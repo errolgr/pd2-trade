@@ -2,13 +2,14 @@ export const changeLog = {
   '0.10.15': [
     '🆕 Command palette (Ctrl+Space in game): one search box for everything. Type to find panels, items with their price and 7-day change, characters, accounts and build meta, your chats, listings and trade offers, and every setting. Enter opens it, Tab searches only one kind, Ctrl+K shows more actions (watch, relist, delist, follow, pin). Settings switches and choices change right in the palette. Rebind or turn it off in Settings → Hotkeys',
     "🆕 List Item, queued listings, Ctrl+U and auto-delist find items in your characters' personal stashes too, not only the shared stash (characters of the mode picked in Settings). Moving an item between a personal stash and the shared stash doesn't count as taking it out",
+    '🆕 Settings → General → Troubleshooting: Telemetry Opt-Out stops sending error reports and usage statistics, right away and on later launches',
+    '✨ Market browser and price check: a search that finds nothing shows its filters as chips, each with how many listings you would get without it (the best one marked); hover a chip to see that filter, click it to drop it and search again',
+    '✨ My listings opens right away on your last list while it refreshes',
+    '✨ Price check: List and "Open search on projectdiablo2.com" moved into the ⋯ menu next to Search, and Show Expired is now a Live / Expired switch above the results that searches again when you flip it',
     '🔧 Chat: a listing made from a personal stash shows "Personal" as its stash instead of "Shared 0"',
     '🔧 Price check: searching by Enhanced Damage finds listings again (it found none since 0.10.13)',
     '🔧 Price check: All Resistances and All Attributes find every item with that line again, not only items that roll each resistance or attribute separately',
-    '✨ Market browser and price check: a search that finds nothing shows its filters as chips, each with how many listings you would get without it (the best one marked); hover a chip to see that filter, click it to drop it and search again',
-    '✨ Price check: List and "Open search on projectdiablo2.com" moved into the ⋯ menu next to Search, and Show Expired is now a Live / Expired switch above the results that searches again when you flip it',
-    "✨ Send to Simulator: the character list shows only your ladder characters (with class portrait, class and level) and you can search it like the market browser's filters. It starts on the character you picked last, else your highest level one, and opens instantly after the first load",
-    "🆕 Price check → Simulator: send items you're wearing, carrying (inventory or cube) or that your mercenary wears, not only stash items; the popover says where it found the item. An item PD2 hasn't saved yet (just picked up) is sent as you copied it",
+
   ],
   '0.10.14': [
     '🆕 Price check: click Price or Age to sort (again to flip the order)',

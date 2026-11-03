@@ -1,6 +1,6 @@
 [package]
 name = "pd2-trader"
-version = "0.10.14"
+version = "0.10.15"
 description = "PD2 Trader"
 authors = ["you"]
 edition = "2021"
