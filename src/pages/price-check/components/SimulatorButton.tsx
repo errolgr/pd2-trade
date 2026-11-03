@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, ChevronDown, FlaskConical, Loader2, LogIn, PackageCheck, PackageX } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ClipboardCheck, FlaskConical, Loader2, LogIn, PackageCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SimCharacterPicker } from '@/components/custom/SimCharacterPicker';
@@ -10,7 +10,13 @@ import { useSimAccess } from '@/hooks/useSimAccess';
 import { useSimLadderCharacters } from '@/hooks/useSimLadderCharacters';
 import { openUrl } from '@/lib/browser-opener';
 import { preferredSimCharacter } from '@/lib/sim-characters';
-import { createSimExport, describeSimExportError, isSessionError, SimExportApiError } from '@/lib/sim-export-api';
+import {
+  createSimExport,
+  describeSimExportError,
+  isSessionError,
+  SimExportApiError,
+  type SimExportItems,
+} from '@/lib/sim-export-api';
 import { findSimItem, type FoundSimItem, type SimItemSource } from '@/lib/sim-item-sources';
 import { trackMeasurement } from '@/lib/telemetry';
 import { cn } from '@/lib/utils';
@@ -19,7 +25,7 @@ import { Banner } from '@/pages/currency/components/StatePanel';
 import type { Item as PriceCheckItem } from '../lib/interfaces';
 
 type Load<T> = { status: 'loading' } | { status: 'ok'; data: T } | { status: 'error'; error: unknown };
-/** PD2's copy of the price-checked item (the export needs it), or null when PD2 has none. */
+/** PD2's copy of the price-checked item, or null when PD2 has none (the clipboard's is sent then). */
 type ItemMatch = Load<FoundSimItem | null>;
 type SendState = { status: 'idle' } | { status: 'sending' } | { status: 'sent' } | { status: 'error'; error: unknown };
 type Mode = 'try' | 'pool';
@@ -41,9 +47,9 @@ function savedCharacter(): string {
 }
 
 /**
- * "Simulator" in the price check's action row (Horadric Sim beta users only): sends PD2's copy of the checked item
- * (from the stash or a character) with one of the user's characters to the planner, tried on in its slot or as a
- * Top Gear candidate.
+ * "Simulator" in the price check's action row (Horadric Sim beta users only): sends the checked item with one of
+ * the user's characters to the planner, tried on in its slot or as a Top Gear candidate. PD2's copy of the item
+ * (stash or a character) is sent when PD2 has one, else the item as copied (just picked up, not saved yet).
  */
 export function SimulatorButton({ item }: { item: PriceCheckItem }) {
   const access = useSimAccess();
@@ -147,16 +153,22 @@ function SimulatorForm({ token, account, item }: { token: string; account: strin
   };
 
   const found = match.status === 'ok' ? match.data : null;
+  // PD2's copy when it has one; else the item as copied, which the server converts
+  const itemSource = found?.source ?? 'clipboard';
   const openPlanner = async () => {
-    if (!found || !character) return;
+    if (match.status === 'loading' || !character) return;
+    const tried = mode === 'try';
+    const items: SimExportItems = found
+      ? { stashItems: [found.item], ...(tried && { try: { stash: 0 } }) }
+      : { clipboardItems: [item], ...(tried && { try: { clipboard: 0 } }) };
     const started = performance.now();
     setSend({ status: 'sending' });
     try {
-      const { url } = await createSimExport(token, character, [found.item], mode === 'try' ? { try: 0 } : {});
+      const { url } = await createSimExport(token, character, items);
       trackMeasurement(
         'sim_export',
         { duration_ms: performance.now() - started, stash_items: 1 },
-        { outcome: 'success', source: 'price_check', mode, item_source: found.source },
+        { outcome: 'success', source: 'price_check', mode, item_source: itemSource },
       );
       setSend({ status: 'sent' });
       await openUrl(url).catch((error) => console.warn('[SimExport] Could not open the browser:', error));
@@ -168,7 +180,7 @@ function SimulatorForm({ token, account, item }: { token: string; account: strin
           outcome: 'error',
           source: 'price_check',
           mode,
-          item_source: found.source,
+          item_source: itemSource,
           status: error instanceof SimExportApiError ? error.status : undefined,
         },
       );
@@ -256,7 +268,7 @@ function SimulatorForm({ token, account, item }: { token: string; account: strin
         <Button
           size="sm"
           className="cursor-pointer"
-          disabled={!found || !character || send.status === 'sending'}
+          disabled={match.status === 'loading' || !character || send.status === 'sending'}
           onClick={() => void openPlanner()}
         >
           {send.status === 'sending' && <Loader2 className="animate-spin" />}
@@ -285,23 +297,37 @@ function ItemStatus({ match }: { match: ItemMatch }) {
     );
   }
   if (match.status === 'error') {
-    return isSessionError(match.error) ? (
-      <SignInBanner tone="destructive">{describeSimExportError(match.error)}</SignInBanner>
-    ) : (
-      <p role="alert"
-        className="flex items-center gap-1.5 text-xs text-destructive">
-        <AlertTriangle className="size-3.5 shrink-0" />
-        {describeSimExportError(match.error)}
-      </p>
+    return (
+      <div className="space-y-1">
+        {isSessionError(match.error) ? (
+          <SignInBanner tone="destructive">{describeSimExportError(match.error)}</SignInBanner>
+        ) : (
+          <p role="alert"
+            className="flex items-center gap-1.5 text-xs text-destructive">
+            <AlertTriangle className="size-3.5 shrink-0" />
+            {describeSimExportError(match.error)}
+          </p>
+        )}
+        <AsCopied />
+      </div>
     );
   }
   const found = match.data;
+  if (!found) return <AsCopied />;
   return (
-    <p className={cn('flex items-center gap-1.5 text-xs', found ? 'text-success' : 'text-muted-foreground')}>
-      {found ? <PackageCheck className="size-3.5 shrink-0" /> : <PackageX className="size-3.5 shrink-0" />}
-      {found
-        ? SOURCE_TEXT[found.source](found.holder ?? '')
-        : "PD2 doesn't have this item yet: it isn't in your stash or on your ladder characters as of the last save"}
+    <p className="flex items-center gap-1.5 text-xs text-success">
+      <PackageCheck className="size-3.5 shrink-0" />
+      {SOURCE_TEXT[found.source](found.holder ?? '')}
+    </p>
+  );
+}
+
+/** PD2 has no copy of the item: the export takes the clipboard's. */
+function AsCopied() {
+  return (
+    <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <ClipboardCheck className="size-3.5 shrink-0" />
+      PD2 hasn&apos;t saved this item yet, so it&apos;s sent as you copied it
     </p>
   );
 }

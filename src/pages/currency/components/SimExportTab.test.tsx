@@ -110,7 +110,7 @@ describe('SimExportTab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send to Simulator (1 item)' }));
 
     await screen.findByText('Sent. The planner opened in your browser.');
-    expect(createSimExport).toHaveBeenCalledWith('tok', 'HammerPal', [SHAKO]);
+    expect(createSimExport).toHaveBeenCalledWith('tok', 'HammerPal', { stashItems: [SHAKO] });
     expect(openUrl).toHaveBeenCalledWith(URL_OUT);
     expect(trackMeasurement).toHaveBeenCalledWith('sim_export', expect.objectContaining({ stash_items: 1 }), {
       outcome: 'success',
@@ -160,7 +160,7 @@ describe('SimExportTab', () => {
       expect((screen.getByRole('button', { name: 'Send to Simulator' }) as HTMLButtonElement).disabled).toBe(false),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Send to Simulator' }));
-    await waitFor(() => expect(createSimExport).toHaveBeenCalledWith('tok', 'HammerPal', []));
+    await waitFor(() => expect(createSimExport).toHaveBeenCalledWith('tok', 'HammerPal', { stashItems: [] }));
   });
 
   it('retries loading characters after a failure', async () => {

@@ -53,7 +53,7 @@ describe('requests', () => {
   it('posts the character and the stash items as they came from PD2', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(201, { url: 'https://pd2trader.com/sim/plan?export=x' }));
     const shako = item({});
-    await expect(createSimExport('tok', 'Sorc', [shako])).resolves.toEqual({
+    await expect(createSimExport('tok', 'Sorc', { stashItems: [shako] })).resolves.toEqual({
       url: 'https://pd2trader.com/sim/plan?export=x',
     });
     const [url, init] = fetchMock.mock.calls[0];
@@ -63,19 +63,20 @@ describe('requests', () => {
     expect(JSON.parse(init?.body as string)).toEqual({ character: 'Sorc', stashItems: [shako] });
   });
 
-  it('names the tried item by its index only when asked to', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse(201, { url: 'https://pd2trader.com/sim/plan?export=y' }));
+  it('names the tried item by its list and index only when asked to', async () => {
+    fetchMock.mockImplementation(async () => jsonResponse(201, { url: 'https://pd2trader.com/sim/plan?export=y' }));
     const shako = item({});
-    await createSimExport('tok', 'Sorc', [shako], { try: 0 });
-    expect(JSON.parse(fetchMock.mock.calls[0][1]?.body as string)).toEqual({
-      character: 'Sorc',
-      stashItems: [shako],
-      try: 0,
-    });
+    const copied = { name: 'Harlequin Crest', quality: 'Unique', type: 'Shako', iLevel: 85, stats: [] };
+    const body = (call: number) => JSON.parse(fetchMock.mock.calls[call][1]?.body as string);
 
-    fetchMock.mockResolvedValueOnce(jsonResponse(201, { url: 'https://pd2trader.com/sim/plan?export=z' }));
-    await createSimExport('tok', 'Sorc', [shako], {});
-    expect(JSON.parse(fetchMock.mock.calls[1][1]?.body as string)).not.toHaveProperty('try');
+    await createSimExport('tok', 'Sorc', { stashItems: [shako], try: { stash: 0 } });
+    expect(body(0)).toEqual({ character: 'Sorc', stashItems: [shako], try: 0 });
+
+    await createSimExport('tok', 'Sorc', { clipboardItems: [copied], try: { clipboard: 0 } });
+    expect(body(1)).toEqual({ character: 'Sorc', stashItems: [], clipboardItems: [copied], tryClipboard: 0 });
+
+    await createSimExport('tok', 'Sorc', { stashItems: [shako] });
+    expect(Object.keys(body(2))).toEqual(['character', 'stashItems']);
   });
 
   it('reads sim.enabled for the login, anonymously without a token', async () => {
@@ -94,12 +95,12 @@ describe('requests', () => {
 
   it('throws the server message with the status', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(404, { message: 'Character "Nope" not found' }));
-    const err = await createSimExport('tok', 'Nope', []).catch((e) => e);
+    const err = await createSimExport('tok', 'Nope', {}).catch((e) => e);
     expect(err).toBeInstanceOf(SimExportApiError);
     expect(err).toMatchObject({ status: 404, message: 'Character "Nope" not found' });
 
     fetchMock.mockResolvedValueOnce(new Response('<html>Bad gateway</html>', { status: 503 }));
-    await expect(createSimExport('tok', 'Sorc', [])).rejects.toMatchObject({
+    await expect(createSimExport('tok', 'Sorc', {})).rejects.toMatchObject({
       status: 503,
       message: 'pd2trader.com answered 503. Try again shortly.',
     });
