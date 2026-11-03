@@ -143,8 +143,8 @@ flowchart LR
   Broker -- scoped proxied calls --> PD2
 ```
 
-- **Isolation**: each plugin runs in an opaque-origin context (`<iframe sandbox="allow-scripts">` without `allow-same-origin`, or a Worker), loaded from a custom protocol (`pd2plugin://<id>/<version>/`) with a strict CSP (`connect-src 'none'`). All I/O goes through the broker's postMessage RPC.
-- **No Tauri IPC in sandboxes**: plugin frames must not have access to `__TAURI_INTERNALS__`. Capabilities in `src-tauri/capabilities/` stay scoped to the host origin only. **Spike required** (§12, R1) to verify that Tauri 2 doesn't inject IPC into sub-frames or custom-protocol origins.
+- **Isolation** (M0 spike, macOS observed, Windows pending): each plugin's logic runs in a Worker spawned inside a hidden `<iframe sandbox="allow-scripts" srcdoc>` (never `allow-same-origin`, never served from a registered URI scheme: Tauri's plugin ACL treats `pd2plugin://` frames as "local" by URL scheme). The srcdoc starts with a strict meta CSP (`connect-src 'none'`). All I/O goes through a `MessageChannel` to the broker; the host authenticates by `event.source` (sandboxed origin is `"null"`).
+- **No Tauri IPC in sandboxes**: on macOS the invoke key is injected into the main frame only, so sandboxed frames can't call commands. On Windows, WebView2 injects init scripts into all frames, so frames likely get the key ([INFERENCE], re-test checklist in spike). Prerequisites before any plugin ships: upgrade Tauri 2.9.5 → ≥ 2.11.6 (GHSA-7gmj: app commands skip ACL without an app manifest; GHSA-w28w: cross-webview IPC data theft), add an app ACL manifest, set a real app CSP, keep capabilities local-only. Fallback if Windows leaks: plugins in a separate webview whose label has no capabilities.
 - **Slots**: a plugin's worker returns a declarative UI tree (JSON) for a slot; the host validates it against the slot schema and renders it with DS slot components. No plugin DOM in core panels.
 - **Panels**: a plugin-owned panel is registered in the overlay registry as `plugin:<id>:<panel>`, positioned and persisted like core panels. Its content is a sandboxed iframe that receives the active theme tokens (and updates when the theme changes) via the DS theme kit.
 - **Budgets**: slot calls have a timeout (default 300 ms, _Proposed_) and render late with skeletons; failures show an `ErrorChip`. N failures/timeouts in a window auto-disable the plugin, and the user is notified. Per-plugin memory/CPU watchdog terminates runaway workers.
@@ -282,16 +282,16 @@ sequenceDiagram
 
 ## 12. Risks
 
-| ID  | Risk                                                                          | Mitigation                                                                                          |
-| --- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| R1  | Tauri 2 exposes IPC to sub-frames/custom-protocol origins, breaking isolation | M0 spike; capabilities scoped to host origin; fall back to Worker-only logic + host-rendered panels |
-| R2  | Many iframes in a transparent always-on-top window hurt FPS/memory            | Workers for logic; iframes only for open panels; unmount closed plugin panels                       |
-| R3  | AI-generated plugins are low quality or look off-brand                        | Template + lint + `llms.txt`; declarative slots constrain UI                                        |
-| R4  | The slot API is wrong and breaking changes strand plugins                     | First-party plugins before opening; semver; deprecation window; manifest `sdk` range                |
-| R5  | Review load is too high for one maintainer                                    | Manual review only for sensitive permissions; automated + AI checks for the rest                    |
-| R6  | Plugins used for RMT/botting or PD2 ToS violations                            | No input automation; listing policy; kill switch                                                    |
-| R7  | Backend load on the strained Atlas cluster                                    | Bundles on R2/CDN; aggregated counters; cacheable listing endpoints                                 |
-| R8  | DS migration stalls feature work                                              | Panel-by-panel migration, warn-then-error lint                                                      |
+| ID  | Risk                                                                                                                       | Mitigation                                                                                                                              |
+| --- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| R1  | Tauri IPC reachable from plugin frames (macOS: blocked by main-frame-only invoke key; Windows: likely leaked to subframes) | Worker-in-sandboxed-srcdoc design; Tauri ≥ 2.11.6 + app ACL manifest + CSP; Windows re-test; fallback: capability-less separate webview |
+| R2  | Many iframes in a transparent always-on-top window hurt FPS/memory                                                         | Workers for logic; iframes only for open panels; unmount closed plugin panels                                                           |
+| R3  | AI-generated plugins are low quality or look off-brand                                                                     | Template + lint + `llms.txt`; declarative slots constrain UI                                                                            |
+| R4  | The slot API is wrong and breaking changes strand plugins                                                                  | First-party plugins before opening; semver; deprecation window; manifest `sdk` range                                                    |
+| R5  | Review load is too high for one maintainer                                                                                 | Manual review only for sensitive permissions; automated + AI checks for the rest                                                        |
+| R6  | Plugins used for RMT/botting or PD2 ToS violations                                                                         | No input automation; listing policy; kill switch                                                                                        |
+| R7  | Backend load on the strained Atlas cluster                                                                                 | Bundles on R2/CDN; aggregated counters; cacheable listing endpoints                                                                     |
+| R8  | DS migration stalls feature work                                                                                           | Panel-by-panel migration, warn-then-error lint                                                                                          |
 
 ## 13. Open questions
 
