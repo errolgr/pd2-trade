@@ -2,31 +2,22 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, ChevronDown, FlaskConical, Loader2, LogIn, PackageCheck, PackageX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { SimCharacterPicker } from '@/components/custom/SimCharacterPicker';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import { useSimAccess } from '@/hooks/useSimAccess';
+import { useSimLadderCharacters } from '@/hooks/useSimLadderCharacters';
 import { openUrl } from '@/lib/browser-opener';
 import { isStashItem } from '@/lib/item-utils';
+import { preferredSimCharacter } from '@/lib/sim-characters';
 import {
   createSimExport,
   describeSimExportError,
-  getMyCharacters,
   isSessionError,
   isSimCandidate,
-  orderedAccounts,
   SimExportApiError,
-  type SimCharacters,
 } from '@/lib/sim-export-api';
 import { matchStashItem } from '@/lib/sim-item-match';
 import { trackMeasurement } from '@/lib/telemetry';
@@ -120,31 +111,13 @@ function SignInBanner({ children, tone = 'info' }: { children: React.ReactNode; 
 
 function SimulatorForm({ token, account, item }: { token: string; account: string; item: PriceCheckItem }) {
   const { fetchAndCacheStash } = usePd2Website();
-  const [characters, setCharacters] = useState<Load<SimCharacters>>({ status: 'loading' });
-  const [character, setCharacter] = useState(savedCharacter);
+  const characters = useSimLadderCharacters(token, account);
+  const [chosen, setChosen] = useState(savedCharacter);
   const [found, setFound] = useState<Load<GameStashItem | null>>({ status: 'loading' });
   const inStash = isStashItem(item);
   const match: StashMatch = inStash ? found : { status: 'not-in-stash' };
   const [mode, setMode] = useState<Mode>('try');
   const [send, setSend] = useState<SendState>({ status: 'idle' });
-
-  useEffect(() => {
-    let live = true;
-    setCharacters({ status: 'loading' });
-    getMyCharacters(token).then(
-      (data) => {
-        if (!live) return;
-        setCharacters({ status: 'ok', data });
-        // The last used character when it still exists, else the selected account's first.
-        const names = orderedAccounts(data, account).flatMap((a) => a.characters);
-        setCharacter((current) => (names.includes(current) ? current : (names[0] ?? '')));
-      },
-      (error) => live && setCharacters({ status: 'error', error }),
-    );
-    return () => {
-      live = false;
-    };
-  }, [token, account]);
 
   // The provider's fetch changes identity with every settings update; only the item refetches.
   const fetchStashRef = useRef(fetchAndCacheStash);
@@ -166,7 +139,7 @@ function SimulatorForm({ token, account, item }: { token: string; account: strin
   }, [item, inStash]);
 
   const chooseCharacter = (name: string) => {
-    setCharacter(name);
+    setChosen(name);
     try {
       localStorage.setItem(SIM_CHARACTER_STORAGE_KEY, name);
     } catch {
@@ -175,6 +148,8 @@ function SimulatorForm({ token, account, item }: { token: string; account: strin
   };
 
   const stashItem = match.status === 'ok' ? match.data : null;
+  const list = characters.status === 'ok' ? characters.data : [];
+  const character = preferredSimCharacter(list, chosen);
   const openPlanner = async () => {
     if (!stashItem || !character) return;
     const started = performance.now();
@@ -219,28 +194,11 @@ function SimulatorForm({ token, account, item }: { token: string; account: strin
           ))}
         {characters.status === 'ok' &&
           (character ? (
-            <Select value={character}
-              onValueChange={chooseCharacter}>
-              <SelectTrigger className="w-full"
-                aria-label="Character">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {orderedAccounts(characters.data, account).map((a) => (
-                  <SelectGroup key={a.account}>
-                    <SelectLabel>{a.account}</SelectLabel>
-                    {a.characters.map((name) => (
-                      <SelectItem key={`${a.account}/${name}`}
-                        value={name}>
-                        {name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
+            <SimCharacterPicker characters={list}
+              value={character}
+              onChange={chooseCharacter} />
           ) : (
-            <p className="text-xs text-muted-foreground">No characters found on your PD2 accounts.</p>
+            <p className="text-xs text-muted-foreground">No ladder characters found on your PD2 accounts.</p>
           ))}
       </section>
 

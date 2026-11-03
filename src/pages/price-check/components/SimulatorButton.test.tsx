@@ -6,6 +6,8 @@ import type { GameData, Item as GameStashItem } from '@/common/types/pd2-website
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import { useSimAccess } from '@/hooks/useSimAccess';
+import { clearSimLadderCharactersCache } from '@/hooks/useSimLadderCharacters';
+import { getAccountCharacters } from '@/lib/builds-api';
 import { openUrl } from '@/lib/browser-opener';
 import { createSimExport, getMyCharacters, SimExportApiError } from '@/lib/sim-export-api';
 import type * as SimExportApi from '@/lib/sim-export-api';
@@ -24,6 +26,7 @@ vi.mock('@/hooks/useSimAccess', () => ({ useSimAccess: vi.fn() }));
 vi.mock('@/overlay', () => ({ useOverlay: vi.fn() }));
 vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
 vi.mock('@/lib/telemetry', () => ({ trackMeasurement: vi.fn() }));
+vi.mock('@/lib/builds-api', () => ({ getAccountCharacters: vi.fn() }));
 vi.mock('@/lib/sim-export-api', async (importOriginal) => ({
   ...(await importOriginal<typeof SimExportApi>()),
   getMyCharacters: vi.fn(),
@@ -76,6 +79,7 @@ afterAll(() => {
 
 beforeEach(() => {
   localStorage.clear();
+  clearSimLadderCharactersCache();
   settings = { pd2Token: 'tok', account: 'Hammerdin' };
   openPanel.mockReset();
   fetchAndCacheStash.mockReset();
@@ -92,9 +96,26 @@ beforeEach(() => {
   vi.mocked(getMyCharacters).mockResolvedValue({
     accounts: [
       { account: 'Alt', characters: ['AltZon'] },
-      { account: 'Hammerdin', characters: ['HammerPal', 'Sorc'] },
+      { account: 'Hammerdin', characters: ['Sorc', 'HammerPal', 'OldPal'] },
     ],
   });
+  const pd2 = (account: string, name: string, className: string, level: number, ladder = true) => ({
+    account,
+    name,
+    className,
+    level,
+    hardcore: false,
+    ladder,
+  });
+  vi.mocked(getAccountCharacters).mockImplementation(async (account) =>
+    account === 'Alt'
+      ? [pd2('Alt', 'AltZon', 'Amazon', 85)]
+      : [
+        pd2('Hammerdin', 'Sorc', 'Sorceress', 70),
+        pd2('Hammerdin', 'HammerPal', 'Paladin', 92),
+        pd2('Hammerdin', 'OldPal', 'Paladin', 99, false),
+      ],
+  );
 });
 
 afterEach(() => {
@@ -111,7 +132,7 @@ describe('SimulatorButton', () => {
     expect(screen.queryByRole('button', { name: /Simulator/ })).toBeNull();
   });
 
-  it('tries the stash item on with the selected account’s character and opens the planner', async () => {
+  it('tries the stash item on with the selected account’s highest ladder character and opens the planner', async () => {
     await openPopover();
     await screen.findByText('Found in your stash');
     await waitFor(() => expect(planner().disabled).toBe(false));
@@ -140,7 +161,23 @@ describe('SimulatorButton', () => {
     localStorage.setItem(SIM_CHARACTER_STORAGE_KEY, 'AltZon');
     await openPopover();
     await waitFor(() => expect(planner().disabled).toBe(false));
-    expect(screen.getByRole('combobox', { name: 'Character' }).textContent).toBe('AltZon');
+    expect((screen.getByRole('combobox', { name: 'Character' }) as HTMLInputElement).value).toBe('AltZon');
+    fireEvent.click(planner());
+    await waitFor(() => expect(createSimExport).toHaveBeenCalledWith('tok', 'AltZon', [SHAKO], { try: 0 }));
+  });
+
+  it('lists only ladder characters and finds them by name or class', async () => {
+    await openPopover();
+    await waitFor(() => expect(planner().disabled).toBe(false));
+    const input = screen.getByRole('combobox', { name: 'Character' });
+    fireEvent.click(input);
+    const names = () => screen.getAllByRole('option').map((o) => o.textContent);
+    expect(names()).toEqual(['HammerPalPaladin · Lvl 92 · Hammerdin', 'SorcSorceress · Lvl 70 · Hammerdin', 'AltZonAmazon · Lvl 85 · Alt']);
+
+    fireEvent.change(input, { target: { value: 'amaz' } });
+    expect(names()).toEqual(['AltZonAmazon · Lvl 85 · Alt']);
+    fireEvent.click(screen.getByRole('option'));
+    expect((input as HTMLInputElement).value).toBe('AltZon');
     fireEvent.click(planner());
     await waitFor(() => expect(createSimExport).toHaveBeenCalledWith('tok', 'AltZon', [SHAKO], { try: 0 }));
   });

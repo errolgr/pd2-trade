@@ -50,14 +50,6 @@ export function getMyCharacters(token: string): Promise<SimCharacters> {
   return request('/api/sim/import/mine', token);
 }
 
-/** The selected account first, then the others as PD2 lists them. */
-export function orderedAccounts(data: SimCharacters, account: string): SimCharacters['accounts'] {
-  const key = account.toLowerCase();
-  return [...data.accounts].sort(
-    (a, b) => Number(b.account.toLowerCase() === key) - Number(a.account.toLowerCase() === key),
-  );
-}
-
 /** `sim.enabled` for the PD2 login (`token`; anonymous without one): the server evaluates beta allowlists per user. */
 export async function getSimEnabled(token: string | null): Promise<boolean> {
   const { flags } = await request<{ flags?: Record<string, boolean> }>('/api/feature-flags', token);

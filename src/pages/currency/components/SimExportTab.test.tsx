@@ -4,6 +4,8 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { MotionGlobalConfig } from 'framer-motion';
 import type { GameData, Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { AccountMismatchError, usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { clearSimLadderCharactersCache } from '@/hooks/useSimLadderCharacters';
+import { getAccountCharacters } from '@/lib/builds-api';
 import { openUrl } from '@/lib/browser-opener';
 import { createSimExport, getMyCharacters, MAX_SIM_EXPORT_ITEMS, SimExportApiError } from '@/lib/sim-export-api';
 import type * as SimExportApi from '@/lib/sim-export-api';
@@ -19,6 +21,7 @@ vi.mock('@/hooks/pd2website/usePD2Website', () => {
 vi.mock('@/overlay', () => ({ useOverlay: vi.fn() }));
 vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
 vi.mock('@/lib/telemetry', () => ({ trackMeasurement: vi.fn() }));
+vi.mock('@/lib/builds-api', () => ({ getAccountCharacters: vi.fn() }));
 vi.mock('@/lib/sim-export-api', async (importOriginal) => ({
   ...(await importOriginal<typeof SimExportApi>()),
   getMyCharacters: vi.fn(),
@@ -72,6 +75,7 @@ afterAll(() => {
 
 beforeEach(() => {
   openPanel.mockReset();
+  clearSimLadderCharactersCache();
   fetchAndCacheStash.mockReset();
   fetchAndCacheStash.mockResolvedValue(stashOf([SHAKO, ARACH, BER]));
   vi.mocked(usePd2Website).mockReturnValue({ fetchAndCacheStash } as unknown as ReturnType<typeof usePd2Website>);
@@ -82,6 +86,12 @@ beforeEach(() => {
       { account: 'Hammerdin', characters: ['HammerPal', 'Sorc'] },
     ],
   });
+  const levels: Record<string, number> = { AltZon: 85, HammerPal: 92, Sorc: 70 };
+  vi.mocked(getAccountCharacters).mockImplementation(async (account) =>
+    Object.entries(levels)
+      .filter(([name]) => (account === 'Alt') === (name === 'AltZon'))
+      .map(([name, level]) => ({ account, name, className: 'Paladin', level, hardcore: false, ladder: true })),
+  );
   vi.mocked(createSimExport).mockResolvedValue({ url: URL_OUT });
   vi.mocked(openUrl).mockResolvedValue();
 });
