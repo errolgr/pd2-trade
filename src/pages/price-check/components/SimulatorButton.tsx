@@ -27,7 +27,7 @@ import type { Item as PriceCheckItem } from '../lib/interfaces';
 type Load<T> = { status: 'loading' } | { status: 'ok'; data: T } | { status: 'error'; error: unknown };
 /** PD2's copy of the price-checked item, or null when PD2 has none (the clipboard's is sent then). */
 type ItemMatch = Load<FoundSimItem | null>;
-type SendState = { status: 'idle' } | { status: 'sending' } | { status: 'sent' } | { status: 'error'; error: unknown };
+type SendState = { status: 'idle' } | { status: 'sending' } | { status: 'error'; error: unknown };
 type Mode = 'try' | 'pool';
 
 /** The character last sent from the price check (character names are unique on PD2 across accounts). */
@@ -106,7 +106,8 @@ export function SimulatorButton({ item }: { item: PriceCheckItem }) {
           {token ? (
             <SimulatorForm token={token}
               account={settings?.account ?? ''}
-              item={item} />
+              item={item}
+              onSent={() => setOpen(false)} />
           ) : (
             <SignInBanner>Sign in to send items to the planner.</SignInBanner>
           )}
@@ -165,7 +166,18 @@ function SignInBanner({ children, tone = 'info' }: { children: React.ReactNode; 
   );
 }
 
-function SimulatorForm({ token, account, item }: { token: string; account: string; item: PriceCheckItem }) {
+function SimulatorForm({
+  token,
+  account,
+  item,
+  onSent,
+}: {
+  token: string;
+  account: string;
+  item: PriceCheckItem;
+  /** The planner link is ready: the popover closes as the browser opens it. */
+  onSent: () => void;
+}) {
   const { fetchAndCacheStash } = usePd2Website();
   const characters = useSimLadderCharacters(token, account);
   const [chosen, setChosen] = useState(savedCharacter);
@@ -227,7 +239,7 @@ function SimulatorForm({ token, account, item }: { token: string; account: strin
         { duration_ms: performance.now() - started, stash_items: 1 },
         { outcome: 'success', source: 'price_check', mode, item_source: itemSource },
       );
-      setSend({ status: 'sent' });
+      onSent();
       await openUrl(url).catch((error) => console.warn('[SimExport] Could not open the browser:', error));
     } catch (error) {
       trackMeasurement(
@@ -317,11 +329,7 @@ function SimulatorForm({ token, account, item }: { token: string; account: strin
           </Banner>
         ))}
 
-      <div className="flex items-center justify-between gap-2">
-        <span role="status"
-          className="text-xs text-muted-foreground">
-          {send.status === 'sent' && 'The planner opened in your browser.'}
-        </span>
+      <div className="flex items-center justify-end gap-2">
         <Button
           size="sm"
           className="cursor-pointer"
