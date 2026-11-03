@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { MotionGlobalConfig } from 'framer-motion';
-import { usePanel, useOverlay, type OverlayApi, type PanelContextValue } from '@/overlay';
+import { showToast, usePanel, useOverlay, type OverlayApi, type PanelContextValue } from '@/overlay';
 import { useOptions, type ISettings } from '@/hooks/useOptions';
 import { useSignIn } from '@/hooks/useSignIn';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
@@ -12,7 +12,7 @@ import type { BuildsPanelPayload } from './lib/types';
 import { clearBuildsCache } from './lib/useBuildsQuery';
 import BuildsPage from './BuildsPage';
 
-vi.mock('@/overlay', () => ({ usePanel: vi.fn(), useOverlay: vi.fn() }));
+vi.mock('@/overlay', () => ({ usePanel: vi.fn(), useOverlay: vi.fn(), showToast: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/hooks/useSignIn', () => ({ useSignIn: vi.fn() }));
 vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
@@ -293,5 +293,67 @@ describe('BuildsPage Mine tab', () => {
     expect(await screen.findByText("Couldn't load Broken's characters from PD2")).toBeTruthy();
     expect(await screen.findByText('LowSorc')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
+  });
+});
+
+describe('BuildsPage Following', () => {
+  const HAMMERDIN = { name: 'Hammerdin', mode: 'softcore' as const };
+
+  it('opens the Characters tab on Following when the user follows anyone', async () => {
+    settings.followedBuildCharacters = [HAMMERDIN];
+    panel.payload = { tab: 'characters' };
+    render(<BuildsPage />);
+    expect(await screen.findByRole('button', { name: 'Unfollow Hammerdin' })).toBeTruthy();
+    expect(screen.queryByText('Sign in to see your characters')).toBeNull();
+  });
+
+  it('opens the Characters tab on Mine when the user follows no one, with no Following shortcut', async () => {
+    panel.payload = { tab: 'characters' };
+    render(<BuildsPage />);
+    expect(await screen.findByText('Sign in to see your characters')).toBeTruthy();
+    expect(screen.queryByText('Not following anyone yet')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Following \(/ })).toBeNull();
+  });
+
+  it('keeps the picked view: Mine stays Mine after switching tabs', async () => {
+    settings.followedBuildCharacters = [HAMMERDIN];
+    panel.payload = { tab: 'characters' };
+    render(<BuildsPage />);
+    await screen.findByRole('button', { name: 'Unfollow Hammerdin' });
+    fireEvent.click(screen.getByRole('radio', { name: 'Mine' }));
+    expect(await screen.findByText('Sign in to see your characters')).toBeTruthy();
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Meta' }));
+    await screen.findByRole('group', { name: 'Classes' });
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Characters' }));
+    expect(await screen.findByText('Sign in to see your characters')).toBeTruthy();
+  });
+
+  it('goes from the Meta landing to Characters → Following in one click', async () => {
+    settings.followedBuildCharacters = [HAMMERDIN];
+    render(<BuildsPage />);
+    await screen.findByRole('group', { name: 'Classes' });
+    fireEvent.click(screen.getByRole('button', { name: 'Following (1)' }));
+    expect(await screen.findByRole('button', { name: 'Unfollow Hammerdin' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Characters' }).getAttribute('data-state')).toBe('active');
+  });
+
+  it('says where a followed character went; unfollowing says nothing', async () => {
+    const updateSettings = vi.fn();
+    vi.mocked(useOptions).mockImplementation(() => ({ settings, updateSettings }) as never);
+    panel.payload = { character: { name: 'Hammerdin' } };
+    const { rerender } = render(<BuildsPage />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Follow' }));
+    expect(updateSettings).toHaveBeenCalledWith({ followedBuildCharacters: [HAMMERDIN] });
+    expect(showToast).toHaveBeenCalledWith({
+      title: 'Following Hammerdin',
+      description: 'Saved to Characters → Following',
+      variant: 'success',
+    });
+
+    vi.mocked(showToast).mockClear();
+    settings = { ...settings, followedBuildCharacters: [HAMMERDIN] };
+    rerender(<BuildsPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Following', pressed: true }));
+    expect(showToast).not.toHaveBeenCalled();
   });
 });

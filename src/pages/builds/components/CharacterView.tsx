@@ -8,6 +8,7 @@ import { HoverPopover } from '@/components/custom/hover-popover';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
 import { openUrl } from '@/lib/browser-opener';
 import { useOptions } from '@/hooks/useOptions';
+import { showToast } from '@/overlay';
 import {
   type BuildsMode,
   type CharacterDetail,
@@ -237,9 +238,18 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
             size="sm"
             className="h-8 gap-1.5 text-xs"
             aria-pressed={followed}
-            onClick={() =>
-              updateSettings({ followedBuildCharacters: toggleFollow(settings?.followedBuildCharacters ?? [], ref) })
-            }
+            onClick={() => {
+              updateSettings({ followedBuildCharacters: toggleFollow(settings?.followedBuildCharacters ?? [], ref) });
+              if (!followed)
+                showToast({
+                  title: t('character.followedToast', { name: detail.name }),
+                  description: t('character.followedToastDescription', {
+                    characters: t('page.tabs.characters'),
+                    following: t('characters.following'),
+                  }),
+                  variant: 'success',
+                });
+            }}
           >
             <Star className={cn('size-3.5', followed && 'fill-q-gold text-q-gold')} />
             {followed ? t('characters.following') : t('character.follow')}

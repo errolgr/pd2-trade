@@ -5,6 +5,7 @@
     "lookupPlaceholder": "角色名…",
     "lookupLabel": "查找角色",
     "mode": "模式",
+    "followingShortcut": "关注 ({{n}})",
     "tabs": {
       "meta": "主流",
       "characters": "角色"
@@ -106,6 +107,8 @@
     "updated": "更新于 {{time}}",
     "firstSeen": "首次发现于 {{time}}",
     "follow": "关注",
+    "followedToast": "已关注 {{name}}",
+    "followedToastDescription": "已保存到 {{characters}} → {{following}}",
     "openSite": "在 pd2trader.com 打开",
     "viewingSnapshot": "正在查看 <date>{{date}}</date><muted> · 价格已隐藏</muted>",
     "backToNow": "回到当前",
