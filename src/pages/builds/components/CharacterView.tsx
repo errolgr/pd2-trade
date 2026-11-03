@@ -238,9 +238,12 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
             size="sm"
             className="h-8 gap-1.5 text-xs"
             aria-pressed={followed}
-            onClick={() => {
-              updateSettings({ followedBuildCharacters: toggleFollow(settings?.followedBuildCharacters ?? [], ref) });
-              if (!followed)
+            onClick={async () => {
+              const saved = await updateSettings({
+                followedBuildCharacters: toggleFollow(settings?.followedBuildCharacters ?? [], ref),
+              });
+              // Only once it's on disk: a failed write leaves the character unfollowed
+              if (saved && !followed)
                 showToast({
                   title: t('character.followedToast', { name: detail.name }),
                   description: t('character.followedToastDescription', {
