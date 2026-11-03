@@ -1,0 +1,25 @@
+# The app commands the overlay (Main) calls. Granted only through capabilities/default.json (window Main, local
+# origin). The SignIn window talks to Main over events and gets none of these.
+[[set]]
+identifier = "main-window"
+description = "Every app command, for the Main overlay window."
+permissions = [
+  "allow-get-diablo-rect",
+  "allow-press-key",
+  "allow-is-diablo-focused",
+  "allow-is-diablo-fullscreen",
+  "allow-focus-diablo",
+  "allow-focus-overlay",
+  "allow-set-outside-click-watch",
+  "allow-update-window-bounds",
+  "allow-set-interactive-region",
+  "allow-start-chat-watcher",
+  "allow-stop-chat-watcher",
+  "allow-get-diablo2-directory",
+  "allow-auto-detect-diablo2-directory",
+  "allow-open-url",
+  "allow-open-config-dir",
+  "allow-write-debug-logs",
+  "allow-open-sign-in-window",
+  "allow-close-sign-in-window",
+]
