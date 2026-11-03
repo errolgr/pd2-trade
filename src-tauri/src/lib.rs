@@ -99,6 +99,8 @@ pub fn run() {
                 window::set_overlay_window(hwnd.0 as isize);
                 window::keep_overlay_tool_window(hwnd.0 as isize);
             }
+            #[cfg(target_os = "linux")]
+            modules::layer_shell::init(&main_window);
             // Click-through until the frontend reports its interactive rects.
             if let Err(e) = region::apply_region(&main_window, &[]) {
                 eprintln!("Failed to seed empty interactive region: {}", e);
