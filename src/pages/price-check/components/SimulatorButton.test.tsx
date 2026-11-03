@@ -7,9 +7,10 @@ import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import { useSimAccess } from '@/hooks/useSimAccess';
 import { clearSimLadderCharactersCache } from '@/hooks/useSimLadderCharacters';
-import { getAccountCharacters } from '@/lib/builds-api';
+import { getAccountCharacters, getCharacterItems } from '@/lib/builds-api';
 import { openUrl } from '@/lib/browser-opener';
 import { createSimExport, getMyCharacters, SimExportApiError } from '@/lib/sim-export-api';
+import { clearCharacterItemsCache } from '@/lib/sim-item-sources';
 import type * as SimExportApi from '@/lib/sim-export-api';
 import { trackMeasurement } from '@/lib/telemetry';
 import { useOverlay, type OverlayApi } from '@/overlay';
@@ -26,7 +27,7 @@ vi.mock('@/hooks/useSimAccess', () => ({ useSimAccess: vi.fn() }));
 vi.mock('@/overlay', () => ({ useOverlay: vi.fn() }));
 vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
 vi.mock('@/lib/telemetry', () => ({ trackMeasurement: vi.fn() }));
-vi.mock('@/lib/builds-api', () => ({ getAccountCharacters: vi.fn() }));
+vi.mock('@/lib/builds-api', () => ({ getAccountCharacters: vi.fn(), getCharacterItems: vi.fn() }));
 vi.mock('@/lib/sim-export-api', async (importOriginal) => ({
   ...(await importOriginal<typeof SimExportApi>()),
   getMyCharacters: vi.fn(),
@@ -80,6 +81,7 @@ afterAll(() => {
 beforeEach(() => {
   localStorage.clear();
   clearSimLadderCharactersCache();
+  clearCharacterItemsCache();
   settings = { pd2Token: 'tok', account: 'Hammerdin' };
   openPanel.mockReset();
   fetchAndCacheStash.mockReset();
@@ -116,6 +118,8 @@ beforeEach(() => {
           pd2('Hammerdin', 'OldPal', 'Paladin', 99, false),
         ],
   );
+  vi.mocked(getCharacterItems).mockReset();
+  vi.mocked(getCharacterItems).mockResolvedValue({ items: [], mercenary: [] });
 });
 
 afterEach(() => {
@@ -164,6 +168,7 @@ describe('SimulatorButton', () => {
       outcome: 'success',
       source: 'price_check',
       mode: 'try',
+      item_source: 'stash',
     });
   });
 
@@ -205,15 +210,27 @@ describe('SimulatorButton', () => {
     await waitFor(() => expect(createSimExport).toHaveBeenCalledWith('tok', 'AltZon', [SHAKO], { try: 0 }));
   });
 
-  it('only sends stash items it can find', async () => {
+  it('sends a worn item from the character wearing it, reading the chosen character first', async () => {
+    const worn = { ...SHAKO, location: { zone: 'Equipped', equipment: 'Helm', storage: 'Unknown' } } as GameStashItem;
+    vi.mocked(getCharacterItems).mockImplementation(async (name) =>
+      name === 'AltZon' ? { items: [worn], mercenary: [] } : { items: [], mercenary: [] },
+    );
     await openPopover(checked({ location: 'Equip' }));
-    expect(screen.getByText('Only items in your stash can be sent')).not.toBeNull();
+    await screen.findByText('Found on AltZon (equipped)');
+    expect(vi.mocked(getCharacterItems).mock.calls[0][0]).toBe('HammerPal');
     expect(fetchAndCacheStash).not.toHaveBeenCalled();
-    expect(planner().disabled).toBe(true);
-    cleanup();
 
-    await openPopover(checked({ name: 'Arachnid Mesh', type: 'Spiderweb Sash' }));
-    await screen.findByText("Couldn't find this item in your stash — reload the stash in Net Worth");
+    fireEvent.click(planner());
+    await waitFor(() => expect(createSimExport).toHaveBeenCalledWith('tok', 'HammerPal', [worn], { try: 0 }));
+  });
+
+  it("says so when PD2 has the item nowhere, after looking on the characters and in the stash", async () => {
+    await openPopover(checked({ name: 'Arachnid Mesh', type: 'Spiderweb Sash', location: 'Inventory' }));
+    await screen.findByText(
+      "PD2 doesn't have this item yet: it isn't in your stash or on your ladder characters as of the last save",
+    );
+    expect(getCharacterItems).toHaveBeenCalledTimes(3);
+    expect(fetchAndCacheStash).toHaveBeenCalled();
     expect(planner().disabled).toBe(true);
   });
 
