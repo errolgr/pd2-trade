@@ -6,7 +6,7 @@ import {
   createSimExport,
   describeSimExportError,
   getMyCharacters,
-  getSimEnabled,
+  getSimAccess,
   isSessionError,
   isSimCandidate,
   SimExportApiError,
@@ -79,18 +79,34 @@ describe('requests', () => {
     expect(Object.keys(body(2))).toEqual(['character', 'stashItems']);
   });
 
-  it('reads sim.enabled for the login, anonymously without a token', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse(200, { audience: 'beta_tester', flags: { 'sim.enabled': true } }));
-    await expect(getSimEnabled('tok')).resolves.toBe(true);
-    expect(fetchMock.mock.calls[0][0]).toBe('https://backend.test/api/feature-flags');
+  it('reads the closed beta for the login, anonymously without a token', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(200, { canUseSim: true, waitlist: '/sim/beta', entry: { position: 3, status: 'invited' } }),
+    );
+    await expect(getSimAccess('tok')).resolves.toEqual({
+      canUse: true,
+      waitlistUrl: 'https://backend.test/sim/beta',
+      waitlistPosition: null,
+    });
+    expect(fetchMock.mock.calls[0][0]).toBe('https://backend.test/api/sim/beta/status');
     expect(fetchMock.mock.calls[0][1]?.headers).toEqual({ Authorization: 'Bearer tok' });
 
-    fetchMock.mockResolvedValueOnce(jsonResponse(200, { audience: 'anonymous', flags: { 'sim.enabled': false } }));
-    await expect(getSimEnabled(null)).resolves.toBe(false);
-    expect(fetchMock.mock.calls[1][1]?.headers).toEqual({});
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(200, { canUseSim: false, waitlist: '/sim/beta', entry: { position: 12, status: 'pending' } }),
+    );
+    await expect(getSimAccess('tok')).resolves.toMatchObject({ canUse: false, waitlistPosition: 12 });
 
-    fetchMock.mockResolvedValueOnce(jsonResponse(200, { audience: 'anonymous', flags: {} }));
-    await expect(getSimEnabled(null)).resolves.toBe(false);
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { canUseSim: false, waitlist: '/sim/beta', entry: null }));
+    await expect(getSimAccess(null)).resolves.toMatchObject({ canUse: false, waitlistPosition: null });
+    expect(fetchMock.mock.calls[2][1]?.headers).toEqual({});
+  });
+
+  it('answers null while the sim is off (404) and throws other failures', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(404, { message: 'Cannot GET /api/sim/beta/status' }));
+    await expect(getSimAccess(null)).resolves.toBeNull();
+
+    fetchMock.mockResolvedValueOnce(jsonResponse(503, {}));
+    await expect(getSimAccess(null)).rejects.toMatchObject({ status: 503 });
   });
 
   it('throws the server message with the status', async () => {

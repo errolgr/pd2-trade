@@ -2,21 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { motion } from 'framer-motion';
 import { DUR, EASE_OUT } from '@/lib/motion';
-import {
-  Bell,
-  Clock,
-  ExternalLink,
-  FlaskConical,
-  Gamepad2,
-  Heart,
-  MessageSquare,
-  Shield,
-  Sigma,
-  Swords,
-  X,
-} from 'lucide-react';
-import { openUrl } from '@/lib/browser-opener';
-import { BACKEND_URL } from '@/lib/pkce';
+import { Bell, Clock, ExternalLink, Gamepad2, Heart, MessageSquare, Shield, Sigma, Swords, X } from 'lucide-react';
 import { useSimAccess } from '@/hooks/useSimAccess';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
 import { cn } from '@/lib/utils';
@@ -40,6 +26,7 @@ import { formatStat, statWithValue } from './stat-text';
 import { AddAllModsButton, ModMenu } from './ModMenu';
 import { EnterOnce, type EnterTracker } from './EnterOnce';
 import { SellerName } from './SellerName';
+import { MarketSimButton } from './MarketSimButton';
 import { OfferBadge } from './OfferBadge';
 import type { ListingOffers } from '../lib/listing-offers';
 import type { AlertGlow } from '../hooks/useLiveAlertGlow';
@@ -571,19 +558,8 @@ const ResultCard = React.memo(function ResultCard({
           >
             <ExternalLink className="size-3.5" />
           </Button>
-          {simAccess && !archived && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 border border-primary/70 bg-primary/10 px-2.5 text-xs text-primary hover:bg-primary/20 hover:text-primary"
-              aria-label="Try in the sim planner"
-              title="Try in the sim planner"
-              onClick={() => void openUrl(`${BACKEND_URL}/sim/plan?listing=${encodeURIComponent(listing._id)}`)}
-            >
-              <FlaskConical className="size-3.5" />
-              Sim
-            </Button>
-          )}
+          {simAccess && !archived && <MarketSimButton access={simAccess}
+            listingId={listing._id} />}
           {!archived && <WhisperButton actions={actions}
             dense />}
           {!archived && (

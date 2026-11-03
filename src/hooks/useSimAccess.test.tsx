@@ -2,13 +2,16 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useOptions } from '@/hooks/useOptions';
-import { getSimEnabled } from '@/lib/sim-export-api';
+import { getSimAccess, type SimAccess } from '@/lib/sim-export-api';
 import { SIM_ACCESS_TTL_MS, useSimAccess } from './useSimAccess';
 
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
-vi.mock('@/lib/sim-export-api', () => ({ getSimEnabled: vi.fn() }));
+vi.mock('@/lib/sim-export-api', () => ({ getSimAccess: vi.fn() }));
 
 let token: string | undefined;
+
+const IN: SimAccess = { canUse: true, waitlistUrl: 'https://pd2trader.com/sim/beta', waitlistPosition: null };
+const WAITING: SimAccess = { ...IN, canUse: false, waitlistPosition: 7 };
 let isLoading: boolean;
 
 async function renderAccess() {
@@ -20,7 +23,7 @@ async function renderAccess() {
 beforeEach(() => {
   isLoading = false;
   vi.mocked(useOptions).mockImplementation(() => ({ settings: { pd2Token: token }, isLoading }) as never);
-  vi.mocked(getSimEnabled).mockReset();
+  vi.mocked(getSimAccess).mockReset();
 });
 
 afterEach(() => {
@@ -31,62 +34,62 @@ afterEach(() => {
 describe('useSimAccess', () => {
   it('is unknown until the flag answers, then shares one request per login for a minute', async () => {
     token = 'tester';
-    const { promise, resolve } = Promise.withResolvers<boolean>();
-    vi.mocked(getSimEnabled).mockReturnValueOnce(promise);
+    const { promise, resolve } = Promise.withResolvers<SimAccess | null>();
+    vi.mocked(getSimAccess).mockReturnValueOnce(promise);
     const first = renderHook(() => useSimAccess());
     expect(first.result.current).toBeUndefined();
-    await act(async () => resolve(true));
-    expect(first.result.current).toBe(true);
+    await act(async () => resolve(IN));
+    expect(first.result.current).toEqual(IN);
 
     // A card mounted later renders the cached answer at once.
     const second = renderHook(() => useSimAccess());
-    expect(second.result.current).toBe(true);
+    expect(second.result.current).toEqual(IN);
     await act(async () => {});
-    expect(vi.mocked(getSimEnabled).mock.calls).toEqual([['tester']]);
+    expect(vi.mocked(getSimAccess).mock.calls).toEqual([['tester']]);
   });
 
   it('asks again after the TTL and per token, anonymously when signed out', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     token = 'ttl';
-    vi.mocked(getSimEnabled).mockResolvedValue(false);
+    vi.mocked(getSimAccess).mockResolvedValue(null);
     await renderAccess();
     vi.setSystemTime(Date.now() + SIM_ACCESS_TTL_MS);
     await renderAccess();
     token = undefined;
     const { result } = await renderAccess();
-    expect(result.current).toBe(false);
-    expect(vi.mocked(getSimEnabled).mock.calls).toEqual([['ttl'], ['ttl'], [null]]);
+    expect(result.current).toBeNull();
+    expect(vi.mocked(getSimAccess).mock.calls).toEqual([['ttl'], ['ttl'], [null]]);
   });
 
-  it('fails closed when the flags cannot be read', async () => {
+  it('fails closed when the beta status cannot be read', async () => {
     token = 'offline';
-    vi.mocked(getSimEnabled).mockRejectedValueOnce(new Error('network down'));
+    vi.mocked(getSimAccess).mockRejectedValueOnce(new Error('network down'));
     const { result } = await renderAccess();
-    expect(result.current).toBe(false);
+    expect(result.current).toBeNull();
   });
 
   it('re-checks while mounted, so a login allowlisted after the first answer gets in without a restart', async () => {
     vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'] });
     token = 'allowlisted-later';
-    vi.mocked(getSimEnabled).mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    vi.mocked(getSimAccess).mockResolvedValueOnce(WAITING).mockResolvedValueOnce(IN);
     const { result } = await renderAccess();
-    expect(result.current).toBe(false);
+    expect(result.current).toEqual(WAITING);
 
     await act(async () => vi.advanceTimersByTime(SIM_ACCESS_TTL_MS));
-    expect(result.current).toBe(true);
-    expect(vi.mocked(getSimEnabled).mock.calls).toEqual([['allowlisted-later'], ['allowlisted-later']]);
+    expect(result.current).toEqual(IN);
+    expect(vi.mocked(getSimAccess).mock.calls).toEqual([['allowlisted-later'], ['allowlisted-later']]);
   });
 
   it('keeps the last answer when a re-check fails', async () => {
     vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'] });
     token = 'flaky';
-    vi.mocked(getSimEnabled).mockResolvedValueOnce(true).mockRejectedValueOnce(new Error('503'));
+    vi.mocked(getSimAccess).mockResolvedValueOnce(IN).mockRejectedValueOnce(new Error('503'));
     const { result } = await renderAccess();
-    expect(result.current).toBe(true);
+    expect(result.current).toEqual(IN);
 
     await act(async () => vi.advanceTimersByTime(SIM_ACCESS_TTL_MS));
-    expect(getSimEnabled).toHaveBeenCalledTimes(2);
-    expect(result.current).toBe(true);
+    expect(getSimAccess).toHaveBeenCalledTimes(2);
+    expect(result.current).toEqual(IN);
   });
 
   it('waits for the settings before asking', async () => {
@@ -94,6 +97,6 @@ describe('useSimAccess', () => {
     isLoading = true;
     const { result } = await renderAccess();
     expect(result.current).toBeUndefined();
-    expect(getSimEnabled).not.toHaveBeenCalled();
+    expect(getSimAccess).not.toHaveBeenCalled();
   });
 });

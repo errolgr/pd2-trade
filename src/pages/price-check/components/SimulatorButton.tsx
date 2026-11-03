@@ -3,6 +3,7 @@ import { AlertTriangle, ClipboardCheck, FlaskConical, Loader2, LogIn, PackageChe
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SimCharacterPicker } from '@/components/custom/SimCharacterPicker';
+import { SIM_WAITLIST_POPOVER_CLASS, SimWaitlist } from '@/components/custom/SimWaitlist';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
@@ -57,16 +58,17 @@ function calloutSeen(): boolean {
 }
 
 /**
- * "Sim" in the price check's action row (Horadric Sim beta users only): sends the checked item with one of the
- * user's characters to the planner, tried on in its slot or as a Top Gear candidate. PD2's copy of the item (stash
- * or a character) is sent when PD2 has one, else the item as copied (just picked up, not saved yet).
+ * "Sim" in the price check's action row, shown while Horadric Sim is on: for beta users (allowlisted, or open beta)
+ * it sends the checked item with one of the user's characters to the planner, tried on in its slot or as a Top Gear
+ * candidate. PD2's copy of the item (stash or a character) is sent when PD2 has one, else the item as copied (just
+ * picked up, not saved yet). Everyone else gets the closed-beta waitlist on the website.
  */
 export function SimulatorButton({ item }: { item: PriceCheckItem }) {
   const access = useSimAccess();
   const { settings } = useOptions();
   const [open, setOpen] = useState(false);
   const [callout, setCallout] = useState(() => !calloutSeen());
-  if (access !== true) return null;
+  if (!access) return null;
   const token = settings?.pd2Token || null;
 
   const dismissCallout = () => {
@@ -97,21 +99,32 @@ export function SimulatorButton({ item }: { item: PriceCheckItem }) {
             <span className="rounded-full bg-primary/20 px-1.5 py-px text-[10px] font-bold tracking-wider">BETA</span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent side="top"
-          align="start"
-          className="w-[420px] space-y-3 p-3">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Send to Simulator
-          </div>
-          {token ? (
-            <SimulatorForm token={token}
-              account={settings?.account ?? ''}
-              item={item}
-              onSent={() => setOpen(false)} />
-          ) : (
-            <SignInBanner>Sign in to send items to the planner.</SignInBanner>
-          )}
-        </PopoverContent>
+        {!access.canUse ? (
+          <PopoverContent side="top"
+            align="start"
+            className={SIM_WAITLIST_POPOVER_CLASS}>
+            <SimWaitlist access={access}
+              onOpen={() => setOpen(false)} />
+          </PopoverContent>
+        ) : (
+          <PopoverContent side="top"
+            align="start"
+            className="w-[420px] space-y-3 p-3">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Send to Simulator
+            </div>
+            {token ? (
+              <SimulatorForm
+                token={token}
+                account={settings?.account ?? ''}
+                item={item}
+                onSent={() => setOpen(false)}
+              />
+            ) : (
+              <SignInBanner>Sign in to send items to the planner.</SignInBanner>
+            )}
+          </PopoverContent>
+        )}
       </Popover>
       {callout && !open && (
         <div

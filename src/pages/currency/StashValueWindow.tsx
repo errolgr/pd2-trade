@@ -42,6 +42,7 @@ import { HistoryTab } from './components/HistoryTab';
 import { AnimatedNumber } from './components/AnimatedNumber';
 import { RaresTab } from './components/RaresTab';
 import { SimExportTab } from './components/SimExportTab';
+import { SimWaitlist } from '@/components/custom/SimWaitlist';
 import { isCrafted } from '@/components/rares/rares-format';
 import { Banner, EmptyState } from './components/StatePanel';
 import { deltaPillClass, formatSignedHr } from './lib/networth-format';
@@ -255,8 +256,12 @@ export function StashValueWindow() {
                   {token && owner && simAccess && (
                     <TabsContent value="simulator"
                       className="pt-1">
-                      <SimExportTab token={token}
-                        account={owner.account} />
+                      {simAccess.canUse ? (
+                        <SimExportTab token={token}
+                          account={owner.account} />
+                      ) : (
+                        <SimWaitlist access={simAccess} />
+                      )}
                     </TabsContent>
                   )}
 

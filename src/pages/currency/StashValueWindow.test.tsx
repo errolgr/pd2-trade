@@ -206,7 +206,7 @@ beforeEach(() => {
   vi.mocked(useNetWorth).mockImplementation(() => netWorth);
   vi.mocked(useOptions).mockImplementation(() => ({ settings }) as never);
   vi.mocked(useWealthRank).mockReturnValue(null);
-  vi.mocked(useSimAccess).mockReturnValue(false);
+  vi.mocked(useSimAccess).mockReturnValue(null);
   panel = { payload: undefined, payloadVersion: 1 };
   gameFocused = true;
   close = vi.fn();
@@ -453,11 +453,17 @@ describe('StashValueWindow tabs', () => {
     expect(screen.getByRole('tab', { name: 'Overview' }).getAttribute('aria-selected')).toBe('true');
   });
 
-  it('shows the Simulator tab only while Horadric Sim is open to the user', async () => {
+  it('shows the Simulator tab while Horadric Sim is on: the waitlist outside the beta', async () => {
+    const access = { waitlistUrl: 'https://pd2trader.com/sim/beta', waitlistPosition: null };
     renderWindow();
     expect(screen.queryByRole('tab', { name: /Simulator/ })).toBeNull();
     cleanup();
-    vi.mocked(useSimAccess).mockReturnValue(true);
+    vi.mocked(useSimAccess).mockReturnValue({ ...access, canUse: false });
+    renderWindow();
+    fireEvent.mouseDown(screen.getByRole('tab', { name: /Simulator/ }));
+    expect(await screen.findByRole('button', { name: /Join the waitlist/ })).not.toBeNull();
+    cleanup();
+    vi.mocked(useSimAccess).mockReturnValue({ ...access, canUse: true });
     renderWindow();
     expect(screen.getByRole('tab', { name: /Simulator/ })).not.toBeNull();
     await act(async () => {});
