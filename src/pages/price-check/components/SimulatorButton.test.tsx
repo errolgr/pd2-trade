@@ -162,7 +162,7 @@ describe('SimulatorButton', () => {
 
     fireEvent.click(planner());
     await screen.findByText('The planner opened in your browser.');
-    expect(createSimExport).toHaveBeenCalledWith('tok', 'HammerPal', [SHAKO], { try: 0 });
+    expect(createSimExport).toHaveBeenCalledWith('tok', 'HammerPal', { stashItems: [SHAKO], try: { stash: 0 } });
     expect(openUrl).toHaveBeenCalledWith(URL_OUT);
     expect(trackMeasurement).toHaveBeenCalledWith('sim_export', expect.objectContaining({ stash_items: 1 }), {
       outcome: 'success',
@@ -177,7 +177,7 @@ describe('SimulatorButton', () => {
     await waitFor(() => expect(planner().disabled).toBe(false));
     fireEvent.click(screen.getByRole('radio', { name: /Add to Top Gear pool/ }));
     fireEvent.click(planner());
-    await waitFor(() => expect(createSimExport).toHaveBeenCalledWith('tok', 'HammerPal', [SHAKO], {}));
+    await waitFor(() => expect(createSimExport).toHaveBeenCalledWith('tok', 'HammerPal', { stashItems: [SHAKO] }));
   });
 
   it('remembers the last chosen character', async () => {
@@ -186,7 +186,9 @@ describe('SimulatorButton', () => {
     await waitFor(() => expect(planner().disabled).toBe(false));
     expect(screen.getByRole('combobox', { name: 'Character' }).textContent).toContain('AltZon');
     fireEvent.click(planner());
-    await waitFor(() => expect(createSimExport).toHaveBeenCalledWith('tok', 'AltZon', [SHAKO], { try: 0 }));
+    await waitFor(() =>
+      expect(createSimExport).toHaveBeenCalledWith('tok', 'AltZon', { stashItems: [SHAKO], try: { stash: 0 } }),
+    );
   });
 
   it('lists only ladder characters and finds them by name or class', async () => {
@@ -207,7 +209,9 @@ describe('SimulatorButton', () => {
     fireEvent.click(screen.getByRole('option'));
     expect(picker.textContent).toBe('AltZonAmazon · Lvl 85');
     fireEvent.click(planner());
-    await waitFor(() => expect(createSimExport).toHaveBeenCalledWith('tok', 'AltZon', [SHAKO], { try: 0 }));
+    await waitFor(() =>
+      expect(createSimExport).toHaveBeenCalledWith('tok', 'AltZon', { stashItems: [SHAKO], try: { stash: 0 } }),
+    );
   });
 
   it('sends a worn item from the character wearing it, reading the chosen character first', async () => {
@@ -221,17 +225,26 @@ describe('SimulatorButton', () => {
     expect(fetchAndCacheStash).not.toHaveBeenCalled();
 
     fireEvent.click(planner());
-    await waitFor(() => expect(createSimExport).toHaveBeenCalledWith('tok', 'HammerPal', [worn], { try: 0 }));
+    await waitFor(() =>
+      expect(createSimExport).toHaveBeenCalledWith('tok', 'HammerPal', { stashItems: [worn], try: { stash: 0 } }),
+    );
   });
 
-  it("says so when PD2 has the item nowhere, after looking on the characters and in the stash", async () => {
-    await openPopover(checked({ name: 'Arachnid Mesh', type: 'Spiderweb Sash', location: 'Inventory' }));
-    await screen.findByText(
-      "PD2 doesn't have this item yet: it isn't in your stash or on your ladder characters as of the last save",
-    );
+  it('sends the item as copied when PD2 has it nowhere, after looking on the characters and in the stash', async () => {
+    const copied = checked({ name: 'Arachnid Mesh', type: 'Spiderweb Sash', location: 'Inventory' });
+    await openPopover(copied);
+    await screen.findByText("PD2 hasn't saved this item yet, so it's sent as you copied it");
     expect(getCharacterItems).toHaveBeenCalledTimes(3);
     expect(fetchAndCacheStash).toHaveBeenCalled();
-    expect(planner().disabled).toBe(true);
+
+    fireEvent.click(planner());
+    await waitFor(() =>
+      expect(createSimExport).toHaveBeenCalledWith('tok', 'HammerPal', {
+        clipboardItems: [copied],
+        try: { clipboard: 0 },
+      }),
+    );
+    expect(trackMeasurement).toHaveBeenCalledWith('sim_export', expect.anything(), expect.objectContaining({ item_source: 'clipboard' }));
   });
 
   it('asks to sign in without a PD2 login', async () => {

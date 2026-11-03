@@ -99,7 +99,7 @@ export function SimExportTab({ token, account }: { token: string; account: strin
     const started = performance.now();
     setSend({ status: 'sending' });
     try {
-      const { url } = await createSimExport(token, character, chosen);
+      const { url } = await createSimExport(token, character, { stashItems: chosen });
       trackMeasurement(
         'sim_export',
         { duration_ms: performance.now() - started, stash_items: chosen.length },
