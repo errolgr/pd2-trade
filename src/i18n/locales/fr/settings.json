@@ -284,6 +284,10 @@
       "debugLogging": {
         "label": "Journal de débogage",
         "description": "Écrire la sortie console dans un fichier journal pour le dépannage."
+      },
+      "telemetryOptOut": {
+        "label": "Désactivation de la télémétrie",
+        "description": "Ne plus envoyer de rapports d'erreurs ni de statistiques d'utilisation."
       }
     }
   },

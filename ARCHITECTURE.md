@@ -196,9 +196,11 @@ Monitoring is split in two:
 - **Sentry** tracks errors and crashes so developers can fix bugs quickly.
 - **Grafana Faro** (Grafana Cloud Frontend Observability) collects usage metrics, web vitals and traces to our own backend.
 
+**Opt-out**: Settings → General → Troubleshooting → _Telemetry Opt-Out_ (`telemetryOptOut`, off by default; intentionally not in the command palette). `src/lib/telemetry-opt-out.ts` reads it from `settings.json` at startup and starts neither SDK when set; toggling at runtime disables the Sentry client, stops session replay and pauses Faro (turning it back on resumes them; replays resume error-only).
+
 ### Sentry (errors)
 
-- **Initialization**: Sentry is initialized in `src/main.tsx` asynchronously to avoid slowing down startup.
+- **Initialization**: `initSentry()` in `src/lib/sentry.ts`, started 1s after launch by `src/lib/telemetry-opt-out.ts` to avoid slowing down startup.
 - **Errors**: Uncaught errors and `console.error` are reported. Expected user-state errors (`AccountMismatchError`, `AuthenticationError`, "is not associated with your logged-in account") are dropped. API failures go through `src/lib/error-reporting.ts`, which reports only 5xx responses, grouped by service, status code and endpoint.
 - **Performance**: Captures 100% of transactions (`tracesSampleRate: 1.0`) to debug performance issues.
 - **Replays**: Records session replays for 10% of sessions (100% on errors) to see exactly what the user did before a crash.
@@ -209,7 +211,7 @@ Monitoring is split in two:
 ### Grafana Faro (metrics, web vitals, traces)
 
 - **Configuration**: Faro is only initialized when the build-time `VITE_FARO_URL` (Faro collector URL) is set. Local builds without it send nothing to Grafana.
-- **Initialization**: `src/lib/faro.ts` (called from `src/main.tsx`). The whole overlay runs in the single `Main` webview, so there is one Faro session; the `window_label` session attribute and the view name are `Main` (`browser` in browser dev mode), and the route (path only) is the Faro page id.
+- **Initialization**: `src/lib/faro.ts` (started by `src/lib/telemetry-opt-out.ts`). The whole overlay runs in the single `Main` webview, so there is one Faro session; the `window_label` session attribute and the view name are `Main` (`browser` in browser dev mode), and the route (path only) is the Faro page id.
 - **No errors**: Faro's error and console instrumentations are not installed, so exceptions are only reported to Sentry.
 - **Measurements & events**: `src/lib/telemetry.ts` (`trackMeasurement` for operations with durations/counts, `trackEvent` for discrete actions). Names are snake_case, value keys carry their unit (`duration_ms`, `*_items`, `price_hr`), attributes must stay low-cardinality.
 - **Tracing**: fetch/XHR spans are recorded; the `traceparent` header is only sent to our own backend (`VITE_BACKEND_URL` / pd2trader.com), never to the projectdiablo2.com API.

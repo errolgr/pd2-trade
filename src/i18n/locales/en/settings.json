@@ -281,6 +281,10 @@
       "debugLogging": {
         "label": "Debug Logging",
         "description": "Write console output to a log file for troubleshooting."
+      },
+      "telemetryOptOut": {
+        "label": "Telemetry Opt-Out",
+        "description": "Stop sending error reports and usage statistics."
       }
     }
   },
