@@ -73,14 +73,14 @@
       "clearTitle": "Desmarcar todos os atributos"
     },
     "actions": {
-      "openTradeAria": "Abrir busca no projectdiablo2.com",
-      "openTradeTooltip": "Abrir esta busca no projectdiablo2.com",
+      "openTrade": "Abrir busca no projectdiablo2.com",
+      "more": "Mais",
       "openInMarket": "Abrir no mercado",
       "list": "Anunciar",
-      "listDisabled": "O item precisa estar no seu baú (compartilhado ou pessoal) para ser anunciado.",
-      "showExpired": "Mostrar expirados"
+      "listDisabled": "O item precisa estar no seu baú (compartilhado ou pessoal) para ser anunciado."
     },
     "results": {
+      "source": { "label": "Anúncios a buscar", "live": "Ativos", "expired": "Expirados" },
       "matches": "Resultados: <value>{{total}}</value>",
       "showing": "· mostrando {{shown}}",
       "loading": "Carregando anúncios do mercado...",

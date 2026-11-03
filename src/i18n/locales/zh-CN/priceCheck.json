@@ -67,14 +67,14 @@
       "clearTitle": "取消勾选所有属性"
     },
     "actions": {
-      "openTradeAria": "在 projectdiablo2.com 打开搜索",
-      "openTradeTooltip": "在 projectdiablo2.com 打开此搜索",
+      "openTrade": "在 projectdiablo2.com 打开搜索",
+      "more": "更多",
       "openInMarket": "在市场中打开",
       "list": "挂单",
-      "listDisabled": "物品必须在储物箱（共享或个人）中才能挂单。",
-      "showExpired": "显示已过期"
+      "listDisabled": "物品必须在储物箱（共享或个人）中才能挂单。"
     },
     "results": {
+      "source": { "label": "搜索范围", "live": "在售", "expired": "已过期" },
       "matches": "匹配：<value>{{total}}</value>",
       "showing": "· 显示 {{shown}} 条",
       "loading": "正在加载市场挂单…",

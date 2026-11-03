@@ -73,14 +73,14 @@
       "clearTitle": "Décocher toutes les stats"
     },
     "actions": {
-      "openTradeAria": "Ouvrir la recherche sur projectdiablo2.com",
-      "openTradeTooltip": "Ouvrir cette recherche sur projectdiablo2.com",
+      "openTrade": "Ouvrir la recherche sur projectdiablo2.com",
+      "more": "Plus",
       "openInMarket": "Ouvrir dans le marché",
       "list": "Vendre",
-      "listDisabled": "L'objet doit être dans votre coffre (partagé ou personnel) pour être mis en vente.",
-      "showExpired": "Afficher expirées"
+      "listDisabled": "L'objet doit être dans votre coffre (partagé ou personnel) pour être mis en vente."
     },
     "results": {
+      "source": { "label": "Annonces à rechercher", "live": "Actives", "expired": "Expirées" },
       "matches": "Résultats : <value>{{total}}</value>",
       "showing": "· {{shown}} affichés",
       "loading": "Chargement des annonces...",
