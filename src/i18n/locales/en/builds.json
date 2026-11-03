@@ -5,6 +5,7 @@
     "lookupPlaceholder": "Character name…",
     "lookupLabel": "Look up a character",
     "mode": "Mode",
+    "followingShortcut": "Following ({{n}})",
     "tabs": {
       "meta": "Meta",
       "characters": "Characters"
@@ -110,6 +111,8 @@
     "updated": "Updated {{time}}",
     "firstSeen": "First seen {{time}}",
     "follow": "Follow",
+    "followedToast": "Following {{name}}",
+    "followedToastDescription": "Saved to {{characters}} → {{following}}",
     "openSite": "Open on pd2trader.com",
     "viewingSnapshot": "Viewing <date>{{date}}</date><muted> · prices hidden</muted>",
     "backToNow": "Back to now",

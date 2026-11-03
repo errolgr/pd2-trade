@@ -5,6 +5,7 @@
     "lookupPlaceholder": "Nome do personagem…",
     "lookupLabel": "Buscar um personagem",
     "mode": "Modo",
+    "followingShortcut": "Seguindo ({{n}})",
     "tabs": {
       "meta": "Meta",
       "characters": "Personagens"
@@ -114,6 +115,8 @@
     "updated": "Atualizado {{time}}",
     "firstSeen": "Visto pela primeira vez {{time}}",
     "follow": "Seguir",
+    "followedToast": "Seguindo {{name}}",
+    "followedToastDescription": "Salvo em {{characters}} → {{following}}",
     "openSite": "Abrir em pd2trader.com",
     "viewingSnapshot": "Vendo <date>{{date}}</date><muted> · preços ocultos</muted>",
     "backToNow": "Voltar ao atual",
