@@ -141,12 +141,15 @@ export function Segmented<T extends string>({
   onChange,
   label,
   className,
+  selectedClassName,
 }: {
   value: T;
   options: { value: T; label: React.ReactNode; title?: string; facet?: SegmentFacet }[];
   onChange: (value: T) => void;
   label: string;
   className?: string;
+  /** Extra classes for the selected option. */
+  selectedClassName?: string;
 }) {
   return (
     <div
@@ -166,7 +169,7 @@ export function Segmented<T extends string>({
             onClick={() => onChange(o.value)}
             className={cn(
               'relative min-w-0 flex-1 truncate rounded-[5px] px-1.5 text-[11px] font-medium text-muted-foreground outline-none transition-[color,background-color,opacity] duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
-              value === o.value && 'bg-accent text-accent-foreground shadow-xs',
+              value === o.value && cn('bg-accent text-accent-foreground shadow-xs', selectedClassName),
               o.facet?.empty && value !== o.value && FACET_DIM,
             )}
           >

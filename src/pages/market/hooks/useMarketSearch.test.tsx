@@ -16,6 +16,7 @@ import {
 import type * as SearchModule from '../lib/search';
 
 vi.mock('@/lib/browser-http', () => ({ fetch: vi.fn() }));
+vi.mock('@/lib/error-reporting', () => ({ reportApiError: vi.fn() }));
 vi.mock('../lib/search', async (importOriginal) => ({
   ...(await importOriginal<typeof SearchModule>()),
   runSearch: vi.fn(),

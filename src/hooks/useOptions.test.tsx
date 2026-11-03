@@ -39,6 +39,7 @@ vi.mock('@/lib/browser-fs', () => ({
   }),
 }));
 vi.mock('@/lib/debug-logger', () => ({ startDebugLogging: vi.fn(), stopDebugLogging: vi.fn() }));
+vi.mock('@/lib/telemetry-opt-out', () => ({ applyTelemetryOptOut: vi.fn() }));
 vi.mock('@/lib/themes', async (importOriginal) => ({
   ...(await importOriginal<typeof Themes>()),
   applyTheme: vi.fn(),

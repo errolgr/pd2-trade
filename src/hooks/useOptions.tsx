@@ -4,6 +4,7 @@ import { useCallback, useEffect } from 'react';
 import { readTextFile, writeTextFile, BaseDirectory, mkdir, exists } from '@/lib/browser-fs';
 import mergeWith from 'lodash/mergeWith';
 import { startDebugLogging, stopDebugLogging } from '@/lib/debug-logger';
+import { applyTelemetryOptOut } from '@/lib/telemetry-opt-out';
 import SettingsLayout from '@/components/dialogs/optionsv2/options-layout';
 import { isTauri } from '@tauri-apps/api/core';
 import { applyTheme, applyWindowTransparency, DEFAULT_THEME_ID, getTheme } from '@/lib/themes';
@@ -91,6 +92,7 @@ export interface ISettings {
   toastPopupsEnabled?: boolean; // Master toggle for toast popups
   toastPopupTypes?: string[]; // Which toast types are enabled: 'whispers' | 'trade' | 'joins' | 'offers'
   debugLoggingEnabled?: boolean;
+  telemetryOptOut?: boolean; // stops Sentry and Faro; read directly from settings.json at startup
   netWorthTrackingEnabled?: boolean; // history snapshots on pd2trader.com; on unless explicitly turned off
   netWorthTickerEnabled?: boolean;
   netWorthTickerAnchor?: NetWorthTickerAnchor;
@@ -409,8 +411,8 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [isLoading, settings?.pd2Token, updateSettings]);
 
   // Single overlay window, single OptionsProvider: settings side effects (theme, transparency,
-  // debug logging) are applied here once loaded. Before that, main.tsx applied the cached theme
-  // and initDebugLoggingFromSettings() read the file directly.
+  // debug logging, telemetry opt-out) are applied here once loaded. Before that, main.tsx applied the cached
+  // theme, and initDebugLoggingFromSettings() / initTelemetryFromSettings() read the file directly.
   useEffect(() => {
     if (isLoading) return;
     applyTheme(getTheme(settings.themeId));
@@ -426,6 +428,11 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (settings.debugLoggingEnabled) startDebugLogging();
     else stopDebugLogging();
   }, [isLoading, settings.debugLoggingEnabled]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    applyTelemetryOptOut(settings.telemetryOptOut ?? false);
+  }, [isLoading, settings.telemetryOptOut]);
 
   useEffect(() => {
     if (isLoading) return;

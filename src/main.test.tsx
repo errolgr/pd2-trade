@@ -10,6 +10,8 @@ vi.mock('@sentry/react', () => ({
   captureConsoleIntegration: vi.fn(),
   browserTracingIntegration: vi.fn(),
   replayIntegration: vi.fn(),
+  getClient: vi.fn(),
+  getReplay: vi.fn(),
 }));
 vi.mock('@/lib/debug-logger', () => ({ initDebugLoggingFromSettings: vi.fn() }));
 vi.mock('@/lib/themes', () => ({ initTheme: vi.fn() }));
@@ -62,6 +64,8 @@ async function boot(path: string) {
   await act(async () => {
     await import('./main');
   });
+  // Telemetry starts after an async settings.json read (localStorage in browser mode)
+  await vi.advanceTimersByTimeAsync(0);
   return {
     text: document.getElementById('root')!.textContent,
     root: document.getElementById('root')!,
@@ -80,6 +84,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
+  localStorage.clear();
 });
 
 describe('main routing', () => {
@@ -150,6 +155,15 @@ describe('main Sentry setup', () => {
     } finally {
       vi.unstubAllEnvs();
     }
+  });
+
+  it('starts neither Sentry nor Faro when settings.json opts out of telemetry', async () => {
+    localStorage.setItem('fs:13/settings.json', JSON.stringify({ telemetryOptOut: true }));
+    const { Sentry } = await boot('/');
+    const { initFaro } = await import('@/lib/faro');
+    vi.advanceTimersByTime(5000);
+    expect(Sentry.init).not.toHaveBeenCalled();
+    expect(initFaro).not.toHaveBeenCalled();
   });
 
   it('drops Tauri IPC breadcrumbs but keeps other HTTP breadcrumbs', async () => {

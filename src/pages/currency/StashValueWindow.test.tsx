@@ -5,6 +5,7 @@ import { MotionGlobalConfig } from 'framer-motion';
 import { useNetWorth, type NetWorthContextValue } from '@/hooks/useNetWorth';
 import { useOptions } from '@/hooks/useOptions';
 import { useWealthRank } from '@/hooks/useWealthRank';
+import { useSimAccess } from '@/hooks/useSimAccess';
 import { usePanel, useOverlay, type OverlayApi, type PanelContextValue, type PanelPayloads } from '@/overlay';
 import { useSignIn } from '@/hooks/useSignIn';
 import {
@@ -23,6 +24,7 @@ import { StashValueWindow } from './StashValueWindow';
 vi.mock('@/hooks/useNetWorth', () => ({ useNetWorth: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/hooks/useWealthRank', () => ({ useWealthRank: vi.fn() }));
+vi.mock('@/hooks/useSimAccess', () => ({ useSimAccess: vi.fn() }));
 vi.mock('@/overlay', () => ({ usePanel: vi.fn(), useOverlay: vi.fn() }));
 vi.mock('@/hooks/useSignIn', () => ({ useSignIn: vi.fn() }));
 vi.mock('@/lib/networth-api', async (importOriginal) => ({
@@ -204,6 +206,7 @@ beforeEach(() => {
   vi.mocked(useNetWorth).mockImplementation(() => netWorth);
   vi.mocked(useOptions).mockImplementation(() => ({ settings }) as never);
   vi.mocked(useWealthRank).mockReturnValue(null);
+  vi.mocked(useSimAccess).mockReturnValue(false);
   panel = { payload: undefined, payloadVersion: 1 };
   gameFocused = true;
   close = vi.fn();
@@ -448,6 +451,16 @@ describe('StashValueWindow tabs', () => {
     reopen({ tab: 'overview' });
     rerender(<StashValueWindow />);
     expect(screen.getByRole('tab', { name: 'Overview' }).getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('shows the Simulator tab only while Horadric Sim is open to the user', async () => {
+    renderWindow();
+    expect(screen.queryByRole('tab', { name: /Simulator/ })).toBeNull();
+    cleanup();
+    vi.mocked(useSimAccess).mockReturnValue(true);
+    renderWindow();
+    expect(screen.getByRole('tab', { name: /Simulator/ })).not.toBeNull();
+    await act(async () => {});
   });
 
   it('shows only the holdings of the tab categories, with the stash tab for uniques', async () => {

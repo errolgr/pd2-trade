@@ -273,6 +273,19 @@ export function GeneralForm() {
               </FormControl>
             }
           />
+          <SettingsRow
+            settingKey="telemetryOptOut"
+            label={t('general.troubleshooting.telemetryOptOut.label')}
+            description={t('general.troubleshooting.telemetryOptOut.description')}
+            control={
+              <FormControl>
+                <Switch
+                  checked={settings.telemetryOptOut ?? false}
+                  onCheckedChange={(checked) => updateSettings({ telemetryOptOut: checked })}
+                />
+              </FormControl>
+            }
+          />
         </SettingsGroup>
       </div>
     </Form>
