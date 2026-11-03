@@ -1,11 +1,11 @@
 import * as React from 'react';
 import { motion } from 'framer-motion';
 import { GripVertical, X } from 'lucide-react';
-import { cn } from '@pd2-trader/ui';
-import { scaleIn, useReducedMotionSafe } from '@/lib/motion';
-import { useTranslation } from '@/i18n';
+import { cn } from '../lib/utils';
+import { useUiLabels } from '../lib/labels';
+import { scaleIn, useReducedMotionSafe } from '../lib/motion';
 
-interface WindowChromeProps {
+interface PanelChromeProps {
   title: React.ReactNode;
   icon?: React.ReactNode;
   /** Right-side controls rendered before the close button. */
@@ -26,7 +26,7 @@ interface WindowChromeProps {
   closeLabel?: string;
 }
 
-function WindowChrome({
+function PanelChrome({
   title,
   icon,
   actions,
@@ -39,15 +39,15 @@ function WindowChrome({
   showGrip,
   gripId,
   closeLabel,
-}: WindowChromeProps) {
-  const { t } = useTranslation();
+}: PanelChromeProps) {
+  const labels = useUiLabels();
   const drag = dragRegion ? { 'data-panel-drag': true } : {};
   const grip = showGrip ?? dragRegion;
 
   return (
     <div
       {...drag}
-      data-slot="window-chrome"
+      data-slot="panel-chrome"
       className={cn(
         'relative flex h-10 shrink-0 select-none items-center gap-2 border-b border-border px-2.5 text-surface-foreground',
         dragRegion && 'cursor-grab active:cursor-grabbing',
@@ -73,7 +73,7 @@ function WindowChrome({
       {onClose && (
         <button
           type="button"
-          aria-label={closeLabel ?? t('common:actions.close')}
+          aria-label={closeLabel ?? labels.close}
           onClick={onClose}
           className="inline-flex size-7 shrink-0 cursor-default items-center justify-center rounded-md text-muted-foreground outline-none transition-[color,background-color,transform] duration-(--dur-fast) ease-out hover:bg-destructive/15 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-90"
         >
@@ -84,12 +84,12 @@ function WindowChrome({
   );
 }
 
-interface WindowPanelProps extends React.ComponentProps<'div'> {
+interface PanelSurfaceProps extends React.ComponentProps<'div'> {
   /** Fade/scale in on mount (respects reduced motion). Default false. */
   animate?: boolean;
 }
 
-function WindowPanel({ className, animate = false, children, ...props }: WindowPanelProps) {
+function PanelSurface({ className, animate = false, children, ...props }: PanelSurfaceProps) {
   const reduce = useReducedMotionSafe();
   const classes = cn(
     'flex flex-col overflow-hidden rounded-lg border border-border bg-surface text-surface-foreground shadow-panel backdrop-blur-md',
@@ -101,7 +101,7 @@ function WindowPanel({ className, animate = false, children, ...props }: WindowP
     const motionProps = props as unknown as React.ComponentProps<typeof motion.div>;
     return (
       <motion.div
-        data-slot="window-panel"
+        data-slot="panel-surface"
         className={classes}
         variants={scaleIn}
         initial="hidden"
@@ -113,7 +113,7 @@ function WindowPanel({ className, animate = false, children, ...props }: WindowP
     );
   }
   return (
-    <div data-slot="window-panel"
+    <div data-slot="panel-surface"
       className={classes}
       {...props}>
       {children}
@@ -121,5 +121,5 @@ function WindowPanel({ className, animate = false, children, ...props }: WindowP
   );
 }
 
-export { WindowChrome, WindowPanel };
-export type { WindowChromeProps, WindowPanelProps };
+export { PanelChrome, PanelSurface };
+export type { PanelChromeProps, PanelSurfaceProps };

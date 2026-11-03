@@ -614,7 +614,7 @@ describe('Composer listing picker', () => {
       within(picker)
         .queryAllByRole('button')
         .map((b) => b.textContent);
-    expect(items()).toEqual(['Harlequin CrestShako2.5 HR', "Tal Rasha's Guardianshipoffers"]);
+    expect(items()).toEqual(['Harlequin CrestShako2.50 HR', "Tal Rasha's Guardianshipoffers"]);
 
     fireEvent.change(within(picker).getByPlaceholderText('Search my listings...'), { target: { value: 'tal' } });
     expect(items()).toEqual(["Tal Rasha's Guardianshipoffers"]);

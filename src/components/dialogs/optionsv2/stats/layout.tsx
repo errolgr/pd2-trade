@@ -1,5 +1,5 @@
 import React from 'react';
-import { SettingsSection } from '../settings-ui';
+import { SettingsSection } from '@pd2-trader/ui';
 import { useTranslation } from '@/i18n';
 import { StatsForm } from './stats-form';
 

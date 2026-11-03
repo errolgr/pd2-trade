@@ -1,13 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
-import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import ItemStatsDisplay from './ItemStatsDisplay';
 import { AlertCircle, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
-import { ScrollArea, Button, cn } from '@pd2-trader/ui';
+import { Badge, ScrollArea, Button, ItemName, fadeInUp, itemCardVariants, listItem, listStagger } from '@pd2-trader/ui';
 import { useTranslation } from '@/i18n';
-import { fadeInUp, listItem, listStagger } from '@/lib/motion';
-import { countChip, itemCard, sectionLabel } from './styles';
 
 interface MultipleMatchSelectorProps {
   matchingItems: GameStashItem[];
@@ -48,25 +45,29 @@ const MultipleMatchSelector: React.FC<MultipleMatchSelectorProps> = ({
       </motion.div>
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className={sectionLabel}>{t('selection.selectItem')}</span>
-          <span className={countChip}
+          <span className="text-2xs font-semibold uppercase tracking-caps text-muted-foreground">
+            {t('selection.selectItem')}
+          </span>
+          <Badge variant="count"
             aria-hidden>
             {matchingItems.length}
-          </span>
+          </Badge>
           <span className="sr-only">{t('selection.foundCount', { count: matchingItems.length })}</span>
         </div>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="inline"
           onClick={anyExpanded ? onCollapseAll : onExpandAll}
-          className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium text-primary outline-none transition-colors duration-(--dur-fast) hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring/60"
+          className="rounded-md px-1.5 py-0.5 text-xs text-primary hover:bg-primary/10 hover:text-primary"
         >
           {anyExpanded ? <ChevronsDownUp className="size-3.5" /> : <ChevronsUpDown className="size-3.5" />}
           {anyExpanded ? t('selection.showLess') : t('selection.showAllStats')}
-        </button>
+        </Button>
       </div>
       <ScrollArea className="pr-2 [&_[data-radix-scroll-area-viewport]>div]:!block">
         <motion.div
-          className="flex max-h-[20rem] flex-col gap-2 p-px"
+          className="flex max-h-80 flex-col gap-2 p-px"
           variants={listStagger}
           initial="hidden"
           animate="visible"
@@ -75,16 +76,16 @@ const MultipleMatchSelector: React.FC<MultipleMatchSelectorProps> = ({
             <motion.div
               variants={listItem}
               key={stashItem.hash || index}
-              className={itemCard({ tone: 'interactive' })}
+              className={itemCardVariants({ tone: 'interactive' })}
               onClick={() => onItemSelect(stashItem)}
             >
               <div className="flex items-center justify-between gap-2">
-                <div
-                  className={cn('truncate', qualityColor(stashItem.quality.name))}
+                <ItemName
+                  name={stashItem.name}
+                  quality={stashItem.quality.name}
+                  className="block truncate"
                   style={{ fontFamily: 'DiabloFont' }}
-                >
-                  {stashItem.name}
-                </div>
+                />
                 <Button
                   type="button"
                   size="sm"

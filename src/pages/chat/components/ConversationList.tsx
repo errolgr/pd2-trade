@@ -16,10 +16,20 @@ import {
   SearchX,
   X,
 } from 'lucide-react';
-import { Button, Input, ScrollArea, Skeleton, ToggleGroup, ToggleGroupItem, cn } from '@pd2-trader/ui';
-import { EmptyState } from '@/pages/currency/components/StatePanel';
+import {
+  Button,
+  Input,
+  ScrollArea,
+  Skeleton,
+  ToggleGroup,
+  ToggleGroupItem,
+  cn,
+  EmptyState,
+  listItem,
+  listStagger,
+  popIn,
+} from '@pd2-trader/ui';
 import { t as tGlobal, useTranslation } from '@/i18n';
-import { listItem, listStagger, popIn } from '@/lib/motion';
 import { useChatListings } from '../hooks/useChatListings';
 import { useKnownPresence } from '../hooks/useTraderProfile';
 import type { InboxFilter, InboxThread } from '../lib/inbox';
@@ -228,26 +238,30 @@ export function ConversationList({
               <span
                 aria-hidden
                 className={cn(
-                  'absolute inset-y-2.5 -left-px w-[3px] rounded-full bg-primary transition-[opacity,transform] duration-(--dur-med)',
+                  'absolute inset-y-2.5 -left-px w-0.75 rounded-full bg-primary transition-[opacity,transform] duration-(--dur-med)',
                   selected ? 'scale-y-100 opacity-100' : 'scale-y-50 opacity-0',
                 )}
               />
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="inline"
                 tabIndex={-1}
                 aria-label={t('bubble.traderDetails', { name })}
                 onClick={() => onOpenTrader(thread.id)}
-                className="relative z-10 shrink-0 rounded-full outline-none transition-transform duration-(--dur-fast) hover:scale-105 active:scale-95"
+                className="relative z-10 shrink-0 rounded-full hover:bg-transparent hover:scale-105 motion-safe:active:scale-95"
               >
                 <ChatAvatar name={name}
                   presence={presence} />
-              </button>
+              </Button>
               {/* The whole row selects (the button's ::after covers it); the avatar sits above it */}
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="inline"
                 aria-current={selected ? 'true' : undefined}
                 onClick={() => onSelect(thread.id)}
-                className="flex min-w-0 flex-1 items-center gap-2 text-left outline-none after:absolute after:inset-0 after:rounded-xl focus-visible:after:ring-2 focus-visible:after:ring-ring/60"
+                className="min-w-0 flex-1 justify-start gap-2 whitespace-normal text-left font-normal after:absolute after:inset-0 after:rounded-xl hover:bg-transparent focus-visible:ring-0 focus-visible:after:ring-2 focus-visible:after:ring-ring/60 motion-safe:active:scale-100"
               >
                 <span className="min-w-0 flex-1">
                   <span className="flex items-baseline gap-1.5">
@@ -341,7 +355,7 @@ export function ConversationList({
                     </span>
                   )}
                 </span>
-              </button>
+              </Button>
             </motion.li>
           );
         })}
@@ -378,19 +392,17 @@ export function ConversationList({
           )}
           <Tip label={t('peek.markAllRead')}
             side="bottom">
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-sm"
               aria-label={t('peek.markAllRead')}
               disabled={!onMarkAllRead}
               onClick={onMarkAllRead}
-              className={cn(
-                'inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-(--dur-fast)',
-                'hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 disabled:hover:bg-transparent',
-                total === 0 && 'ml-auto',
-              )}
+              className={cn('shrink-0 text-muted-foreground disabled:opacity-40', total === 0 && 'ml-auto')}
             >
               <CheckCheck className="size-4" />
-            </button>
+            </Button>
           </Tip>
         </div>
         <div className="group relative">
@@ -408,14 +420,16 @@ export function ConversationList({
             className="h-8 rounded-lg border-border/70 bg-background/60 pl-8 pr-8 text-sm shadow-xs"
           />
           {search && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-xs"
               aria-label={t('list.clearSearch')}
               onClick={() => onSearchChange('')}
-              className="absolute right-1 top-1/2 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors duration-(--dur-fast) hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+              className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground"
             >
               <X className="size-3.5" />
-            </button>
+            </Button>
           )}
         </div>
         <ToggleGroup

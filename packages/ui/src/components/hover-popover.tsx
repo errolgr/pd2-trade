@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Popover, PopoverContent, PopoverTrigger } from '@pd2-trader/ui';
+import { Popover, PopoverContent, PopoverTrigger } from './popover';
 
 interface HoverPopoverProps {
   content: React.ReactNode;

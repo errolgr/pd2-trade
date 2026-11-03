@@ -3,9 +3,7 @@ import { useRemoteSignIn, useSignIn, type SignInAction, type SignInState } from 
 import pd2Logo from '@/assets/pd2_logo.png';
 import { X, Check, ChevronRight, Copy, Loader2, ShieldCheck, KeyRound, Eye, ArrowRight } from 'lucide-react';
 import { motion, MotionConfig } from 'framer-motion';
-import { ScrollArea, Button, cn } from '@pd2-trader/ui';
-import { WindowPanel } from '@/components/custom/window-chrome';
-import { fadeInUp, listItem, listStagger } from '@/lib/motion';
+import { ScrollArea, Button, cn, PanelSurface, fadeInUp, listItem, listStagger } from '@pd2-trader/ui';
 import { useTranslation } from '@/i18n';
 
 const TRUST_POINTS = [
@@ -65,20 +63,22 @@ function SignInView({ state, dispatch, showClose }: SignInViewProps) {
   const openFailed = loading && !!link?.openFailed;
 
   const closeButton = showClose && (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="icon-sm"
       onClick={handleLater}
-      className="absolute top-2.5 right-2.5 z-10 inline-flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none transition-[color,background-color,transform] duration-(--dur-fast) ease-out hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-95"
+      className="absolute top-2.5 right-2.5 z-10 text-muted-foreground hover:text-foreground"
       aria-label={t('common:actions.close')}
     >
-      <X className="w-4 h-4" />
-    </button>
+      <X className="size-4" />
+    </Button>
   );
 
   // Account selection view
   if (accounts && accounts.length > 1) {
     return (
-      <WindowPanel className="relative h-full w-full gap-4 px-8 pt-7 pb-5 select-none"
+      <PanelSurface className="relative h-full w-full gap-4 px-8 pt-7 pb-5 select-none"
         data-panel-drag>
         <Backdrop />
         {closeButton}
@@ -139,13 +139,13 @@ function SignInView({ state, dispatch, showClose }: SignInViewProps) {
             })}
           </motion.div>
         </ScrollArea>
-      </WindowPanel>
+      </PanelSurface>
     );
   }
 
   // Sign in view
   return (
-    <WindowPanel
+    <PanelSurface
       className="relative h-full w-full items-center justify-center gap-6 px-8 py-7 select-none"
       data-panel-drag
     >
@@ -240,7 +240,7 @@ function SignInView({ state, dispatch, showClose }: SignInViewProps) {
           </Button>
         </div>
       </motion.div>
-    </WindowPanel>
+    </PanelSurface>
   );
 }
 

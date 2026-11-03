@@ -2,9 +2,8 @@ import React from 'react';
 import { Check } from 'lucide-react';
 import { useOptions } from '@/hooks/useOptions';
 import { getTheme, type Theme, THEMES } from '@pd2-trader/ui/tokens';
-import { ToggleGroup, ToggleGroupItem, cn } from '@pd2-trader/ui';
+import { Button, ToggleGroup, ToggleGroupItem, cn, SETTING_HIGHLIGHT } from '@pd2-trader/ui';
 import { themeStyle } from '@/lib/themes';
-import { SETTING_HIGHLIGHT } from '../settings-ui';
 import { Trans, useTranslation } from '@/i18n';
 
 type ModeFilter = 'all' | 'dark' | 'light';
@@ -129,12 +128,14 @@ export function ThemePicker() {
         {visible.map((theme, index) => {
           const checked = theme.id === current.id;
           return (
-            <button
+            <Button
               key={theme.id}
               ref={(el) => {
                 optionRefs.current[index] = el;
               }}
               type="button"
+              variant="outline"
+              size="row"
               role="radio"
               aria-checked={checked}
               aria-label={t('theme.optionLabel', {
@@ -146,10 +147,10 @@ export function ThemePicker() {
               onClick={() => select(theme.id)}
               onKeyDown={(e) => onOptionKeyDown(e, index)}
               className={cn(
-                'group relative flex flex-col gap-2 rounded-lg border border-border bg-card p-2 text-left outline-none',
+                'group relative flex-col items-stretch gap-2 rounded-lg border-border bg-card p-2 shadow-none',
                 'transition-[transform,box-shadow,border-color] duration-(--dur-fast) ease-out',
-                'hover:border-ring/50 hover:shadow-panel motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0',
-                'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                'hover:bg-card hover:text-card-foreground hover:shadow-panel motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0',
+                'focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                 checked && 'border-primary/70 shadow-glow ring-2 ring-primary/70',
               )}
             >
@@ -173,7 +174,7 @@ export function ThemePicker() {
                     strokeWidth={3} />
                 </span>
               </div>
-            </button>
+            </Button>
           );
         })}
       </div>

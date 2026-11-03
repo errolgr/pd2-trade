@@ -8,8 +8,8 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
+  springSnappy,
 } from '@pd2-trader/ui';
-import { springSnappy } from '@/lib/motion';
 import type { PseudoOption } from '@/pages/price-check/lib/pseudo-fold';
 import { useTranslation } from '@/i18n';
 

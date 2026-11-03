@@ -26,8 +26,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
   cn,
+  PanelChrome,
+  Banner,
+  EmptyState,
 } from '@pd2-trader/ui';
-import { WindowChrome } from '@/components/custom/window-chrome';
 import { usePanel, useOverlay } from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
 import { useSignIn } from '@/hooks/useSignIn';
@@ -52,7 +54,6 @@ import { RaresTab } from './components/RaresTab';
 import { SimExportTab } from './components/SimExportTab';
 import { SimWaitlist } from '@/components/custom/SimWaitlist';
 import { isCrafted } from '@/components/rares/rares-format';
-import { Banner, EmptyState } from './components/StatePanel';
 import { deltaPillClass, formatSignedHr } from './lib/networth-format';
 import { useNetWorthQuery } from './lib/useNetWorthQuery';
 import { PublicProfileToggle } from '../net-worth/PublicProfileToggle';
@@ -312,7 +313,7 @@ function WindowTitle({
 }) {
   const { t } = useTranslation('currency');
   return (
-    <WindowChrome
+    <PanelChrome
       className="sticky top-0 z-30 h-12 border-border/70 bg-background/85 px-4 backdrop-blur-md"
       titleClassName="flex items-center gap-2.5 overflow-hidden text-base"
       icon={<Gem className="text-q-unique" />}

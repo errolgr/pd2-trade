@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '@pd2-trader/ui';
+import { cn } from '../lib/utils';
 
 /*
  * Building blocks of the price-check market popovers (uniques' price popover, rares' appraisal popover),

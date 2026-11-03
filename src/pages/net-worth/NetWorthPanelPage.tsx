@@ -1,14 +1,22 @@
 import React, { useEffect, useId, useMemo, useState } from 'react';
 import { motion, MotionConfig } from 'framer-motion';
 import { AlertTriangle, Camera, ExternalLink, LogIn, Loader2, Play, Square, TrendingUp } from 'lucide-react';
-import { Button, Skeleton, cn } from '@pd2-trader/ui';
+import {
+  Button,
+  Skeleton,
+  cn,
+  PanelChrome,
+  PanelSurface,
+  EASE_OUT,
+  listItem,
+  listStagger,
+  useReducedMotionSafe,
+} from '@pd2-trader/ui';
 import { useOptions } from '@/hooks/useOptions';
 import { useNetWorth } from '@/hooks/useNetWorth';
 import { getPoints, NetWorthPoint } from '@/lib/networth-api';
 import { usePanel } from '@/overlay';
 import { useSignIn } from '@/hooks/useSignIn';
-import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
-import { EASE_OUT, listItem, listStagger, useReducedMotionSafe } from '@/lib/motion';
 import { AnimatedNumber } from '@/pages/currency/components/AnimatedNumber';
 import { deltaPillClass } from '@/pages/currency/lib/networth-format';
 import { formatHr, formatSignedHr } from './overlay';
@@ -173,9 +181,9 @@ const NetWorthPanel: React.FC = () => {
   const signedIn = status !== 'signed-out' && !!owner;
 
   return (
-    <WindowPanel animate
+    <PanelSurface animate
       className="h-full w-full">
-      <WindowChrome
+      <PanelChrome
         title={t('panel.title')}
         icon={<TrendingUp />}
         closeLabel={t('panel.hide')}
@@ -349,7 +357,7 @@ const NetWorthPanel: React.FC = () => {
           </div>
         </>
       )}
-    </WindowPanel>
+    </PanelSurface>
   );
 };
 

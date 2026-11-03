@@ -1,9 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Coins, Info, PackageOpen } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@pd2-trader/ui';
-import { formatHr } from '@/lib/utils';
-import { EASE_OUT, listItem, listStagger } from '@/lib/motion';
+import { Tooltip, TooltipContent, TooltipTrigger, EASE_OUT, listItem, listStagger, formatHrAmount } from '@pd2-trader/ui';
 import { NET_WORTH_CATEGORIES, type Valuation } from '@/lib/networth-api';
 import { CATEGORY_COLORS, categoryLabel, formatUnitPrice } from '../lib/networth-format';
 import { currentLocale, useTranslation } from '@/i18n';
@@ -50,7 +48,7 @@ export function OverviewTab({ valuation }: { valuation: Valuation }) {
                   />
                 </TooltipTrigger>
                 <TooltipContent>
-                  {categoryLabel(category)} · {((value / total) * 100).toFixed(1)}% · {formatHr(value)}
+                  {categoryLabel(category)} · {((value / total) * 100).toFixed(1)}% · {formatHrAmount(value)} HR
                 </TooltipContent>
               </Tooltip>
             ))}
@@ -126,7 +124,7 @@ export function OverviewTab({ valuation }: { valuation: Valuation }) {
           <Info className="mt-0.5 size-3.5 shrink-0 opacity-70" />
           <span>
             {t('overview.unpriced', { count: valuation.unpricedCount })} ·{' '}
-            {t('overview.uncertain', { value: formatHr(valuation.uncertainHr) })} ·{' '}
+            {t('overview.uncertain', { value: `${formatHrAmount(valuation.uncertainHr)} HR` })} ·{' '}
             <Coins className="mb-0.5 inline size-3 text-q-gold" />{' '}
             {t('overview.gold', { amount: valuation.gold.toLocaleString(currentLocale()) })}
           </span>

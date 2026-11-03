@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import moment from 'moment';
 import { Bell, BellOff, Bookmark, Check, LogIn, Pencil, Play, Plus, RotateCw, Trash2, X } from 'lucide-react';
-import { cn, Button, Input, Switch, ScrollArea } from '@pd2-trader/ui';
+import { cn, Button, Input, Switch, ScrollArea, EmptyState } from '@pd2-trader/ui';
 import { showToast, undoToast } from '@/overlay';
 import { useSignIn } from '@/hooks/useSignIn';
-import { EmptyState } from '@/pages/currency/components/StatePanel';
 import { type MarketStore, retrySavedSearchSync } from '@/pages/market/store/useMarketStore';
 import { ITEM_TYPES } from '../lib/catalog';
 import { groupOf, orBlockNumbers } from '../lib/stat-groups';
@@ -277,10 +276,12 @@ function SavedRow({
             </Button>
           </form>
         ) : (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="inline"
             onClick={onRun}
-            className="block w-full min-w-0 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+            className="block w-full min-w-0 rounded-none text-left font-normal hover:bg-transparent hover:text-current"
           >
             <div className="truncate text-sm font-medium">{search.name}</div>
             <div className="truncate text-2xs text-muted-foreground">
@@ -289,7 +290,7 @@ function SavedRow({
                 saved: moment(search.createdAt).fromNow(),
               })}
             </div>
-          </button>
+          </Button>
         )}
       </div>
       {!editing && (

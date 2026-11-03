@@ -1,6 +1,6 @@
 import React from 'react';
 import { ExternalLink, Globe, Lock } from 'lucide-react';
-import { Switch, cn } from '@pd2-trader/ui';
+import { Button, Switch, cn } from '@pd2-trader/ui';
 import { getProfileSettings, ProfileSettings, updateProfileSettings } from '@/lib/networth-api';
 import { BACKEND_URL } from '@/lib/pkce';
 import { openUrl } from '@/lib/browser-opener';
@@ -79,14 +79,16 @@ export const PublicProfileToggle: React.FC<{ token: string }> = ({ token }) => {
         </span>
       )}
       {slug && (
-        <button
+        <Button
           type="button"
-          className="ml-auto inline-flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground"
+          variant="quiet"
+          size="inline"
+          className="ml-auto font-normal"
           onClick={() => openUrl(`${BACKEND_URL}/u/${encodeURIComponent(slug)}`)}
         >
           <ExternalLink className="size-3" />
           {t('profile.viewProfile')}
-        </button>
+        </Button>
       )}
     </div>
   );

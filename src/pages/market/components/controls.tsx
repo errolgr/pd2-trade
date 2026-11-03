@@ -3,6 +3,7 @@ import { ChevronRight, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   cn,
+  Button,
   Input,
   Popover,
   PopoverAnchor,
@@ -12,8 +13,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  DUR,
+  EASE_OUT,
 } from '@pd2-trader/ui';
-import { DUR, EASE_OUT } from '@/lib/motion';
 import { facetShare } from '../lib/facets';
 import type { Tri } from '../lib/types';
 import { useTranslation } from '@/i18n';
@@ -75,15 +77,17 @@ export function Section({
           highlighted && FILTER_HIGHLIGHT_CLASS,
         )}
       >
-        <button
+        <Button
           type="button"
+          variant="quiet"
+          size="inline"
           aria-expanded={open}
           aria-controls={id}
           onClick={() => {
             setOpenState(!open);
             onOpenChange?.(!open);
           }}
-          className="flex min-w-0 flex-1 items-center gap-1 rounded-sm text-2xs font-semibold uppercase tracking-wider text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+          className="flex min-w-0 flex-1 justify-start gap-1 rounded-sm text-2xs font-semibold uppercase tracking-wider"
         >
           <ChevronRight
             className={cn('size-3.5 shrink-0 transition-transform duration-(--dur-fast)', open && 'rotate-90')}
@@ -94,7 +98,7 @@ export function Section({
               {active}
             </span>
           )}
-        </button>
+        </Button>
         {actions}
       </div>
       <AnimatePresence initial={false}>
@@ -167,16 +171,18 @@ export function Segmented<T extends string>({
     >
       {options.map((o) => {
         const button = (
-          <button
+          <Button
             key={o.value}
             type="button"
+            variant="quiet"
+            size="inline"
             role="radio"
             aria-checked={value === o.value}
             aria-label={o.facet?.text}
             title={o.title}
             onClick={() => onChange(o.value)}
             className={cn(
-              'relative min-w-0 flex-1 truncate rounded-sm px-1.5 text-2xs font-medium text-muted-foreground outline-none transition-[color,background-color,opacity] duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
+              'relative block min-w-0 flex-1 truncate rounded-sm px-1.5 text-2xs transition-[color,background-color,opacity]',
               value === o.value && cn('bg-accent text-accent-foreground shadow-xs', selectedClassName),
               o.facet?.empty && value !== o.value && FACET_DIM,
             )}
@@ -184,7 +190,7 @@ export function Segmented<T extends string>({
             {o.label}
             {o.facet && <FacetHairline share={o.facet.share}
               inset={6} />}
-          </button>
+          </Button>
         );
         // Options with a facet always get their tooltip, so they keep focus when counts come and go
         return o.facet ? (
@@ -581,13 +587,15 @@ export function Autocomplete<T>({
 /** ✕ inside the right edge of a text field (the field needs `relative` and right padding). */
 export function ClearButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="quiet"
+      size="icon-2xs"
       aria-label={label}
       onClick={onClick}
-      className="absolute top-1/2 right-1 inline-flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground hover:text-foreground"
+      className="absolute top-1/2 right-1 -translate-y-1/2 rounded-sm"
     >
       <X className="size-3" />
-    </button>
+    </Button>
   );
 }

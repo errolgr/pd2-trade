@@ -1,9 +1,8 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
-import { cn } from '@pd2-trader/ui';
+import { Button, cn, DUR, EASE_OUT } from '@pd2-trader/ui';
 import { Trans, useTranslation } from '@/i18n';
-import { DUR, EASE_OUT } from '@/lib/motion';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { itemCorruptions } from '@/lib/item-utils';
 
@@ -104,25 +103,29 @@ const ItemStatsDisplay: React.FC<ItemStatsDisplayProps> = ({ stashItem, isExpand
             )}
           </AnimatePresence>
           {!isExpanded && extraModifiers.length > 0 && !hideToggle && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="inline"
               onClick={toggle}
-              className="group mt-1 inline-flex items-center gap-0.5 rounded-sm text-xs font-medium text-primary outline-none transition-colors duration-(--dur-fast) hover:text-primary/80 focus-visible:ring-2 focus-visible:ring-ring/60"
+              className="group mt-1 gap-0.5 rounded-sm text-xs text-primary hover:bg-transparent hover:text-primary/80"
             >
               {t('itemStats.showMore')}
               <span className="text-muted-foreground">({extraModifiers.length})</span>
               <ChevronDown className="size-3 transition-transform duration-(--dur-fast) group-hover:translate-y-px" />
-            </button>
+            </Button>
           )}
           {isExpanded && !hideToggle && (
-            <button
+            <Button
               type="button"
+              variant="quiet"
+              size="inline"
               onClick={toggle}
-              className="mt-1 inline-flex items-center gap-0.5 rounded-sm text-xs font-medium text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+              className="mt-1 gap-0.5 rounded-sm text-xs"
             >
               {t('itemStats.showLess')}
               <ChevronDown className="size-3 rotate-180" />
-            </button>
+            </Button>
           )}
         </div>
       )}

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { AlertCircle, Check, CircleDashed, Info, Users } from 'lucide-react';
-import { cn, Skeleton, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@pd2-trader/ui';
+import { cn, ItemName, Skeleton, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@pd2-trader/ui';
 import {
   type CharacterDetail,
   filterParams,
@@ -19,7 +19,7 @@ import {
   signatureSkills,
   wornKeys,
 } from '../lib/gear-up';
-import { classMeta, fmtHr, fmtPct, qualityText } from '../lib/format';
+import { classMeta, fmtHr, fmtPct } from '../lib/format';
 import { currentLocale, Trans, useTranslation } from '@/i18n';
 import { ItemIcon, PriceChip, QueryError, SearchMarketButton, Section, ShareBar, SkillIcon } from './parts';
 
@@ -153,9 +153,11 @@ function TopItems({ query, worn }: { query: BuildsQuery<ShoppingListResponse>; w
                     size={28} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-1.5">
-                      <span className={cn('min-w-0 flex-1 truncate text-xs', qualityText(item.quality))}>
-                        {item.name}
-                      </span>
+                      <ItemName
+                        name={item.name}
+                        quality={item.quality ?? 'Rune'}
+                        className="min-w-0 flex-1 truncate text-xs"
+                      />
                       <span className="text-2xs text-muted-foreground tabular-nums">{fmtPct(item.pct)}</span>
                     </div>
                     <ShareBar pct={item.pct}

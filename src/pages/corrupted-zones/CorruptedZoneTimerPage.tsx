@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, Lock, LockOpen } from 'lucide-react';
-import { cn } from '@pd2-trader/ui';
+import { Button, cn } from '@pd2-trader/ui';
 import { useOptions } from '@/hooks/useOptions';
 import { usePanel, useOverlay } from '@/overlay';
 import { overlayViewport, useDragToMove } from '@/overlay/useDragToMove';
@@ -210,9 +210,11 @@ const CorruptedZoneTimer: React.FC = () => {
       className={cn('inline-flex flex-col gap-1', align, listAbove && 'flex-col-reverse')}
     >
       {/* No transforms/shadows here: the panel is sized to this box, so it must not grow on hover. */}
-      <button
+      <Button
         ref={pillRef}
         type="button"
+        variant="outline"
+        size="inline"
         data-interactive="true"
         onClick={() => {
           if (drag.consumeDragClick()) return;
@@ -222,10 +224,10 @@ const CorruptedZoneTimer: React.FC = () => {
         {...(locked ? {} : drag.handlers)}
         aria-expanded={expanded}
         className={cn(
-          'pointer-events-auto flex cursor-pointer select-none border border-q-corrupted-zone/45 bg-surface text-xs font-medium text-surface-foreground shadow-[inset_0_0_12px_-4px_var(--q-corrupted-zone)] outline-none backdrop-blur-md transition-[background-color,border-color] duration-(--dur-fast) ease-out hover:border-q-corrupted-zone/80 hover:bg-surface-elevated focus-visible:border-q-corrupted-zone active:bg-muted',
+          'pointer-events-auto flex cursor-pointer select-none border-q-corrupted-zone/45 bg-surface text-xs text-surface-foreground shadow-[inset_0_0_12px_-4px_var(--q-corrupted-zone)] backdrop-blur-md transition-[background-color,border-color] hover:border-q-corrupted-zone/80 hover:bg-surface-elevated hover:text-surface-foreground focus-visible:border-q-corrupted-zone focus-visible:ring-0 active:bg-muted motion-safe:active:scale-100',
           vertical
-            ? 'w-44 flex-col gap-1 rounded-lg px-2.5 py-1.5 text-left'
-            : 'h-7 items-center gap-2 whitespace-nowrap rounded-full pl-3 pr-2',
+            ? 'w-44 flex-col items-stretch justify-start gap-1 rounded-lg px-2.5 py-1.5 text-left whitespace-normal'
+            : 'h-7 gap-2 rounded-full pr-2 pl-3',
         )}
         title={t(locked ? 'corruptedZones.pillTitleLocked' : 'corruptedZones.pillTitle', { title })}
       >
@@ -250,7 +252,7 @@ const CorruptedZoneTimer: React.FC = () => {
             {chevron}
           </>
         )}
-      </button>
+      </Button>
       {expanded && (
         <div
           data-interactive="true"
@@ -276,13 +278,15 @@ const CorruptedZoneTimer: React.FC = () => {
               </li>
             ))}
           </ol>
-          <button
+          <Button
             type="button"
+            variant="quiet"
+            size="inline"
             aria-pressed={locked}
             onClick={() => updateSettings({ corruptedZoneTimerLocked: !locked })}
             title={t(locked ? 'corruptedZones.lock.lockedTitle' : 'corruptedZones.lock.unlockedTitle')}
             className={cn(
-              'flex cursor-pointer items-center gap-1.5 self-start border-t border-border/60 pt-1.5 text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-surface-foreground focus-visible:text-surface-foreground',
+              'cursor-pointer gap-1.5 self-start rounded-none border-t border-border/60 pt-1.5 text-xs font-normal hover:text-surface-foreground focus-visible:text-surface-foreground focus-visible:ring-0',
               locked && 'text-q-corrupted-zone',
             )}
           >
@@ -290,7 +294,7 @@ const CorruptedZoneTimer: React.FC = () => {
               className="size-3" /> : <LockOpen aria-hidden
                 className="size-3" />}
             {t('corruptedZones.lock.label')}
-          </button>
+          </Button>
         </div>
       )}
     </div>

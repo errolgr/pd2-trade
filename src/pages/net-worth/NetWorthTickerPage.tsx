@@ -2,7 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { MotionConfig } from 'framer-motion';
-import { cn } from '@pd2-trader/ui';
+import { Button, cn } from '@pd2-trader/ui';
 import { useOptions } from '@/hooks/useOptions';
 import { useNetWorth } from '@/hooks/useNetWorth';
 import { useWealthRank } from '@/hooks/useWealthRank';
@@ -174,13 +174,15 @@ const NetWorthTicker: React.FC = () => {
     <MotionConfig reducedMotion="user">
       <div className="inline-block">
         {/* No transforms/shadows here: the panel is sized to this pill's box, so it must not grow on hover. */}
-        <button
+        <Button
           ref={pillRef}
           type="button"
+          variant="outline"
+          size="inline"
           onClick={onClick}
           {...drag.handlers}
           style={{ opacity: (settings.netWorthTickerOpacity ?? 90) / 100 }}
-          className="group flex h-7 cursor-pointer select-none items-center gap-2 whitespace-nowrap rounded-full border border-border bg-surface pl-3 pr-2.5 text-xs font-medium text-surface-foreground outline-none backdrop-blur-md transition-[background-color,border-color] duration-(--dur-fast) ease-out hover:border-ring/60 hover:bg-surface-elevated focus-visible:border-ring active:bg-muted"
+          className="group flex h-7 cursor-pointer select-none gap-2 rounded-full border-border bg-surface pr-2.5 pl-3 text-xs text-surface-foreground shadow-none backdrop-blur-md transition-[background-color,border-color] hover:border-ring/60 hover:bg-surface-elevated hover:text-surface-foreground focus-visible:border-ring focus-visible:ring-0 active:bg-muted motion-safe:active:scale-100"
           title={t('ticker.title')}
         >
           <span
@@ -228,7 +230,7 @@ const NetWorthTicker: React.FC = () => {
             )}
             title={dotTitle}
           />
-        </button>
+        </Button>
       </div>
     </MotionConfig>
   );

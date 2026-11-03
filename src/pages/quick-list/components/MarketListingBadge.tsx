@@ -4,10 +4,9 @@ import { ArrowUp, Check, Loader2, SquareArrowOutUpRight, Trash2 } from 'lucide-r
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import moment from 'moment';
-import { Tooltip, TooltipTrigger, TooltipContent, cn } from '@pd2-trader/ui';
+import { Button, Tooltip, TooltipTrigger, TooltipContent, cn, DUR, EASE_OUT } from '@pd2-trader/ui';
 import { PD2Website } from '@/common/constants';
 import { openUrl } from '@/lib/browser-opener';
-import { DUR, EASE_OUT } from '@/lib/motion';
 import { showToast, usePanel } from '@/overlay';
 import { useTranslation } from '@/i18n';
 
@@ -21,8 +20,6 @@ interface MarketListingBadgeProps {
 
 const pill =
   'inline-flex h-6 w-16 select-none items-center justify-center gap-1 rounded-full border text-2xs font-semibold leading-none';
-const iconButton =
-  'inline-flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none transition-[color,background-color,transform] duration-(--dur-fast) ease-out focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-90 [&_svg]:size-4';
 const swap = { duration: DUR.fast, ease: EASE_OUT };
 
 const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
@@ -117,12 +114,10 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
               <Check className="size-3" />
             </span>
           ) : state === 'bump' ? (
-            <button
+            <Button
               type="button"
-              className={cn(
-                pill,
-                'cursor-pointer border-primary/40 bg-primary text-primary-foreground shadow-sm outline-none transition-[box-shadow,transform] duration-(--dur-fast) hover:shadow-glow focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-95 disabled:opacity-70',
-              )}
+              size="xs"
+              className={cn(pill, 'cursor-pointer border-primary/40 motion-safe:active:scale-95 disabled:opacity-70')}
               onClick={handleBump}
               disabled={bumping === stashItem.hash}
             >
@@ -132,7 +127,7 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
                 <ArrowUp className="size-3" />
               )}
               {t('listing.bump')}
-            </button>
+            </Button>
           ) : state === 'cooldown' ? (
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>{listedPill(true)}</TooltipTrigger>
@@ -145,11 +140,13 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
       </span>
       <Tooltip delayDuration={0}>
         <TooltipTrigger asChild>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-sm"
             aria-label={t('listing.removeListing')}
             disabled={deleting}
-            className={cn(iconButton, 'text-destructive/80 hover:bg-destructive/15 hover:text-destructive')}
+            className="text-destructive/80 hover:bg-destructive/15 hover:text-destructive"
             onClick={async (e) => {
               e.stopPropagation();
               setDeleting(true);
@@ -167,24 +164,26 @@ const MarketListingBadge: React.FC<MarketListingBadgeProps> = ({
             }}
           >
             {deleting ? <Loader2 className="animate-spin" /> : <Trash2 />}
-          </button>
+          </Button>
         </TooltipTrigger>
         <TooltipContent>{t('listing.removeListing')}</TooltipContent>
       </Tooltip>
 
       <Tooltip delayDuration={0}>
         <TooltipTrigger asChild>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-sm"
             aria-label={t('listing.goToTrade')}
-            className={cn(iconButton, 'hover:bg-accent hover:text-accent-foreground')}
+            className="text-muted-foreground"
             onClick={(e) => {
               e.stopPropagation();
               openUrl(`${PD2Website.Website}/market/listing/${listing._id}`);
             }}
           >
             <SquareArrowOutUpRight />
-          </button>
+          </Button>
         </TooltipTrigger>
         <TooltipContent>{t('listing.goToTrade')}</TooltipContent>
       </Tooltip>

@@ -1,10 +1,23 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import { AlertTriangle, Heart, LayoutGrid, List, LogIn, RefreshCw, SearchX, Store } from 'lucide-react';
-import { cn, Button, Skeleton, Tabs, TabsList, TabsTrigger, TooltipProvider } from '@pd2-trader/ui';
-import { DUR, EASE_OUT, fadeIn, slideInRight, springSnappy } from '@/lib/motion';
-import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
-import { EmptyState } from '@/pages/currency/components/StatePanel';
+import {
+  cn,
+  Button,
+  Skeleton,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TooltipProvider,
+  DUR,
+  EASE_OUT,
+  fadeIn,
+  slideInRight,
+  springSnappy,
+  PanelChrome,
+  PanelSurface,
+  EmptyState,
+} from '@pd2-trader/ui';
 import { showToast, usePanel } from '@/overlay';
 import { useSignIn } from '@/hooks/useSignIn';
 import { useOptions } from '@/hooks/useOptions';
@@ -389,13 +402,13 @@ const MarketBrowserPage: React.FC = () => {
     <MotionConfig reducedMotion="user">
       <TooltipProvider delayDuration={300}>
         <ModActionsProvider value={modActions}>
-          <WindowPanel
+          <PanelSurface
             animate
             tabIndex={-1}
             onKeyDown={handleKeyDown}
             className="relative z-10 h-full w-full outline-none"
           >
-            <WindowChrome
+            <PanelChrome
               title={t('page.title')}
               icon={<Store className="text-primary" />}
               onClose={close}
@@ -651,7 +664,7 @@ const MarketBrowserPage: React.FC = () => {
                 </AnimatePresence>
               </div>
             )}
-          </WindowPanel>
+          </PanelSurface>
         </ModActionsProvider>
       </TooltipProvider>
     </MotionConfig>
@@ -672,18 +685,17 @@ function ViewModeToggle({ value, onChange }: { value: MarketViewMode; onChange: 
       className="flex h-6 shrink-0 rounded-md border border-input bg-background/40 p-0.5"
     >
       {options.map((o) => (
-        <button
+        <Button
           key={o.mode}
           type="button"
+          variant="quiet"
+          size="inline"
           role="radio"
           aria-checked={value === o.mode}
           aria-label={o.label}
           title={o.label}
           onClick={() => onChange(o.mode)}
-          className={cn(
-            'relative inline-flex w-6 items-center justify-center rounded-sm text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
-            value === o.mode && 'text-accent-foreground',
-          )}
+          className={cn('relative w-6 rounded-sm', value === o.mode && 'text-accent-foreground')}
         >
           {value === o.mode && (
             <motion.span
@@ -694,7 +706,7 @@ function ViewModeToggle({ value, onChange }: { value: MarketViewMode; onChange: 
             />
           )}
           <span className="relative">{o.icon}</span>
-        </button>
+        </Button>
       ))}
     </div>
   );

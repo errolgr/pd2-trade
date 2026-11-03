@@ -27,6 +27,10 @@ import {
   TooltipContent,
   TooltipTrigger,
   cn,
+  EmptyState,
+  Toggle,
+  ToggleGroup,
+  ToggleGroupItem,
 } from '@pd2-trader/ui';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
@@ -39,7 +43,6 @@ import { openUrl } from '@/lib/browser-opener';
 import { trackEvent, trackMeasurement } from '@/lib/telemetry';
 import { showToast } from '@/overlay';
 import { useTranslation } from '@/i18n';
-import EmptyState from '../components/EmptyState';
 import {
   canBump,
   DEFAULT_LISTINGS_SORT,
@@ -70,8 +73,8 @@ const BUMP_FLASH_STAGGER_MS = 210;
 const BUMP_FLASH_SPREAD_MS = 2500;
 const BUMP_FLASH_DURATION_MS = 1050;
 
-const chip =
-  'inline-flex h-7 shrink-0 items-center gap-1 rounded-full border px-2.5 text-xs tabular-nums outline-none transition-colors duration-(--dur-fast) focus-visible:ring-2 focus-visible:ring-ring/60 disabled:opacity-50';
+/** Filter chips: Toggle chips at the toolbar's height, with the filter's own tint when on. */
+const chip = 'h-7 shrink-0 px-2.5 text-xs tabular-nums';
 
 /** A listing to bring into view (the palette): `edit` also opens its price editor; a new `version` asks again. */
 export interface ListingFocus {
@@ -292,21 +295,25 @@ const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange, focus
   if (!authData) {
     return (
       <EmptyState icon={<Store />}
-        title={t('listed.notSignedInTitle')}>
-        {t('listed.notSignedInDescription')}
-      </EmptyState>
+        title={t('listed.notSignedInTitle')}
+        description={t('listed.notSignedInDescription')}
+        className="m-4" />
     );
   }
   if (error && !listings) {
     return (
-      <EmptyState icon={<CircleAlert />}
-        title={t('listed.loadError')}>
-        <p className="mb-4 text-destructive">{error}</p>
-        <Button onClick={() => void load()}>
-          <RotateCw className="size-4" />
-          {t('common:actions.retry')}
-        </Button>
-      </EmptyState>
+      <EmptyState
+        icon={<CircleAlert />}
+        title={t('listed.loadError')}
+        description={<p className="text-destructive">{error}</p>}
+        action={
+          <Button onClick={() => void load()}>
+            <RotateCw className="size-4" />
+            {t('common:actions.retry')}
+          </Button>
+        }
+        className="m-4"
+      />
     );
   }
 
@@ -347,14 +354,16 @@ const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange, focus
             className="h-7 pr-7 pl-8 text-xs"
           />
           {query && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-2xs"
               aria-label={t('listed.clearSearch')}
               onClick={() => setQuery('')}
-              className="absolute top-1/2 right-1.5 inline-flex size-5 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+              className="absolute top-1/2 right-1.5 -translate-y-1/2 rounded-full text-muted-foreground hover:text-foreground"
             >
               <XIcon className="size-3" />
-            </button>
+            </Button>
           )}
         </div>
         <Select value={sort.key}
@@ -393,63 +402,53 @@ const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange, focus
             <TooltipContent>{t('myListings.sort.reverse')}</TooltipContent>
           </Tooltip>
         )}
-        <div
-          className="flex h-7 shrink-0 items-center rounded-md border border-border p-0.5"
-          role="group"
+        <ToggleGroup
+          type="single"
+          value={view}
+          onValueChange={(v) => v && updateSettings({ myListingsView: v as 'cards' | 'rows' })}
+          className="h-7 shrink-0 rounded-md border border-border p-0.5"
           aria-label={t('myListings.view.label')}
         >
           {(['cards', 'rows'] as const).map((v) => (
             <Tooltip key={v}
               delayDuration={0}>
               <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  aria-pressed={view === v}
+                <ToggleGroupItem
+                  value={v}
                   aria-label={t(`myListings.view.${v}`)}
-                  onClick={() => updateSettings({ myListingsView: v })}
-                  className={cn(
-                    'inline-flex size-6 items-center justify-center rounded-sm text-muted-foreground transition-colors duration-(--dur-fast) [&_svg]:size-3.5',
-                    view === v ? 'bg-accent text-foreground' : 'hover:text-foreground',
-                  )}
+                  className="size-6 flex-none rounded-sm px-0 text-muted-foreground first:rounded-sm last:rounded-sm data-[state=on]:bg-accent data-[state=on]:text-foreground data-[state=on]:shadow-none [&_svg:not([class*='size-'])]:size-3.5"
                 >
                   {v === 'cards' ? <LayoutList /> : <Rows3 />}
-                </button>
+                </ToggleGroupItem>
               </TooltipTrigger>
               <TooltipContent>{t(`myListings.view.${v}`)}</TooltipContent>
             </Tooltip>
           ))}
-        </div>
+        </ToggleGroup>
       </div>
 
       <div className="flex items-center gap-1.5">
-        <button
-          type="button"
-          aria-pressed={filter === 'ready'}
-          onClick={() => setFilter((f) => (f === 'ready' ? null : 'ready'))}
+        <Toggle
+          variant="chip"
+          pressed={filter === 'ready'}
+          onPressedChange={() => setFilter((f) => (f === 'ready' ? null : 'ready'))}
           disabled={readyIds.length === 0 && filter !== 'ready'}
           className={cn(
             chip,
-            filter === 'ready'
-              ? 'border-success/60 bg-success/15 text-success'
-              : 'border-border text-muted-foreground hover:text-foreground',
+            'data-[state=on]:border-success/60 data-[state=on]:bg-success/15 data-[state=on]:text-success',
           )}
         >
           {t('myListings.filter.ready', { count: readyIds.length })}
-        </button>
-        <button
-          type="button"
-          aria-pressed={filter === 'offers'}
-          onClick={() => setFilter((f) => (f === 'offers' ? null : 'offers'))}
+        </Toggle>
+        <Toggle
+          variant="chip"
+          pressed={filter === 'offers'}
+          onPressedChange={() => setFilter((f) => (f === 'offers' ? null : 'offers'))}
           disabled={offerCount === 0 && filter !== 'offers'}
-          className={cn(
-            chip,
-            filter === 'offers'
-              ? 'border-primary/60 bg-primary/15 text-primary'
-              : 'border-border text-muted-foreground hover:text-foreground',
-          )}
+          className={cn(chip, 'data-[state=on]:border-primary/60')}
         >
           {t('myListings.filter.offers', { count: offerCount })}
-        </button>
+        </Toggle>
         <span className="ml-auto text-xs text-muted-foreground tabular-nums">
           {t('myListings.slots', { count: listings?.length ?? 0, max: 50 })}
         </span>
@@ -476,16 +475,15 @@ const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange, focus
           </div>
         ) : shown.length === 0 ? (
           query || filter ? (
-            <EmptyState icon={<SearchX />}
+            <EmptyState
+              icon={<SearchX />}
               title={t('listed.noMatches')}
-              className="p-6">
-              {query ? t('listed.noMatchesFor', { query }) : t('myListings.noneForFilter')}
-            </EmptyState>
+              description={query ? t('listed.noMatchesFor', { query }) : t('myListings.noneForFilter')}
+            />
           ) : (
             <EmptyState icon={<Store />}
-              title={t('listed.noActiveTitle')}>
-              {t('listed.noActiveDescription')}
-            </EmptyState>
+              title={t('listed.noActiveTitle')}
+              description={t('listed.noActiveDescription')} />
           )
         ) : view === 'cards' ? (
           <div className="flex flex-col gap-1.5 p-px">

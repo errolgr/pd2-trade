@@ -83,7 +83,7 @@ export function ChatAvatar({
       {dot && (
         <span
           className={cn(
-            'absolute bottom-0 right-0 size-[30%] min-h-2 min-w-2 rounded-full ring-2 ring-card',
+            'absolute bottom-0 right-0 size-3/10 min-h-2 min-w-2 rounded-full ring-2 ring-card',
             dot,
             presence === 'ingame' && 'shadow-[0_0_6px] shadow-success/60',
           )}

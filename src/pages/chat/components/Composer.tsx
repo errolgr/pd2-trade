@@ -26,7 +26,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
-import { ToggleGroup, ToggleGroupItem, cn } from '@pd2-trader/ui';
+import { Button, ToggleGroup, ToggleGroupItem, cn, fadeInUp } from '@pd2-trader/ui';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { ChatListingState } from '../hooks/useChatListings';
 import { ChatTemplateForm } from '@/components/custom/chat-template-form';
@@ -34,7 +34,6 @@ import { useChatTemplates, type ChatTemplateDraft } from '@/hooks/useChatTemplat
 import { useOptions, type ISettings } from '@/hooks/useOptions';
 import { Trans, useTranslation } from '@/i18n';
 import { CHAT_TEMPLATE_TOKENS, fillTemplate, templatePlaceholders } from '@/lib/message-templates';
-import { fadeInUp } from '@/lib/motion';
 import { undoToast, useOverlay } from '@/overlay';
 import { useChatListings } from '../hooks/useChatListings';
 import {
@@ -89,8 +88,12 @@ const MENU_ACTIONS: Record<MenuAction, { labelKey: string; icon: LucideIcon }> =
 /** How long a deleted template can be restored. */
 const TEMPLATE_UNDO_MS = 6000;
 
-const rowAction =
-  'inline-flex size-6 items-center justify-center rounded-md text-muted-foreground outline-none transition-[color,background-color] duration-(--dur-fast) hover:bg-background/70 hover:text-foreground [&_svg]:size-3.5';
+/** Extras on the template rows' ghost `icon-xs` Buttons (their icons are size-3.5). */
+const rowAction = 'text-muted-foreground hover:bg-background/70 hover:text-foreground';
+
+/** Extras on the quick-reply line's ghost `xs` Buttons: outlined pills. */
+const chipButton =
+  'h-auto shrink-0 rounded-full border border-border/70 bg-background/50 py-0.5 text-xs font-normal text-muted-foreground hover:border-primary/40 hover:text-foreground';
 
 /** Values for the template tokens; every token is filled, unknown ones with ''. */
 export interface TemplateVars {
@@ -177,16 +180,18 @@ function DraftPill({
           <span className="truncate font-semibold text-info">{name}</span>
         </span>
       )}
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="icon-2xs"
         aria-label={t('composer.remove', { name })}
         // Keep the caret in the editor
         onMouseDown={(e) => e.preventDefault()}
         onClick={onRemove}
-        className="absolute -top-1.5 -right-0.5 inline-flex size-4 items-center justify-center rounded-full border border-border bg-card text-muted-foreground opacity-0 shadow-xs outline-none transition-[opacity,background-color,color] duration-(--dur-fast) group-hover/pill:opacity-100 hover:bg-destructive hover:text-destructive-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/60"
+        className="absolute -top-1.5 -right-0.5 size-4 rounded-full border border-border bg-card text-muted-foreground opacity-0 shadow-xs transition-[opacity,background-color,color,transform] group-hover/pill:opacity-100 hover:bg-destructive hover:text-destructive-foreground focus-visible:opacity-100"
       >
         <X className="size-2.5" />
-      </button>
+      </Button>
     </span>
   );
 }
@@ -619,8 +624,10 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                         i === activeIndex && 'opacity-100',
                       )}
                     >
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon-xs"
                         tabIndex={-1}
                         aria-label={t('composer.editNamed', { name: tpl.label })}
                         title={t('composer.editShortcut')}
@@ -631,11 +638,13 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                         }}
                         className={rowAction}
                       >
-                        <Pencil />
-                      </button>
+                        <Pencil className="size-3.5" />
+                      </Button>
                       {tpl.source.kind === 'custom' && (
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="icon-xs"
                           tabIndex={-1}
                           aria-label={t('composer.deleteNamed', { name: tpl.label })}
                           title={t('composer.deleteShortcut')}
@@ -646,14 +655,16 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                           }}
                           className={cn(rowAction, 'hover:bg-destructive/15 hover:text-destructive')}
                         >
-                          <Trash2 />
-                        </button>
+                          <Trash2 className="size-3.5" />
+                        </Button>
                       )}
                     </div>
                     {/* Mouse shortcuts for Ctrl+S / Ctrl+E / Ctrl+D (the keyboard stays in the message) */}
                     <div className="flex shrink-0 items-center gap-0.5">
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon-xs"
                         tabIndex={-1}
                         aria-label={
                           tpl.favorite
@@ -669,14 +680,14 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                         }}
                         className={cn(
                           rowAction,
-                          'transition-[color,background-color,opacity]',
+                          'transition-[color,background-color,opacity,transform]',
                           tpl.favorite
                             ? 'text-warning'
                             : cn('opacity-0 group-hover/template:opacity-100', i === activeIndex && 'opacity-100'),
                         )}
                       >
-                        <Star className={cn(tpl.favorite && 'fill-current')} />
-                      </button>
+                        <Star className={cn('size-3.5', tpl.favorite && 'fill-current')} />
+                      </Button>
                     </div>
                   </li>
                 ))}
@@ -756,8 +767,10 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             </ToggleGroup>
           )}
           <Tip label={t('composer.templatesTip')}>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="xs"
               aria-label={t('composer.messageTemplates')}
               aria-expanded={menuOpen}
               // Keep the draft's caret: a template picked from here goes in where the user was typing
@@ -776,29 +789,32 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                 focusEditor();
               }}
               className={cn(
-                'inline-flex shrink-0 items-center gap-1 rounded-full border border-border/70 bg-background/50 px-2 py-0.5 text-xs text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:border-primary/40 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
-                menuOpen && 'border-primary/40 bg-primary/10 text-foreground',
+                chipButton,
+                'gap-1 px-2 hover:bg-background/50 has-[>svg]:px-2',
+                menuOpen && 'border-primary/40 bg-primary/10 text-foreground hover:bg-primary/10',
               )}
             >
               <kbd className="font-sans font-semibold">/</kbd>
               <FileText className="size-3" />
-            </button>
+            </Button>
           </Tip>
           {/* The starred templates, in template order; each picks its template like the "/" menu does.
               Unpinning is only done by unstarring the template (in the "/" menu or Settings). */}
           {favorites.length > 0 ? (
             favorites.map((tpl) => (
-              <button
+              <Button
                 key={tpl.key}
                 type="button"
+                variant="ghost"
+                size="xs"
                 title={tpl.text}
                 // Keep the draft's caret/selection: the chip inserts where the user was typing
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => pickTemplate(tpl)}
-                className="shrink-0 whitespace-nowrap rounded-full border border-border/70 bg-background/50 px-2.5 py-0.5 text-xs text-muted-foreground outline-none transition-[border-color,background-color,color] duration-(--dur-fast) hover:border-primary/40 hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-[0.97]"
+                className={cn(chipButton, 'px-2.5 hover:bg-primary/10')}
               >
                 {tpl.label}
-              </button>
+              </Button>
             ))
           ) : (
             <span className="shrink-0 whitespace-nowrap text-2xs text-muted-foreground/80">
@@ -879,15 +895,16 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           <Tip
             label={channel === 'whisper' ? t('composer.whisperTipEnter', { tip: whisperTip }) : t('composer.sendTip')}
           >
-            <button
+            <Button
               type="button"
+              size="icon"
               aria-label={channel === 'whisper' ? t('composer.copyWhisper') : t('composer.send')}
               disabled={!canSend}
               onClick={send}
-              className="inline-flex size-8 shrink-0 items-center justify-center rounded-xl bg-linear-to-b from-primary to-primary/80 text-primary-foreground shadow-sm outline-none transition-[opacity,transform,box-shadow] duration-(--dur-fast) hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-95 disabled:pointer-events-none disabled:opacity-40"
+              className="size-8 shrink-0 rounded-xl bg-transparent bg-linear-to-b from-primary to-primary/80 transition-[opacity,transform,box-shadow] hover:bg-transparent hover:shadow-md motion-safe:active:scale-95 disabled:opacity-40"
             >
               {channel === 'whisper' ? <ClipboardCopy className="size-4" /> : <SendHorizontal className="size-4" />}
-            </button>
+            </Button>
           </Tip>
         </div>
         {channel === 'whisper' && (

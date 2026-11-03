@@ -2,6 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, ChevronDown, RotateCcw, X } from 'lucide-react';
 import {
   cn,
+  itemQualityClass,
+  ItemName,
   Button,
   Input,
   ScrollArea,
@@ -12,7 +14,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@pd2-trader/ui';
-import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import { CLASSES, ITEM_TYPES, RARITIES, basesForType, optionCodes } from '../lib/catalog';
 import { defaultAgeDays, MAX_FILTER_TEXT, MAX_SELLER_NAME, type SearchDefaults, withSource } from '../lib/defaults';
 import {
@@ -32,8 +33,6 @@ import { statName } from './stat-text';
 import { useTranslation } from '@/i18n';
 
 const AGE_DAYS = [1, 3, 7, 14, 30, 90];
-
-const rarityColor = (r: Rarity) => (r === 'Runeword' ? 'text-q-rune' : qualityColor(r));
 
 /**
  * Rarity: a multi-select dropdown (quality-coloured items with checkmarks), sized like the other selects. `counts`
@@ -56,7 +55,8 @@ function RarityField({
       RARITIES.filter((r) => value.includes(r)).map((r, i) => (
         <React.Fragment key={r}>
           {i > 0 && <span className="text-muted-foreground">, </span>}
-          <span className={rarityColor(r)}>{r}</span>
+          <ItemName name={r}
+            quality={r} />
         </React.Fragment>
       ))
     ) : (
@@ -127,7 +127,7 @@ function RarityItem({
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
       style={facetFill(facetShare(count, peak))}
-      className={cn('text-xs', rarityColor(rarity), count === 0 && !checked && FACET_DIM)}
+      className={cn('text-xs', itemQualityClass(rarity), count === 0 && !checked && FACET_DIM)}
     >
       {rarity}
       {text && <FacetRowTip text={text}
@@ -382,15 +382,17 @@ export function FilterSidebar({
             <Field label="">
               <span className="inline-flex h-6 max-w-full items-center gap-1 rounded-full border border-primary/40 bg-primary/10 pl-2 pr-0.5 text-2xs text-primary">
                 <span className="truncate">{t('filters.sort.stat', { stat: statName(f.sort.key) })}</span>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon-2xs"
                   aria-label={t('filters.sort.stopStat')}
                   title={t('filters.sort.stopStat')}
                   onClick={() => set({ sort: { ...defaults.sort } })}
-                  className="inline-flex size-5 shrink-0 items-center justify-center rounded-full hover:bg-primary/20"
+                  className="shrink-0 rounded-full hover:bg-primary/20 hover:text-current"
                 >
                   <X className="size-3" />
-                </button>
+                </Button>
               </span>
             </Field>
           )}

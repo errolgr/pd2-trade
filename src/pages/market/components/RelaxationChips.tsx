@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { cn } from '@pd2-trader/ui';
+import { Button, cn } from '@pd2-trader/ui';
 import { currentLocale, useTranslation } from '@/i18n';
 import type { Relaxation } from '../hooks/useRelaxations';
 
@@ -50,8 +50,10 @@ export function RelaxationChips({
         return (
           <li key={c.id}
             className="min-w-0 max-w-full">
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="inline"
               onClick={() => onPick(c.id)}
               onMouseEnter={() => onHover?.(c.id)}
               onMouseLeave={() => onHover?.(null)}
@@ -60,10 +62,10 @@ export function RelaxationChips({
               aria-label={c.counting ? name : t('results.relaxDropCount', { filter: c.label, count: count(c) })}
               title={name}
               className={cn(
-                'group inline-flex h-7 max-w-full items-center gap-1.5 rounded-full border pr-1.5 pl-3 text-xs outline-none transition-colors duration-(--dur-fast) focus-visible:ring-2 focus-visible:ring-ring/60',
+                'group h-7 max-w-full gap-1.5 rounded-full pr-1.5 pl-3 text-xs font-normal shadow-none hover:text-foreground',
                 top
-                  ? 'border-primary/70 bg-primary/12 text-foreground hover:bg-primary/20'
-                  : 'border-border text-foreground hover:border-foreground/40 hover:bg-accent/50',
+                  ? 'border-primary/70 bg-primary/12 text-foreground hover:border-primary/70 hover:bg-primary/20'
+                  : 'border-border bg-transparent text-foreground hover:border-foreground/40 hover:bg-accent/50',
               )}
             >
               <span className="min-w-0 truncate">{c.label}</span>
@@ -86,7 +88,7 @@ export function RelaxationChips({
                 aria-hidden
                 className="size-3 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground"
               />
-            </button>
+            </Button>
           </li>
         );
       })}

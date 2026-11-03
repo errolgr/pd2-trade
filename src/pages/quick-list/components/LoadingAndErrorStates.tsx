@@ -1,8 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Search, Loader2, AlertTriangle, CircleAlert } from 'lucide-react';
-import { Button, Alert, AlertTitle, AlertDescription, Skeleton } from '@pd2-trader/ui';
-import { fadeIn, fadeInUp } from '@/lib/motion';
+import { Button, Alert, AlertTitle, AlertDescription, Skeleton, fadeIn, fadeInUp } from '@pd2-trader/ui';
 import { Trans, useTranslation } from '@/i18n';
 
 interface LoadingAndErrorStatesProps {

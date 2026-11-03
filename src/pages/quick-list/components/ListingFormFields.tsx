@@ -16,8 +16,11 @@ import {
   SheetHeader,
   SheetTitle,
   SheetDescription,
+  DUR,
+  EASE_OUT,
+  fadeIn,
+  slideInRight,
 } from '@pd2-trader/ui';
-import { DUR, EASE_OUT, fadeIn, slideInRight } from '@/lib/motion';
 import { useOptions } from '@/hooks/useOptions';
 import { Trans, useTranslation } from '@/i18n';
 import { ShortcutFormData } from './types';

@@ -27,9 +27,12 @@
     "llms.txt"
   ],
   "scripts": {
-    "build:css": "tsx scripts/build-css.ts"
+    "build:css": "tsx scripts/build-css.ts",
+    "catalog": "ladle serve",
+    "catalog:build": "ladle build"
   },
   "devDependencies": {
+    "@ladle/react": "^5.1.1",
     "tsx": "^4.23.15"
   },
   "dependencies": {
@@ -53,6 +56,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "framer-motion": "^12.4.2",
     "lucide-react": "^0.475.0",
     "recharts": "^3.5.1",
     "sonner": "^2.0.1",

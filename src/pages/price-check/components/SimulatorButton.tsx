@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, ClipboardCheck, FlaskConical, Loader2, LogIn, PackageCheck, X } from 'lucide-react';
-import { Button, Popover, PopoverContent, PopoverTrigger, Skeleton, cn } from '@pd2-trader/ui';
+import { Button, Popover, PopoverContent, PopoverTrigger, Skeleton, cn, Banner } from '@pd2-trader/ui';
 import { SimCharacterPicker } from '@/components/custom/SimCharacterPicker';
 import { SIM_WAITLIST_POPOVER_CLASS, SimWaitlist } from '@/components/custom/SimWaitlist';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
@@ -19,7 +19,6 @@ import {
 import { findSimItem, type FoundSimItem, type SimItemSource } from '@/lib/sim-item-sources';
 import { trackMeasurement } from '@/lib/telemetry';
 import { useOverlay } from '@/overlay';
-import { Banner } from '@/pages/currency/components/StatePanel';
 import type { Item as PriceCheckItem } from '../lib/interfaces';
 
 type Load<T> = { status: 'loading' } | { status: 'ok'; data: T } | { status: 'error'; error: unknown };
@@ -130,7 +129,7 @@ export function SimulatorButton({ item }: { item: PriceCheckItem }) {
         >
           <span
             aria-hidden
-            className="absolute -top-[7px] right-6 size-3 rotate-45 border-l border-t border-primary bg-popover"
+            className="absolute -top-1.75 right-6 size-3 rotate-45 border-l border-t border-primary bg-popover"
           />
           <div className="flex items-start gap-2">
             <span className="mt-0.5 rounded-full bg-primary px-1.5 py-px text-3xs font-bold tracking-wider text-primary-foreground">
@@ -140,14 +139,16 @@ export function SimulatorButton({ item }: { item: PriceCheckItem }) {
               <p className="text-sm font-semibold text-foreground">Try this item on your character</p>
               <p className="text-xs text-muted-foreground">See what it does to your build in the planner</p>
             </div>
-            <button
+            <Button
               type="button"
+              variant="quiet"
+              size="inline"
               aria-label="Dismiss"
               onClick={dismissCallout}
-              className="cursor-pointer rounded p-0.5 text-muted-foreground hover:text-foreground"
+              className="cursor-pointer rounded-sm p-0.5"
             >
               <X className="size-3.5" />
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -297,15 +298,17 @@ function SimulatorForm({
         {MODES.map((option) => {
           const checked = mode === option.value;
           return (
-            <button
+            <Button
               key={option.value}
               type="button"
+              variant="ghost"
+              size="row"
               role="radio"
               aria-checked={checked}
               onClick={() => setMode(option.value)}
               className={cn(
-                'flex cursor-pointer items-start gap-2.5 rounded-md border px-2.5 py-2 text-left transition-colors',
-                checked ? 'border-primary bg-primary/10' : 'border-border/60 hover:bg-muted/40',
+                'cursor-pointer items-start gap-2.5 border px-2.5 py-2',
+                checked ? 'border-primary bg-primary/10 hover:bg-primary/10' : 'border-border/60 hover:bg-muted/40',
               )}
             >
               <span
@@ -321,7 +324,7 @@ function SimulatorForm({
                 <span className="block text-sm font-medium">{option.title}</span>
                 <span className="block text-xs text-muted-foreground">{option.description}</span>
               </span>
-            </button>
+            </Button>
           );
         })}
       </div>

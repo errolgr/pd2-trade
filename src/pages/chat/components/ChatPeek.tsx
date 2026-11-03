@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowDownLeft, CheckCheck, CircleCheck, Gamepad2, type LucideIcon, MessageSquare } from 'lucide-react';
-import { cn } from '@pd2-trader/ui';
+import { Button, cn } from '@pd2-trader/ui';
 import { t, useTranslation } from '@/i18n';
 import type { FeedItem, FeedKind } from '../chat-feed';
 
@@ -35,9 +35,8 @@ function detail(item: FeedItem) {
   return deal || item.text || t(KINDS[item.kind].labelKey);
 }
 
-const footerButton =
-  'flex-1 rounded-md px-2 py-1.5 text-xs font-medium outline-none transition-colors duration-(--dur-fast) ' +
-  'hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent disabled:opacity-40 disabled:hover:bg-transparent';
+/** Extras on the footer's ghost `sm` Buttons: two equal compact halves. */
+const footerButton = 'h-auto flex-1 px-2 py-1.5 text-xs focus-visible:bg-accent disabled:opacity-40';
 
 /**
  * The chat button's peek: the newest PEEK_ITEMS new things behind its badges (unread threads, offers received or
@@ -80,10 +79,12 @@ export function ChatPeek({
             const label = t(labelKey);
             return (
               <li key={item.key}>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="row"
                   onClick={() => onPick(item)}
-                  className="flex w-full items-start gap-2.5 rounded-md px-2.5 py-1.5 text-left outline-none hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent"
+                  className="items-start gap-2.5 px-2.5 focus-visible:bg-accent"
                 >
                   <Icon aria-label={label}
                     className={cn('mt-0.5 size-4 shrink-0', className)} />
@@ -96,7 +97,7 @@ export function ChatPeek({
                     </span>
                     <span className="block truncate text-xs text-muted-foreground">{detail(item)}</span>
                   </span>
-                </button>
+                </Button>
               </li>
             );
           })}
@@ -105,17 +106,21 @@ export function ChatPeek({
       <div role="separator"
         className="my-1 h-px bg-border" />
       <div className="flex gap-1">
-        <button type="button"
+        <Button type="button"
+          variant="ghost"
+          size="sm"
           disabled={!canMarkAllRead}
           onClick={onMarkAllRead}
           className={footerButton}>
           {t('peek.markAllRead')}
-        </button>
-        <button type="button"
+        </Button>
+        <Button type="button"
+          variant="ghost"
+          size="sm"
           onClick={onOpenChat}
           className={footerButton}>
           {t('peek.openChat')}
-        </button>
+        </Button>
       </div>
     </div>
   );

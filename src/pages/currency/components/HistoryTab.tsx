@@ -15,7 +15,6 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { fadeInUp, listItem, listStagger, useReducedMotionSafe } from '@/lib/motion';
 import {
   deleteHistory,
   getDiff,
@@ -31,7 +30,7 @@ import {
 import { useNetWorth } from '@/hooks/useNetWorth';
 import {
   CATEGORY_COLORS,
-  CATEGORY_NAME_CLASS,
+  CATEGORY_QUALITY,
   categoryLabel,
   deltaClass,
   deltaPillClass,
@@ -43,7 +42,6 @@ import {
   formatWeekday,
 } from '../lib/networth-format';
 import { useNetWorthQuery } from '../lib/useNetWorthQuery';
-import { Banner, EmptyState } from './StatePanel';
 import { useTranslation } from '@/i18n';
 import type { TFunction } from 'i18next';
 import {
@@ -70,6 +68,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
   cn,
+  fadeInUp,
+  listItem,
+  listStagger,
+  useReducedMotionSafe,
+  Banner,
+  EmptyState,
+  ItemName,
 } from '@pd2-trader/ui';
 
 type Range = '24h' | '7d' | 'season' | 'all';
@@ -127,13 +132,14 @@ function SectionHeader({
 function ShowMore({ remaining, onClick }: { remaining: number; onClick: () => void }) {
   const { t } = useTranslation('currency');
   return (
-    <button
+    <Button
       type="button"
-      className="w-full py-2 text-xs font-medium text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-muted/40 hover:text-foreground focus-visible:bg-muted/40"
+      variant="quiet"
+      className="h-auto w-full rounded-none py-2 text-xs hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:ring-0"
       onClick={onClick}
     >
       {t('history.showMore', { remaining })}
-    </button>
+    </Button>
   );
 }
 
@@ -641,13 +647,15 @@ function SnapshotsSection({ token, owner, points }: { token: string; owner: NetW
         {selected.length > 0 ? (
           <span className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className="tabular-nums">{t('history.snapshots.selected', { selected: selected.length })}</span>
-            <button
+            <Button
               type="button"
-              className="rounded px-1.5 py-0.5 font-medium text-foreground/80 outline-none transition-colors duration-(--dur-fast) hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+              variant="ghost"
+              size="inline"
+              className="rounded-sm px-1.5 py-0.5 text-foreground/80 hover:text-foreground"
               onClick={() => setSelected([])}
             >
               {t('common:actions.clear')}
-            </button>
+            </Button>
           </span>
         ) : (
           <span className="text-xs text-muted-foreground">{t('history.snapshots.pickTwo')}</span>
@@ -815,7 +823,11 @@ function SnapshotsSection({ token, owner, points }: { token: string; owner: NetW
                           variants={listItem}
                           className="grid grid-cols-[1fr_6rem_4rem_5.5rem] gap-2 px-2.5 py-1.5 transition-colors duration-(--dur-fast) hover:bg-muted/40"
                         >
-                          <span className={cn('truncate', CATEGORY_NAME_CLASS[line.category])}>{line.name}</span>
+                          <ItemName
+                            name={line.name}
+                            quality={CATEGORY_QUALITY[line.category]}
+                            className={cn('truncate', !CATEGORY_QUALITY[line.category] && 'text-inherit')}
+                          />
                           <span className="text-right tabular-nums text-muted-foreground">
                             {line.qtyFrom} → {line.qtyTo}
                           </span>

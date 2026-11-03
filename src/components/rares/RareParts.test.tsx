@@ -298,10 +298,10 @@ describe('RareHistorySection', () => {
     withTooltips(<RareHistorySection history={history} />);
     expect(screen.getByText(/3× · 1 seller · since Sep 27/)).not.toBeNull();
     const rows = screen.getAllByRole('listitem').map((li) => li.textContent);
-    expect(rows).toEqual(['Oct 10new owner3.5 HR', 'Oct 12 ist', 'Sep 27no price']);
+    expect(rows).toEqual(['Oct 10new owner3.50 HR', 'Oct 12 ist', 'Sep 27no price']);
   });
 
-  it('trims HR prices to two decimals without trailing zeros', () => {
+  it('prints HR prices in the shared HR format (no float noise)', () => {
     withTooltips(
       <RareHistorySection
         history={{
@@ -312,6 +312,6 @@ describe('RareHistorySection', () => {
       />,
     );
     expect(screen.getByText(/2 sellers/)).not.toBeNull();
-    expect(screen.getByRole('listitem').textContent).toBe('Oct 102 HR');
+    expect(screen.getByRole('listitem').textContent).toBe('Oct 102.00 HR');
   });
 });

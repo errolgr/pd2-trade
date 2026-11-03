@@ -1,11 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import moment from 'moment';
-import { AlertCircle, ClipboardCopy, Copy, Gamepad2, Globe, HandCoins, Loader2, RotateCw } from 'lucide-react';
-import { cn } from '@pd2-trader/ui';
+import { ClipboardCopy, Copy, Gamepad2, Globe, HandCoins, Loader2 } from 'lucide-react';
+import { Button, cn, ErrorChip, fadeInUp, slideInRight } from '@pd2-trader/ui';
 import { t, Trans, useTranslation } from '@/i18n';
 import { writeText } from '@/lib/browser-clipboard';
-import { fadeInUp, slideInRight } from '@/lib/motion';
 import { showToast } from '@/overlay';
 import type { ChatListingState } from '../hooks/useChatListings';
 import type { TimelineEntry } from '../lib/inbox';
@@ -105,15 +104,17 @@ export function MessageBubble({
   const SourceIcon = whisper ? Gamepad2 : Globe;
   const copyButton = (
     <Tip label={t('bubble.copyMessage')}>
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="icon-xs"
         aria-label={t('bubble.copyMessage')}
         onClick={() => void copyMessage(entry.content)}
-        className="shrink-0 self-center rounded-md p-1 text-muted-foreground opacity-0 transition-opacity duration-(--dur-fast) hover:bg-muted/60 hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover/msg:opacity-100"
+        className="size-5.5 shrink-0 self-center text-muted-foreground opacity-0 transition-[color,background-color,opacity,transform] hover:bg-muted/60 hover:text-foreground focus-visible:opacity-100 group-hover/msg:opacity-100"
       >
         <Copy aria-hidden
           className="size-3.5" />
-      </button>
+      </Button>
     </Tip>
   );
   return (
@@ -212,23 +213,25 @@ export function MessageBubble({
               <span aria-hidden
                 className="w-7 shrink-0" />
             ) : (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="inline"
                 tabIndex={-1}
                 aria-label={t('bubble.traderDetails', { name: otherName })}
                 onClick={onOpenTrader}
-                className="mt-0.5 shrink-0 rounded-full outline-none transition-transform duration-(--dur-fast) hover:scale-105 active:scale-95"
+                className="mt-0.5 shrink-0 rounded-full hover:bg-transparent hover:scale-105 motion-safe:active:scale-95"
               >
                 <ChatAvatar name={otherName}
                   className="size-7 text-xs" />
-              </button>
+              </Button>
             ))}
           {isOwnMessage && copyButton}
           <div
             aria-busy={sending || undefined}
             title={moment(entry.createdAt).format('ddd, MMM D YYYY · h:mm A')}
             className={cn(
-              'relative max-w-[72%] rounded-2xl px-3 py-1.5 text-foreground ring-1 ring-inset transition-[opacity,box-shadow] duration-(--dur-med)',
+              'relative max-w-18/25 rounded-2xl px-3 py-1.5 text-foreground ring-1 ring-inset transition-[opacity,box-shadow] duration-(--dur-med)',
               isOwnMessage
                 ? [
                     'bg-linear-to-br from-primary/28 via-primary/18 to-primary/10 shadow-sm ring-primary/30',
@@ -248,18 +251,8 @@ export function MessageBubble({
               listings={listings} />
             <div className="flex items-center justify-end gap-1 text-3xs leading-4 tabular-nums text-muted-foreground">
               {failed && message.clientId ? (
-                <span className="flex items-center gap-1 text-destructive">
-                  <AlertCircle className="size-3" />
-                  {t('bubble.failedToSend')}
-                  <button
-                    type="button"
-                    onClick={() => onRetry(message.conversation_id, message.clientId!)}
-                    className="inline-flex items-center gap-0.5 rounded-sm font-semibold underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-                  >
-                    <RotateCw className="size-2.5" />
-                    {t('common:actions.retry')}
-                  </button>
-                </span>
+                <ErrorChip message={t('bubble.failedToSend')}
+                  onRetry={() => onRetry(message.conversation_id, message.clientId!)} />
               ) : (
                 <>
                   <SourceIcon

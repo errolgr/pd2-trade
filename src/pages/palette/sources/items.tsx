@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Copy, Eye, EyeOff, Shield, Store } from 'lucide-react';
-import { cn } from '@pd2-trader/ui';
+import { cn, itemQualityClass } from '@pd2-trader/ui';
 import { useOptions, type ISettings } from '@/hooks/useOptions';
 import { writeText } from '@/lib/browser-clipboard';
 import type { BuildsFilters } from '@/lib/builds-api';
@@ -12,7 +12,6 @@ import {
   useMarketPrices,
 } from '@/pages/chat/hooks/useListingMarketPrices';
 import { namePriceCode } from '@/pages/chat/lib/price-codes';
-import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import { toggleWatch, watchState } from '@/pages/market/alerts/WatchButton';
 import { formatHrPrice } from '@/pages/market/components/ResultsList';
 import { useItemNameSuggestions } from '@/pages/market/hooks/useItemNameSuggestions';
@@ -157,7 +156,7 @@ function toItem(
 
   return {
     ref,
-    titleClassName: quality === 'Runeword' ? 'text-q-rune' : qualityColor(quality),
+    titleClassName: itemQualityClass(quality),
     subtitle: [quality, option.slot].filter(Boolean).join(' · '),
     badge: option.alias ? query : undefined,
     // Typo and space-insensitive server matches ("theme" → The Meat Scraper) are guesses

@@ -1,9 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
-import { Skeleton } from '@pd2-trader/ui';
-import { HoverPopover } from '@/components/custom/hover-popover';
-import { scaleIn } from '@/lib/motion';
+import { Skeleton, HoverPopover, scaleIn } from '@pd2-trader/ui';
 import type { RareAppraisal, RareHistory } from '@/lib/rare-appraisal-api';
 import { CraftedBadges, VerdictBadge } from '@/components/rares/RareParts';
 import { RareAppraisalDetail } from '@/components/rares/RareAppraisalDetail';
@@ -66,7 +64,7 @@ export function RareAppraisalPill({
       animate="visible">
       <HoverPopover
         content={
-          <div className="max-h-[calc(100vh-180px)] w-popover max-w-viewport space-y-3 overflow-y-auto rounded-lg border border-border bg-popover p-3 text-sm text-popover-foreground shadow-panel">
+          <div className="max-h-(--radix-popover-content-available-height) w-popover max-w-viewport space-y-3 overflow-y-auto rounded-lg border border-border bg-popover p-3 text-sm text-popover-foreground shadow-panel">
             <div className="flex items-center justify-between gap-3">
               <span
                 className={isCrafted(appraisal) ? 'truncate font-semibold text-q-crafted' : 'truncate font-semibold'}

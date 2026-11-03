@@ -14,6 +14,8 @@ const toggleVariants = cva(
         default: 'bg-transparent',
         outline:
           'border border-input bg-transparent shadow-xs hover:border-ring/40 hover:bg-accent hover:text-accent-foreground',
+        /** Filter chip: pill outline; pressed → primary tint. */
+        chip: 'rounded-full border border-border/70 bg-transparent text-muted-foreground hover:border-ring/40 hover:bg-accent/50 data-[state=on]:border-primary/50 data-[state=on]:bg-primary/15 data-[state=on]:text-primary data-[state=on]:shadow-none',
       },
       size: {
         default: 'h-9 px-2 min-w-9',
@@ -21,6 +23,8 @@ const toggleVariants = cva(
         lg: 'h-10 px-2.5 min-w-10',
       },
     },
+    // Chips have their own compact geometry unless a size is passed explicitly.
+    compoundVariants: [{ variant: 'chip', size: 'default', class: 'h-6 min-w-0 gap-1 px-2 text-2xs' }],
     defaultVariants: {
       variant: 'default',
       size: 'default',

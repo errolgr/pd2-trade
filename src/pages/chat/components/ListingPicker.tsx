@@ -1,12 +1,12 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Loader2, PackagePlus, RotateCw, Search } from 'lucide-react';
-import { Button, Input, Popover, PopoverContent, PopoverTrigger, Skeleton, cn } from '@pd2-trader/ui';
+import { Button, Input, ItemName, Popover, PopoverContent, PopoverTrigger, PriceTag, Skeleton } from '@pd2-trader/ui';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import { useTranslation } from '@/i18n';
 import { buildGetAllUserMarketListingsQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
-import { ListingThumb, nameColor } from './ListingCard';
+import { listingItemName, ListingThumb } from './ListingCard';
 import { Tip } from './chat-parts';
 
 /** Newest-bumped active listings offered by the picker. */
@@ -106,24 +106,26 @@ export function ListingPicker({
       <ul className="max-h-64 space-y-0.5 overflow-y-auto overscroll-contain p-1.5">
         {matches.map((listing) => (
           <li key={listing._id}>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="row"
               onClick={() => pick(listing)}
-              className="flex w-full items-center gap-2.5 rounded-md px-1.5 py-1 text-left outline-none transition-colors duration-(--dur-fast) hover:bg-accent/70 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring/50"
+              className="gap-2.5 px-1.5 py-1 hover:bg-accent/70 hover:text-foreground focus-visible:bg-accent"
             >
               <ListingThumb listing={listing} />
               <span className="min-w-0 flex-1">
-                <span className={cn('block truncate text-sm font-semibold', nameColor(listing))}>
-                  {listing.item.name}
-                </span>
+                <ItemName {...listingItemName(listing)}
+                  className="block truncate text-sm font-semibold" />
                 {listing.item.base?.name && listing.item.base.name !== listing.item.name && (
                   <span className="block truncate text-2xs text-muted-foreground">{listing.item.base.name}</span>
                 )}
               </span>
               <span className="max-w-24 shrink-0 truncate text-xs font-medium tabular-nums text-foreground/85">
-                {listing.hr_price > 0 ? `${listing.hr_price} HR` : listing.price || '—'}
+                {listing.hr_price > 0 ? <PriceTag amount={listing.hr_price}
+                  unit="hr" /> : listing.price || '—'}
               </span>
-            </button>
+            </Button>
           </li>
         ))}
       </ul>

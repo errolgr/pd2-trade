@@ -1,8 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { CartesianGrid, ComposedChart, Line, ReferenceLine, Tooltip as ChartTooltip, XAxis, YAxis } from 'recharts';
 import { ArrowRight, History, Skull } from 'lucide-react';
-import { cn, Button, Skeleton, ChartContainer, type ChartConfig } from '@pd2-trader/ui';
-import { useReducedMotionSafe } from '@/lib/motion';
+import { cn, Button, ItemName, Skeleton, ChartContainer, type ChartConfig, useReducedMotionSafe } from '@pd2-trader/ui';
 import {
   type BuildsMode,
   getCharacterSnapshot,
@@ -11,8 +10,8 @@ import {
   type SnapshotListEntry,
 } from '@/lib/builds-api';
 import { peekBuildsCache, primeBuildsCache, snapshotQueryKey, useBuildsQuery } from '../lib/useBuildsQuery';
-import { type BuildDiff, diffBuilds, type DiffItem, isEmptyDiff } from '../lib/build-diff';
-import { fmtDateTime, fmtHr, qualityText } from '../lib/format';
+import { type BuildDiff, diffBuilds, isEmptyDiff } from '../lib/build-diff';
+import { fmtDateTime, fmtHr } from '../lib/format';
 import { QueryError, Section } from './parts';
 import { currentLocale, Trans, useTranslation } from '@/i18n';
 
@@ -172,10 +171,6 @@ function buildFeed(docs: SnapshotDetail[], total: number): FeedItem[] {
   return feed;
 }
 
-function ItemName({ item }: { item: DiffItem }) {
-  return <span className={qualityText(item.quality, item.runeword)}>{item.name}</span>;
-}
-
 function FeedEntry({
   entry,
   selected,
@@ -194,13 +189,15 @@ function FeedEntry({
   const d = entry.diff;
   return (
     <li>
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="inline"
         aria-pressed={selected}
         title={latest ? t('timeline.currentBuild') : t('timeline.showBuildAtTime')}
         onClick={() => onSelect(latest || selected ? null : entry.id)}
         className={cn(
-          'relative w-full px-3 py-2 text-left text-xs outline-none transition-colors duration-(--dur-fast) hover:bg-accent/40 focus-visible:bg-accent/50',
+          'relative block w-full rounded-none px-3 py-2 text-left text-xs font-normal whitespace-normal hover:bg-accent/40 hover:text-current focus-visible:bg-accent/50 focus-visible:ring-0',
           selected && 'bg-primary/10 before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-primary',
         )}
       >
@@ -236,11 +233,19 @@ function FeedEntry({
                 </span>{' '}
                 {c.removed && (
                   <span className="line-through decoration-muted-foreground/60 opacity-70">
-                    <ItemName item={c.removed} />
+                    <ItemName name={c.removed.name}
+                      quality={c.removed.quality ?? 'Rune'}
+                      runeword={c.removed.runeword} />
                   </span>
                 )}
                 {c.removed && c.added && <ArrowRight className="mx-1 inline size-3" />}
-                {c.added ? <ItemName item={c.added} /> : <span className="italic"> {t('timeline.removed')}</span>}
+                {c.added ? (
+                  <ItemName name={c.added.name}
+                    quality={c.added.quality ?? 'Rune'}
+                    runeword={c.added.runeword} />
+                ) : (
+                  <span className="italic"> {t('timeline.removed')}</span>
+                )}
               </li>
             ))}
             {d.merc && (
@@ -262,7 +267,7 @@ function FeedEntry({
             {d.skills.length > 6 && <li>{t('timeline.moreSkillChanges', { count: d.skills.length - 6 })}</li>}
           </ul>
         )}
-      </button>
+      </Button>
     </li>
   );
 }

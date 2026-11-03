@@ -1,13 +1,21 @@
 import React, { useState } from 'react';
 import moment from 'moment';
 import { Package, User as UserIcon } from 'lucide-react';
-import { cn, Popover, PopoverContent, PopoverTrigger, Skeleton } from '@pd2-trader/ui';
+import {
+  cn,
+  ItemName,
+  type ItemNameProps,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  PriceTag,
+  Skeleton,
+  PopoverKeyValue,
+} from '@pd2-trader/ui';
 import { t, Trans, useTranslation } from '@/i18n';
 import { openUrl } from '@/lib/browser-opener';
 import { useItems } from '@/hooks/useItems';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
-import { PopoverKeyValue } from '@/components/custom/popover-parts';
-import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import ItemStatsDisplay from '@/pages/quick-list/components/ItemStatsDisplay';
 import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
@@ -79,11 +87,12 @@ export function ListingThumb({
   );
 }
 
-/** The item name's colour: rune colour for runes and runewords, else its quality colour. */
-export const nameColor = (listing: MarketListingEntry) =>
-  listing.item.is_runeword || / Rune$/.test(listing.item.name)
-    ? 'text-q-rune'
-    : qualityColor(listing.item.quality?.name ?? '');
+/** ItemName props for a listing's item: its name in the rune colour for runes and runewords, else its quality's. */
+export const listingItemName = (listing: MarketListingEntry): Pick<ItemNameProps, 'name' | 'quality' | 'runeword'> => ({
+  name: listing.item.name,
+  quality: listing.item.quality?.name,
+  runeword: listing.item.is_runeword,
+});
 
 /** Compact stash tab, as the net worth tabs label it: "Shared 3", "Personal", else the storage name. */
 function stashLabel(listing: MarketListingEntry): string | null {
@@ -131,7 +140,8 @@ export function ListingDetails({
   const delta = market && listing.hr_price > 0 ? marketDelta(listing.hr_price, market.hr) : null;
   return (
     <div className="w-80 max-w-viewport rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-panel">
-      <div className={cn('truncate text-sm font-semibold', nameColor(listing))}>{item.name}</div>
+      <ItemName {...listingItemName(listing)}
+        className="block truncate text-sm font-semibold" />
       {item.base?.name && item.base.name !== item.name && (
         <div className="truncate text-xs text-muted-foreground">{item.base.name}</div>
       )}
@@ -144,11 +154,15 @@ export function ListingDetails({
       />
       <div className="mt-2 space-y-1 border-t border-border pt-2 text-xs">
         {listing.hr_price > 0 && (
-          <PopoverKeyValue label={t('listing.price')}>{`${listing.hr_price} HR`}</PopoverKeyValue>
+          <PopoverKeyValue label={t('listing.price')}>
+            <PriceTag amount={listing.hr_price}
+              unit="hr" />
+          </PopoverKeyValue>
         )}
         {market && (
           <PopoverKeyValue label={t('listing.market')}>
-            {`${Number(market.hr.toFixed(2))} HR `}
+            <PriceTag amount={market.hr}
+              unit="hr" />{' '}
             <span className="text-muted-foreground">{`· ${market.window}`}</span>
             {delta && <span className={cn('ml-1.5', delta.className)}>{delta.text}</span>}
           </PopoverKeyValue>
@@ -233,7 +247,8 @@ export function ListingCard({ listing, listed, url }: { listing: MarketListingEn
           <span className={cn(listingIconBoxClass, !listed && 'opacity-50 grayscale')}>
             <ItemArt listing={listing} />
           </span>
-          <span className={cn('truncate font-semibold', nameColor(listing))}>{listing.item.name}</span>
+          <ItemName {...listingItemName(listing)}
+            className="truncate font-semibold" />
           {!listed && (
             <span className="shrink-0 rounded-sm bg-muted px-1 text-3xs font-medium uppercase tracking-wide text-muted-foreground">
               {t('listing.unlisted')}

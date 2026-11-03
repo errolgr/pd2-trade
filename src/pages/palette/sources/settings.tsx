@@ -1,7 +1,7 @@
 import React from 'react';
 import type { TFunction } from 'i18next';
 import { SlidersHorizontal } from 'lucide-react';
-import { cn } from '@pd2-trader/ui';
+import { Switch } from '@pd2-trader/ui';
 import { type ISettings, useOptions } from '@/hooks/useOptions';
 import { useTranslation } from '@/i18n';
 import { SETTINGS_SECTIONS } from '@/components/dialogs/optionsv2/settings-ui';
@@ -27,27 +27,13 @@ interface Ctx {
   updateSettings: (patch: Partial<ISettings>) => void;
 }
 
-/** Switch look-alike for a boolean setting's row end (display only: the row's Enter flips it). */
-function SwitchIndicator({ on, dimmed }: { on: boolean; dimmed?: boolean }) {
-  return (
-    <span
-      aria-hidden
-      data-state={on ? 'checked' : 'unchecked'}
-      className={cn(
-        'inline-flex h-5 w-9 shrink-0 items-center rounded-full border-2 border-transparent shadow-inner',
-        'transition-[background-color,box-shadow] duration-(--dur-fast) ease-out',
-        on ? 'bg-primary shadow-glow' : 'bg-input',
-        dimmed && 'opacity-50',
-      )}
-    >
-      <span
-        className={cn(
-          'block size-4 rounded-full bg-background shadow-md transition-transform duration-(--dur-med) ease-spring',
-          on ? 'translate-x-4' : 'translate-x-0',
-        )}
-      />
-    </span>
-  );
+/** A boolean setting's row end: a display-only switch (the row's Enter flips it). */
+function settingSwitch(on: boolean, dimmed: boolean) {
+  return <Switch checked={on}
+    disabled={dimmed}
+    tabIndex={-1}
+    aria-hidden
+    className="pointer-events-none" />;
 }
 
 const trailingText = (text: string) =>
@@ -89,8 +75,7 @@ function settingItem(ctx: Ctx, entry: SettingEntry): PaletteItem {
       const disabled = entry.disabled?.(settings) ?? false;
       return {
         ...base,
-        trailing: <SwitchIndicator on={on}
-          dimmed={disabled} />,
+        trailing: settingSwitch(on, !!disabled),
         primary: disabled
           ? open
           : {

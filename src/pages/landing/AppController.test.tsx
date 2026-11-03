@@ -237,11 +237,7 @@ describe('AppController list and delist hotkeys', () => {
     await mount();
     await press(1);
     await advance(300);
-    expect(h.overlay.openPanel).toHaveBeenCalledWith(
-      'quickList',
-      { error: 'not_in_stash' },
-      { placement: 'cursor' },
-    );
+    expect(h.overlay.openPanel).toHaveBeenCalledWith('quickList', { error: 'not_in_stash' }, { placement: 'cursor' });
     expect(toasts()).toContainEqual(
       expect.objectContaining({
         title: 'Cannot List Item',
@@ -255,11 +251,7 @@ describe('AppController list and delist hotkeys', () => {
     await mount();
     await press(1);
     await advance(300);
-    expect(h.overlay.openPanel).toHaveBeenCalledWith(
-      'quickList',
-      { error: 'not_in_stash' },
-      { placement: 'cursor' },
-    );
+    expect(h.overlay.openPanel).toHaveBeenCalledWith('quickList', { error: 'not_in_stash' }, { placement: 'cursor' });
     expect(toasts()).toContainEqual(expect.objectContaining({ description: 'Item is not supported or invalid.' }));
   });
 

@@ -363,7 +363,7 @@ describe('ItemOverlayWidget unique price pill', () => {
   it('reports "No price data available" as an error when the API has nothing', async () => {
     renderWidget(shako());
     const msg = await screen.findByText('No price data available');
-    expect(msg.className).toContain('text-destructive');
+    expect(msg.closest('[role="alert"]')!.className).toContain('text-destructive');
   });
 
   it('shows the error message when the price request throws', async () => {
@@ -500,10 +500,10 @@ describe('ItemOverlayWidget stat selection', () => {
     const { rerenderItem } = renderWidget(rareRing());
     fireEvent.click(statCheckbox('+20% Faster Cast Rate'));
     fireEvent.click(searchButton());
-    await screen.findByText('1.5 HR');
+    await screen.findByText('1.50 HR');
 
     rerenderItem(rareRing({ name: 'Storm Loop', stats: [MF] }));
-    await waitFor(() => expect(screen.queryByText('1.5 HR')).toBeNull());
+    await waitFor(() => expect(screen.queryByText('1.50 HR')).toBeNull());
     expect(screen.queryByText(/selected/)).toBeNull();
     expect(screen.getByText('Ready to search')).not.toBeNull();
   });
@@ -560,7 +560,7 @@ describe('ItemOverlayWidget market search', () => {
     await act(async () =>
       resolve(servicePage([listing({ hr_price: 2 }), listing({ hr_price: 0, price: 'offer me' })], 57)),
     );
-    expect(await screen.findByText('2 HR')).not.toBeNull();
+    expect(await screen.findByText('2.00 HR')).not.toBeNull();
     expect(screen.getByText('offer me')).not.toBeNull();
     expect(screen.getByText('57')).not.toBeNull();
     expect(screen.getByText('· showing 2')).not.toBeNull();
@@ -590,7 +590,7 @@ describe('ItemOverlayWidget market search', () => {
     );
     renderWidget(rareRing());
     fireEvent.click(searchButton());
-    const row = (await screen.findByText('1.5 HR')).closest('tr')!;
+    const row = (await screen.findByText('1.50 HR')).closest('tr')!;
     expect(within(row).getByText('E')).not.toBeNull();
     expect(within(row).getByText('C')).not.toBeNull();
     expect(within(row).getByText('3')).not.toBeNull();
@@ -600,7 +600,7 @@ describe('ItemOverlayWidget market search', () => {
     searchListings.mockResolvedValue(servicePage([listing()]));
     renderWidget(rareRing());
     fireEvent.click(searchButton());
-    await screen.findByText('1.5 HR');
+    await screen.findByText('1.50 HR');
     expect(lastFilters().sort).toEqual({ by: 'bumped', dir: 'desc' });
 
     fireEvent.click(screen.getByTitle('Sort by price'));
@@ -616,14 +616,14 @@ describe('ItemOverlayWidget market search', () => {
     searchListings.mockResolvedValue(servicePage([listing()]));
     renderWidget(rareRing());
     fireEvent.click(searchButton());
-    await screen.findByText('1.5 HR');
+    await screen.findByText('1.50 HR');
     fireEvent.click(screen.getByTitle('Sort by price'));
     await waitFor(() => expect(lastFilters().sort.by).toBe('price'));
 
     searchListings.mockRejectedValueOnce(new MarketBackendError('down', 'unavailable', 503));
     getMarketListings.mockResolvedValueOnce(page([listing({ hr_price: 2 })]));
     fireEvent.click(screen.getByTitle('Sort by price'));
-    expect(await screen.findByText('2 HR')).not.toBeNull();
+    expect(await screen.findByText('2.00 HR')).not.toBeNull();
     expect(lastQuery()).toMatchObject({ $sort: { hr_price: 1 }, hr_price: { $gt: 0 } });
   });
 
@@ -639,8 +639,8 @@ describe('ItemOverlayWidget market search', () => {
     );
     renderWidget(rareRing());
     fireEvent.click(searchButton());
-    await screen.findByText('3 HR');
-    const shown = () => ['1 HR', '2 HR', '3 HR'].filter((p) => screen.queryByText(p));
+    await screen.findByText('3.00 HR');
+    const shown = () => ['1.00 HR', '2.00 HR', '3.00 HR'].filter((p) => screen.queryByText(p));
 
     const pick = (name: string) => {
       fireEvent.click(screen.getByRole('button', { name: 'Seller filter' }));
@@ -648,19 +648,19 @@ describe('ItemOverlayWidget market search', () => {
     };
 
     pick('In game');
-    expect(shown()).toEqual(['1 HR']);
+    expect(shown()).toEqual(['1.00 HR']);
     expect(screen.getByText('· 1 in game')).not.toBeNull();
 
     pick('In game or on trade site');
-    expect(shown()).toEqual(['1 HR', '2 HR']);
+    expect(shown()).toEqual(['1.00 HR', '2.00 HR']);
     expect(screen.getByText('· 2 online')).not.toBeNull();
 
     pick('On the trade site');
-    expect(shown()).toEqual(['2 HR']);
+    expect(shown()).toEqual(['2.00 HR']);
     expect(screen.getByText('· 1 on site')).not.toBeNull();
 
     pick('Anyone');
-    expect(shown()).toEqual(['1 HR', '2 HR', '3 HR']);
+    expect(shown()).toEqual(['1.00 HR', '2.00 HR', '3.00 HR']);
     // Filtering never searches again
     expect(searchListings).toHaveBeenCalledTimes(1);
   });
@@ -749,7 +749,7 @@ describe('ItemOverlayWidget market search', () => {
     renderWidget(rareRing());
     fireEvent.click(screen.getByRole('radio', { name: 'Expired' }));
     fireEvent.click(searchButton());
-    const row = (await screen.findByText('4 HR')).closest('tr')!;
+    const row = (await screen.findByText('4.00 HR')).closest('tr')!;
     const ended = within(row).getByText('sold after 2 days');
     expect(ended.getAttribute('title')).toBe('Ended 2 days ago');
   });
@@ -761,7 +761,7 @@ describe('ItemOverlayWidget market search', () => {
     renderWidget(rareRing());
     fireEvent.click(searchButton());
 
-    expect(await screen.findByText('5 HR')).not.toBeNull();
+    expect(await screen.findByText('5.00 HR')).not.toBeNull();
     expect(screen.queryByRole('alert')).toBeNull();
     expect(lastQuery()).toMatchObject({ $skip: 0, $limit: 20, 'item.quality.name': 'Rare' });
     expect(reportApiError).toHaveBeenCalledWith(
@@ -804,7 +804,7 @@ describe('ItemOverlayWidget market search', () => {
     expect(screen.queryByText('No listings found')).toBeNull();
 
     fireEvent.click(within(alert).getByRole('button', { name: /Retry/ }));
-    expect(await screen.findByText('7 HR')).not.toBeNull();
+    expect(await screen.findByText('7.00 HR')).not.toBeNull();
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
@@ -829,7 +829,7 @@ describe('ItemOverlayWidget market search', () => {
 
     inView = true;
     rerenderItem(item);
-    expect(await screen.findByText('99 HR')).not.toBeNull();
+    expect(await screen.findByText('99.0 HR')).not.toBeNull();
     expect(lastPage()).toBe(1);
     expect(screen.getAllByRole('row')).toHaveLength(1 + 21); // header + 20 + one new (duplicate dropped)
     // a short page means there is nothing more to load
@@ -849,7 +849,7 @@ describe('ItemOverlayWidget market search', () => {
 
     inView = true;
     rerenderItem(item);
-    expect(await screen.findByText('99 HR')).not.toBeNull();
+    expect(await screen.findByText('99.0 HR')).not.toBeNull();
     expect(lastPage()).toBe(1);
   });
 
@@ -864,7 +864,7 @@ describe('ItemOverlayWidget market search', () => {
     expect(await screen.findByText('Load more')).not.toBeNull();
     inView = true;
     rerenderItem(item);
-    expect(await screen.findByText('21 HR')).not.toBeNull();
+    expect(await screen.findByText('21.0 HR')).not.toBeNull();
     inView = false;
     rerenderItem(item);
 
@@ -876,7 +876,7 @@ describe('ItemOverlayWidget market search', () => {
 
     searchListings.mockResolvedValueOnce(servicePage([listing({ _id: 'b0', hr_price: 77 })], 1));
     fireEvent.click(searchButton());
-    expect(await screen.findByText('77 HR')).not.toBeNull();
+    expect(await screen.findByText('77.0 HR')).not.toBeNull();
     expect(lastPage()).toBe(0);
     expect(lastFilters().stats).toEqual([expect.objectContaining({ key: 'item_magicbonus', min: 1 })]);
     expect(screen.getAllByRole('row')).toHaveLength(1 + 1);
@@ -899,9 +899,9 @@ describe('ItemOverlayWidget market search', () => {
 
     searchListings.mockResolvedValueOnce(servicePage([listing({ _id: 'b0', hr_price: 77 })], 1));
     fireEvent.click(searchButton());
-    expect(await screen.findByText('77 HR')).not.toBeNull();
+    expect(await screen.findByText('77.0 HR')).not.toBeNull();
     await act(async () => late.resolve(servicePage([listing({ _id: 'a20', hr_price: 66 })], 40)));
-    expect(screen.queryByText('66 HR')).toBeNull();
+    expect(screen.queryByText('66.0 HR')).toBeNull();
     expect(screen.getAllByRole('row')).toHaveLength(1 + 1);
   });
 
@@ -920,7 +920,7 @@ describe('ItemOverlayWidget market search', () => {
     );
     renderWidget(rareRing());
     fireEvent.click(searchButton());
-    await screen.findByText('3 HR');
+    await screen.findByText('3.00 HR');
     // only the recently-seen seller counts as online
     const buttons = screen.getAllByRole('button', { name: 'Copy whisper' });
     expect(buttons).toHaveLength(1);
@@ -944,7 +944,7 @@ describe('ItemOverlayWidget market search', () => {
     fireEvent.click(searchButton());
 
     // Rows show before PD2 answered, with the stored (stale) presence: nobody online
-    expect(await screen.findByText('2 HR')).not.toBeNull();
+    expect(await screen.findByText('2.00 HR')).not.toBeNull();
     expect(screen.queryByRole('button', { name: 'Copy whisper' })).toBeNull();
     expect(getListingPresence).toHaveBeenCalledWith(['a', 'b']);
 
@@ -952,7 +952,7 @@ describe('ItemOverlayWidget market search', () => {
       lookup.resolve(new Map([['b', { user_last_online: null, user_last_ingame: '2026-10-18T11:59:00Z' }]])),
     );
     const rows = screen.getAllByRole('row').slice(1);
-    expect(rows.map((r) => within(r).getByText(/HR$/).textContent)).toEqual(['1 HR', '2 HR']);
+    expect(rows.map((r) => within(r).getByText(/HR$/).textContent)).toEqual(['1.00 HR', '2.00 HR']);
     expect(within(rows[1]).getByRole('button', { name: 'Copy whisper' })).not.toBeNull();
     expect(within(rows[0]).queryByRole('button', { name: 'Copy whisper' })).toBeNull();
   });
@@ -1169,7 +1169,7 @@ describe('ItemOverlayWidget extra header behaviour', () => {
     expect(within(popover).getByText('Maxhp')).not.toBeNull();
 
     // socket breakdown: picking a socket count filters on exactly that many sockets
-    fireEvent.mouseEnter(within(own).getByText('Tohit Percent').closest('[role="button"]')!.parentElement!);
+    fireEvent.mouseEnter(within(own).getByText('Tohit Percent').closest('button')!.parentElement!);
     fireEvent.click(await screen.findByText(/1 Socket$/));
     await waitFor(() => expect(searchListings).toHaveBeenCalled());
     const f = lastFilters();

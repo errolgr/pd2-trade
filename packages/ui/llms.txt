@@ -1,5 +1,6 @@
 # @pd2-trader/ui — rules for AI tools building PD2 Trader features and plugins
-# Human version: DESIGN_RULES.md (same folder). Lint: eslint-rules/design-system.js (pd2-ds/*).
+# Human version: DESIGN_RULES.md (same folder). Lint: eslint-rules/design-system.js + consistency.js (pd2-ds/*).
+# Catalog: `npm run catalog` (Ladle; every component x 21 themes x window opacity).
 
 ## Context
 - UI runs in ONE transparent, always-on-top, NON-FOCUSABLE overlay window over Diablo II (Tauri 2 + WebView2, Chromium >= 112).
@@ -13,6 +14,7 @@ semantic: background foreground surface surface-foreground surface-elevated card
   border input ring scrim chart-1 chart-2 chart-3 chart-4 chart-5
   sidebar sidebar-foreground sidebar-primary sidebar-primary-foreground sidebar-accent sidebar-accent-foreground sidebar-border sidebar-ring
 domain: glow q-unique q-set q-rare q-magic q-crafted q-rune q-normal q-gold q-corrupted q-corrupted-zone
+  dmg-fire dmg-cold dmg-lightning dmg-poison (elemental damage text)
 keywords: transparent current inherit (and currentColor in SVG)
 inline styles: var(--<token>) only, e.g. style={{ color: 'var(--q-unique)' }}; color-mix(in oklab, var(--success) 20%, transparent) ok.
 
@@ -24,44 +26,58 @@ warning = stale/partial; info = notice; border/input/ring = hairline/input borde
 glow = theme highlight (shadow-glow); q-* = Diablo II item quality colors: item names ALWAYS use their q-* color; never use q-* for non-item meaning.
 
 ## Scales
-spacing: Tailwind default 4px scale (gap-1 gap-1.5 gap-2, p-1.5 p-2 p-3, px-2.5). Half steps ok. No brackets.
-type: text-xs = body, text-sm = titles/values, text-base+ = hero numbers only. font-medium / font-semibold. Numbers: tabular-nums.
-radius: rounded-sm (chips) rounded-md (controls, tiles) rounded-lg (panels) rounded-xl rounded-full (pills). Derived from per-theme --radius.
+spacing: 4px scale, dynamic in Tailwind 4: any multiple of 0.25 (gap-1 gap-1.5 p-2 px-2.5 w-55=220px h-4.5=18px w-0.75=3px), fractions (top-1/2 -translate-x-1/2 max-w-2/5). No brackets.
+named widths (w-/min-w-/max-w-): w-control (220px settings control column) w-sidebar (300px split-panel column) w-popover (400px detail card)
+  max-w-viewport (window minus 8px gutters) max-w-contained (parent minus 16px gutters).
+type (ONLY these exist; text-lg/xl/3xl are reset and render unstyled):
+  text-3xs 10px (dense UPPERCASE meta labels, counters, chip text only) · text-2xs 11px (captions, meta, table cells) · text-xs 12px (body)
+  text-sm 13px (titles, primary values, buttons) · text-base 16px (panel hero values) · text-2xl 24px (headline numbers) · text-display 30px (one hero total)
+  Uppercase eyebrow: uppercase tracking-caps. font-medium / font-semibold. Numbers: tabular-nums (PriceTag does it).
+radius: rounded-xs (2px marks) rounded-sm 4 (chips) rounded-md 6 (controls, tiles) rounded-lg 8 (panels) rounded-full (pills). Derived from per-theme --radius.
 elevation: shadow-panel (panels, popovers), shadow-glow (highlighted item). Not shadow-lg.
 z: z-raised (sticky header) z-popup (in-panel menu/scrim) z-drawer (in-panel sidebar) z-panel (overlay panels) z-floating (portalled popovers/tooltips/dialogs).
 motion: ease-out ease-spring; duration-(--dur-fast)=120ms duration-(--dur-med)=200ms duration-(--dur-slow)=300ms.
-  framer presets: import { fadeIn, fadeInUp, scaleIn, slideInRight, slideInLeft, listStagger, listItem, springSnappy, springSoft, useReducedMotionSafe } from '@/lib/motion'.
+  framer presets: import { fadeIn, fadeInUp, scaleIn, slideInRight, slideInLeft, listStagger, listItem, springSnappy, springSoft, useReducedMotionSafe } from '@pd2-trader/ui'.
   Gate JS transforms with useReducedMotionSafe(); use motion-safe: for CSS animation classes.
-icons: lucide-react only. size-3 (dense chip), size-3.5 (inline with text-xs), size-4 (buttons, chrome bar). Use size-*, not h-4 w-4. Decorative: aria-hidden. Icon-only button: aria-label via i18n.
+icons: lucide-react only. size-3 (dense chip), size-3.5 (inline with text-xs), size-4 (buttons, chrome bar). Use size-*, not h-4 w-4. Decorative: aria-hidden; icon-only buttons: aria-label via i18n.
 
-## Banned (pd2-ds lint; warn in src/**, error in packages/ui/**)
+## Banned (pd2-ds lint; ERROR in src/**, packages/ui/** and plugin code)
 - raw colors anywhere in TSX classes/styles/props: #fff #1a1a1a rgb() rgba() hsl() oklch() oklab() lab() lch() hwb()
 - Tailwind palette classes: bg-red-500 text-zinc-400 border-white text-black/50 ring-blue-400 (any hue-step or white/black)
 - arbitrary values with raw numbers on spacing/size/type/radius/border: w-[312px] text-[13px] text-[11px] p-[7px] rounded-[4px] max-h-[calc(100vh-2rem)]
   (allowed: var-only values like w-[var(--radix-popover-trigger-width)], keywords like rounded-[inherit])
+- importing @radix-ui/*, radix-ui, cmdk, sonner, vaul or class-variance-authority outside packages/ui (use the @pd2-trader/ui wrappers)
+- styled raw controls: <button className=…> <input className=…> <select> <textarea>, div role="button" onClick → Button / Input / Select / Textarea / Toggle
+- local primitives: defining Button, Badge, DialogContent, EmptyState, PriceTag, ItemName… or calling cva()/tv() outside packages/ui (add it to the package first)
 - window.alert / window.confirm / window.prompt (wedge the non-focusable window; lint no-alert)
 - DOM keydown listeners for hotkeys; stealing focus on open; Promise.withResolvers and other APIs newer than Chromium 112
 - hard-coded UI strings (use i18n t('...'))
-Escape hatch (rare, reason required): `// ds-allow: <reason>` on the line above (JSX: {/* ds-allow: <reason> */}),
-or `// eslint-disable-next-line pd2-ds/no-arbitrary-value -- <reason>`.
+Escape hatch (rare, reason required): `// ds-allow: <reason>` on the line above (JSX: {/* ds-allow: <reason> */}).
 
-## Components and import paths
-Now (M1): shadcn primitives live in the app at src/components/ui/* (import '@/components/ui/<name>'):
-  alert alert-dialog badge breadcrumb button button-group card chart checkbox dialog dropdown-menu form input label
-  popover progress scroll-area select separator sheet skeleton slider sonner switch table tabs textarea toggle toggle-group tooltip
-Overlay patterns: '@/components/custom/window-chrome' (WindowChrome, WindowPanel), '@/components/custom/hover-popover' (HoverPopover),
-  '@/components/custom/popover-parts' (PopoverTile, PopoverKeyValue, PopoverSectionTitle),
-  '@/pages/currency/components/StatePanel' (Banner tone=info|warning|destructive, EmptyState).
-Toasts/confirm: import { showToast, confirmToast, undoToast } from '@/overlay' (src/overlay/toast.tsx).
-Class merge: import { cn } from '@/lib/utils'. Variants: cva from 'class-variance-authority'.
-Tokens (TS): import { THEME_TOKENS, SEMANTIC_TOKENS, DOMAIN_TOKENS, EASING, DURATION_MS, Z_LAYERS } from '@pd2-trader/ui/tokens'.
+## Components (everything from ONE import: import { … } from '@pd2-trader/ui'; never deep-import files)
+primitives: Button ButtonGroup Badge Card ItemCard Input Textarea Label Checkbox Switch Slider Select* Tabs* Toggle ToggleGroup* Tooltip* TooltipProvider
+  Popover* DropdownMenu* Dialog* AlertDialog* Sheet* Command* (cmdk) Form* (react-hook-form) Table* ScrollArea Separator Progress Skeleton Alert Breadcrumb* Chart* Toaster toast
+overlay patterns: PanelSurface (panel body, window-opacity aware) PanelChrome {title icon? actions? center? onClose? diabloFont?} (h-10 title bar, drag handle)
+  HoverPopover PopoverTile PopoverKeyValue PopoverSectionTitle SettingsSection SettingsGroup SettingsRow SettingsHint SettingsSkeleton
+  Banner {tone:info|warning|destructive, icon, children, actions?} EmptyState {icon?, title, description?, action?} ErrorChip {message, onRetry?} SkeletonRows {rows?}
+domain: ItemName {name, quality?, runeword?} (+ itemQualityClass(quality)) RuneIcon {rune} PriceTag {amount, unit:'hr'|'rune'|'gold', rune?, trend?:'up'|'down'|'flat'}
+  CurrencyAmount {amount, unit, rune?, label?, delta?, size?} DataRow {label, value} StatLine {children, range?, corrupted?}
+  MarketRow {name, quality?, icon?, subtitle?, price?, meta?, onClick?, selected?} SparkChart {points, tone?, showChange?}
+  formatHrAmount(n) formatAmount(n, unit) usePriceText(n, unit, rune?)
+slots (what plugins render into core surfaces): SlotSection {title, children} SlotRow {label, value, tone?} SlotBadge {text, tone?} SlotText {text, tone?, size?:'sm'|'md'}
+  SlotColumn SlotList {items} SlotDivider SlotAction {label, onClick, disabled?}; SlotTone = default|muted|success|warning|danger|q-unique|q-set|q-rare|q-magic|q-crafted|q-rune
+runtime: cn (class merge that knows the DS scale) UiLabelsProvider/useUiLabels (translated built-in strings) PanelPortalContext
+Button variants: default secondary outline ghost destructive link quiet field · sizes: default sm xs lg icon icon-sm icon-xs icon-2xs row inline
+  icon button = variant="ghost" size="icon-sm"; inline text action = variant="quiet" size="inline"; clickable list row = variant="ghost" size="row" (aria-selected marks it);
+  picker trigger = variant="field"; pressed filter chip = <Toggle variant="chip">; segmented choice = ToggleGroup.
+Toasts/confirm in the app: import { showToast, confirmToast, undoToast } from '@/overlay'.
+Tokens (TS): import { THEMES, THEME_TOKENS, SEMANTIC_TOKENS, DOMAIN_TOKENS, TYPE_SCALE, WIDTHS, EASING, DURATION_MS, Z_LAYERS } from '@pd2-trader/ui/tokens'.
 Tailwind theme CSS: @import '@pd2-trader/ui/tailwind.css'.
-M2: components move to @pd2-trader/ui (primitives, PanelChrome, HoverPopover, ItemName, PriceTag, Slot* components). Update imports then; do not deep-import src/components/ui internals from plugins.
 
 ## States
-loading: <Skeleton className="h-4 w-24" /> shaped like the content (no spinners for content).
-empty: <EmptyState icon title description action />: say what is empty and the next step.
-error: <Banner tone="destructive"> in-panel; toast for transient results; plugin slot failure → ErrorChip (M2/M3).
+loading: <Skeleton className="h-4 w-24" /> shaped like the content, or <SkeletonRows rows={3} /> (no spinners for content).
+empty: <EmptyState icon={<Search />} title=… description=… action=… />: say what is empty and the next step.
+error: <Banner tone="destructive"> in-panel; <ErrorChip message=… onRetry=… /> inline; toast for transient results.
 interactive: hover:bg-accent, focus = global outline-ring/50, disabled:opacity-50.
 
 ## Copy
@@ -69,11 +85,12 @@ Sentence case, short, plain, no "!". "…" for in-progress ("Opening browser…"
 Errors: what happened + what to do. Use PD2 vocabulary (HR, runes, corrupted, Hell games).
 
 ## Minimal example
-<WindowPanel>
-  <WindowChrome title={t('myPlugin.title')} icon={<Coins />} onClose={close} />
+import { Button, DataRow, ItemName, PanelChrome, PanelSurface, PriceTag } from '@pd2-trader/ui';
+<PanelSurface>
+  <PanelChrome title={t('myPlugin.title')} icon={<Coins />} onClose={close} />
   <div className="flex flex-col gap-1.5 p-2 text-xs">
-    <span className="font-medium text-q-unique">{item.name}</span>
-    <span className="tabular-nums text-muted-foreground">{t('myPlugin.price', { value })}</span>
+    <ItemName name={item.name} quality={item.quality} className="font-medium" />
+    <DataRow label={t('myPlugin.price')} value={<PriceTag amount={price} unit="hr" trend="up" />} />
     <Button size="sm" variant="secondary" onClick={onList}>{t('myPlugin.list')}</Button>
   </div>
-</WindowPanel>
+</PanelSurface>

@@ -1,14 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { PackageOpen, Search, SearchX, X } from 'lucide-react';
-import { formatHr } from '@/lib/utils';
 import type { ValuationLine } from '@/lib/networth-api';
 import { DataTable } from './DataTable';
 import { DataTableColumnHeader } from './DataTableColumnHeader';
 import { ConfidenceBadge, HoldingName, PriceChange } from './HoldingCells';
 import { formatUnitPrice } from '../lib/networth-format';
 import type { TFunction } from 'i18next';
-import { Input, Switch, Label } from '@pd2-trader/ui';
+import { Button, Input, PriceTag, Switch, Label } from '@pd2-trader/ui';
 import { useTranslation } from '@/i18n';
 
 interface HoldingsTableProps {
@@ -50,7 +49,9 @@ function createColumns(totalHr: number, showTab: boolean, t: TFunction): ColumnD
       meta: { align: 'right' },
       header: ({ column }) => <DataTableColumnHeader column={column}
         title={t('columns.value')} />,
-      cell: ({ row }) => <span className="font-medium tabular-nums">{formatHr(row.original.value)}</span>,
+      cell: ({ row }) => <PriceTag amount={row.original.value}
+        unit="hr"
+        className="font-medium" />,
     },
     {
       id: 'share',
@@ -125,14 +126,16 @@ export function HoldingsTable({ lines, totalHr, showTab = false, toolbar }: Hold
             className="h-9 pl-8 pr-8"
           />
           {query && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-xs"
               aria-label={t('holdings.clearSearch')}
               onClick={() => setQuery('')}
-              className="absolute right-1.5 top-1/2 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+              className="absolute top-1/2 right-1.5 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
               <X className="size-3.5" />
-            </button>
+            </Button>
           )}
         </div>
         <div className="flex h-9 items-center gap-2 rounded-md border border-border/60 bg-muted/30 px-2.5">
@@ -158,7 +161,9 @@ export function HoldingsTable({ lines, totalHr, showTab = false, toolbar }: Hold
         {visible.length > 0 && (
           <p className="shrink-0 tabular-nums">
             {t('holdings.count', { count: visible.length })} ·{' '}
-            <span className="font-medium text-foreground">{formatHr(visibleHr)}</span>
+            <PriceTag amount={visibleHr}
+              unit="hr"
+              className="font-medium text-foreground" />
           </p>
         )}
       </div>

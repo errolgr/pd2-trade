@@ -4,10 +4,8 @@ import { Sparkles } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { getVersion } from '@/lib/browser-app';
 import { motion, MotionConfig } from 'framer-motion';
-import { Badge, ScrollArea, Skeleton, cn } from '@pd2-trader/ui';
+import { Badge, ScrollArea, Skeleton, cn, PanelChrome, PanelSurface, listItem, listStagger } from '@pd2-trader/ui';
 import { changeLog } from '@/assets/changeLog';
-import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
-import { listItem, listStagger } from '@/lib/motion';
 import { useTranslation } from '@/i18n';
 
 type EntryType = 'feature' | 'fix' | 'other';
@@ -137,9 +135,9 @@ export default function ChangelogPage() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <WindowPanel animate
+      <PanelSurface animate
         className="h-full w-full">
-        <WindowChrome
+        <PanelChrome
           title={t('changeLog.title')}
           icon={<Sparkles className="text-primary" />}
           onClose={close}
@@ -173,7 +171,7 @@ export default function ChangelogPage() {
         ) : (
           <ChangelogSkeleton />
         )}
-      </WindowPanel>
+      </PanelSurface>
     </MotionConfig>
   );
 }

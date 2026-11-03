@@ -14,9 +14,6 @@ const designSystemIgnores = [
   "packages/ui/src/tokens/**",
   "packages/ui/scripts/**",
 ];
-// Consistency rules (no direct Radix/cmdk/sonner/vaul/cva imports, no styled raw controls, no local primitives)
-// stay warn-only in the app until the component move into @pd2-trader/ui lands; then set this to "error".
-const srcConsistencySeverity = "warn";
 // Plugin code (first-party plugins, create-pd2-plugin template) must be clean from day one: every rule errors.
 const pluginCode = [
   "packages/plugins/*/src/**/*.{ts,tsx,js,jsx}",
@@ -26,6 +23,10 @@ const pluginCode = [
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
+  {
+    // Build output (Ladle catalog static build).
+    ignores: ["packages/ui/build/**"],
+  },
   {
     files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"]
   },
@@ -68,14 +69,11 @@ export default [
     },
   },
   {
-    // Token rules are warn-only in the app until each panel is migrated (PRD A5); packages/ui must be clean.
+    // Every app surface is migrated (PRD A5), so token and consistency rules error in src as in packages/ui.
     files: ["src/**/*.{ts,tsx}"],
     ignores: designSystemIgnores,
     plugins: { "pd2-ds": designSystem },
-    rules: {
-      ...pd2dsRules(TOKEN_RULES, "warn"),
-      ...pd2dsRules(CONSISTENCY_RULES, srcConsistencySeverity),
-    },
+    rules: pd2dsRules([...TOKEN_RULES, ...CONSISTENCY_RULES], "error"),
   },
   {
     // Consistency rules do not apply here: packages/ui is where primitives, Radix and cva belong.

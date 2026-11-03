@@ -9,8 +9,7 @@ import {
   SortingState,
   useReactTable,
 } from '@tanstack/react-table';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, cn } from '@pd2-trader/ui';
-import { EASE_OUT } from '@/lib/motion';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, cn, EASE_OUT } from '@pd2-trader/ui';
 import { useTranslation } from '@/i18n';
 
 declare module '@tanstack/react-table' {

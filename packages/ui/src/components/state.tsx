@@ -1,10 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { cn } from '@pd2-trader/ui';
-import { fadeInUp } from '@/lib/motion';
-type Tone = 'info' | 'warning' | 'destructive';
+import { cn } from '../lib/utils';
+import { fadeInUp } from '../lib/motion';
 
-const TONE_CLASSES: Record<Tone, { box: string; icon: string }> = {
+export type BannerTone = 'info' | 'warning' | 'destructive';
+
+const TONE_CLASSES: Record<BannerTone, { box: string; icon: string }> = {
   info: { box: 'border-info/30 bg-info/10', icon: 'bg-info/15 text-info' },
   warning: { box: 'border-warning/35 bg-warning/10', icon: 'bg-warning/15 text-warning' },
   destructive: { box: 'border-destructive/35 bg-destructive/10', icon: 'bg-destructive/15 text-destructive' },
@@ -19,7 +20,7 @@ export function Banner({
   className,
   role,
 }: {
-  tone: Tone;
+  tone: BannerTone;
   icon: React.ReactNode;
   children: React.ReactNode;
   actions?: React.ReactNode;
@@ -62,7 +63,7 @@ export function EmptyState({
   className,
   compact = false,
 }: {
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   title: React.ReactNode;
   description?: React.ReactNode;
   action?: React.ReactNode;
@@ -80,14 +81,16 @@ export function EmptyState({
         className,
       )}
     >
-      <span
-        className={cn(
-          'flex items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/20',
-          compact ? 'size-9 [&_svg]:size-4' : 'size-12 [&_svg]:size-6',
-        )}
-      >
-        {icon}
-      </span>
+      {icon && (
+        <span
+          className={cn(
+            'flex items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/20',
+            compact ? 'size-9 [&_svg]:size-4' : 'size-12 [&_svg]:size-6',
+          )}
+        >
+          {icon}
+        </span>
+      )}
       <div className="space-y-1">
         <p className="text-sm font-medium text-foreground">{title}</p>
         {description && (

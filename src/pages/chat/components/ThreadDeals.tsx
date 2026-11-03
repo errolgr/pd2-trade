@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import {
   Button,
+  DataRow,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -25,6 +26,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  PriceTag,
   cn,
 } from '@pd2-trader/ui';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
@@ -153,7 +155,8 @@ export function OfferHoverCard({
   const [openedAt, setOpenedAt] = useState<number | null>(null);
   const setOpen = (open: boolean) => setOpenedAt((at) => (open ? (at ?? Date.now()) : null));
   const status = hidden ? 'hidden' : offerStatus(offer);
-  const hr = offer.hrOffer && offer.price !== `${offer.hrOffer} HR` ? `${offer.hrOffer} HR` : null;
+  // The HR value, unless the offer text already is it ("1.5 HR")
+  const hr = offer.hrOffer && offer.price !== `${offer.hrOffer} HR` ? offer.hrOffer : null;
   const offerSection = (
     <section aria-label={t('deals.offer')}
       className="mt-2 space-y-1 border-t border-border pt-2 text-xs">
@@ -168,18 +171,24 @@ export function OfferHoverCard({
         </span>
       </div>
       {offer.price && (
-        <div className="flex justify-between gap-3">
-          <span className="shrink-0 text-muted-foreground">{t('deals.offered')}</span>
-          <span className="min-w-0 break-words text-right font-semibold">
-            {offer.price}
-            {hr && <span className="ml-1.5 font-normal text-muted-foreground">{`(${hr})`}</span>}
-          </span>
-        </div>
+        <DataRow
+          label={t('deals.offered')}
+          value={
+            <>
+              {offer.price}
+              {hr && (
+                <span className="ml-1.5 font-normal text-muted-foreground">
+                  (<PriceTag amount={hr}
+                    unit="hr" />)
+                </span>
+              )}
+            </>
+          }
+          valueClassName="whitespace-normal break-words font-semibold"
+        />
       )}
-      <div className="flex justify-between gap-3">
-        <span className="shrink-0 text-muted-foreground">{t('deals.sent')}</span>
-        <span>{shortAgo(offer.timestamp.getTime(), now ?? openedAt ?? offer.timestamp.getTime())}</span>
-      </div>
+      <DataRow label={t('deals.sent')}
+        value={shortAgo(offer.timestamp.getTime(), now ?? openedAt ?? offer.timestamp.getTime())} />
     </section>
   );
   return (
@@ -233,11 +242,8 @@ const DEFAULT_TEMPLATES = {
 // Below 560px of strip width (@max-[559px]) rows drop the asking/market line and actions go icon-only
 // (with tooltips).
 
-const actionClass = cn(
-  'inline-flex h-7 shrink-0 items-center gap-1 rounded-lg px-2 text-xs font-semibold outline-none transition-[background-color,color,border-color,transform] duration-(--dur-fast) active:scale-[0.97]',
-  'focus-visible:ring-2 focus-visible:ring-ring/60 disabled:pointer-events-none disabled:opacity-50',
-  '@max-[559px]:h-6 @max-[559px]:px-1.5',
-);
+/** Extras on the deal strip's ghost `inline` Buttons (see ACTION_TONE for their colours). */
+const actionClass = 'h-7 shrink-0 rounded-lg px-2 text-xs font-semibold @max-[559px]:h-6 @max-[559px]:px-1.5';
 
 /** Action labels drop to icon-only (with a tooltip; the label stays the accessible name) when narrow. */
 const actionLabelClass = '@max-[559px]:sr-only';
@@ -245,9 +251,10 @@ const actionLabelClass = '@max-[559px]:sr-only';
 /** filled: the main action. outline: secondary. destructive: red text. muted: housekeeping. */
 type ActionTone = 'filled' | 'outline' | 'destructive' | 'muted';
 const ACTION_TONE: Record<ActionTone, string> = {
-  filled: 'bg-success text-success-foreground shadow-xs hover:bg-success/90 data-[state=open]:bg-success/90',
-  outline: 'border border-border bg-background/60 text-foreground hover:border-primary/40 hover:bg-accent',
-  destructive: 'text-destructive hover:bg-destructive/12',
+  filled:
+    'bg-success text-success-foreground shadow-xs hover:bg-success/90 hover:text-success-foreground data-[state=open]:bg-success/90',
+  outline: 'border border-border bg-background/60 text-foreground hover:border-primary/40 hover:bg-accent hover:text-foreground',
+  destructive: 'text-destructive hover:bg-destructive/12 hover:text-destructive',
   muted: 'text-muted-foreground hover:bg-accent hover:text-foreground',
 };
 
@@ -271,13 +278,15 @@ function ActionButton({
 }) {
   return (
     <Tip label={title}>
-      <button type="button"
+      <Button type="button"
+        variant="ghost"
+        size="inline"
         disabled={disabled}
         className={cn(actionClass, ACTION_TONE[tone])}
         onClick={onClick}>
         {children}
         <span className={actionLabelClass}>{label}</span>
-      </button>
+      </Button>
     </Tip>
   );
 }
@@ -318,10 +327,14 @@ function AcceptButton({
     <Popover open={open}
       onOpenChange={setOpen}>
       <Tip label={tip}>
-        <PopoverTrigger disabled={disabled}
-          className={cn(actionClass, ACTION_TONE.filled)}>
-          <Check className="size-3.5" />
-          <span className={actionLabelClass}>{t('deals.accept')}</span>
+        <PopoverTrigger asChild>
+          <Button variant="ghost"
+            size="inline"
+            disabled={disabled}
+            className={cn(actionClass, ACTION_TONE.filled)}>
+            <Check className="size-3.5" />
+            <span className={actionLabelClass}>{t('deals.accept')}</span>
+          </Button>
         </PopoverTrigger>
       </Tip>
       <PopoverContent align="end"
@@ -483,12 +496,16 @@ export function ThreadDeals({
   const moreMenu = (itemName: string | undefined, items: React.ReactNode) => (
     <DropdownMenu>
       <Tip label={t('deals.moreActions')}>
-        <DropdownMenuTrigger
-          aria-label={itemName != null ? t('deals.moreActionsFor', { item: itemName }) : t('deals.moreActionsForOffer')}
-          disabled={busyId !== null}
-          className={cn(actionClass, ACTION_TONE.muted, 'px-1.5 data-[state=open]:bg-accent')}
-        >
-          <MoreHorizontal className="size-3.5" />
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="inline"
+            aria-label={itemName != null ? t('deals.moreActionsFor', { item: itemName }) : t('deals.moreActionsForOffer')}
+            disabled={busyId !== null}
+            className={cn(actionClass, ACTION_TONE.muted, 'px-1.5 data-[state=open]:bg-accent')}
+          >
+            <MoreHorizontal className="size-3.5" />
+          </Button>
         </DropdownMenuTrigger>
       </Tip>
       <DropdownMenuContent align="end"
@@ -842,15 +859,17 @@ export function ThreadDeals({
         })}
         {deals.length > COLLAPSE_AFTER && (
           <li>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="inline"
               aria-expanded={expanded}
-              className={cn(actionClass, ACTION_TONE.muted, 'h-6 w-full justify-center font-medium')}
+              className={cn(actionClass, ACTION_TONE.muted, 'h-6 w-full font-medium')}
               onClick={() => setExpanded((open) => !open)}
             >
               <ChevronDown className={cn('size-3.5 transition-transform', expanded && 'rotate-180')} />
               {expanded ? t('deals.showLess') : t('deals.more', { count: deals.length - 1 })}
-            </button>
+            </Button>
           </li>
         )}
       </ul>

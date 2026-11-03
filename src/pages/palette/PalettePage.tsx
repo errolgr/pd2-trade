@@ -1,9 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Command } from 'cmdk';
 import { AnimatePresence, motion } from 'framer-motion';
 import { LogIn, Pin, PinOff, Search, X } from 'lucide-react';
-import { cn } from '@pd2-trader/ui';
-import { DUR, EASE_OUT } from '@/lib/motion';
+import {
+  Button,
+  Command,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  cn,
+  DUR,
+  EASE_OUT,
+} from '@pd2-trader/ui';
 import { useOptions } from '@/hooks/useOptions';
 import { useSignIn } from '@/hooks/useSignIn';
 import { showToast, useOverlay, usePanel } from '@/overlay';
@@ -203,33 +211,37 @@ export default function PalettePage() {
           value={selected}
           onValueChange={setSelected}
           loop
-          className="flex min-h-0 flex-1 flex-col"
+          className="h-auto min-h-0 flex-1 rounded-none bg-transparent text-inherit"
         >
-          <div className="relative flex h-13 shrink-0 items-center gap-2.5 border-b border-border/60 px-4">
-            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-            {scope && (
-              <button
-                type="button"
-                onClick={() => {
-                  popScope();
-                  inputRef.current?.focus();
-                }}
-                aria-label={t('scope.remove', { label: scope.label ?? groupLabels[scope.group] })}
-                className="flex shrink-0 items-center gap-1 rounded-full border border-primary/60 bg-primary/15 px-2.5 py-0.5 text-xs text-primary"
-              >
-                {scope.label ?? groupLabels[scope.group]}
-                <X className="h-3 w-3" />
-              </button>
-            )}
-            <Command.Input
-              ref={inputRef}
-              autoFocus
-              value={query}
-              onValueChange={setQuery}
-              onKeyDown={onInputKeyDown}
-              placeholder={scope ? t('input.scopedPlaceholder') : t('input.placeholder')}
-              className="h-full min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
-            />
+          <CommandInput
+            ref={inputRef}
+            autoFocus
+            value={query}
+            onValueChange={setQuery}
+            onKeyDown={onInputKeyDown}
+            placeholder={scope ? t('input.scopedPlaceholder') : t('input.placeholder')}
+            wrapperClassName="h-13 shrink-0 gap-2.5 border-border/60 px-4"
+            icon={<Search className="size-4 shrink-0 text-muted-foreground" />}
+            leading={
+              scope && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="inline"
+                  onClick={() => {
+                    popScope();
+                    inputRef.current?.focus();
+                  }}
+                  aria-label={t('scope.remove', { label: scope.label ?? groupLabels[scope.group] })}
+                  className="shrink-0 gap-1 rounded-full border-primary/60 bg-primary/15 px-2.5 py-0.5 text-xs font-normal text-primary shadow-none hover:border-primary/60 hover:bg-primary/25 hover:text-primary"
+                >
+                  {scope.label ?? groupLabels[scope.group]}
+                  <X className="size-3" />
+                </Button>
+              )
+            }
+            className="h-full min-w-0 flex-1 rounded-none py-0 text-base"
+          >
             {!scope && <span className="shrink-0 text-xs text-muted-foreground">{t('scope.tabHint')}</span>}
             <AnimatePresence>
               {loading && (
@@ -251,24 +263,25 @@ export default function PalettePage() {
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
+          </CommandInput>
 
-          <Command.List
+          <CommandList
             onPointerMove={() => setUserMoved(true)}
-            className="min-h-0 overflow-y-auto overscroll-contain px-1.5 py-1.5 [&_[cmdk-group-heading]]:px-2.5 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-2 [&_[cmdk-group-heading]]:text-2xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground"
+            className="max-h-none min-h-0 overscroll-contain px-1.5 py-1.5"
           >
             {sections.map((section) => (
-              <Command.Group key={section.key}
-                heading={section.heading}>
+              <CommandGroup key={section.key}
+                heading={section.heading}
+                className={GROUP_CLASS}>
                 {section.items.map((item) => (
                   <PaletteRow key={item.ref.id}
                     item={item}
                     onSelect={() => run(item, item.primary)} />
                 ))}
-              </Command.Group>
+              </CommandGroup>
             ))}
             {signedOut && (
-              <Command.Item
+              <CommandItem
                 value={SIGN_IN_ROW}
                 onSelect={() => {
                   openSignIn();
@@ -276,16 +289,16 @@ export default function PalettePage() {
                 }}
                 className={ROW_CLASS}
               >
-                <LogIn className="h-4 w-4 text-muted-foreground" />
+                <LogIn className="size-4 text-muted-foreground" />
                 <span className="truncate">{t('signIn.title')}</span>
-              </Command.Item>
+              </CommandItem>
             )}
             {empty && (
               <div className="px-3 py-6 text-center text-sm text-muted-foreground">
                 {t('empty.noResults', { query: q })}
               </div>
             )}
-          </Command.List>
+          </CommandList>
         </Command>
 
         <div className="flex h-9 shrink-0 items-center gap-4 border-t border-border/60 px-4 text-xs text-muted-foreground">
@@ -328,11 +341,13 @@ function isCaretAtEnd(e: React.KeyboardEvent<HTMLInputElement>): boolean {
 }
 
 const ROW_CLASS =
-  'flex h-9 cursor-pointer select-none items-center gap-2.5 rounded-md px-2.5 text-sm outline-none data-[selected=true]:bg-primary/15';
+  'h-9 cursor-pointer gap-2.5 rounded-md px-2.5 py-0 data-[selected=true]:bg-primary/15 data-[selected=true]:text-inherit';
+const GROUP_CLASS =
+  'p-0 text-inherit [&_[cmdk-group-heading]]:px-2.5 [&_[cmdk-group-heading]]:pt-2 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-caps';
 
 function PaletteRow({ item, onSelect }: { item: PaletteItem; onSelect: () => void }) {
   return (
-    <Command.Item value={item.ref.id}
+    <CommandItem value={item.ref.id}
       onSelect={onSelect}
       className={ROW_CLASS}>
       <span className="flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground">{item.icon}</span>
@@ -348,7 +363,7 @@ function PaletteRow({ item, onSelect }: { item: PaletteItem; onSelect: () => voi
           {item.trailing}
         </span>
       )}
-    </Command.Item>
+    </CommandItem>
   );
 }
 
@@ -372,11 +387,14 @@ function ActionMenu({ item, pinned, onRun, onTogglePin, onClose }: ActionMenuPro
       className="absolute bottom-11 right-2 z-10 w-64 overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-panel"
     >
       <Command label={t('menu.label', { title: item.ref.title })}
+        className="rounded-none bg-transparent text-inherit"
         loop>
-        <div className="truncate px-3 pt-2 text-2xs font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="truncate px-3 pt-2 text-2xs font-medium uppercase tracking-caps text-muted-foreground">
           {item.ref.title}
         </div>
-        <Command.Input
+        <CommandInput
+          icon={null}
+          wrapperClassName="h-8 border-0 px-3"
           autoFocus
           placeholder={t('menu.placeholder')}
           onKeyDown={(e) => {
@@ -390,11 +408,11 @@ function ActionMenu({ item, pinned, onRun, onTogglePin, onClose }: ActionMenuPro
               onClose();
             }
           }}
-          className="h-8 w-full bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground"
+          className="h-8 py-0"
         />
-        <Command.List className="max-h-56 overflow-y-auto p-1">
+        <CommandList className="max-h-56 p-1">
           {actions.map((action) => (
-            <Command.Item
+            <CommandItem
               key={action.id}
               value={`${action.id} ${action.label}`}
               onSelect={() => onRun(action)}
@@ -408,19 +426,19 @@ function ActionMenu({ item, pinned, onRun, onTogglePin, onClose }: ActionMenuPro
               {action.shortcut && action !== item.primary && (
                 <kbd className="ml-auto font-sans text-2xs text-muted-foreground">{action.shortcut}</kbd>
               )}
-            </Command.Item>
+            </CommandItem>
           ))}
-          <Command.Item
+          <CommandItem
             value={`pin ${t(pinned ? 'menu.unpin' : 'menu.pin')}`}
             onSelect={onTogglePin}
             className={ROW_CLASS}
           >
             <span className="flex h-4 w-4 shrink-0 items-center justify-center text-muted-foreground">
-              {pinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+              {pinned ? <PinOff className="size-4" /> : <Pin className="size-4" />}
             </span>
             <span className="truncate">{t(pinned ? 'menu.unpin' : 'menu.pin')}</span>
-          </Command.Item>
-        </Command.List>
+          </CommandItem>
+        </CommandList>
       </Command>
     </motion.div>
   );

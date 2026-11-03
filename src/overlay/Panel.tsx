@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import * as Sentry from '@sentry/react';
 import { Z_LAYERS } from '@pd2-trader/ui/tokens';
-import { PanelPortalContext } from '@pd2-trader/ui';
+import { Button, PanelPortalContext } from '@pd2-trader/ui';
 import { claimKeyboard, isHeldOverFullscreenGame, isKeyboardClaimed, releaseKeyboard } from './keyboard';
 import { holdRegionLoop } from './region';
 import { clampRectInto, clampRectVisible } from './layout-storage';
@@ -216,16 +216,17 @@ export const Panel: React.FC<{ id: PanelId }> = ({ id }) => {
             fallback={({ resetError }) => (
               <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-lg border bg-popover p-4 text-sm text-popover-foreground">
                 <span>{t('app:panel.crashed')}</span>
-                <button
+                <Button
                   type="button"
-                  className="rounded-md bg-muted px-2.5 py-1 text-xs"
+                  variant="secondary"
+                  size="xs"
                   onClick={() => {
                     resetError();
                     close();
                   }}
                 >
                   {t('common:actions.close')}
-                </button>
+                </Button>
               </div>
             )}
           >

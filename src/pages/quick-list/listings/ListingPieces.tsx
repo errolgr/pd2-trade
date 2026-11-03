@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import moment from 'moment';
 import { ArrowUp, Check, Clock, Loader2, Pencil, SquareArrowOutUpRight, Trash2, X as XIcon } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger, Input, Button, cn } from '@pd2-trader/ui';
+import { Tooltip, TooltipContent, TooltipTrigger, Input, Button, cn, itemQualityClass } from '@pd2-trader/ui';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { ListingThumb, nameColor } from '@/pages/chat/components/ListingCard';
+import { ListingThumb, listingItemName } from '@/pages/chat/components/ListingCard';
 import { ItemTooltip } from '@/pages/market/components/ItemTooltip';
 import { useTranslation } from '@/i18n';
 import { itemDisplayName } from '@/pages/market/lib/listing';
@@ -48,10 +48,16 @@ export function ListingName({
   className?: string;
   diablo?: boolean;
 }) {
+  const { name, quality, runeword } = listingItemName(listing);
   return (
     <ItemHover listing={listing}>
+      {/* A plain span (not ItemName): the tooltip trigger needs a ref-forwarding child */}
       <span
-        className={cn('min-w-0 cursor-help truncate font-medium', nameColor(listing), className)}
+        className={cn(
+          'min-w-0 cursor-help truncate font-medium',
+          itemQualityClass(quality, { runeword, name: typeof name === 'string' ? name : undefined }),
+          className,
+        )}
         style={diablo ? { fontFamily: 'DiabloFont' } : undefined}
       >
         {itemDisplayName(listing.item)}
@@ -106,8 +112,8 @@ export function PriceText({ listing, className }: { listing: MarketListingEntry;
 /** The note beside an HR price ("or best offer"); a note-only listing's note is its price. */
 export const sideNote = (listing: MarketListingEntry) => (listing.hr_price > 0 && listing.price ? listing.price : null);
 
-const iconButton =
-  'inline-flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none transition-[color,background-color] duration-(--dur-fast) hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring/60 disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-3.5';
+/** Row icon actions: ghost icon buttons with the smaller glyph. */
+const iconButton = "text-muted-foreground [&_svg:not([class*='size-'])]:size-3.5";
 
 export interface ListingActionHandlers {
   onBump: (listing: MarketListingEntry) => void;
@@ -140,41 +146,47 @@ export function ListingActions({
       <span className="flex items-center gap-0.5">
         <Tooltip delayDuration={0}>
           <TooltipTrigger asChild>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-sm"
               className={iconButton}
               aria-label={t('listing.editPrice')}
               onClick={() => handlers.onEdit(listing)}
             >
               <Pencil />
-            </button>
+            </Button>
           </TooltipTrigger>
           <TooltipContent>{t('listing.editPrice')}</TooltipContent>
         </Tooltip>
         <Tooltip delayDuration={0}>
           <TooltipTrigger asChild>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-sm"
               className={cn(iconButton, 'text-destructive/80 hover:bg-destructive/15 hover:text-destructive')}
               aria-label={deleting ? t('listing.deleting') : t('listing.removeListing')}
               disabled={deleting}
               onClick={() => handlers.onDelete(listing)}
             >
               {deleting ? <Loader2 className="animate-spin" /> : <Trash2 />}
-            </button>
+            </Button>
           </TooltipTrigger>
           <TooltipContent>{t('listing.removeListing')}</TooltipContent>
         </Tooltip>
         <Tooltip delayDuration={0}>
           <TooltipTrigger asChild>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-sm"
               className={iconButton}
               aria-label={t('listing.goToTrade')}
               onClick={() => handlers.onOpen(listing)}
             >
               <SquareArrowOutUpRight />
-            </button>
+            </Button>
           </TooltipTrigger>
           <TooltipContent>{t('listing.goToTrade')}</TooltipContent>
         </Tooltip>

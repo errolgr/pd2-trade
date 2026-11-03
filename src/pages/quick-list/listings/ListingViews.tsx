@@ -9,10 +9,9 @@ import { displayMods } from '@/pages/market/components/ItemTooltip';
 import type { Deal } from '@/pages/market/enrich/useDealIndicators';
 import type { ListingOffers } from '@/pages/market/lib/listing-offers';
 import { itemCorruptions } from '@/lib/item-utils';
-import { DUR, EASE_OUT } from '@/lib/motion';
 import { useTranslation } from '@/i18n';
 import { ArrowDown, ArrowUp } from 'lucide-react';
-import { cn } from '@pd2-trader/ui';
+import { Button, cn, DUR, EASE_OUT } from '@pd2-trader/ui';
 import { bumpReadyAt, type ListingsSort, type ListingsSortKey } from './my-listings';
 import {
   baseName,
@@ -99,16 +98,18 @@ function CardStats({ listing }: { listing: MarketListingEntry }) {
     <motion.div layout
       transition={transition}
       className="flex min-w-0 items-start gap-2 text-xs">
-      <button
+      <Button
         type="button"
+        variant="quiet"
+        size="inline"
         onClick={toggle}
         aria-expanded={open}
         aria-label={open ? t('myListings.stats.less') : t('myListings.stats.all')}
         className={cn(
-          'flex min-w-0 flex-1 cursor-pointer rounded-sm text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/60',
+          'flex min-w-0 flex-1 cursor-pointer justify-start rounded-sm text-left font-normal motion-safe:active:scale-100',
           open
-            ? 'flex-col gap-0.5'
-            : 'flex-row items-baseline overflow-hidden whitespace-nowrap [mask-image:linear-gradient(to_right,black_88%,transparent)]',
+            ? 'flex-col items-start gap-0.5 whitespace-normal'
+            : 'flex-row items-baseline gap-0 overflow-hidden [mask-image:linear-gradient(to_right,black_88%,transparent)]',
         )}
       >
         {shown.map((mod, i) => (
@@ -127,19 +128,21 @@ function CardStats({ listing }: { listing: MarketListingEntry }) {
             {mod.label}
           </motion.span>
         ))}
-      </button>
+      </Button>
       {note && <span className="max-w-2/5 shrink-0 truncate text-muted-foreground italic">{note}</span>}
       {(hidden > 0 || open) && (
-        <button
+        <Button
           type="button"
+          variant="quiet"
+          size="inline"
           onClick={toggle}
           aria-hidden
           tabIndex={-1}
-          className="inline-flex shrink-0 items-center gap-0.5 rounded-sm text-2xs text-muted-foreground hover:text-foreground"
+          className="shrink-0 gap-0.5 rounded-sm text-2xs font-normal"
         >
           {!open && `+${hidden}`}
           <ChevronDown className={cn('size-3.5 transition-transform duration-(--dur-med)', open && 'rotate-180')} />
-        </button>
+        </Button>
       )}
     </motion.div>
   );
@@ -177,7 +180,7 @@ export const ListingCard = React.memo(function ListingCard(props: ListingViewPro
               diablo />
             {base && <span className="shrink-0 truncate text-xs text-muted-foreground">{base}</span>}
             <ItemFlags listing={listing} />
-            <span className="ml-auto max-w-[35%] shrink-0 truncate pl-2 text-right">
+            <span className="ml-auto max-w-1/3 shrink-0 truncate pl-2 text-right">
               <PriceText listing={listing}
                 className="text-base" />
             </span>
@@ -309,21 +312,23 @@ export function ListingRowsHeader({ sort, onSort }: { sort: ListingsSort; onSort
         const active = col.sortKey !== null && sort.key === col.sortKey;
         const label = t(`myListings.columns.${col.id}`);
         return col.sortKey ? (
-          <button
+          <Button
             key={col.id}
             type="button"
+            variant="quiet"
+            size="inline"
             role="columnheader"
             aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
             onClick={() => onSort(col.sortKey!)}
             className={cn(
-              'flex min-w-0 items-center gap-0.5 uppercase outline-none hover:text-foreground focus-visible:text-foreground',
+              'flex min-w-0 justify-start gap-0.5 rounded-none font-semibold uppercase focus-visible:text-foreground focus-visible:ring-0 motion-safe:active:scale-100',
               col.align,
               active && 'text-foreground',
             )}
           >
             <span className="truncate">{label}</span>
             {active && (sort.dir === 'asc' ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />)}
-          </button>
+          </Button>
         ) : (
           <span key={col.id}
             role="columnheader"

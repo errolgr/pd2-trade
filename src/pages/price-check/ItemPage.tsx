@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { PackageSearch } from 'lucide-react';
+import { PanelChrome, PanelSurface } from '@pd2-trader/ui';
 import ItemOverlayWidget from '@/pages/price-check/components/ItemOverlayWidget';
 import type { Item } from '@/pages/price-check/lib/interfaces';
-import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 import { usePanel } from '@/overlay';
 import { useTranslation } from '@/i18n';
 
@@ -28,9 +28,9 @@ const ItemWindow: React.FC = () => {
   const { item } = search;
 
   return !item ? (
-    <WindowPanel animate
+    <PanelSurface animate
       className="h-full w-full">
-      <WindowChrome
+      <PanelChrome
         title={t('overlay.title')}
         titleClassName="text-xs font-medium uppercase tracking-caps text-muted-foreground"
         showGrip={false}
@@ -43,7 +43,7 @@ const ItemWindow: React.FC = () => {
         <p className="max-w-65 text-sm text-muted-foreground">{t('itemPage.noItem')}</p>
         <p className="max-w-65 text-xs text-muted-foreground/80">{t('itemPage.noItemHint')}</p>
       </div>
-    </WindowPanel>
+    </PanelSurface>
   ) : (
     <ItemOverlayWidget item={item}
       onClose={close} />

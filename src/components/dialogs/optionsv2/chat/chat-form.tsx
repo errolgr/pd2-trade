@@ -19,12 +19,17 @@ import {
   SelectTrigger,
   SelectValue,
   Slider,
-  cn,
+  Toggle,
+  DUR,
+  EASE_OUT,
+  fadeIn,
+  popIn,
+  SettingsGroup,
+  SettingsRow,
+  SettingsSkeleton,
 } from '@pd2-trader/ui';
 import { useOptions } from '@/hooks/useOptions';
-import { DUR, EASE_OUT, fadeIn, popIn } from '@/lib/motion';
 import { templatePlaceholders } from '@/lib/message-templates';
-import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import { CHAT_TIMING_OPTIONS, optionLabel } from '../setting-options';
 import { ChatTemplatesEditor } from './chat-templates-editor';
 import { Trans, useTranslation } from '@/i18n';
@@ -260,23 +265,16 @@ export function ChatForm() {
                               {TOAST_TYPES.map((type) => {
                                 const isActive = types.includes(type.id);
                                 return (
-                                  <button
+                                  <Toggle
                                     key={type.id}
-                                    type="button"
-                                    aria-pressed={isActive}
-                                    onClick={() => toggleType(type.id)}
-                                    className={cn(
-                                      'inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-xs font-medium outline-none',
-                                      'transition-[color,background-color,border-color,box-shadow,transform] duration-(--dur-fast) ease-out',
-                                      'focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-95',
-                                      isActive
-                                        ? 'border-primary bg-primary text-primary-foreground shadow-xs hover:bg-primary/90'
-                                        : 'border-border bg-muted/60 text-muted-foreground hover:border-ring/50 hover:bg-muted hover:text-foreground',
-                                    )}
+                                    variant="chip"
+                                    pressed={isActive}
+                                    onPressedChange={() => toggleType(type.id)}
+                                    className="h-7 gap-1.5 px-3 text-xs"
                                   >
                                     {isActive ? <Check className="size-3" /> : <Plus className="size-3" />}
                                     {t(type.labelKey)}
-                                  </button>
+                                  </Toggle>
                                 );
                               })}
                             </div>
@@ -412,15 +410,17 @@ export function ChatForm() {
                           <Badge variant="secondary"
                             className="flex items-center gap-1 py-1 pr-1 pl-2.5">
                             {playerName}
-                            <button
+                            <Button
                               type="button"
+                              variant="quiet"
+                              size="inline"
                               aria-label={t('chat.ignore.removeNamed', { name: playerName })}
                               onClick={() => removeFromIgnoreList(playerName)}
-                              className="ml-0.5 rounded-full p-0.5 text-muted-foreground outline-none transition-colors hover:bg-destructive/20 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/60 disabled:pointer-events-none"
+                              className="ml-0.5 rounded-full p-0.5 hover:bg-destructive/20 hover:text-destructive"
                               disabled={isDisabled}
                             >
-                              <X className="h-3 w-3" />
-                            </button>
+                              <X className="size-3" />
+                            </Button>
                           </Badge>
                         </motion.div>
                       ))}
@@ -598,15 +598,17 @@ function PlaceholderHint({
       <span>{intro}</span>
       <span className="flex flex-wrap gap-1.5">
         {tokens.map((token) => (
-          <button
+          <Button
             key={token}
             type="button"
+            variant="outline"
+            size="inline"
             title={t('chat.templates.insertToken', { token })}
             onClick={() => onInsert(token)}
-            className="rounded-sm border border-border/70 bg-muted/60 px-1.5 py-0.5 font-mono text-2xs text-foreground/80 outline-none transition-[color,background-color,border-color,transform] duration-(--dur-fast) ease-out hover:border-primary/60 hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-95"
+            className="rounded-sm border-border/70 bg-muted/60 px-1.5 py-0.5 font-mono text-2xs font-normal text-foreground/80 shadow-none hover:border-primary/60 hover:bg-primary/10 hover:text-foreground"
           >
             {token}
-          </button>
+          </Button>
         ))}
       </span>
       {asks.length > 0 && (

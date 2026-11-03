@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { useOptions } from '@/hooks/useOptions';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus, X, ChevronUp, ChevronDown, Pencil, Check, NotebookPen } from 'lucide-react';
-import { Input, Button, cn } from '@pd2-trader/ui';
+import { Input, Button, cn, fadeInUp, listItem, listStagger, springSnappy } from '@pd2-trader/ui';
 import { Trans, useTranslation } from '@/i18n';
-import { fadeInUp, listItem, listStagger, springSnappy } from '@/lib/motion';
 
 export interface NoteMacro {
   label: string;
@@ -40,9 +39,10 @@ export function applyMacroTemplate(
   return result;
 }
 
-const tokenClass = 'rounded bg-primary/12 px-1 py-px font-mono text-[0.95em] text-primary';
+const tokenClass = 'rounded-sm bg-primary/12 px-1 py-px font-mono text-2xs text-primary';
+/** Icon actions on a macro row: ghost icon buttons, muted until hovered. */
 const macroAction =
-  'inline-flex size-6 items-center justify-center rounded-md text-muted-foreground outline-none transition-[color,background-color,transform] duration-(--dur-fast) hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-90 disabled:pointer-events-none disabled:opacity-30 [&_svg]:size-3.5';
+  "text-muted-foreground hover:text-foreground motion-safe:active:scale-90 disabled:opacity-30 [&_svg:not([class*='size-'])]:size-3.5";
 
 /** Renders macro text with `{placeholders}` highlighted as tokens. */
 export const MacroTemplate: React.FC<{ text: string; className?: string }> = ({ text, className }) => (
@@ -200,9 +200,11 @@ const MacroManagerSheet: React.FC<MacroManagerSheetProps> = ({ onApply }) => {
                     </div>
                   </div>
                 ) : (
-                  <button
+                  <Button
                     type="button"
-                    className="min-w-0 flex-1 cursor-pointer rounded-l-lg px-3 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                    variant="ghost"
+                    size="row"
+                    className="block min-w-0 flex-1 cursor-pointer rounded-none rounded-l-lg px-3 py-2 hover:bg-transparent hover:text-secondary-foreground motion-safe:active:scale-100"
                     onClick={() => onApply?.(macro)}
                     title={t('macros.use')}
                   >
@@ -210,12 +212,14 @@ const MacroManagerSheet: React.FC<MacroManagerSheetProps> = ({ onApply }) => {
                     <span className="mx-1.5 text-muted-foreground">&rarr;</span>
                     <MacroTemplate text={macro.text}
                       className="text-xs text-muted-foreground" />
-                  </button>
+                  </Button>
                 )}
                 {editingIndex !== index && (
                   <div className="flex shrink-0 items-center gap-0.5 pr-1.5 opacity-70 transition-opacity duration-(--dur-fast) group-hover/macro:opacity-100 group-focus-within/macro:opacity-100">
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon-xs"
                       onClick={() => moveUp(index)}
                       className={macroAction}
                       disabled={index === 0}
@@ -223,9 +227,11 @@ const MacroManagerSheet: React.FC<MacroManagerSheetProps> = ({ onApply }) => {
                       title={t('macros.moveUp')}
                     >
                       <ChevronUp />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon-xs"
                       onClick={() => moveDown(index)}
                       className={macroAction}
                       disabled={index === macros.length - 1}
@@ -233,25 +239,29 @@ const MacroManagerSheet: React.FC<MacroManagerSheetProps> = ({ onApply }) => {
                       title={t('macros.moveDown')}
                     >
                       <ChevronDown />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon-xs"
                       onClick={() => startEdit(index)}
                       className={macroAction}
                       aria-label={t('macros.editLabel', { label: macro.label })}
                       title={t('common:actions.edit')}
                     >
                       <Pencil />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon-xs"
                       onClick={() => removeMacro(index)}
                       className={cn(macroAction, 'hover:bg-destructive/15 hover:text-destructive')}
                       aria-label={t('macros.deleteLabel', { label: macro.label })}
                       title={t('common:actions.delete')}
                     >
                       <X />
-                    </button>
+                    </Button>
                   </div>
                 )}
               </motion.li>

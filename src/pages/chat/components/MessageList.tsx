@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { AlertTriangle, ArrowDown, Loader2, MessageSquareDashed, RotateCw } from 'lucide-react';
-import { ScrollArea, Skeleton, Button, cn } from '@pd2-trader/ui';
-import { EmptyState } from '@/pages/currency/components/StatePanel';
+import { ScrollArea, Skeleton, Button, cn, EmptyState } from '@pd2-trader/ui';
 import { useTranslation } from '@/i18n';
 import type { ChatListingState } from '../hooks/useChatListings';
 import type { ThreadState } from '../hooks/useChatStore';
@@ -223,14 +222,16 @@ export function MessageList({
       )}
       {newCount > 0 && (
         <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center">
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="xs"
             onClick={jumpToLatest}
-            className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-primary/40 bg-popover/95 px-3 py-1 text-xs font-medium text-foreground shadow-panel outline-none transition-[background-color,scale] duration-(--dur-fast) hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-95"
+            className="pointer-events-auto h-auto gap-1.5 rounded-full border-primary/40 bg-popover/95 px-3 py-1 text-xs text-foreground shadow-panel hover:border-primary/40 hover:text-foreground motion-safe:active:scale-95 has-[>svg]:px-3"
           >
             <ArrowDown className="size-3.5 text-primary" />
             {t('messages.jumpToLatest', { count: newCount })}
-          </button>
+          </Button>
         </div>
       )}
     </div>

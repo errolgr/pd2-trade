@@ -1,5 +1,5 @@
 import { useReducedMotion, type Transition, type Variants } from 'framer-motion';
-import { DURATION_MS, EASING } from '@pd2-trader/ui/tokens';
+import { DURATION_MS, EASING } from '../tokens';
 
 /**
  * Shared framer-motion presets built from the motion scale in @pd2-trader/ui/tokens (the same values back the

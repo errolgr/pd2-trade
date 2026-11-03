@@ -12,7 +12,17 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import { cn, Button, Skeleton, Slider, Tooltip, TooltipContent, TooltipTrigger } from '@pd2-trader/ui';
+import {
+  cn,
+  Button,
+  Input,
+  itemQualityClass,
+  Skeleton,
+  Slider,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@pd2-trader/ui';
 import {
   BUILD_CLASSES,
   type BuildsFilters,
@@ -31,7 +41,7 @@ import {
 import { useBuildsActions } from '../lib/context';
 import { type BuildsQuery, useBuildsQuery } from '../lib/useBuildsQuery';
 import { CORE_SHARE, coreKitTotal } from '../lib/gear-up';
-import { classMeta, fmtHr, fmtPct, keyLabel, qualityText, skillFilter, skillLabel, timeAgo } from '../lib/format';
+import { classMeta, fmtHr, fmtPct, keyLabel, skillFilter, skillLabel, timeAgo } from '../lib/format';
 import {
   ClassEmblem,
   ItemActionsMenu,
@@ -163,9 +173,11 @@ function ClassBar({
         const pct = total ? (count / total) * 100 : 0;
         const tint = (percent: number) => `color-mix(in srgb, ${meta.color} ${percent}%, transparent)`;
         return (
-          <button
+          <Button
             key={name}
             type="button"
+            variant="ghost"
+            size="inline"
             aria-pressed={active}
             title={
               active
@@ -180,7 +192,7 @@ function ClassBar({
               boxShadow: active ? `inset 0 0 0 1px ${meta.color}` : undefined,
             }}
             className={cn(
-              'flex min-w-32 items-center gap-2 px-2.5 py-2 text-left outline-none transition-[opacity,background-color,box-shadow,flex-grow] duration-(--dur-fast) hover:brightness-125 focus-visible:brightness-125',
+              'flex min-w-32 justify-start gap-2 rounded-none px-2.5 py-2 text-left font-normal transition-[opacity,background-color,box-shadow,flex-grow] hover:bg-transparent hover:text-current hover:brightness-125 focus-visible:ring-0 focus-visible:brightness-125',
               dim && 'opacity-45 hover:opacity-90',
             )}
           >
@@ -202,7 +214,7 @@ function ClassBar({
                 )}
               </span>
             </span>
-          </button>
+          </Button>
         );
       })}
     </div>
@@ -274,14 +286,16 @@ function FilterBar({
             className="inline-flex h-6 items-center gap-1 rounded-full border border-border bg-muted/40 pr-0.5 pl-2.5 text-2xs"
           >
             {chip.label}
-            <button
+            <Button
               type="button"
+              variant="quiet"
+              size="icon-2xs"
               aria-label={t('meta.removeFilter')}
               onClick={chip.remove}
-              className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+              className="rounded-full hover:bg-accent focus-visible:ring-ring/50"
             >
               <X className="size-3" />
-            </button>
+            </Button>
           </span>
         ))}
         {chips.length > 0 && (
@@ -401,25 +415,27 @@ function UsagePanel({
       }
     >
       <div className="sticky top-0 z-10 bg-surface/95 px-2 pt-1 pb-1.5 backdrop-blur-sm">
-        <Search className="pointer-events-none absolute top-[calc(50%-1px)] left-4 size-3.5 -translate-y-1/2 text-muted-foreground" />
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={
-            view === 'skills' ? t('meta.searchSkills') : view === 'items' ? t('meta.searchItems') : t('meta.searchMerc')
-          }
-          aria-label={
-            view === 'skills'
-              ? t('meta.searchSkillsLabel')
-              : view === 'items'
-                ? t('meta.searchItemsLabel')
-                : t('meta.searchMercLabel')
-          }
-          spellCheck={false}
-          autoComplete="off"
-          className="h-7 w-full rounded-md border border-input bg-background/60 pr-2 pl-7 text-xs text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
-        />
+        <div className="relative">
+          <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={
+              view === 'skills' ? t('meta.searchSkills') : view === 'items' ? t('meta.searchItems') : t('meta.searchMerc')
+            }
+            aria-label={
+              view === 'skills'
+                ? t('meta.searchSkillsLabel')
+                : view === 'items'
+                  ? t('meta.searchItemsLabel')
+                  : t('meta.searchMercLabel')
+            }
+            spellCheck={false}
+            autoComplete="off"
+            className="h-7 bg-background/60 pr-2 pl-7 text-xs text-foreground shadow-none md:text-xs dark:bg-background/60"
+          />
+        </div>
       </div>
       {usage.error ? (
         <QueryError query={usage}
@@ -529,12 +545,14 @@ function UsageRow({
         active && 'bg-primary/10 before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-primary',
       )}
     >
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="inline"
         aria-pressed={active}
         title={active ? t('meta.removeFilterName', { name }) : t('meta.filterBy', { name })}
         onClick={onClick}
-        className="flex min-w-0 flex-1 items-center gap-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        className="flex min-w-0 flex-1 justify-start gap-2 rounded-none text-left font-normal hover:bg-transparent hover:text-current focus-visible:ring-ring/50"
       >
         {icon}
         <span className="min-w-0 flex-1">
@@ -553,7 +571,7 @@ function UsageRow({
           <ShareBar pct={usage.pct}
             className="mt-1" />
         </span>
-      </button>
+      </Button>
       {trailing}
     </div>
   );
@@ -575,7 +593,7 @@ function ItemUsageRow({
       icon={<ItemIcon item={item}
         size={24} />}
       name={item.name}
-      nameClassName={qualityText(item.quality)}
+      nameClassName={itemQualityClass(item.quality ?? 'Rune')}
       usage={item}
       active={active}
       onClick={onClick}
@@ -636,7 +654,7 @@ function CoreKit({
               icon={<ItemIcon item={item}
                 size={24} />}
               name={item.name}
-              nameClassName={qualityText(item.quality)}
+              nameClassName={itemQualityClass(item.quality ?? 'Rune')}
               usage={item}
               active={filters.items.includes(item.key)}
               onClick={() => onToggleItem(item.key)}
@@ -831,21 +849,23 @@ function SortHeader({
   const active = sort === by;
   const Arrow = dir === 'desc' ? ArrowDown : ArrowUp;
   return (
-    <button
+    <Button
       type="button"
+      variant="quiet"
+      size="inline"
       role="columnheader"
       aria-sort={active ? (dir === 'desc' ? 'descending' : 'ascending') : 'none'}
       title={active ? (dir === 'desc' ? t('meta.sortHighest') : t('meta.sortLowest')) : t('meta.sortBy', { label })}
       onClick={() => onSort(by, active && dir === 'desc' ? 'asc' : 'desc')}
       className={cn(
-        'flex shrink-0 items-center gap-0.5 rounded-sm uppercase outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50',
+        'flex shrink-0 justify-start gap-0.5 rounded-sm font-normal uppercase focus-visible:ring-ring/50',
         active && 'text-foreground',
         className,
       )}
     >
       {label}
       {active && <Arrow className="size-3" />}
-    </button>
+    </Button>
   );
 }
 
@@ -855,17 +875,12 @@ function CharacterRow({ character: c }: { character: CharacterListEntry }) {
   const meta = classMeta(c.className);
   return (
     <li>
-      <div
-        role="button"
-        tabIndex={0}
+      <Button
+        type="button"
+        variant="ghost"
+        size="inline"
         onClick={() => openCharacter(c.name, mode)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            openCharacter(c.name, mode);
-          }
-        }}
-        className="flex cursor-pointer items-center gap-2.5 px-3 py-1.5 outline-none transition-colors duration-(--dur-fast) hover:bg-accent/40 focus-visible:bg-accent/50"
+        className="flex w-full cursor-pointer justify-start gap-2.5 rounded-none px-3 py-1.5 text-left font-normal hover:bg-accent/40 hover:text-current focus-visible:bg-accent/50 focus-visible:ring-0"
       >
         <ClassEmblem className={c.className}
           size={30} />
@@ -905,7 +920,7 @@ function CharacterRow({ character: c }: { character: CharacterListEntry }) {
             unpriced />
         </span>
         <span className="w-16 shrink-0 text-right text-2xs text-muted-foreground">{timeAgo(c.lastUpdated)}</span>
-      </div>
+      </Button>
     </li>
   );
 }

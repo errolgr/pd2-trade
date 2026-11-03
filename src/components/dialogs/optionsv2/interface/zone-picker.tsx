@@ -1,6 +1,6 @@
 import React from 'react';
 import { Check, ChevronDown, Search } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger, Input, cn } from '@pd2-trader/ui';
+import { Button, Popover, PopoverContent, PopoverTrigger, Input, cn } from '@pd2-trader/ui';
 import { CORRUPTED_ZONES } from '@/lib/corrupted-zones';
 import { useTranslation } from '@/i18n';
 
@@ -22,10 +22,11 @@ export function ZonePicker({ value, onChange }: ZonePickerProps) {
   return (
     <Popover onOpenChange={(open) => !open && setQuery('')}>
       <PopoverTrigger asChild>
-        <button
+        <Button
           type="button"
+          variant="field"
           aria-label={t('zonePicker.triggerLabel')}
-          className="flex h-9 w-control items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring hover:border-ring/60"
+          className="w-control px-3 has-[>svg]:px-3"
         >
           <span className={cn('truncate', value.length === 0 && 'text-muted-foreground')}>
             {value.length === 0
@@ -35,7 +36,7 @@ export function ZonePicker({ value, onChange }: ZonePickerProps) {
                 : t('zonePicker.count', { count: value.length })}
           </span>
           <ChevronDown className="size-4 shrink-0 opacity-50" />
-        </button>
+        </Button>
       </PopoverTrigger>
       <PopoverContent align="end"
         className="w-95 p-0">
@@ -62,13 +63,15 @@ export function ZonePicker({ value, onChange }: ZonePickerProps) {
           {shown.map((zone) => {
             const on = value.includes(zone);
             return (
-              <button
+              <Button
                 key={zone}
                 type="button"
+                variant="ghost"
+                size="row"
                 role="option"
                 aria-selected={on}
                 onClick={() => toggle(zone)}
-                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent"
+                className="rounded-sm focus-visible:bg-accent focus-visible:ring-0 aria-selected:bg-transparent aria-selected:text-foreground aria-selected:hover:bg-accent"
               >
                 <span
                   className={cn(
@@ -79,18 +82,20 @@ export function ZonePicker({ value, onChange }: ZonePickerProps) {
                   {on && <Check className="size-3" />}
                 </span>
                 <span className={cn('truncate', on && 'text-q-corrupted-zone')}>{zone}</span>
-              </button>
+              </Button>
             );
           })}
         </div>
         {value.length > 0 && (
           <div className="flex items-center justify-between border-t border-border px-3 py-2 text-xs text-muted-foreground">
             <span>{t('zonePicker.followedCount', { count: value.length })}</span>
-            <button type="button"
-              className="hover:text-foreground"
+            <Button type="button"
+              variant="quiet"
+              size="inline"
+              className="text-xs font-normal"
               onClick={() => onChange([])}>
               {t('common:actions.clear')}
-            </button>
+            </Button>
           </div>
         )}
       </PopoverContent>

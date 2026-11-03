@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Badge, Tooltip, TooltipContent, TooltipTrigger, cn } from '@pd2-trader/ui';
+import { Badge, ItemName, Tooltip, TooltipContent, TooltipTrigger, cn } from '@pd2-trader/ui';
 import { BACKEND_URL } from '@/lib/pkce';
 import type { ValuationLine } from '@/lib/networth-api';
-import { CATEGORY_COLORS, CATEGORY_NAME_CLASS } from '../lib/networth-format';
+import { CATEGORY_COLORS, CATEGORY_QUALITY } from '../lib/networth-format';
 import { useTranslation } from '@/i18n';
 
 export function HoldingName({ line, showTab = false }: { line: ValuationLine; showTab?: boolean }) {
@@ -29,9 +29,11 @@ export function HoldingName({ line, showTab = false }: { line: ValuationLine; sh
         )}
       </span>
       <div className="min-w-0 leading-tight">
-        <p className={cn('truncate text-sm font-medium', CATEGORY_NAME_CLASS[line.category] ?? 'text-foreground')}>
-          {line.name}
-        </p>
+        <ItemName
+          name={line.name}
+          quality={CATEGORY_QUALITY[line.category]}
+          className={cn('block truncate text-sm font-medium', !CATEGORY_QUALITY[line.category] && 'text-foreground')}
+        />
         {showTab && line.tab && <p className="truncate text-2xs text-muted-foreground">{line.tab}</p>}
       </div>
     </div>

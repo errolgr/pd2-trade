@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { motion } from 'framer-motion';
-import { DUR, EASE_OUT } from '@/lib/motion';
 import { Bell, Clock, ExternalLink, Gamepad2, Heart, MessageSquare, Shield, Sigma, Swords, X } from 'lucide-react';
-import { cn, Button, ScrollArea, Tooltip, TooltipContent, TooltipTrigger } from '@pd2-trader/ui';
+import { cn, Button, ScrollArea, Tooltip, TooltipContent, TooltipTrigger, DUR, EASE_OUT } from '@pd2-trader/ui';
 import { useSimAccess } from '@/hooks/useSimAccess';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
 import { ListingThumb } from '@/pages/chat/components/ListingCard';
@@ -223,12 +222,12 @@ const shortName = (name: string) => name.replace(/ Rune$/, '');
 /** Most socket icons a breakdown stacks (the tooltip lists every source). */
 const MAX_STACK_ICONS = 6;
 
-/** Rainbow Facet names in their element's colour (the game's elemental hues; themes have no element tokens). */
+/** Rainbow Facet names in their element's colour (the game's elemental hues, as `dmg-*` domain tokens). */
 const ELEMENT_TEXT: Record<JewelElement, string> = {
-  fire: 'text-[#ff7043]',
-  cold: 'text-[#6aa8ff]',
-  lightning: 'text-[#f2cf4a]',
-  poison: 'text-[#62c75f]',
+  fire: 'text-dmg-fire',
+  cold: 'text-dmg-cold',
+  lightning: 'text-dmg-lightning',
+  poison: 'text-dmg-poison',
 };
 const groupNameColor = (group: SocketGroup) =>
   group.element ? ELEMENT_TEXT[group.element] : itemNameColor(group.items[0]);
@@ -239,7 +238,7 @@ function SocketIcon({ listing, className }: { listing: MarketListingEntry; class
     <ListingThumb
       listing={listing}
       className={cn('size-3.5 rounded-full border border-border bg-muted/80 shadow-none ring-1 ring-card', className)}
-      artClassName="max-h-[85%] max-w-[85%]"
+      artClassName="max-h-17/20 max-w-17/20"
     />
   );
 }
@@ -336,18 +335,20 @@ const ResultCard = React.memo(function ResultCard({
             {pin.searchName ? t('cards.fromAlertNamed', { name: pin.searchName }) : t('cards.fromAlert')}
             <span className="text-muted-foreground">{t('cards.notInResults')}</span>
           </span>
-          <button
+          <Button
             type="button"
+            variant="quiet"
+            size="icon-2xs"
             aria-label={t('cards.dismissAlert')}
             title={t('cards.dismiss')}
             onClick={(e) => {
               e.stopPropagation();
               pin.onDismiss();
             }}
-            className="inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-primary/15 hover:text-foreground"
+            className="shrink-0 rounded-sm hover:bg-primary/15"
           >
             <X className="size-3" />
-          </button>
+          </Button>
         </div>
       )}
       {/* 1. Header */}
@@ -707,7 +708,7 @@ function ModLine({
       )}
     >
       {matched && <span aria-hidden
-        className="absolute inset-y-0.5 left-0 w-[3px] rounded-full bg-primary" />}
+        className="absolute inset-y-0.5 left-0 w-0.75 rounded-full bg-primary" />}
       <span
         className={cn(
           'relative min-w-0 flex-1',
@@ -819,7 +820,7 @@ function SocketSection({
               </div>
               {group.subtitle && <div className="pl-6.5 text-2xs text-muted-foreground">{group.subtitle}</div>}
               {group.lines.length > 0 && (
-                <div className="mt-0.5 ml-[9px] space-y-px border-l border-border/60 pl-2">
+                <div className="mt-0.5 ml-2.25 space-y-px border-l border-border/60 pl-2">
                   {group.lines.map((l, i) => {
                     const text = (
                       <>

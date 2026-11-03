@@ -80,7 +80,7 @@ describe('RunePricePopover', () => {
   it('lists high runes with market prices and listing counts, hiding low runes behind Show More', () => {
     open();
     const ber = runeButton('Ber Rune')!;
-    expect(ber.textContent).toContain('1.5 HR');
+    expect(ber.textContent).toContain('1.50 HR');
     expect(ber.textContent).toContain('(40 listings)');
     expect(runeButton('Ist Rune')).toBeNull();
     expect(runeButton('Mal Rune')).toBeNull();
@@ -135,17 +135,17 @@ describe('RunePricePopover', () => {
     ];
     const { dialog } = open({ selectedRuneBreakdown: 'Ber Rune', selectedRuneCombinations: combos });
 
-    expect(within(dialog).getByText('target 1.5 HR')).not.toBeNull();
+    expect(within(dialog).getByText('target 1.50 HR')).not.toBeNull();
 
     const exact = within(dialog).getByText('1x Jah');
-    expect(exact.parentElement!.textContent).toContain('= 1.2 HR');
+    expect(exact.parentElement!.textContent).toContain('= 1.20 HR');
     // tiny differences (<= 0.1) are not worth a Diff line
     expect(exact.closest('div.rounded-md')!.textContent).not.toContain('Diff');
-    expect(within(dialog).getByText('= 1.2 HR').className).toContain('text-success');
+    expect(within(dialog).getByText('= 1.20 HR').className).toContain('text-success');
 
     const near = within(dialog).getByText('4x Vex + 2x Ist');
-    expect(near.closest('div.rounded-md')!.textContent).toContain('Diff: 0.4 HR');
-    expect(within(dialog).getByText('= 1.1 HR').className).toContain('text-warning');
+    expect(near.closest('div.rounded-md')!.textContent).toContain('Diff: 0.40 HR');
+    expect(within(dialog).getByText('= 1.10 HR').className).toContain('text-warning');
 
     expect(within(dialog).getByText('= 0.09 HR').className).toContain('text-muted-foreground');
   });
@@ -165,12 +165,12 @@ describe('RunePricePopover', () => {
       selectedRuneCombinations: combos,
     });
 
-    expect(within(dialog).getByText('target 1.5 HR')).not.toBeNull();
-    expect(within(dialog).getByText('= 0.3 HR')).not.toBeNull();
-    expect(within(dialog).getByText('Diff: 1.2 HR')).not.toBeNull();
+    expect(within(dialog).getByText('target 1.50 HR')).not.toBeNull();
+    expect(within(dialog).getByText('= 0.30 HR')).not.toBeNull();
+    expect(within(dialog).getByText('Diff: 1.20 HR')).not.toBeNull();
     fireEvent.click(within(dialog).getByRole('button', { name: /show more|more/i }));
     expect(dialog.textContent).toContain('0.73 HR');
-    expect(dialog.textContent).toContain('0.033 HR');
+    expect(dialog.textContent).toContain('0.03 HR');
     expect(dialog.textContent).not.toMatch(/\d\.\d{4,}/);
   });
 
@@ -206,7 +206,7 @@ describe('RunePricePopover', () => {
     render(<Parent />);
     fireEvent.click(screen.getByRole('button', { name: 'Rune prices' }));
     fireEvent.click(runeButton('Jah Rune')!);
-    expect(await screen.findByText('target 1.2 HR')).not.toBeNull();
+    expect(await screen.findByText('target 1.20 HR')).not.toBeNull();
     fireEvent.click(runeButton('Jah Rune')!);
     await waitFor(() => expect(screen.queryByText(/target/)).toBeNull());
   });

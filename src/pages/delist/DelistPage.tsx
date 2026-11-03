@@ -2,15 +2,21 @@ import React, { useCallback, useState } from 'react';
 import { MotionConfig, motion } from 'framer-motion';
 import { Clock, Loader2, Trash2 } from 'lucide-react';
 import moment from 'moment';
-import { ScrollArea, cn } from '@pd2-trader/ui';
-import { qualityColor } from '@/pages/price-check/lib/qualityColor';
+import {
+  Badge,
+  ItemName,
+  ScrollArea,
+  cn,
+  PanelChrome,
+  PanelSurface,
+  itemCardVariants,
+  listItem,
+  listStagger,
+} from '@pd2-trader/ui';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import ItemStatsDisplay from '@/pages/quick-list/components/ItemStatsDisplay';
-import { countChip, itemCard } from '@/pages/quick-list/components/styles';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
-import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
-import { listItem, listStagger } from '@/lib/motion';
 import { showToast, usePanel } from '@/overlay';
 import { useTranslation } from '@/i18n';
 
@@ -55,19 +61,19 @@ export const DelistPage: React.FC = () => {
 
   return (
     <MotionConfig reducedMotion="user">
-      <WindowPanel animate
+      <PanelSurface animate
         className="h-full w-full">
-        <WindowChrome
+        <PanelChrome
           title={t('delist.pageTitle')}
           icon={<Trash2 />}
           onClose={close}
           showGrip={false}
           actions={
             listings.length > 0 ? (
-              <span className={countChip}
+              <Badge variant="count"
                 aria-label={t('delist.listingsCount', { count: listings.length })}>
                 {listings.length}
-              </span>
+              </Badge>
             ) : undefined
           }
         />
@@ -89,14 +95,12 @@ export const DelistPage: React.FC = () => {
                   role="button"
                   tabIndex={deletingId ? -1 : 0}
                   aria-label={t('delist.removeItem', { name: listing.item.name })}
-                  className={itemCard({
-                    tone: 'danger',
-                    className: cn(
-                      deletingId && 'pointer-events-none',
-                      deletingId && !isDeleting && 'border-border/50 bg-card/30',
-                      isDeleting && 'border-destructive/60 bg-destructive/10',
-                    ),
-                  })}
+                  className={cn(
+                    itemCardVariants({ tone: 'danger' }),
+                    deletingId && 'pointer-events-none',
+                    deletingId && !isDeleting && 'border-border/50 bg-card/30',
+                    isDeleting && 'border-destructive/60 bg-destructive/10',
+                  )}
                   onClick={() => handleDelete(listing)}
                   onKeyDown={(e) => {
                     if (e.target !== e.currentTarget) return;
@@ -112,12 +116,12 @@ export const DelistPage: React.FC = () => {
                   >
                     <div className="flex justify-between items-start gap-2">
                       <div className="flex-1 min-w-0">
-                        <div
-                          className={cn('truncate', qualityColor(listing.item.quality.name))}
+                        <ItemName
+                          name={listing.item.name}
+                          quality={listing.item.quality.name}
+                          className="block truncate"
                           style={{ fontFamily: 'DiabloFont' }}
-                        >
-                          {listing.item.name}
-                        </div>
+                        />
                         <div className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
                           {listing.hr_price ? (
                             <span className="shrink-0 rounded-full bg-primary/12 px-1.5 py-px font-semibold tabular-nums text-primary">
@@ -173,7 +177,7 @@ export const DelistPage: React.FC = () => {
             })}
           </motion.div>
         </ScrollArea>
-      </WindowPanel>
+      </PanelSurface>
     </MotionConfig>
   );
 };

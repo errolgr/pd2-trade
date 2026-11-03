@@ -1,3 +1,4 @@
+import type { ItemQuality } from '@pd2-trader/ui';
 import type { NetWorthCategory } from '@/lib/networth-api';
 import { currentLocale, t } from '@/i18n';
 
@@ -35,11 +36,11 @@ export const CATEGORY_COLORS: Record<NetWorthCategory, string> = {
   other: 'var(--muted-foreground)',
 };
 
-/** D2 item-quality text colour for a holding name (uniques gold, sets green, runes orange). */
-export const CATEGORY_NAME_CLASS: Partial<Record<NetWorthCategory, string>> = {
-  uniques: 'text-q-unique',
-  sets: 'text-q-set',
-  runes: 'text-q-rune',
+/** D2 item quality of a holding's category, for its name colour (uniques gold, sets green, runes orange). */
+export const CATEGORY_QUALITY: Partial<Record<NetWorthCategory, ItemQuality>> = {
+  uniques: 'Unique',
+  sets: 'Set',
+  runes: 'Rune',
 };
 
 /** 24-hour clock time in the UI locale, e.g. "14:05". */

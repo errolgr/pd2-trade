@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import moment from 'moment';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Heart, Loader2, Sigma } from 'lucide-react';
-import { cn, ScrollArea } from '@pd2-trader/ui';
+import { cn, Button, formatHrAmount, ItemName, ScrollArea } from '@pd2-trader/ui';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
 import { ListingThumb } from '@/pages/chat/components/ListingCard';
 import { DealBadge } from '@/pages/market/enrich/DealBadge';
@@ -11,7 +11,7 @@ import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketLis
 import { listingAge } from '../lib/listing';
 import { statWithValue } from './stat-text';
 import type { ScoredListing } from '../lib/types';
-import { displayMods, itemNameColor } from './ItemTooltip';
+import { displayMods } from './ItemTooltip';
 import { EnterOnce, type EnterTracker } from './EnterOnce';
 import { SellerName } from './SellerName';
 import { OfferBadge } from './OfferBadge';
@@ -24,10 +24,9 @@ const ROW_HEIGHT = 58;
 const LOAD_MORE_AHEAD = 6;
 const SUMMARY_MODS = 4;
 
-/** "2.5 HR" / "0.75 HR"; null when the listing has no HR price (note only). */
+/** "2.50 HR" / "0.75 HR" (DS HR precision); null when the listing has no HR price (note only). */
 export function formatHrPrice(hr: number): string | null {
-  if (!(hr > 0)) return null;
-  return `${hr >= 10 ? Math.round(hr * 10) / 10 : Math.round(hr * 100) / 100} HR`;
+  return hr > 0 ? `${formatHrAmount(hr)} HR` : null;
 }
 
 /** A failed next-page load (see useMarketSearch). */
@@ -65,17 +64,19 @@ export function LoadMoreFooter({ loading, error, retryAt, onRetry }: LoadMoreSta
       className="flex items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground">
       <span title={error}>{t('results.loadMoreFailed')}</span>
       <span aria-hidden>·</span>
-      <button
+      <Button
         type="button"
+        variant="link"
+        size="inline"
         disabled={waiting}
         title={
           waiting && retryAt !== null ? t('results.rateLimitedUntil', { time: moment(retryAt).format('LT') }) : error
         }
         onClick={onRetry}
-        className="rounded-sm font-medium text-primary underline-offset-2 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring/60 disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline"
+        className="rounded-sm underline-offset-2 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline disabled:opacity-100"
       >
         {t('common:actions.retry')}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -256,7 +257,12 @@ const ResultRow = React.memo(function ResultRow({
 
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-baseline gap-1.5">
-          <span className={cn('truncate text-sm font-semibold', itemNameColor(item))}>{item.name}</span>
+          <ItemName
+            name={item.name}
+            quality={item.quality?.name}
+            runeword={item.is_runeword}
+            className="truncate text-sm font-semibold"
+          />
           {base && <span className="truncate text-2xs text-muted-foreground">{base}</span>}
           {item.is_ethereal && <span className="shrink-0 text-2xs text-info">eth</span>}
           {item.socket_count > 0 && (

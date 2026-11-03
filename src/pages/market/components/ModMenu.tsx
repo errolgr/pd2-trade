@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useMemo, useState } from 'react';
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, Filter, ListFilter, Sigma } from 'lucide-react';
 import {
+  Button,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -171,8 +172,10 @@ export function AddAllModsButton({
   const rows = modsAsFilters(item.modifiers ?? [], actions.fill);
   if (rows.length === 0) return null;
   return (
-    <button
+    <Button
       type="button"
+      variant="quiet"
+      size="inline"
       className={className}
       title={t('modMenu.addAllTitle', { count: rows.length })}
       aria-label={t('modMenu.addAllLabel')}
@@ -183,6 +186,6 @@ export function AddAllModsButton({
     >
       <ListFilter className="size-3" />
       {label}
-    </button>
+    </Button>
   );
 }

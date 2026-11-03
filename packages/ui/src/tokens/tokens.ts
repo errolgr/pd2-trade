@@ -72,6 +72,11 @@ export const DOMAIN_TOKENS = [
   'q-gold',
   'q-corrupted',
   'q-corrupted-zone',
+  // Elemental damage
+  'dmg-fire',
+  'dmg-cold',
+  'dmg-lightning',
+  'dmg-poison',
 ] as const;
 
 export const SHAPE_TOKENS = ['radius'] as const;
@@ -81,6 +86,7 @@ export const THEME_TOKENS = [...SEMANTIC_TOKENS, ...DOMAIN_TOKENS, ...SHAPE_TOKE
 export type ThemeToken = (typeof THEME_TOKENS)[number];
 export type ColorToken = Exclude<ThemeToken, (typeof SHAPE_TOKENS)[number]>;
 export type QualityToken = Extract<ThemeToken, `q-${string}`>;
+export type DamageToken = Extract<ThemeToken, `dmg-${string}`>;
 
 export interface Theme {
   id: string;

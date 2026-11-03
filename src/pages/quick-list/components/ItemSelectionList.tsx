@@ -1,15 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ChevronsDownUp, ChevronsUpDown, Loader2 } from 'lucide-react';
-import { ScrollArea, cn } from '@pd2-trader/ui';
+import { Badge, Button, ItemName, ScrollArea, cn, itemCardVariants, listItem, listStagger } from '@pd2-trader/ui';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import ItemStatsDisplay from './ItemStatsDisplay';
 import MarketListingBadge from './MarketListingBadge';
 import { useTranslation } from '@/i18n';
-import { listItem, listStagger } from '@/lib/motion';
-import { countChip, itemCard, sectionLabel } from './styles';
 
 interface ItemSelectionListProps {
   matchingItems: GameStashItem[];
@@ -47,11 +44,13 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
     <div className="mb-3 flex min-h-0 flex-1 flex-col">
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className={sectionLabel}>{t('selection.selectItem')}</span>
-          <span className={countChip}
+          <span className="text-2xs font-semibold uppercase tracking-caps text-muted-foreground">
+            {t('selection.selectItem')}
+          </span>
+          <Badge variant="count"
             aria-hidden>
             {matchingItems.length}
-          </span>
+          </Badge>
           <span className="sr-only">{t('selection.foundCount', { count: matchingItems.length })}</span>
           {isMarketListingsLoading && (
             <span className="flex items-center gap-1 text-2xs text-muted-foreground">
@@ -59,14 +58,16 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
             </span>
           )}
         </div>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="inline"
           onClick={anyExpanded ? onCollapseAll : onExpandAll}
-          className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium text-primary outline-none transition-colors duration-(--dur-fast) hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring/60"
+          className="rounded-md px-1.5 py-0.5 text-xs text-primary hover:bg-primary/10 hover:text-primary"
         >
           {anyExpanded ? <ChevronsDownUp className="size-3.5" /> : <ChevronsUpDown className="size-3.5" />}
           {anyExpanded ? t('selection.showLess') : t('selection.showAllStats')}
-        </button>
+        </Button>
       </div>
       <ScrollArea className="min-h-0 flex-1 pr-2 [&_[data-radix-scroll-area-viewport]>div]:!block">
         <motion.div
@@ -86,7 +87,7 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
                 role="button"
                 aria-pressed={isSelected}
                 tabIndex={0}
-                className={itemCard({ tone: isSelected ? 'selected' : 'interactive' })}
+                className={itemCardVariants({ tone: isSelected ? 'selected' : 'interactive' })}
                 onClick={() => onItemSelect(stashItem)}
                 onKeyDown={(e) => {
                   if (e.target !== e.currentTarget) return;
@@ -114,12 +115,12 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
                         )}
                       />
                     </span>
-                    <div
-                      className={cn('truncate', qualityColor(stashItem.quality.name))}
+                    <ItemName
+                      name={stashItem.name}
+                      quality={stashItem.quality.name}
+                      className="block truncate"
                       style={{ fontFamily: 'DiabloFont' }}
-                    >
-                      {stashItem.name}
-                    </div>
+                    />
                   </div>
                   <MarketListingBadge
                     key={`${stashItem.hash}-${currentListings.length}`}

@@ -8,7 +8,7 @@
  * tracking → `tracking-caps`, named widths → `w-control`, `max-w-viewport`….
  */
 
-/** Cubic-bezier control points; framer-motion takes these arrays directly (src/lib/motion.ts). */
+/** Cubic-bezier control points; framer-motion takes these arrays directly (lib/motion.ts). */
 export const EASING = {
   out: [0.22, 1, 0.36, 1],
   spring: [0.34, 1.56, 0.64, 1],

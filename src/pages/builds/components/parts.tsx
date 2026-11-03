@@ -1,13 +1,23 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, Filter, MoreHorizontal, RefreshCw, Store } from 'lucide-react';
-import { cn, Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@pd2-trader/ui';
-import { springSnappy } from '@/lib/motion';
+import {
+  cn,
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  ItemName,
+  itemQualityClass,
+  springSnappy,
+  StatLine,
+} from '@pd2-trader/ui';
 import type { EquippedItem, SocketedItem } from '@/lib/builds-api';
 import type { BuildsQuery } from '../lib/useBuildsQuery';
 import { useBuildsActions } from '../lib/context';
 import { type MarketItemRef, marketFiltersFor } from '../lib/market-link';
-import { classMeta, classPortraitUrl, fmtHr, initials, qualityBorder, qualityText, skillIconUrl } from '../lib/format';
+import { classMeta, classPortraitUrl, fmtHr, initials, qualityBorder, skillIconUrl } from '../lib/format';
 import { itemArtCandidates } from '../lib/item-art';
 import { Trans, useTranslation } from '@/i18n';
 
@@ -120,7 +130,7 @@ export function ItemIcon({
         />
       ) : (
         <span
-          className={cn('font-semibold', qualityText(item.quality, item.runeword))}
+          className={cn('font-semibold', itemQualityClass(item.quality ?? 'Rune', { runeword: item.runeword }))}
           style={{ fontSize: Math.min(15, Math.round(size * 0.36)) }}
         >
           {initials(item.name) || '?'}
@@ -182,7 +192,7 @@ type TooltipItem = Pick<
 /** In-game style item card: name in its quality colour, base, mods in magic blue, sockets, price. */
 export function ItemTooltipCard({ item }: { item: TooltipItem }) {
   const { t } = useTranslation('builds');
-  const nameClass = qualityText(item.quality, item.runeword);
+  const nameClass = itemQualityClass(item.quality ?? 'Rune', { runeword: item.runeword });
   const flagCorrupted = item.corrupted && !item.mods.some((m) => /^corrupted$/i.test(m));
   return (
     <div className="w-72 rounded-md border border-border bg-background/95 px-3 py-2.5 text-center text-xs leading-normal shadow-panel">
@@ -200,9 +210,8 @@ export function ItemTooltipCard({ item }: { item: TooltipItem }) {
       {item.mods.length > 0 && (
         <ul className="mt-1.5 space-y-px">
           {item.mods.map((mod, i) => (
-            <li key={i}
-              className={/^corrupted$/i.test(mod) ? 'text-q-corrupted' : 'text-q-magic'}>
-              {mod}
+            <li key={i}>
+              <StatLine corrupted={/^corrupted$/i.test(mod)}>{mod}</StatLine>
             </li>
           ))}
         </ul>
@@ -217,12 +226,12 @@ export function ItemTooltipCard({ item }: { item: TooltipItem }) {
       {item.socketed.length > 0 && (
         <div className="mt-1.5 flex flex-wrap justify-center gap-1">
           {item.socketed.map((s, i) => (
-            <span
+            <ItemName
               key={i}
-              className={cn('rounded-sm border border-border/70 px-1.5 py-px text-2xs', qualityText(s.quality))}
-            >
-              {s.name}
-            </span>
+              name={s.name}
+              quality={s.quality ?? 'Rune'}
+              className="rounded-sm border border-border/70 px-1.5 py-px text-2xs"
+            />
           ))}
         </div>
       )}
@@ -299,13 +308,15 @@ export function ItemActionsMenu({
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         {children ?? (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-xs"
             aria-label={t('itemActions.actionsFor', { name: item.name })}
-            className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+            className="text-muted-foreground focus-visible:ring-ring/50"
           >
             <MoreHorizontal className="size-3.5" />
-          </button>
+          </Button>
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start"
@@ -416,15 +427,17 @@ export function Segmented<T extends string>({
       className={cn('flex h-7 shrink-0 rounded-md border border-input bg-background/40 p-0.5', className)}
     >
       {options.map((o) => (
-        <button
+        <Button
           key={o.value}
           type="button"
+          variant="quiet"
+          size="inline"
           role="radio"
           aria-checked={value === o.value}
           title={o.title}
           onClick={() => onChange(o.value)}
           className={cn(
-            'relative inline-flex items-center justify-center rounded-sm px-2 text-xs text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50',
+            'relative rounded-sm px-2 text-xs font-normal focus-visible:ring-ring/50',
             value === o.value && 'text-accent-foreground',
           )}
         >
@@ -437,7 +450,7 @@ export function Segmented<T extends string>({
             />
           )}
           <span className="relative flex items-center gap-1">{o.label}</span>
-        </button>
+        </Button>
       ))}
     </div>
   );

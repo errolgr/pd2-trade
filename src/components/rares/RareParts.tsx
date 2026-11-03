@@ -4,11 +4,9 @@ import type {
   CheckPriority,
   RareAppraisal,
   RareHistory,
-  RareHistoryListing,
   VerdictRule,
 } from '@/lib/rare-appraisal-api';
 import { ChevronDown, TriangleAlert } from 'lucide-react';
-import { PopoverSectionTitle } from '@/components/custom/popover-parts';
 import {
   hardcoreNote,
   isCrafted,
@@ -25,8 +23,7 @@ import {
   verdictLabel,
 } from './rares-format';
 import { Trans, useTranslation } from '@/i18n';
-import type { TFunction } from 'i18next';
-import { Tooltip, TooltipContent, TooltipTrigger, cn } from '@pd2-trader/ui';
+import { Button, PriceTag, Tooltip, TooltipContent, TooltipTrigger, cn, PopoverSectionTitle } from '@pd2-trader/ui';
 
 /*
  * Building blocks shared by the price-check rare card and the Net Worth "Rares" tab.
@@ -99,7 +96,7 @@ export function CraftedBadges({ rare, className }: { rare: RareAppraisal; classN
       </span>
       {rare.confidence === 'low' && (
         <Hint text={t('crafted.lowConfidenceTitle')}>
-          <span className="inline-flex shrink-0 cursor-help items-center gap-1 rounded-full border border-amber-500/50 bg-amber-500/10 px-2 py-0.5 text-2xs font-semibold leading-none text-amber-500">
+          <span className="inline-flex shrink-0 cursor-help items-center gap-1 rounded-full border border-warning/50 bg-warning/10 px-2 py-0.5 text-2xs font-semibold leading-none text-warning">
             <TriangleAlert aria-hidden
               className="size-3" />
             {t('crafted.lowConfidence')}
@@ -153,7 +150,7 @@ export function RankBar({ rare, rule }: { rare: RareAppraisal; rule: VerdictRule
         style={{ left: pct(lo), width: pct(hi - lo), background: color, opacity: 0.3 }}
       />
       <span
-        className="absolute top-[11px] h-4 w-[3px] -translate-x-1/2 rounded-sm shadow-[0_0_6px_currentColor]"
+        className="absolute top-2.75 h-4 w-0.75 -translate-x-1/2 rounded-sm shadow-[0_0_6px_currentColor]"
         style={{ left: pct(rare.rank), background: color, color }}
       />
       {rare.rank > 0.1 && (
@@ -279,12 +276,17 @@ export function ItemStatsSection({
   const keyCount = rare.stats.filter((s) => s.stars).length;
   return (
     <section>
-      <button
+      <Button
         type="button"
+        variant="quiet"
+        size="inline"
         tabIndex={-1}
         aria-expanded={open}
         onClick={() => onOpenChange(!open)}
-        className={cn('block w-full cursor-pointer text-left outline-none', !open && '-mb-1.5')}
+        className={cn(
+          'block w-full cursor-pointer text-left text-inherit hover:text-inherit motion-safe:active:scale-100',
+          !open && '-mb-1.5',
+        )}
       >
         <PopoverSectionTitle
           aside={
@@ -296,7 +298,7 @@ export function ItemStatsSection({
         >
           {t('stats.title')}
         </PopoverSectionTitle>
-      </button>
+      </Button>
       {open && (
         <ul className="space-y-1">
           {rankedStats(rare).map((s, i) => {
@@ -378,12 +380,6 @@ export function HardcoreNote({
   return <p className={cn('text-2xs leading-snug text-muted-foreground', className)}>{note}.</p>;
 }
 
-/** Asking price of one listing: HR without trailing zeros ("3.5 HR", "2 HR", "0.15 HR"), else the seller's text. */
-function listingPrice(listing: RareHistoryListing, t: TFunction): string {
-  if (listing.hrPrice !== null) return `${Number(listing.hrPrice.toFixed(2))} HR`;
-  return listing.priceText?.trim() || t('history.noPrice');
-}
-
 /**
  * Market history of this exact item, as a popover section: title with "3× · 2 sellers · since Sep 27" and its
  * listings (newest first; date, "new owner" where the seller changed, price). Hidden for weak fingerprints and
@@ -417,14 +413,15 @@ export function RareHistorySection({ history }: { history: RareHistory | null })
                 </span>
               )}
             </span>
-            <span
-              className={cn(
-                'shrink-0 tabular-nums',
-                l.hrPrice !== null ? 'font-semibold text-foreground' : 'text-muted-foreground',
-              )}
-            >
-              {listingPrice(l, t)}
-            </span>
+            {l.hrPrice !== null ? (
+              <PriceTag amount={l.hrPrice}
+                unit="hr"
+                className="shrink-0 font-semibold text-foreground" />
+            ) : (
+              <span className="shrink-0 tabular-nums text-muted-foreground">
+                {l.priceText?.trim() || t('history.noPrice')}
+              </span>
+            )}
           </li>
         ))}
       </ul>

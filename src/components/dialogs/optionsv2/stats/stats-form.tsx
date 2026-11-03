@@ -14,9 +14,11 @@ import {
   SelectContent,
   SelectItem,
   Switch,
+  SettingsGroup,
+  SettingsRow,
+  SettingsSkeleton,
 } from '@pd2-trader/ui';
 import { useOptions } from '@/hooks/useOptions';
-import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import {
   CORRUPTED_FILTER_OPTIONS,
   MARGIN_UNIT_OPTIONS,

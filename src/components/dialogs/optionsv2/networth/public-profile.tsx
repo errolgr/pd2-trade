@@ -12,12 +12,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SettingsGroup,
+  SettingsRow,
 } from '@pd2-trader/ui';
 import { useOptions } from '@/hooks/useOptions';
 import { getProfileSettings, NetWorthApiError, ProfileSettings, updateProfileSettings } from '@/lib/networth-api';
 import { BACKEND_URL } from '@/lib/pkce';
 import { openUrl } from '@/lib/browser-opener';
-import { SettingsGroup, SettingsRow } from '../settings-ui';
 import { useTranslation } from '@/i18n';
 
 type LoadState =

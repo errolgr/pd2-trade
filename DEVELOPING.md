@@ -65,11 +65,11 @@ Before you begin, ensure you have the following installed:
 
 ```
 pd2-trade/
+├── packages/ui/            # @pd2-trader/ui design system: tokens, components, Ladle catalog (DESIGN_RULES.md)
 ├── src/                    # Frontend source code
-│   ├── components/         # Reusable UI components
-│   │   ├── ui/            # Base UI components (shadcn/ui style)
-│   │   ├── custom/        # Custom components
-│   │   └── dialogs/       # Dialog components
+│   ├── components/         # App-specific composites (built from @pd2-trader/ui)
+│   │   ├── custom/        # Chat button, sim picker, chat template form
+│   │   └── dialogs/       # Settings dialog sections
 │   ├── overlay/           # Single overlay window: panels, region click-through, keyboard, toasts
 │   ├── pages/             # Panel contents
 │   │   ├── landing/       # AppController (hotkeys, clipboard, chat watcher; renders nothing)
@@ -99,6 +99,17 @@ npm run tauri dev
 
 # Build for production
 npm run tauri build
+```
+
+### Design system (`@pd2-trader/ui`)
+
+UI comes from `packages/ui` only; read `packages/ui/DESIGN_RULES.md` before building a surface (lint `pd2-ds/*` errors on raw colors, arbitrary values, palette classes, direct Radix/cmdk/sonner imports, styled raw controls and local primitives).
+
+```bash
+# Component catalog (Ladle): every component, theme switcher over all 21 themes, window-opacity slider
+npm run catalog
+# Static catalog build (packages/ui/build)
+npm run catalog:build
 ```
 
 ### Pointing at a local backend

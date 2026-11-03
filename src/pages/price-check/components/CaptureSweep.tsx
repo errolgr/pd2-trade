@@ -1,12 +1,14 @@
 import type React from 'react';
 import { motion } from 'framer-motion';
-import { useReducedMotionSafe } from '@/lib/motion';
+import { useReducedMotionSafe } from '@pd2-trader/ui';
 
 /** Ring-only mask: the gradient shows in the 2px padding band, not over the content. */
 const RING_MASK: React.CSSProperties = {
   padding: 2,
+  // ds-allow: mask layer, #000 = fully opaque alpha (no colour is painted)
   WebkitMask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
   WebkitMaskComposite: 'xor',
+  // ds-allow: mask layer, #000 = fully opaque alpha (no colour is painted)
   mask: 'linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0)',
 };
 
@@ -23,7 +25,10 @@ export function CaptureSweep() {
       <motion.div
         aria-hidden
         className="pointer-events-none absolute inset-0 z-50 rounded-[inherit]"
-        style={{ boxShadow: 'inset 0 0 28px -10px var(--glow), inset 0 0 0 1px color-mix(in oklab, var(--glow) 45%, transparent)' }}
+        style={{
+          boxShadow:
+            'inset 0 0 28px -10px var(--glow), inset 0 0 0 1px color-mix(in oklab, var(--glow) 45%, transparent)',
+        }}
         initial={{ opacity: 0 }}
         animate={{ opacity: [0, 1, 0] }}
         transition={{ duration: 0.9, times: [0, 0.25, 1], ease: 'easeOut' }}
@@ -38,7 +43,7 @@ export function CaptureSweep() {
         transition={{ duration: 0.9, times: [0, 0.08, 0.75, 1], ease: 'easeOut' }}
       >
         <motion.div
-          className="absolute top-1/2 left-1/2 aspect-square w-[300%]"
+          className="absolute top-1/2 left-1/2 aspect-square w-3/1"
           style={{
             x: '-50%',
             y: '-50%',

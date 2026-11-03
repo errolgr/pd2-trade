@@ -1,3 +1,4 @@
+import { formatHrAmount } from '@pd2-trader/ui';
 import { t, currentLocale } from '@/i18n';
 
 /** Class metadata, asset URLs and number/time formatting for the builds panel (ported from pd2trader.com /builds). */
@@ -58,13 +59,9 @@ export function initials(name: string): string {
     .join('');
 }
 
-/** HR with precision that suits the size: 0.04, 1.30, 27.5, 1.2k. */
+/** HR in the DS precision (formatHrAmount: 0.04, 1.30, 27.5, 1.2k); '—' when unknown. */
 export function fmtHr(v: number | null | undefined): string {
-  if (v === null || v === undefined || Number.isNaN(v)) return '—';
-  if (v >= 1000) return `${(v / 1000).toFixed(1)}k`;
-  if (v >= 100) return v.toFixed(0);
-  if (v >= 10) return v.toFixed(1);
-  return v.toFixed(2);
+  return v === null || v === undefined || Number.isNaN(v) ? '—' : formatHrAmount(v);
 }
 
 export function fmtPct(v: number | null | undefined): string {
@@ -100,29 +97,7 @@ export function skillLabel(value: string): string {
   return m ? `${m[1]} ${m[2]}+` : value;
 }
 
-/** Text colour class for a PD2 quality name (runewords and runes in the rune colour). */
-export function qualityText(quality: string | null | undefined, runeword = false): string {
-  if (runeword || quality === 'Runeword') return 'text-q-rune';
-  switch (quality) {
-    case 'Unique':
-      return 'text-q-unique';
-    case 'Set':
-      return 'text-q-set';
-    case 'Rare':
-      return 'text-q-rare';
-    case 'Crafted':
-      return 'text-q-crafted';
-    case 'Magic':
-      return 'text-q-magic';
-    case null:
-    case undefined:
-      return 'text-q-rune';
-    default:
-      return 'text-q-normal';
-  }
-}
-
-/** Border colour class matching qualityText. */
+/** Border colour class matching the item's quality colour (itemQualityClass). */
 export function qualityBorder(quality: string | null | undefined, runeword = false): string {
   if (runeword || quality === 'Runeword') return 'border-q-rune/50';
   switch (quality) {

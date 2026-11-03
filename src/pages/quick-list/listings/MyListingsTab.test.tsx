@@ -185,7 +185,7 @@ describe('MyListingsTab', () => {
 
   it('stores the view toggle', async () => {
     await renderTab();
-    await click(screen.getByRole('button', { name: 'Compact rows' }));
+    await click(screen.getByRole('radio', { name: 'Compact rows' }));
     expect(updateSettings).toHaveBeenCalledWith({ myListingsView: 'rows' });
   });
 

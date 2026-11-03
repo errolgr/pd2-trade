@@ -1,7 +1,7 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
+import { PriceTag } from '@pd2-trader/ui';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { fmtBandHr } from '@/components/rares/rares-format';
 import { PriceSparkline } from '@/pages/price-check/components/PriceSparkline';
 import { shortAgo } from '@/pages/chat/hooks/useTraderProfile';
 import { usePriceHistory } from './usePriceHistory';
@@ -64,7 +64,8 @@ export function PriceHistoryMini({ listing }: { listing: MarketListingEntry }) {
               {shortAgo(Date.parse(l.listedAt), now)}
             </span>
             <span className="min-w-0 truncate tabular-nums">
-              {l.hrPrice !== null && l.hrPrice > 0 ? `${fmtBandHr(l.hrPrice)} HR` : (l.priceText ?? '—')}
+              {l.hrPrice !== null && l.hrPrice > 0 ? <PriceTag amount={l.hrPrice}
+                unit="hr" /> : (l.priceText ?? '—')}
             </span>
             {l.sellerChanged && <span className="shrink-0 text-2xs text-info">{t('history.newSeller')}</span>}
           </li>

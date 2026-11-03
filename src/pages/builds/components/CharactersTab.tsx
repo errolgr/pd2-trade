@@ -1,7 +1,6 @@
 import React from 'react';
 import { ChevronRight, Clock, LogIn, Skull, Star, StarOff, Trash2, UserRound, X } from 'lucide-react';
-import { cn, Badge, Button, Skeleton } from '@pd2-trader/ui';
-import { EmptyState } from '@/pages/currency/components/StatePanel';
+import { cn, Badge, Button, Skeleton, EmptyState } from '@pd2-trader/ui';
 import { useOptions, type BuildCharacterRef } from '@/hooks/useOptions';
 import { useSignIn } from '@/hooks/useSignIn';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
@@ -313,10 +312,12 @@ function TrackedSummary({ name, mode }: { name: string; mode: BuildsMode }) {
   const detail = query.data && !query.stale ? query.data : null;
   if (!detail) return <Skeleton className="h-6 w-full" />;
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="inline"
       onClick={() => openCharacter(detail.name, detail.mode)}
-      className="group flex w-full items-center gap-1.5 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+      className="group flex w-full justify-start gap-1.5 rounded-md text-left font-normal hover:bg-transparent hover:text-current focus-visible:ring-ring/50"
     >
       {signatureSkills(detail.skills, 3).map((s) => (
         <SkillIcon key={s.name}
@@ -328,7 +329,7 @@ function TrackedSummary({ name, mode }: { name: string; mode: BuildsMode }) {
       </span>
       <PriceChip hr={detail.gearValueHr} />
       <ChevronRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-    </button>
+    </Button>
   );
 }
 
@@ -351,10 +352,12 @@ function TrackedCard({
   const detail = query.data && !query.stale ? query.data : null;
   return (
     <div className="group relative transition-colors hover:bg-accent/30">
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="inline"
         onClick={() => openCharacter(charRef.name, charRef.mode)}
-        className="flex w-full items-center gap-2.5 px-3 py-2 text-left outline-none focus-visible:bg-accent/40"
+        className="flex w-full justify-start gap-2.5 rounded-none px-3 py-2 text-left font-normal whitespace-normal hover:bg-transparent hover:text-current focus-visible:bg-accent/40 focus-visible:ring-0"
       >
         {detail ? <ClassEmblem className={detail.className}
           size={30} /> : <Skeleton className="h-7.5 w-8.5" />}
@@ -384,17 +387,19 @@ function TrackedCard({
         </div>
         {detail && <PriceChip hr={detail.gearValueHr}
           className={onRemove ? 'mr-6' : undefined} />}
-      </button>
+      </Button>
       {onRemove && (
-        <button
+        <Button
           type="button"
+          variant="quiet"
+          size="icon-xs"
           aria-label={t('characters.removeLabel', { action: removeLabel, name: charRef.name })}
           title={removeLabel}
           onClick={onRemove}
-          className="absolute top-1/2 right-2 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground opacity-60 outline-none hover:bg-accent hover:text-foreground hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/50"
+          className="absolute top-1/2 right-2 -translate-y-1/2 opacity-60 hover:bg-accent hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-ring/50"
         >
           {unfollow ? <StarOff className="size-3.5" /> : <X className="size-3.5" />}
-        </button>
+        </Button>
       )}
     </div>
   );

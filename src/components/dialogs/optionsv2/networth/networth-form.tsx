@@ -15,9 +15,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SettingsGroup,
+  SettingsHint,
+  SettingsRow,
+  SettingsSkeleton,
 } from '@pd2-trader/ui';
 import { ISettings, useOptions } from '@/hooks/useOptions';
-import { SettingsGroup, SettingsHint, SettingsLink, SettingsRow, SettingsSkeleton } from '../settings-ui';
+import { SettingsLink } from '../settings-ui';
 import { AUTO_SNAPSHOT_OPTIONS, optionLabel, TICKER_ANCHOR_OPTIONS } from '../setting-options';
 import { PublicProfileGroup } from './public-profile';
 import { Trans, useTranslation } from '@/i18n';

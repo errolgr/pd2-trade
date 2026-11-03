@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { cn } from '@pd2-trader/ui';
+import { SparkChart } from '@pd2-trader/ui';
 import { fetchPriceHistory, type PriceHistoryPoint } from '@/pages/currency/lib/price-api';
 import { useTranslation } from '@/i18n';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const WIDTH = 220;
-const HEIGHT = 32;
 
 export interface SparklineQuery {
   baseCode: string;
@@ -74,45 +72,14 @@ export function PriceSparkline({ query }: { query: SparklineQuery }) {
   }
 
   const prices = points.map((p) => p.avgPrice);
-  const min = Math.min(...prices);
-  const range = Math.max(...prices) - min || 1;
-  const path = prices
-    .map((price, i) => {
-      const x = (i / (prices.length - 1)) * WIDTH;
-      const y = HEIGHT - 2 - ((price - min) / range) * (HEIGHT - 4);
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(' ');
   const first = prices[0];
   const last = prices[prices.length - 1];
-  const changePercent = ((last - first) / first) * 100;
-  const up = changePercent >= 0;
 
   return (
-    <div className="flex items-center gap-3">
-      <svg
-        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-        preserveAspectRatio="none"
-        className={cn('h-8 min-w-0 flex-1', up ? 'text-success' : 'text-destructive')}
-        role="img"
-        aria-label={t('sparkline.aria', { count: points.length, first: first.toFixed(2), last: last.toFixed(2) })}
-      >
-        <polyline
-          points={path}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.5}
-          strokeLinejoin="round"
-          vectorEffect="non-scaling-stroke"
-        />
-      </svg>
-      <span
-        className={cn('shrink-0 text-xs font-semibold tabular-nums', up ? 'text-success' : 'text-destructive')}
-        title={`${first.toFixed(2)} → ${last.toFixed(2)} HR`}
-      >
-        {up ? '+' : ''}
-        {changePercent.toFixed(1)}%
-      </span>
-    </div>
+    <SparkChart
+      points={prices}
+      aria-label={t('sparkline.aria', { count: points.length, first: first.toFixed(2), last: last.toFixed(2) })}
+      changeTitle={`${first.toFixed(2)} → ${last.toFixed(2)} HR`}
+    />
   );
 }

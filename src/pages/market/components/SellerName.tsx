@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '@pd2-trader/ui';
+import { Button, cn } from '@pd2-trader/ui';
 import { useTranslation } from '@/i18n';
 
 /**
@@ -17,8 +17,10 @@ export function SellerName({
 }) {
   const { t } = useTranslation('market');
   return (
-    <button
+    <Button
       type="button"
+      variant="link"
+      size="inline"
       title={t('seller.openTrader')}
       onClick={(e) => {
         e.stopPropagation();
@@ -26,11 +28,11 @@ export function SellerName({
       }}
       onKeyDown={(e) => e.stopPropagation()}
       className={cn(
-        'min-w-0 cursor-pointer truncate rounded-sm text-left underline-offset-2 outline-none hover:underline focus-visible:underline focus-visible:ring-1 focus-visible:ring-ring',
+        'inline-block min-w-0 cursor-pointer truncate rounded-sm text-left font-normal text-inherit underline-offset-2 focus-visible:underline focus-visible:ring-1 focus-visible:ring-ring',
         className,
       )}
     >
       {children}
-    </button>
+    </Button>
   );
 }

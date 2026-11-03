@@ -6,7 +6,7 @@
  * overlay), and the generated `tailwind.css` ships the default theme's values in `:root` for first paint.
  */
 
-import { PALETTE, type QualityToken, type Theme, type ThemeMode, type ThemeToken } from './tokens';
+import { PALETTE, type DamageToken, type QualityToken, type Theme, type ThemeMode, type ThemeToken } from './tokens';
 
 /** Compact theme input for `defineTheme`; `quality`/`overrides` replace the derived defaults. */
 export interface ThemeSpec {
@@ -68,6 +68,21 @@ const LIGHT_QUALITY: Omit<Record<QualityToken, string>, 'q-normal'> = {
   'q-corrupted-zone': PALETTE.purple700,
 };
 
+/** Elemental damage colors (market result cards, stat lines). Light themes use darker inks for contrast. */
+const DARK_DAMAGE: Record<DamageToken, string> = {
+  'dmg-fire': 'oklch(0.712 0.185 37.768)',
+  'dmg-cold': 'oklch(0.727 0.143 257.059)',
+  'dmg-lightning': 'oklch(0.861 0.151 94.024)',
+  'dmg-poison': 'oklch(0.745 0.171 143.098)',
+};
+
+const LIGHT_DAMAGE: Record<DamageToken, string> = {
+  'dmg-fire': 'oklch(0.56 0.19 37.768)',
+  'dmg-cold': 'oklch(0.5 0.17 257.059)',
+  'dmg-lightning': 'oklch(0.56 0.12 94.024)',
+  'dmg-poison': 'oklch(0.52 0.15 143.098)',
+};
+
 /** Expands a compact spec into the full token set; shared defaults (status colors, quality, radius) fill the rest. */
 export function defineTheme(s: ThemeSpec): Theme {
   const dark = s.mode === 'dark';
@@ -116,6 +131,7 @@ export function defineTheme(s: ThemeSpec): Theme {
     glow: s.glow,
     scrim: dark ? 'oklch(0 0 0 / 0.6)' : 'oklch(0.206 0.018 264.052 / 0.35)',
     ...(dark ? DARK_QUALITY : { ...LIGHT_QUALITY, 'q-normal': s.foreground }),
+    ...(dark ? DARK_DAMAGE : LIGHT_DAMAGE),
     ...s.quality,
     radius: '0.5rem',
     ...s.overrides,

@@ -9,6 +9,7 @@
 export * from './lib/utils';
 export * from './lib/portal';
 export * from './lib/labels';
+export * from './lib/motion';
 
 // Primitives (shadcn/Radix, owned)
 export * from './components/alert';
@@ -20,6 +21,7 @@ export * from './components/button-group';
 export * from './components/card';
 export * from './components/chart';
 export * from './components/checkbox';
+export * from './components/command';
 export * from './components/dialog';
 export * from './components/dropdown-menu';
 export * from './components/form';
@@ -41,3 +43,21 @@ export * from './components/textarea';
 export * from './components/toggle';
 export * from './components/toggle-group';
 export * from './components/tooltip';
+
+// Overlay patterns
+export * from './components/panel-chrome';
+export * from './components/hover-popover';
+export * from './components/popover-parts';
+export * from './components/settings';
+export * from './components/state';
+
+// Domain components
+export * from './components/feedback';
+export * from './components/item-name';
+export * from './components/rune-icon';
+export * from './components/price';
+export * from './components/rows';
+export * from './components/spark-chart';
+
+// Plugin slot components
+export * from './components/slots';

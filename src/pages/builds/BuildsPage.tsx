@@ -1,9 +1,17 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import { Search, Trophy } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger, TooltipProvider } from '@pd2-trader/ui';
-import { fadeIn, springSnappy } from '@/lib/motion';
-import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
+import {
+  Input,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TooltipProvider,
+  fadeIn,
+  springSnappy,
+  PanelChrome,
+  PanelSurface,
+} from '@pd2-trader/ui';
 import { usePanel, useOverlay } from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
 import { type BuildsFilters, type BuildsMode, EMPTY_BUILDS_FILTERS } from '@/lib/builds-api';
@@ -127,13 +135,13 @@ const BuildsPage: React.FC = () => {
     <MotionConfig reducedMotion="user">
       <TooltipProvider delayDuration={250}>
         <BuildsActionsContext.Provider value={actions}>
-          <WindowPanel
+          <PanelSurface
             animate
             tabIndex={-1}
             onKeyDown={handleKeyDown}
             className="relative z-10 h-full w-full outline-none"
           >
-            <WindowChrome
+            <PanelChrome
               title={t('page.title')}
               icon={<Trophy className="text-primary" />}
               onClose={close}
@@ -148,7 +156,7 @@ const BuildsPage: React.FC = () => {
                   className="relative"
                 >
                   <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                  <input
+                  <Input
                     ref={lookupRef}
                     value={lookup}
                     onChange={(e) => setLookup(e.target.value)}
@@ -156,7 +164,7 @@ const BuildsPage: React.FC = () => {
                     aria-label={t('page.lookupLabel')}
                     spellCheck={false}
                     autoComplete="off"
-                    className="h-7 w-60 rounded-md border border-input bg-background/60 pr-2 pl-7 text-xs text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+                    className="h-7 w-60 bg-background/60 pr-2 pl-7 text-xs text-foreground shadow-none md:text-xs dark:bg-background/60"
                   />
                 </form>
               }
@@ -232,7 +240,7 @@ const BuildsPage: React.FC = () => {
                 </AnimatePresence>
               </div>
             )}
-          </WindowPanel>
+          </PanelSurface>
         </BuildsActionsContext.Provider>
       </TooltipProvider>
     </MotionConfig>

@@ -4,7 +4,3 @@ export function formatWithUnderscore(str: string) {
     .replace(/'/g, '')
     .replace(/[-\s]+/g, '_');
 }
-
-export function formatHr(value: number): string {
-  return `${value.toFixed(2)} HR`;
-}

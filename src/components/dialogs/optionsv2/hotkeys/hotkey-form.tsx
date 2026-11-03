@@ -5,9 +5,22 @@ import React from 'react';
 import { useOptions } from '@/hooks/useOptions';
 import { AlertTriangle, Plus } from 'lucide-react';
 import { hotkeyKeyFromEvent, hotkeyKeyLabel, hotkeyKeyToken, normalizeHotkeyKey } from '@/lib/hotkey-keys';
-import { SettingsGroup, SettingsHint, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import type { TFunction } from 'i18next';
-import { Form, FormControl, FormField, FormMessage, Tabs, TabsList, TabsTrigger, Input, cn } from '@pd2-trader/ui';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormMessage,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  Input,
+  cn,
+  SettingsGroup,
+  SettingsHint,
+  SettingsRow,
+  SettingsSkeleton,
+} from '@pd2-trader/ui';
 import { useTranslation } from '@/i18n';
 
 /** Built per render language so validation messages follow the UI language. */

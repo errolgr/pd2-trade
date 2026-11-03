@@ -18,8 +18,9 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DUR,
+  EASE_OUT,
 } from '@pd2-trader/ui';
-import { DUR, EASE_OUT } from '@/lib/motion';
 import { CORRUPTION_OPTIONS, corruptionOption } from '../lib/catalog';
 import { newStatFilter } from '../lib/defaults';
 import { MAX_OR_BLOCKS, compactBlocks, groupOf, moveToGroup, orBlockNumbers, type StatGroup } from '../lib/stat-groups';
@@ -318,15 +319,17 @@ export function StatFilters({
               canOpenBlock={canOpenBlock(s)}
               onMove={(target) => move(s.id, target)}
             />
-            <button
+            <Button
               type="button"
+              variant="quiet"
+              size="icon-xs"
               aria-label={tr('stats.removeName', { name })}
               title={tr('common:actions.remove')}
               onClick={() => onChange(compactBlocks(stats.filter((x) => x.id !== s.id)))}
-              className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-destructive/15 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/60"
+              className="shrink-0 hover:bg-destructive/15 hover:text-destructive"
             >
               <X className="size-3.5" />
-            </button>
+            </Button>
           </div>
           {bounded ? (
             <div className="grid grid-cols-2 gap-1 pr-7 pl-9">
@@ -397,25 +400,26 @@ export function StatFilters({
               className="mb-1 flex gap-0.5 border-b border-border pb-1"
             >
               {TABS.map((t) => (
-                <button
+                <Button
                   key={t.id}
                   type="button"
+                  variant="quiet"
+                  size="inline"
                   role="tab"
                   aria-selected={tab === t.id}
                   disabled={counts[t.id] === 0}
                   onClick={() => setPickedTab(t.id)}
                   className={cn(
-                    'flex-1 rounded px-1.5 py-0.5 text-2xs outline-none transition-colors disabled:opacity-40',
-                    tab === t.id
-                      ? t.id === 'corruption'
-                        ? 'bg-q-corrupted/15 text-q-corrupted'
-                        : 'bg-accent text-accent-foreground'
-                      : 'text-muted-foreground hover:text-foreground',
+                    'flex-1 gap-0 rounded px-1.5 py-0.5 text-2xs font-normal disabled:opacity-40',
+                    tab === t.id &&
+                      (t.id === 'corruption'
+                        ? 'bg-q-corrupted/15 text-q-corrupted hover:text-q-corrupted'
+                        : 'bg-accent text-accent-foreground hover:text-accent-foreground'),
                   )}
                 >
                   {tr(t.labelKey)}
                   {counts[t.id] > 0 && <span className="ml-1 tabular-nums opacity-70">{counts[t.id]}</span>}
-                </button>
+                </Button>
               ))}
             </div>
           }
@@ -608,17 +612,19 @@ function GroupMenu({
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="inline"
           aria-label={t('stats.groups.rowLabel', { name, description })}
           title={t('stats.groups.badgeHint')}
-          className="shrink-0 rounded outline-none transition-[filter] duration-(--dur-fast) hover:brightness-125 focus-visible:ring-2 focus-visible:ring-ring/60"
+          className="shrink-0 rounded transition-[filter] hover:bg-transparent hover:text-current hover:brightness-125"
         >
           <GroupBadge
             group={group}
             text={group === 'and' ? 'AND' : group === 'not' ? 'NOT' : blocks.length > 1 ? `OR ${group}` : 'OR'}
           />
-        </button>
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end"
         className="min-w-44">
@@ -685,8 +691,10 @@ function PresetMenu({
     >
       <span className="min-w-0 flex-1 truncate">{presetName(p)}</span>
       <span className="text-2xs text-muted-foreground">{p.stats.length}</span>
-      <button
+      <Button
         type="button"
+        variant="quiet"
+        size="icon-xs"
         tabIndex={-1}
         aria-label={t('presets.deleteLabel', { name: presetName(p) })}
         title={t('presets.deleteTitle')}
@@ -696,10 +704,10 @@ function PresetMenu({
           e.stopPropagation();
           onRemove(p);
         }}
-        className="inline-flex size-6 items-center justify-center rounded-sm text-muted-foreground/70 transition-colors hover:bg-destructive/15 hover:text-destructive group-data-[highlighted]:text-muted-foreground"
+        className="rounded-sm text-muted-foreground/70 hover:bg-destructive/15 hover:text-destructive group-data-[highlighted]:text-muted-foreground"
       >
         <Trash2 className="size-3" />
-      </button>
+      </Button>
     </DropdownMenuItem>
   );
   const sectionLabel = 'text-3xs uppercase tracking-wider text-muted-foreground';

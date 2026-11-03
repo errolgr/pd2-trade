@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import { MessageSquare, MessagesSquare } from 'lucide-react';
-import { Badge } from '@pd2-trader/ui';
-import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
+import { Badge, PanelChrome, PanelSurface, DUR, EASE_OUT, fadeIn, slideInRight, EmptyState } from '@pd2-trader/ui';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { isOfferNews, type OfferNotification } from '@/hooks/pd2website/useOfferNotifications';
 import { useOptions } from '@/hooks/useOptions';
@@ -22,8 +21,6 @@ import {
 } from '@/lib/chat-prefs';
 import { isOpenTrade, unreadWhispers, whisperCommand, whisperTarget } from '@/lib/whisper-history';
 import { setBadgeCount, showToast, undoToast, usePanel } from '@/overlay';
-import { DUR, EASE_OUT, fadeIn, slideInRight } from '@/lib/motion';
-import { EmptyState } from '@/pages/currency/components/StatePanel';
 import { playNotificationSound } from '@/hooks/useSocketNotifications';
 import { findMarketLinks } from '../lib/market-links';
 import {
@@ -733,13 +730,15 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
 
   return (
     <MotionConfig reducedMotion="user">
-      <WindowPanel animate
+      <PanelSurface
+        animate
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className="relative z-10 h-full w-full outline-none">
-        {/* Top Bar (WindowChrome is the panel drag handle) */}
+        className="relative z-10 h-full w-full outline-none"
+      >
+        {/* Top Bar (PanelChrome is the panel drag handle) */}
         <div id="titlebar-drag-handle">
-          <WindowChrome
+          <PanelChrome
             title={t('widget.title')}
             icon={<MessageSquare className="text-primary" />}
             onClose={onClose}
@@ -966,7 +965,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
             )}
           </AnimatePresence>
         </div>
-      </WindowPanel>
+      </PanelSurface>
     </MotionConfig>
   );
 }

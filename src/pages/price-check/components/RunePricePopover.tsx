@@ -6,15 +6,21 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-  Skeleton,
+  SkeletonRows,
+  PriceTag,
+  formatHrAmount,
   cn,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
+  DUR,
+  EASE_OUT,
+  fadeInUp,
+  listItem,
+  listStagger,
 } from '@pd2-trader/ui';
 import { openUrl } from '@/lib/browser-opener';
-import { DUR, EASE_OUT, fadeInUp, listItem, listStagger } from '@/lib/motion';
 import { ItemValue, RuneCombination } from '../lib/types';
 import { Trans, useTranslation } from '@/i18n';
 
@@ -27,12 +33,6 @@ interface RunePricePopoverProps {
 }
 
 const RUNE_PRICES_URL = 'https://pd2trader.com/?category=runes';
-
-/**
- * An HR amount for display: 2 decimals, 3 below 0.1 HR (low runes), trailing zeros dropped. Prices are 7-day
- * averages and combination totals are float sums, so the raw numbers carry noise like 0.30000000000000004.
- */
-export const hrAmount = (value: number) => Number(value.toFixed(value < 0.1 ? 3 : 2));
 
 const LOW_RUNES: Record<string, true> = {
   'Gul Rune': true,
@@ -83,7 +83,7 @@ export function RunePricePopover({
       <PopoverContent
         align="start"
         collisionPadding={8}
-        className="w-[min(480px,calc(100vw-16px))] max-h-[min(1000px,calc(100vh-56px))] overflow-y-auto p-0"
+        className="max-h-(--radix-popover-content-available-height) w-120 max-w-viewport overflow-y-auto p-0"
       >
         <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-popover/95 px-4 py-3 backdrop-blur-sm">
           <h4 className="text-sm font-semibold tracking-tight">{t('runePrices.title')}</h4>
@@ -114,15 +114,9 @@ export function RunePricePopover({
 
         <div className="px-2 py-2">
           {loading ? (
-            <div className="space-y-1 px-2 py-1"
+            <div className="space-y-2 px-2 py-1"
               aria-busy="true">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i}
-                  className="flex items-center justify-between py-1">
-                  <Skeleton className="h-4 w-24 bg-muted-foreground/15" />
-                  <Skeleton className="h-4 w-32 bg-muted-foreground/15" />
-                </div>
-              ))}
+              <SkeletonRows rows={8} />
               <p className="pt-1 text-center text-xs text-muted-foreground">{t('runePrices.loading')}</p>
             </div>
           ) : (
@@ -161,7 +155,8 @@ export function RunePricePopover({
                           rune.isFixed ? 'text-muted-foreground' : 'text-success',
                         )}
                       >
-                        {hrAmount(rune.price)} HR
+                        <PriceTag amount={rune.price}
+                          unit="hr" />
                         {rune.isFixed && <span className="ml-1 text-xs">*</span>}
                       </span>
                       <span className="w-21.5 text-right text-xs tabular-nums text-muted-foreground">
@@ -178,10 +173,12 @@ export function RunePricePopover({
             <>
               {/* Show More/Less Button */}
               {lowRunes.length > 0 && (
-                <button
+                <Button
                   type="button"
+                  variant="quiet"
+                  size="xs"
                   onClick={() => setShowMore(!showMore)}
-                  className="mt-1 flex w-full items-center justify-center gap-1 rounded-md py-1.5 text-xs text-muted-foreground outline-none transition-colors hover:bg-accent/50 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+                  className="mt-1 flex h-auto w-full rounded-md py-1.5 text-xs font-normal hover:bg-accent/50"
                 >
                   {showMore ? (
                     <>
@@ -194,7 +191,7 @@ export function RunePricePopover({
                       {t('runePrices.showMoreLower', { count: lowRunes.length })}
                     </>
                   )}
-                </button>
+                </Button>
               )}
 
               {/* Breakdown combinations */}
@@ -219,7 +216,7 @@ export function RunePricePopover({
                         />
                       </span>
                       <span className="text-xs font-normal tabular-nums text-muted-foreground">
-                        {t('runePrices.target', { value: hrAmount(targetValue) })}
+                        {t('runePrices.target', { value: formatHrAmount(targetValue) })}
                       </span>
                     </h5>
                     <div className="space-y-1.5">
@@ -250,7 +247,7 @@ export function RunePricePopover({
                                   tone === 'far' && 'text-muted-foreground',
                                 )}
                               >
-                                = {hrAmount(combo.totalValue)} HR
+                                = {formatHrAmount(combo.totalValue)} HR
                               </span>
                             </div>
                             {combo.difference > 0.1 && (
@@ -260,7 +257,7 @@ export function RunePricePopover({
                                   tone === 'near' ? 'text-warning/80' : 'text-muted-foreground',
                                 )}
                               >
-                                {t('runePrices.diff', { value: hrAmount(combo.difference) })}
+                                {t('runePrices.diff', { value: formatHrAmount(combo.difference) })}
                               </div>
                             )}
                           </motion.div>

@@ -7,12 +7,22 @@ import { useUpdater } from '@/hooks/useUpdater';
 import { isTauri } from '@tauri-apps/api/core';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowUpCircle, CheckCircle2, Download, FileText, Loader2, RefreshCw } from 'lucide-react';
-import { Button, Form, FormControl, FormField, Skeleton, Switch } from '@pd2-trader/ui';
-import { fadeInUp, springSoft } from '@/lib/motion';
+import {
+  Button,
+  Form,
+  FormControl,
+  FormField,
+  Skeleton,
+  Switch,
+  fadeInUp,
+  springSoft,
+  SettingsGroup,
+  SettingsRow,
+  SettingsSkeleton,
+} from '@pd2-trader/ui';
 import { showToast, useOverlay } from '@/overlay';
 import { manualUpdateToast, markManualUpdateRequired, requiresManualUpdate } from '@/lib/manual-update';
 import { isNetworkError } from '@/lib/network-errors';
-import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import { useTranslation } from '@/i18n';
 
 export function AboutForm() {

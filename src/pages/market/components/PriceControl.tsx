@@ -1,4 +1,4 @@
-import { cn } from '@pd2-trader/ui';
+import { Button, cn } from '@pd2-trader/ui';
 import { currentLocale, useTranslation } from '@/i18n';
 import {
   bucketLight,
@@ -76,12 +76,14 @@ export function PriceControl({
             return (
               <FacetTip key={b.from}
                 text={text}>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="inline"
                   aria-label={text}
                   aria-pressed={!!light}
                   {...optionProps(i)}
-                  className="group relative flex h-full min-w-0 items-end px-px outline-none hover:bg-primary/6 focus-visible:bg-primary/15"
+                  className="group relative flex h-full min-w-0 items-end gap-0 rounded-none px-px font-normal hover:bg-primary/6 hover:text-current focus-visible:bg-primary/15 focus-visible:ring-0 motion-safe:active:scale-100"
                 >
                   {inRange(preview, i) && <span aria-hidden
                     className="absolute inset-0 bg-primary/6" />}
@@ -120,7 +122,7 @@ export function PriceControl({
                       style={{ left: `calc(1px + (100% - 2px) * ${m})` }}
                     />
                   ))}
-                </button>
+                </Button>
               </FacetTip>
             );
           })}

@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
-import { cn } from '@pd2-trader/ui';
+import { cn, ItemName } from '@pd2-trader/ui';
 import { useOptions } from '@/hooks/useOptions';
 import { getSeasonDateConfig } from '@/lib/seasons';
 import { DEFAULT_PRICE_WINDOW_HOURS, basisLabel, windowLabel } from '@/lib/price-window';
-import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import { namePriceCode } from '@/pages/chat/lib/price-codes';
 import {
   type ListingMarketPrice,
@@ -102,7 +101,7 @@ export function ItemNameSearch({
   const basis = basisLabel(endDate ? 'season' : windowLabel(settings.priceWindowHours ?? DEFAULT_PRICE_WINDOW_HOURS));
 
   return (
-    <div className="relative w-[min(24rem,40vw)] cursor-text">
+    <div className="relative w-96 cursor-text">
       <Search
         aria-hidden
         className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground"
@@ -126,14 +125,11 @@ export function ItemNameSearch({
           return (
             <span className="flex flex-col gap-0.5 py-0.5">
               <span className="flex items-baseline gap-2">
-                <span
-                  className={cn(
-                    'min-w-0 flex-1 truncate text-sm',
-                    o.quality === 'Runeword' ? 'text-q-rune' : qualityColor(o.quality),
-                  )}
-                >
-                  <SuggestionName option={o} />
-                </span>
+                <ItemName
+                  name={<SuggestionName option={o} />}
+                  quality={o.quality}
+                  className="min-w-0 flex-1 truncate text-sm"
+                />
                 <span className="shrink-0 font-semibold tabular-nums">
                   {price ? formatHrPrice(price.hr) : price === undefined && priced ? '' : '—'}
                 </span>

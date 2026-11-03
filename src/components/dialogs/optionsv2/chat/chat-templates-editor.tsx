@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, ChevronUp, FileText, Pencil, Plus, Star, X } from 'lucide-react';
-import { Button, cn } from '@pd2-trader/ui';
+import { Button, cn, listItem, springSnappy, SETTING_HIGHLIGHT } from '@pd2-trader/ui';
 import { ChatTemplateForm } from '@/components/custom/chat-template-form';
 import { useChatTemplates } from '@/hooks/useChatTemplates';
-import { listItem, springSnappy } from '@/lib/motion';
-import { SETTING_HIGHLIGHT } from '../settings-ui';
 import { MacroTemplate } from '@/pages/quick-list/components/MacroManagerSheet';
 import { Trans, useTranslation } from '@/i18n';
 
-const rowAction =
-  'inline-flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none transition-[color,background-color,transform] duration-(--dur-fast) hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-90 disabled:pointer-events-none disabled:opacity-30 [&_svg]:size-3.5';
+/** Icon actions on a template row: ghost icon buttons, muted until hovered. */
+const rowAction = "text-muted-foreground hover:text-foreground disabled:opacity-30 [&_svg:not([class*='size-'])]:size-3.5";
 
 /**
  * The user's own chat templates (Settings → Chat): listed in "/" menu order, each can be moved, edited or
@@ -77,8 +75,10 @@ export function ChatTemplatesEditor() {
                       />
                     </div>
                     <div className="flex shrink-0 items-center gap-0.5 opacity-70 transition-opacity duration-(--dur-fast) group-hover/template:opacity-100 group-focus-within/template:opacity-100">
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={() => update(template.id, { favorite: !template.favorite })}
                         aria-label={
                           template.favorite
@@ -90,9 +90,11 @@ export function ChatTemplatesEditor() {
                         className={cn(rowAction, template.favorite && 'text-warning hover:text-warning')}
                       >
                         <Star className={cn(template.favorite && 'fill-current')} />
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={() => move(index, -1)}
                         disabled={index === 0}
                         aria-label={t('chatTemplates.moveUpNamed', { name: template.name })}
@@ -100,9 +102,11 @@ export function ChatTemplatesEditor() {
                         className={rowAction}
                       >
                         <ChevronUp />
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={() => move(index, 1)}
                         disabled={index === templates.length - 1}
                         aria-label={t('chatTemplates.moveDownNamed', { name: template.name })}
@@ -110,18 +114,22 @@ export function ChatTemplatesEditor() {
                         className={rowAction}
                       >
                         <ChevronDown />
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={() => setEditing(template.id)}
                         aria-label={t('chatTemplates.editNamed', { name: template.name })}
                         title={t('common:actions.edit')}
                         className={rowAction}
                       >
                         <Pencil />
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={() => {
                           remove(template.id);
                           if (editing === template.id) setEditing(null);
@@ -131,7 +139,7 @@ export function ChatTemplatesEditor() {
                         className={cn(rowAction, 'hover:bg-destructive/15 hover:text-destructive')}
                       >
                         <X />
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}

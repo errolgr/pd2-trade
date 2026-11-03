@@ -15,8 +15,7 @@ import {
   TrendingUp,
   X,
 } from 'lucide-react';
-import { cn } from '@pd2-trader/ui';
-import { popIn, scaleIn } from '@/lib/motion';
+import { Button, cn, popIn, scaleIn } from '@pd2-trader/ui';
 import { useTranslation } from '@/i18n';
 import { CARET_HEIGHT, type ChatDockItem } from '@/pages/chat/chat-dock';
 
@@ -84,9 +83,9 @@ const CountBadge: React.FC<{ count: number; className: string; label: string; st
   </motion.span>
 );
 
+/** Extras on the tab's ghost `inline` Buttons: flush full-width segments, highlighted (not ringed) on focus. */
 const segment =
-  'relative flex w-full flex-1 items-center justify-center text-surface-foreground outline-none transition-colors ' +
-  'duration-(--dur-fast) hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent [&_svg]:pointer-events-none';
+  'relative w-full flex-1 rounded-none text-surface-foreground focus-visible:bg-accent focus-visible:ring-0 motion-safe:active:scale-100';
 
 interface MenuEntry {
   id: ChatDockItem;
@@ -130,8 +129,10 @@ const MenuRow: React.FC<MenuRowProps> = ({ entry, favorite, onPick, onToggleFavo
       className="group/row relative flex items-center rounded-md bg-surface hover:bg-accent hover:text-accent-foreground has-[:focus-visible]:bg-accent"
     >
       {reorder && (
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-xs"
           aria-label={t('chatButton.move', { label })}
           title={t('chatButton.moveHint')}
           onPointerDown={(e) => {
@@ -143,17 +144,19 @@ const MenuRow: React.FC<MenuRowProps> = ({ entry, favorite, onPick, onToggleFavo
             e.preventDefault();
             reorder.onMove(e.key === 'ArrowUp' ? -1 : 1);
           }}
-          className="ml-0.5 inline-flex h-6 w-4 shrink-0 cursor-grab touch-none items-center justify-center rounded text-muted-foreground/40 outline-none group-hover/row:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/60 active:cursor-grabbing"
+          className="ml-0.5 w-4 cursor-grab touch-none rounded-sm text-muted-foreground/40 hover:bg-transparent hover:text-muted-foreground group-hover/row:text-muted-foreground active:cursor-grabbing motion-safe:active:scale-100"
         >
           <GripVertical className="size-3.5" />
-        </button>
+        </Button>
       )}
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="row"
         role="menuitem"
         onClick={onPick}
         className={cn(
-          'flex min-w-0 flex-1 items-center gap-2.5 py-1.5 pr-2.5 text-left outline-none',
+          'min-w-0 flex-1 gap-2.5 pr-2.5 hover:bg-transparent focus-visible:ring-0 motion-safe:active:scale-100',
           reorder ? 'pl-1' : 'pl-2.5',
         )}
       >
@@ -169,23 +172,27 @@ const MenuRow: React.FC<MenuRowProps> = ({ entry, favorite, onPick, onToggleFavo
             {formatCount(count.count)}
           </span>
         )}
-      </button>
+      </Button>
       {onToggleFavorite && (
         // Stays open: several windows can be starred in one go
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon-xs"
           role="menuitemcheckbox"
           aria-checked={favorite}
           aria-label={t('chatButton.favorite', { label })}
           title={favorite ? t('chatButton.removeFavorite') : t('chatButton.addFavorite')}
           onClick={onToggleFavorite}
           className={cn(
-            'mr-1 inline-flex size-6 shrink-0 items-center justify-center rounded outline-none transition-colors duration-(--dur-fast) hover:bg-background/60 focus-visible:ring-2 focus-visible:ring-ring/60',
-            favorite ? 'text-warning' : 'text-muted-foreground/40 group-hover/row:text-muted-foreground',
+            'mr-1 shrink-0 rounded-sm hover:bg-background/60',
+            favorite
+              ? 'text-warning hover:text-warning'
+              : 'text-muted-foreground/40 hover:text-muted-foreground group-hover/row:text-muted-foreground',
           )}
         >
           <Star className={cn('size-3.5', favorite && 'fill-current')} />
-        </button>
+        </Button>
       )}
     </Reorder.Item>
   );
@@ -434,9 +441,11 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
           onClickCapture={onTabClickCapture}
         >
           {onTab.map(({ id, label, tabLabel, icon: Icon, onClick, badge: count }) => (
-            <button
+            <Button
               key={id}
               type="button"
+              variant="ghost"
+              size="inline"
               onClick={onClick}
               className={segment}
               aria-label={tabLabel ?? label}
@@ -454,12 +463,14 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
                   />
                 )}
               </AnimatePresence>
-            </button>
+            </Button>
           ))}
           {onTab.length > 0 && <div aria-hidden
             className="mx-auto h-px w-1/2 shrink-0 bg-border" />}
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="inline"
             onClick={() => setMenuOpen((open) => !open)}
             style={{ flexGrow: CARET_HEIGHT }}
             className={cn(segment, 'text-muted-foreground', menuOpen && 'bg-accent text-accent-foreground')}
@@ -472,7 +483,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
               style={{ width: icon.width * 0.85, height: icon.height * 0.85 }}
               className={cn('transition-transform duration-(--dur-med)', menuOpen !== menuBelow && 'rotate-180')}
             />
-          </button>
+          </Button>
         </div>
 
         <AnimatePresence>
@@ -516,15 +527,17 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
                 <>
                   <div role="separator"
                     className="my-1 h-px bg-border" />
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="row"
                     role="menuitem"
                     onClick={pick(onDisableClick)}
-                    className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-destructive outline-none hover:bg-destructive/15 focus-visible:bg-destructive/15"
+                    className="gap-2.5 px-2.5 text-destructive hover:bg-destructive/15 hover:text-destructive focus-visible:bg-destructive/15 focus-visible:ring-0"
                   >
                     <X className="size-4 shrink-0" />
                     <span className="flex-1">{t('chatButton.disableOverlay')}</span>
-                  </button>
+                  </Button>
                 </>
               )}
             </motion.div>

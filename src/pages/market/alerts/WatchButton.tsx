@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, Eye, Loader2 } from 'lucide-react';
-import { cn } from '@pd2-trader/ui';
-import { EASE_OUT, springSnappy } from '@/lib/motion';
+import { Button, cn, EASE_OUT, springSnappy } from '@pd2-trader/ui';
 import { showToast, usePanel } from '@/overlay';
 import type { MarketFilters } from '@/pages/market/lib/types';
 import {
@@ -95,19 +94,20 @@ export function WatchButton({ filters, className }: { filters: MarketFilters | n
             : t('watch.labels.watch');
 
   return (
-    <button
+    <Button
       type="button"
+      variant="outline"
+      size="xs"
       aria-pressed={!!watching}
       aria-label={label}
       title={label}
       disabled={disabled}
       onClick={toggle}
       className={cn(
-        'relative inline-flex h-6 shrink-0 items-center gap-1 rounded-md border border-input bg-background/40 px-2 text-2xs font-medium text-muted-foreground outline-none',
-        'transition-[color,background-color,border-color] duration-(--dur-fast) hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
+        'relative shrink-0 rounded-md bg-background/40 px-2 text-muted-foreground shadow-none hover:border-input hover:text-foreground',
         // Disabled keeps hover so the title says why
-        'disabled:cursor-not-allowed disabled:opacity-50',
-        watching && 'border-primary/50 bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary',
+        'disabled:pointer-events-auto disabled:cursor-not-allowed',
+        watching && 'border-primary/50 bg-primary/10 text-primary hover:border-primary/50 hover:bg-primary/15 hover:text-primary',
         className,
       )}
     >
@@ -143,6 +143,6 @@ export function WatchButton({ filters, className }: { filters: MarketFilters | n
         </AnimatePresence>
       </span>
       {watching ? t('watch.watching') : t('watch.watch')}
-    </button>
+    </Button>
   );
 }

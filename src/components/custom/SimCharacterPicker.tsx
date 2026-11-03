@@ -1,7 +1,16 @@
 import React, { useState } from 'react';
-import { Command } from 'cmdk';
-import { Check, ChevronDown, Search } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger, cn } from '@pd2-trader/ui';
+import { Check, ChevronDown } from 'lucide-react';
+import {
+  Button,
+  Command,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  cn,
+} from '@pd2-trader/ui';
 import type { SimCharacter } from '@/lib/sim-characters';
 import { ClassEmblem } from '@/pages/builds/components/parts';
 
@@ -45,17 +54,15 @@ export function SimCharacterPicker({
     <Popover open={open}
       onOpenChange={toggle}>
       <PopoverTrigger asChild>
-        <button
+        <Button
           type="button"
+          variant="field"
           role="combobox"
           aria-expanded={open}
           aria-label="Character"
           // As a select's: the open list takes the overlay's keyboard
           data-keep-keyboard
-          className={cn(
-            'flex h-9 w-full cursor-pointer items-center gap-2 rounded-md border border-input bg-transparent px-2 text-sm shadow-xs outline-none transition-[color,border-color,box-shadow] duration-(--dur-fast) ease-out hover:border-ring/40 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 data-[state=open]:border-ring',
-            className,
-          )}
+          className={cn('w-full justify-start px-2 has-[>svg]:px-2', className)}
         >
           {chosen?.className && <ClassEmblem className={chosen.className}
             size={18} />}
@@ -66,7 +73,7 @@ export function SimCharacterPicker({
             </span>
           )}
           <ChevronDown className="ml-auto size-4 shrink-0 opacity-50 transition-transform duration-(--dur-fast) ease-out [[data-state=open]>&]:rotate-180" />
-        </button>
+        </Button>
       </PopoverTrigger>
       <PopoverContent align="start"
         data-keep-keyboard
@@ -74,27 +81,23 @@ export function SimCharacterPicker({
         <Command label="Characters"
           shouldFilter={false}
           loop>
-          <div className="flex items-center gap-2 border-b border-border px-2.5">
-            <Search aria-hidden
-              className="size-3.5 shrink-0 text-muted-foreground" />
-            <Command.Input
-              autoFocus
-              value={query}
-              onValueChange={setQuery}
-              placeholder="Search characters…"
-              className="h-9 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-            />
-          </div>
-          <Command.List className="max-h-64 overflow-y-auto p-1">
+          <CommandInput
+            autoFocus
+            value={query}
+            onValueChange={setQuery}
+            placeholder="Search characters…"
+            className="h-9 py-0"
+          />
+          <CommandList className="max-h-64 p-1">
             {options.map((c) => (
-              <Command.Item
+              <CommandItem
                 key={`${c.account}/${c.name}`}
                 value={`${c.account}/${c.name}`}
                 onSelect={() => {
                   onChange(c.name);
                   toggle(false);
                 }}
-                className="flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1 outline-none data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground"
+                className="cursor-pointer py-1"
               >
                 {c.className ? (
                   <ClassEmblem className={c.className}
@@ -110,14 +113,14 @@ export function SimCharacterPicker({
                 </span>
                 <Check
                   aria-hidden
-                  className={cn('size-3.5 shrink-0', c.name === value ? 'opacity-100' : 'opacity-0')}
+                  className={cn('size-3.5 shrink-0 text-current', c.name === value ? 'opacity-100' : 'opacity-0')}
                 />
-              </Command.Item>
+              </CommandItem>
             ))}
             {options.length === 0 && (
               <div className="px-2 py-3 text-center text-xs text-muted-foreground">No ladder character matches</div>
             )}
-          </Command.List>
+          </CommandList>
           <div className="border-t border-border px-2.5 py-1.5 text-2xs text-muted-foreground">
             Ladder characters only
           </div>

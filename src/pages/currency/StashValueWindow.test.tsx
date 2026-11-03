@@ -485,10 +485,9 @@ describe('StashValueWindow tabs', () => {
     renderWindow();
     openTab('Gems & Mats');
     const panel = screen.getByRole('tabpanel');
-    expect([...panel.querySelectorAll('tbody td:first-child p')].map((p) => p.textContent)).toEqual([
-      'Perfect Ruby',
-      'Wirt Leg',
-    ]);
+    expect(
+      [...panel.querySelectorAll('tbody td:first-child [data-slot="item-name"]')].map((p) => p.textContent),
+    ).toEqual(['Perfect Ruby', 'Wirt Leg']);
     expect(within(panel).queryByRole('button', { name: 'Rune exchange' })).toBeNull();
 
     openTab('Uniques & Sets');

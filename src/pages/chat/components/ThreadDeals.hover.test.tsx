@@ -100,9 +100,9 @@ describe('ThreadDeals offer hover card', () => {
     fireEvent.mouseEnter(itemName());
     const section = await screen.findByRole('region', { name: 'Offer' });
     expect(screen.getByText('Shako')).not.toBeNull();
-    expect(screen.getByText('Price:').parentElement!.textContent).toBe('Price:2 HR');
+    expect(screen.getByText('Price:').parentElement!.textContent).toBe('Price:2.00 HR');
     expect(screen.getByText('Market:')).not.toBeNull();
-    expect(section.textContent).toBe('Offer from bobopenOffered:2 ist(1.5 HR)Sent:3m ago');
+    expect(section.textContent).toBe('Offer from bobopenOffered:2 ist(1.50 HR)Sent:3m ago');
     expect(screen.queryByText(/Click to/)).toBeNull();
   });
 
@@ -127,7 +127,7 @@ describe('ThreadDeals offer hover card', () => {
     expect(within(card).getByText('Harlequin Crest')).not.toBeNull();
     expect(within(card).getByText(line)).not.toBeNull();
     expect(within(card).queryByText('Price:')).toBeNull();
-    expect(section.textContent).toBe('Offer from bobopenOffered:2 ist(1.5 HR)Sent:3m ago');
+    expect(section.textContent).toBe('Offer from bobopenOffered:2 ist(1.50 HR)Sent:3m ago');
   });
 
   it('shows the full card with its status for a declined offer on a sold listing', async () => {
@@ -137,7 +137,7 @@ describe('ThreadDeals offer hover card', () => {
     const section = await screen.findByRole('region', { name: 'Offer' });
     expect(screen.getByText('Sold or delisted')).not.toBeNull();
     expect(screen.getByText('Price:')).not.toBeNull();
-    expect(section.textContent).toBe('Offer from bobdeclinedOffered:2 ist(1.5 HR)Sent:3m ago');
+    expect(section.textContent).toBe('Offer from bobdeclinedOffered:2 ist(1.50 HR)Sent:3m ago');
   });
 
   it('keeps the action buttons working while the card is open', async () => {

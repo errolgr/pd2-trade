@@ -59,6 +59,10 @@
     --q-gold: oklch(0.812 0.129 85.869);
     --q-corrupted: oklch(0.704 0.191 22.216);
     --q-corrupted-zone: oklch(0.714 0.203 305.504);
+    --dmg-fire: oklch(0.712 0.185 37.768);
+    --dmg-cold: oklch(0.727 0.143 257.059);
+    --dmg-lightning: oklch(0.861 0.151 94.024);
+    --dmg-poison: oklch(0.745 0.171 143.098);
     --radius: 0.5rem;
     /* Window transparency (Settings → Interface): applyWindowTransparency sets both; opaque by default. */
     --window-opacity: 100%;
@@ -168,6 +172,10 @@
     --color-q-gold: var(--q-gold);
     --color-q-corrupted: var(--q-corrupted);
     --color-q-corrupted-zone: var(--q-corrupted-zone);
+    --color-dmg-fire: var(--dmg-fire);
+    --color-dmg-cold: var(--dmg-cold);
+    --color-dmg-lightning: var(--dmg-lightning);
+    --color-dmg-poison: var(--dmg-poison);
 
     --radius-sm: calc(var(--radius) - 4px);
     --radius-md: calc(var(--radius) - 2px);

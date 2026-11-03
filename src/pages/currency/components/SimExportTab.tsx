@@ -10,7 +10,7 @@ import {
   Send,
   UserRound,
 } from 'lucide-react';
-import { Button, Checkbox, Input, Skeleton, cn } from '@pd2-trader/ui';
+import { Button, Checkbox, Input, Skeleton, cn, itemQualityClass, Banner, EmptyState } from '@pd2-trader/ui';
 import { SimCharacterPicker } from '@/components/custom/SimCharacterPicker';
 import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
@@ -27,9 +27,6 @@ import {
 } from '@/lib/sim-export-api';
 import { trackMeasurement } from '@/lib/telemetry';
 import { useOverlay } from '@/overlay';
-import { qualityColor } from '@/pages/price-check/lib/qualityColor';
-import { Banner, EmptyState } from './StatePanel';
-
 type Load<T> = { status: 'loading' } | { status: 'ok'; data: T } | { status: 'error'; error: unknown };
 type SendState =
   | { status: 'idle' }
@@ -234,7 +231,7 @@ export function SimExportTab({ token, account }: { token: string; account: strin
                           disabled={!checked && full}
                           onCheckedChange={(value) => toggle(item.hash, value === true)}
                         />
-                        <span className={cn('min-w-0 truncate font-medium', qualityColor(item.quality?.name ?? ''))}>
+                        <span className={cn('min-w-0 truncate font-medium', itemQualityClass(item.quality?.name))}>
                           {item.name}
                         </span>
                         {item.base?.name && item.base.name !== item.name && (

@@ -6,7 +6,6 @@ import { useOptions } from '@/hooks/useOptions';
 import { isTauri, invoke } from '@tauri-apps/api/core';
 import { FolderSearch, Wand2 } from 'lucide-react';
 import { getSeasonSettingOptions } from '@/lib/seasons';
-import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import { LADDER_OPTIONS, MODE_OPTIONS, optionLabel } from '../setting-options';
 import { showToast } from '@/overlay';
 import type { TFunction } from 'i18next';
@@ -23,6 +22,9 @@ import {
   SelectContent,
   SelectItem,
   Switch,
+  SettingsGroup,
+  SettingsRow,
+  SettingsSkeleton,
 } from '@pd2-trader/ui';
 import { useTranslation } from '@/i18n';
 

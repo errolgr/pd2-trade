@@ -91,7 +91,7 @@ describe('MessageBubble offer pill hover card', () => {
     fireEvent.mouseEnter(pill);
     const section = await screen.findByRole('region', { name: 'Offer' });
     expect(screen.getByText('Sharkskin Gloves')).not.toBeNull();
-    expect(screen.getByText('Price:').parentElement!.textContent).toBe('Price:0.5 HR');
+    expect(screen.getByText('Price:').parentElement!.textContent).toBe('Price:0.50 HR');
     expect(section.textContent).toMatch(/^Your offeracceptedOffered:5 wssSent:/);
   });
 

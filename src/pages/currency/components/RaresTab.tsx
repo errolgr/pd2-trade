@@ -1,11 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Gem } from 'lucide-react';
-import { cn, Tooltip, TooltipContent, TooltipTrigger } from '@pd2-trader/ui';
-import { DUR, EASE_OUT } from '@/lib/motion';
+import {
+  Button,
+  cn,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  DUR,
+  EASE_OUT,
+  PopoverSectionTitle,
+  EmptyState,
+} from '@pd2-trader/ui';
 import type { RaresSummary } from '@/lib/networth-api';
 import { fetchRareHistory, type RareAppraisal, type RareHistory, type VerdictRule } from '@/lib/rare-appraisal-api';
-import { PopoverSectionTitle } from '@/components/custom/popover-parts';
 import { CraftedBadges, VerdictBadge } from '@/components/rares/RareParts';
 import { RareAppraisalDetail } from '@/components/rares/RareAppraisalDetail';
 import { rareArtUrl } from '@/components/rares/rare-art';
@@ -25,7 +33,6 @@ import {
   starsText,
   starTitle,
 } from '@/components/rares/rares-format';
-import { EmptyState } from './StatePanel';
 import { Trans, useTranslation } from '@/i18n';
 
 /**
@@ -348,13 +355,15 @@ function RareRow({
   const band = marketBandText(rare);
   return (
     <li className="border-b border-border/50 last:border-b-0">
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="row"
         aria-expanded={expanded}
         onClick={() => onToggle(rare.id)}
         className={cn(
-          'flex w-full cursor-pointer items-center gap-2.5 px-2.5 py-2 text-left outline-none transition-colors duration-(--dur-fast)',
-          'hover:bg-accent/40 focus-visible:bg-accent/40',
+          'cursor-pointer gap-2.5 rounded-none px-2.5 py-2 transition-colors motion-safe:active:scale-100',
+          'hover:bg-accent/40 hover:text-foreground focus-visible:bg-accent/40 focus-visible:ring-0',
           expanded && 'bg-accent/30',
         )}
       >
@@ -364,7 +373,7 @@ function RareRow({
             alt=""
             aria-hidden
             loading="lazy"
-            className="max-h-7 max-w-7 object-contain drop-shadow-[0_1px_2px_rgb(0_0_0/0.4)]"
+            className="max-h-7 max-w-7 object-contain drop-shadow-sm/40"
             onError={(e) => (e.currentTarget.style.visibility = 'hidden')}
           />
         </span>
@@ -392,7 +401,7 @@ function RareRow({
             expanded && 'rotate-180',
           )}
         />
-      </button>
+      </Button>
       <Collapse open={expanded}>
         <RareRowDetail rare={rare}
           rule={rule}
@@ -427,11 +436,13 @@ function RareFold({
   const note = kind === 'vendor' ? t('rares.fold.vendorNote', { count: n }) : t('rares.fold.lowNote');
   return (
     <div className="overflow-hidden rounded-lg border border-dashed border-border bg-card/20">
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="row"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full cursor-pointer items-center gap-2.5 px-2.5 py-2 text-left outline-none transition-colors hover:bg-accent/30 focus-visible:bg-accent/30"
+        className="cursor-pointer gap-2.5 rounded-none px-2.5 py-2 transition-colors hover:bg-accent/30 hover:text-foreground focus-visible:bg-accent/30 focus-visible:ring-0 motion-safe:active:scale-100"
       >
         <span
           className={cn(
@@ -451,7 +462,7 @@ function RareFold({
             open && 'rotate-180',
           )}
         />
-      </button>
+      </Button>
       <Collapse open={open}>
         <ul className="border-t border-border/40">
           {items.map((r) => (

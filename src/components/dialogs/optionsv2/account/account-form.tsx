@@ -25,9 +25,10 @@ import {
   AlertTitle,
   AlertDescription,
   cn,
+  fadeInUp,
+  SettingsGroup,
+  SettingsRow,
 } from '@pd2-trader/ui';
-import { fadeInUp } from '@/lib/motion';
-import { SettingsGroup, SettingsRow } from '../settings-ui';
 import { Trans, useTranslation } from '@/i18n';
 
 const accountFormSchema = z.object({

@@ -17,7 +17,18 @@ import {
   Swords,
   UserRound,
 } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger, ScrollArea, Skeleton, cn } from '@pd2-trader/ui';
+import {
+  Button,
+  DataRow,
+  ItemName,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  PriceTag,
+  ScrollArea,
+  Skeleton,
+  cn,
+} from '@pd2-trader/ui';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
 import { t as tGlobal, useTranslation } from '@/i18n';
@@ -29,14 +40,17 @@ import { type ChatListingState, useChatListings } from '../hooks/useChatListings
 import { type ListingMarketPrice, useListingMarketPrices } from '../hooks/useListingMarketPrices';
 import { presenceLabel, shortAgo, type TraderProfile } from '../hooks/useTraderProfile';
 import type { InboxThread } from '../lib/inbox';
-import { ListingDetails, ListingThumb, marketDelta, nameColor } from './ListingCard';
+import { ListingDetails, listingItemName, ListingThumb, marketDelta } from './ListingCard';
 import { dealStatusLabel, OfferHoverCard, offerStatus, STATUS_CLASS } from './ThreadDeals';
 import { characterUrl, ChatAvatar, marketUrl, profileUrl, Tip } from './chat-parts';
 
 /** Their listings shown in the grid; the rest are behind "N more" (their market on the website). */
 const MARKET_GRID_LIMIT = 8;
 
-const priceText = (listing: MarketListingEntry) => (listing.hr_price > 0 ? `${listing.hr_price} HR` : listing.price);
+/** The asking price: its HR value, else the seller's note ("2 ist"), else a dash. */
+const askingPrice = (listing: MarketListingEntry): React.ReactNode =>
+  listing.hr_price > 0 ? <PriceTag amount={listing.hr_price}
+    unit="hr" /> : listing.price || '—';
 
 /** Copies `*account` (what goes after /w in the game chat). */
 async function copyAccount(account: string) {
@@ -86,10 +100,8 @@ function Section({
   );
 }
 
-const actionButtonClass = cn(
-  'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none',
-  'transition-[background-color,color,transform] duration-(--dur-fast) hover:bg-primary/10 hover:text-foreground active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-ring/60',
-);
+/** Extras on the profile card's ghost `icon-sm` action Buttons. */
+const actionButtonClass = 'text-muted-foreground hover:bg-primary/10 hover:text-foreground';
 
 /** One of their listings in the market grid: hover for details, click to link it in the composer. */
 function MarketTile({
@@ -107,8 +119,10 @@ function MarketTile({
     <Popover open={open}
       onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="inline"
           aria-label={t('trader.linkInMessage', { item: listing.item.name })}
           onClick={(e) => {
             // A click links it; the popover is for hovering (keep Radix from toggling it open)
@@ -118,7 +132,7 @@ function MarketTile({
           }}
           onMouseEnter={() => setOpen(true)}
           onMouseLeave={() => setOpen(false)}
-          className="group/tile flex min-w-0 flex-col items-center gap-1 rounded-lg border border-border/60 bg-linear-to-b from-background/70 to-background/30 p-1.5 shadow-xs outline-none transition-[border-color,transform,box-shadow] duration-(--dur-fast) hover:-translate-y-px hover:border-primary/40 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-[0.97]"
+          className="group/tile min-w-0 flex-col gap-1 rounded-lg border border-border/60 bg-linear-to-b from-background/70 to-background/30 p-1.5 shadow-xs transition-[border-color,transform,box-shadow] hover:-translate-y-px hover:border-primary/40 hover:bg-transparent hover:shadow-sm"
         >
           <ListingThumb
             listing={listing}
@@ -126,9 +140,9 @@ function MarketTile({
             artClassName="max-h-9 max-w-9 transition-transform duration-(--dur-fast) group-hover/tile:scale-110"
           />
           <span className="w-full truncate text-center text-3xs font-semibold tabular-nums text-foreground/85">
-            {priceText(listing) || '—'}
+            {askingPrice(listing)}
           </span>
-        </button>
+        </Button>
       </PopoverTrigger>
       <PopoverContent
         onMouseEnter={() => setOpen(true)}
@@ -256,19 +270,21 @@ export function TraderSidebar({
         </div>
         <p className="px-0.5 text-2xs text-muted-foreground">{t('trader.clickItemHint')}</p>
         {thread.userId && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="xs"
             onClick={() =>
               openPanel('market', {
                 filters: { sellerUserId: thread.userId, sellerName: username ?? thread.name },
                 tab: 'search',
               })
             }
-            className="inline-flex h-7 w-full items-center justify-center gap-1.5 rounded-md border border-border/60 text-2xs font-medium text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+            className="h-7 w-full gap-1.5 rounded-md border border-border/60 text-muted-foreground hover:bg-primary/10 hover:text-foreground"
           >
             <Store className="size-3.5" />
             {t('trader.browseAll')}
-          </button>
+          </Button>
         )}
       </>
     );
@@ -286,14 +302,16 @@ export function TraderSidebar({
         <UserRound className="size-4 text-muted-foreground" />
         <span className="flex-1 text-sm font-semibold tracking-tight">{t('trader.title')}</span>
         <Tip label={closeLabel}>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-sm"
             aria-label={closeLabel}
             onClick={onClose}
-            className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+            className="text-muted-foreground"
           >
             <PanelRightClose className="size-4" />
-          </button>
+          </Button>
         </Tip>
       </div>
       <ScrollArea className="min-h-0 flex-1 [&_[data-radix-scroll-area-viewport]>div]:!block">
@@ -314,15 +332,17 @@ export function TraderSidebar({
               <div className="min-w-0 flex-1">
                 <h4 className="truncate text-sm font-semibold leading-tight text-foreground">{thread.name}</h4>
                 {username ? (
-                  <button
+                  <Button
                     type="button"
+                    variant="quiet"
+                    size="inline"
                     onClick={() => openUrl(profileUrl(username))}
-                    className="inline-flex max-w-full items-center gap-1 rounded-sm text-xs text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-primary focus-visible:ring-2 focus-visible:ring-ring/60"
+                    className="max-w-full rounded-sm text-xs font-normal hover:text-primary"
                   >
                     <span className="truncate">@{username}</span>
                     <ExternalLink aria-hidden
                       className="size-3 shrink-0" />
-                  </button>
+                  </Button>
                 ) : (
                   // A website user without a known username (a market seller messaged from the market) is still linked
                   !thread.userId && (
@@ -346,16 +366,18 @@ export function TraderSidebar({
                 {accounts.map((account) => (
                   <Tip key={account}
                     label={t('trader.accountTip', { account })}>
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
+                      size="xs"
                       aria-label={t('trader.copyAccount', { account })}
                       onClick={() => void copyAccount(account)}
-                      className="inline-flex max-w-full items-center gap-1 rounded-full border border-border/70 bg-background/60 px-2 py-0.5 text-2xs font-medium text-foreground/90 outline-none transition-colors duration-(--dur-fast) hover:border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring/60"
+                      className="h-auto max-w-full rounded-full border-border/70 bg-background/60 px-2 py-0.5 text-foreground/90 shadow-none hover:border-primary/40 hover:bg-primary/10 hover:text-foreground/90 has-[>svg]:px-2"
                     >
                       <Gamepad2 aria-hidden
                         className="size-3 shrink-0 text-muted-foreground" />
                       <span className="truncate">*{account}</span>
-                    </button>
+                    </Button>
                   </Tip>
                 ))}
               </div>
@@ -366,61 +388,71 @@ export function TraderSidebar({
               {username && (
                 <>
                   <Tip label={t('trader.viewProfileTip')}>
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon-sm"
                       aria-label={t('trader.viewProfile')}
                       className={actionButtonClass}
                       onClick={() => openUrl(profileUrl(username))}
                     >
                       <UserRound className="size-3.5" />
-                    </button>
+                    </Button>
                   </Tip>
                   <Tip label={t('trader.theirMarketTip')}>
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon-sm"
                       aria-label={t('trader.theirMarket')}
                       className={actionButtonClass}
                       onClick={() => openUrl(marketUrl(username))}
                     >
                       <Store className="size-3.5" />
-                    </button>
+                    </Button>
                   </Tip>
                 </>
               )}
               {characterName && (
                 <Tip label={t('trader.viewCharacter')}>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon-sm"
                     aria-label={t('trader.viewCharacter')}
                     className={actionButtonClass}
                     onClick={() => openUrl(characterUrl(characterName))}
                   >
                     <Swords className="size-3.5" />
-                  </button>
+                  </Button>
                 </Tip>
               )}
               {characterName && (
                 <Tip label={t('trader.viewBuildTip')}>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon-sm"
                     aria-label={t('trader.viewBuild')}
                     className={actionButtonClass}
                     onClick={() => openPanel('builds', { character: { name: characterName } })}
                   >
                     <Shield className="size-3.5" />
-                  </button>
+                  </Button>
                 </Tip>
               )}
               {whisperAccount && (
                 <Tip label={t('trader.copyWhisperTip', { account: whisperAccount })}>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon-sm"
                     aria-label={t('trader.copyWhisperTarget')}
                     className={actionButtonClass}
                     onClick={() => void copyAccount(whisperAccount)}
                   >
                     <Copy className="size-3.5" />
-                  </button>
+                  </Button>
                 </Tip>
               )}
             </div>
@@ -495,20 +527,21 @@ export function TraderSidebar({
                   const delta = market && listing.hr_price > 0 ? marketDelta(listing.hr_price, market.hr) : null;
                   return (
                     <li key={listing._id}>
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="row"
                         onClick={() => openUrl(`https://www.projectdiablo2.com/market/listing/${listing._id}`)}
-                        className="flex w-full min-w-0 items-center gap-2 rounded-lg px-1.5 py-1 text-left outline-none transition-colors duration-(--dur-fast) hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring/60"
+                        className="min-w-0 rounded-lg px-1.5 py-1 hover:bg-accent/60 hover:text-foreground"
                       >
                         <ListingThumb listing={listing}
                           className={cn(!listed && 'opacity-50 grayscale')} />
                         <span className="min-w-0 flex-1">
-                          <span className={cn('block truncate text-xs font-semibold', nameColor(listing))}>
-                            {listing.item.name}
-                          </span>
+                          <ItemName {...listingItemName(listing)}
+                            className="block truncate text-xs font-semibold" />
                           <span className="flex items-center gap-1 text-2xs text-muted-foreground">
                             <span className="truncate tabular-nums text-foreground/85">
-                              {priceText(listing) || '—'}
+                              {askingPrice(listing)}
                             </span>
                             {market && (
                               <span className="shrink-0 tabular-nums">
@@ -526,7 +559,7 @@ export function TraderSidebar({
                         >
                           {listed ? t('trader.listed') : t('listing.unlisted')}
                         </span>
-                      </button>
+                      </Button>
                     </li>
                   );
                 })}
@@ -549,15 +582,17 @@ export function TraderSidebar({
                 profile.status === 'ready' &&
                 profile.total > grid.length &&
                 username && (
-                  <button
+                  <Button
                     type="button"
+                    variant="link"
+                    size="inline"
                     onClick={() => openUrl(marketUrl(username))}
-                    className="inline-flex items-center gap-0.5 rounded-sm normal-case tracking-normal text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
+                    className="gap-0.5 rounded-sm font-semibold normal-case tracking-normal"
                   >
                     {t('deals.more', { count: profile.total - grid.length })}
                     <ExternalLink aria-hidden
                       className="size-3" />
-                  </button>
+                  </Button>
                 )
               }
             >
@@ -570,20 +605,25 @@ export function TraderSidebar({
             <Section icon={Gamepad2}
               title={t('trader.inGame')}>
               <div className="space-y-1.5 rounded-lg border border-border/60 bg-background/30 px-2.5 py-2 text-xs">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-1.5 text-muted-foreground">
-                    <MessageCircle className="size-3.5" />
-                    {t('trader.whispers')}
-                  </span>
-                  <span className="font-semibold tabular-nums">{whisperCount}</span>
-                </div>
-                {lastWhisper > 0 && (
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-muted-foreground">{t('trader.lastWhisper')}</span>
-                    <span title={moment(lastWhisper).format('ddd, MMM D YYYY · h:mm A')}>
-                      {shortAgo(lastWhisper, now)}
+                <DataRow
+                  label={
+                    <span className="flex items-center gap-1.5">
+                      <MessageCircle className="size-3.5" />
+                      {t('trader.whispers')}
                     </span>
-                  </div>
+                  }
+                  value={whisperCount}
+                  valueClassName="font-semibold"
+                />
+                {lastWhisper > 0 && (
+                  <DataRow
+                    label={t('trader.lastWhisper')}
+                    value={
+                      <span title={moment(lastWhisper).format('ddd, MMM D YYYY · h:mm A')}>
+                        {shortAgo(lastWhisper, now)}
+                      </span>
+                    }
+                  />
                 )}
                 {thread.people.map((person) => (
                   <div key={person.key}

@@ -178,17 +178,19 @@ export function ChatTemplateForm({
           className="flex flex-wrap items-center gap-1.5 pt-0.5">
           <span className="text-2xs text-muted-foreground">Insert:</span>
           {tokens.map(({ token, description }) => (
-            <button
+            <Button
               key={token}
               type="button"
+              variant="outline"
+              size="xs"
               title={description}
               // Keep the text's caret: the token goes where the user was typing
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => insertToken(token)}
-              className="rounded-sm border border-border/70 bg-muted/60 px-1.5 py-0.5 font-mono text-2xs text-foreground/80 outline-none transition-[color,background-color,border-color] duration-(--dur-fast) hover:border-ring/50 hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+              className="h-auto rounded-sm border-border/70 bg-muted/60 px-1.5 py-0.5 font-mono font-normal text-foreground/80 shadow-none hover:bg-muted hover:text-foreground"
             >
               {token}
-            </button>
+            </Button>
           ))}
         </div>
         <p id={`${id}-asks`}

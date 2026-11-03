@@ -16,10 +16,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SettingsGroup,
+  SettingsRow,
+  SettingsSkeleton,
 } from '@pd2-trader/ui';
 import { ISettings, useOptions } from '@/hooks/useOptions';
 import { DEFAULT_WHISPER_TEMPLATE } from '@/pages/market/lib/whisper';
-import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import {
   ageDayOptions,
   alertSecondsOptions,

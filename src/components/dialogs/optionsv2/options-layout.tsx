@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { motion, MotionConfig } from 'framer-motion';
 import { Check, type LucideIcon } from 'lucide-react';
-import { ScrollArea, cn } from '@pd2-trader/ui';
-import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
+import { Button, ScrollArea, cn, PanelChrome, PanelSurface, fadeInUp, springSnappy } from '@pd2-trader/ui';
 import { usePanel } from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
-import { fadeInUp, springSnappy } from '@/lib/motion';
 import SettingGenereal from './appearance/layout';
 import SettingsHotkeys from './hotkeys/layout';
 import SettingsAbout from './about/layout';
@@ -179,8 +177,8 @@ export default function SettingsLayout() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <WindowPanel className="h-full w-full">
-        <WindowChrome
+      <PanelSurface className="h-full w-full">
+        <PanelChrome
           title={
             <span className="flex items-baseline gap-2">
               <span className="text-base">{t('layout.title')}</span>
@@ -208,12 +206,14 @@ export default function SettingsLayout() {
                   const active = item.title === selectedItem.title;
                   const Icon = item.icon;
                   return (
-                    <button
+                    <Button
                       key={item.title}
                       ref={(el) => {
                         tabRefs.current[index] = el;
                       }}
                       type="button"
+                      variant="ghost"
+                      size="row"
                       role="tab"
                       id={`settings-tab-${index}`}
                       aria-selected={active}
@@ -222,10 +222,10 @@ export default function SettingsLayout() {
                       onClick={() => setSelectedItem(item)}
                       onKeyDown={(e) => onNavKeyDown(e, index)}
                       className={cn(
-                        'group relative flex h-9 items-center gap-2.5 rounded-md px-2.5 text-left text-sm font-medium outline-none',
-                        'transition-[color,background-color,transform] duration-(--dur-fast) ease-out motion-safe:active:scale-[0.98]',
-                        'focus-visible:ring-2 focus-visible:ring-ring/60',
-                        active ? 'text-foreground' : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+                        'group relative h-9 gap-2.5 rounded-md px-2.5 py-0 font-medium aria-selected:bg-transparent',
+                        active
+                          ? 'text-foreground hover:bg-transparent hover:text-foreground aria-selected:text-foreground'
+                          : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
                       )}
                     >
                       {active && (
@@ -246,7 +246,7 @@ export default function SettingsLayout() {
                         )}
                       />
                       <span className="relative truncate">{t(item.titleKey)}</span>
-                    </button>
+                    </Button>
                   );
                 })}
               </nav>
@@ -286,7 +286,7 @@ export default function SettingsLayout() {
             </ScrollArea>
           </div>
         </SettingsNavContext.Provider>
-      </WindowPanel>
+      </PanelSurface>
     </MotionConfig>
   );
 }

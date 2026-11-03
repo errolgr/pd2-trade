@@ -78,9 +78,9 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
+  PanelChrome,
+  PanelSurface,
 } from '@pd2-trader/ui';
-import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
-
 const VARIANTS = ['default', 'secondary', 'outline', 'ghost', 'destructive', 'link'] as const;
 const SIZES = ['sm', 'default', 'lg'] as const;
 const QUALITIES = ['unique', 'set', 'rare', 'magic', 'crafted', 'rune', 'normal', 'gold', 'corrupted'] as const;
@@ -308,8 +308,8 @@ export default function PrimitivesGallery() {
           </Section>
 
           <Section title="Window chrome">
-            <WindowPanel className="h-40">
-              <WindowChrome
+            <PanelSurface className="h-40">
+              <PanelChrome
                 title="Net Worth"
                 icon={<Coins />}
                 diabloFont
@@ -324,7 +324,7 @@ export default function PrimitivesGallery() {
                 onClose={() => undefined}
               />
               <div className="p-3 text-muted-foreground">Panel body on bg-surface</div>
-            </WindowPanel>
+            </PanelSurface>
           </Section>
 
           <Section title="Quality colors"

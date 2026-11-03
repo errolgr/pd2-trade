@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ExternalLink, Gem, History, Repeat, SearchX, Skull, Star, Swords, Users } from 'lucide-react';
-import { cn, Badge, Button, Skeleton } from '@pd2-trader/ui';
-import { HoverPopover } from '@/components/custom/hover-popover';
-import { EmptyState } from '@/pages/currency/components/StatePanel';
+import { cn, Badge, Button, Skeleton, HoverPopover, EmptyState } from '@pd2-trader/ui';
 import { openUrl } from '@/lib/browser-opener';
 import { useOptions } from '@/hooks/useOptions';
 import {
@@ -458,11 +456,13 @@ function DollCell({ cell, item, merc }: { cell: DollCellDef; item: DollItem | un
         content={<ItemTooltipCard item={item} />}>
         <ItemActionsMenu item={item}
           merc={merc}>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="inline"
             aria-label={`${item.name} (${item.slot})`}
             className={cn(
-              'relative flex w-full flex-col items-center justify-center rounded-md border bg-background/40 outline-none transition-[background-color,transform] duration-(--dur-fast) hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring/50 active:scale-[0.98]',
+              'relative flex w-full flex-col gap-0 rounded-md border bg-background/40 hover:bg-accent/40 hover:text-current focus-visible:ring-ring/50',
               qualityBorder(item.quality, item.runeword),
             )}
             style={{ height }}
@@ -489,7 +489,7 @@ function DollCell({ cell, item, merc }: { cell: DollCellDef; item: DollItem | un
                 {fmtHr(item.priceHr)}
               </span>
             )}
-          </button>
+          </Button>
         </ItemActionsMenu>
       </HoverPopover>
     </div>
@@ -535,11 +535,13 @@ function CharmCell({ charm }: { charm: CharmItem }) {
       <HoverPopover side="right"
         content={<ItemTooltipCard item={charm} />}>
         <ItemActionsMenu item={charm}>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="inline"
             aria-label={charm.name}
             className={cn(
-              'relative flex w-full items-center justify-center rounded-sm border bg-background/40 outline-none transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring',
+              'relative flex w-full gap-0 rounded-sm border bg-background/40 hover:bg-accent/60 hover:text-current focus-visible:ring-ring',
               qualityBorder(charm.quality, charm.runeword),
             )}
             style={{ height }}
@@ -549,7 +551,7 @@ function CharmCell({ charm }: { charm: CharmItem }) {
               height={height - 4}
               className="border-0 bg-transparent" />
             {charm.corrupted && <span className="absolute top-0.5 right-0.5 size-1 rounded-full bg-q-corrupted" />}
-          </button>
+          </Button>
         </ItemActionsMenu>
       </HoverPopover>
     </div>

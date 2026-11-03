@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowDownLeft, ArrowUp, MessagesSquare, Pencil, Store, Trash2 } from 'lucide-react';
+import { itemQualityClass } from '@pd2-trader/ui';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
 import { t } from '@/i18n';
 import { reportApiError } from '@/lib/error-reporting';
-import { ListingThumb, nameColor } from '@/pages/chat/components/ListingCard';
+import { ListingThumb } from '@/pages/chat/components/ListingCard';
 import { offerStatus } from '@/pages/chat/components/ThreadDeals';
 import { offerThreadId } from '@/pages/chat/lib/offers-seen';
 import { itemDisplayName } from '@/pages/market/lib/listing';
@@ -137,7 +138,10 @@ function toItem(
   const { listing } = entry;
   return {
     ref,
-    titleClassName: nameColor(listing),
+    titleClassName: itemQualityClass(listing.item.quality?.name, {
+      runeword: listing.item.is_runeword,
+      name: listing.item.name,
+    }),
     subtitle: baseName(listing) ?? undefined,
     icon: <ListingThumb listing={listing}
       className="size-5 rounded-sm"

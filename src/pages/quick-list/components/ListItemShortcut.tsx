@@ -26,6 +26,16 @@ import {
   TabsContent,
   ScrollArea,
   cn,
+  badgeVariants,
+  itemCardVariants,
+  EmptyState,
+  PanelSurface,
+  DUR,
+  EASE_OUT,
+  fadeInUp,
+  listItem,
+  listStagger,
+  popIn,
 } from '@pd2-trader/ui';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
@@ -50,10 +60,6 @@ import { buildGetAllUserMarketListingsQuery } from '@/pages/price-check/lib/trad
 import { trackEvent, trackMeasurement } from '@/lib/telemetry';
 import { usePendingListingsQueue, PendingListing } from '@/hooks/usePendingListingsQueue';
 import MultipleMatchSelector from './MultipleMatchSelector';
-import EmptyState from './EmptyState';
-import { countChip, itemCard } from './styles';
-import { WindowPanel } from '@/components/custom/window-chrome';
-import { DUR, EASE_OUT, fadeInUp, listItem, listStagger, popIn } from '@/lib/motion';
 import { showToast, usePanel } from '@/overlay';
 import { subscribeListingDeleted } from '@/hooks/pd2website/listing-events';
 import { exactStashMatches } from '../lib/exact-stash-match';
@@ -848,9 +854,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       return (
         <EmptyState icon={<ListChecks />}
           title={t('queued.emptyTitle')}
-          className="h-full">
-          {t('queued.emptyDescription')}
-        </EmptyState>
+          description={t('queued.emptyDescription')}
+          className="m-4" />
       );
     }
 
@@ -909,7 +914,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
                     variants={listItem}
                     exit={{ opacity: 0, x: -12, transition: { duration: DUR.fast } }}
                     key={pendingListing.id}
-                    className={itemCard({ className: 'flex items-center justify-between gap-3' })}
+                    className={itemCardVariants({ className: 'flex items-center justify-between gap-3' })}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="truncate font-medium">{itemName}</div>
@@ -983,9 +988,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       return (
         <EmptyState icon={<PackageSearch />}
           title={t('shortcut.noItemTitle')}
-          className="h-75">
-          {t('shortcut.noItemDescription')}
-        </EmptyState>
+          description={t('shortcut.noItemDescription')}
+          className="m-4" />
       );
     }
 
@@ -1037,13 +1041,15 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
               <span>{t('shortcut.noItemsFound', { name: item.name || item.type })}</span>
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="inline"
                     aria-label={t('shortcut.whyNotFound')}
-                    className="inline-flex rounded-full text-warning outline-none transition-transform duration-(--dur-fast) hover:scale-110 focus-visible:ring-2 focus-visible:ring-ring/60"
+                    className="rounded-full text-warning hover:bg-transparent hover:text-warning motion-safe:hover:scale-110"
                   >
-                    <AlertCircle className="w-4 h-4" />
-                  </button>
+                    <AlertCircle className="size-4" />
+                  </Button>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs text-xs text-center">
                   {t('shortcut.notFoundTooltip')}
@@ -1176,7 +1182,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
             initial="hidden"
             animate="visible"
             exit="exit"
-            className={cn(countChip, 'h-4.5 min-w-4.5 text-2xs')}
+            className={cn(badgeVariants({ variant: 'count' }), 'h-4.5 min-w-4.5 text-2xs')}
           >
             {count}
           </motion.span>
@@ -1187,7 +1193,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
 
   return (
     <MotionConfig reducedMotion="user">
-      <WindowPanel animate
+      <PanelSurface animate
         className="h-full w-full">
         <Tabs
           value={activeTab}
@@ -1267,7 +1273,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
             {renderQueuedItemsContent()}
           </TabsContent>
         </Tabs>
-      </WindowPanel>
+      </PanelSurface>
     </MotionConfig>
   );
 };

@@ -1,8 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { MotionConfig } from 'framer-motion';
 import { ExternalLink, Loader2, SearchX } from 'lucide-react';
-import { Button, TooltipProvider } from '@pd2-trader/ui';
-import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
+import { Button, TooltipProvider, PanelChrome, PanelSurface } from '@pd2-trader/ui';
 import { usePanel, useOverlay } from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
@@ -71,7 +70,7 @@ export const ListingDrawerPage: React.FC = () => {
   return (
     <MotionConfig reducedMotion="user">
       <TooltipProvider delayDuration={300}>
-        <WindowPanel animate
+        <PanelSurface animate
           className="h-full w-full">
           {row ? (
             <ListingDetail
@@ -88,7 +87,7 @@ export const ListingDrawerPage: React.FC = () => {
             />
           ) : (
             <>
-              <WindowChrome title={t('drawer.title')}
+              <PanelChrome title={t('drawer.title')}
                 showGrip={false}
                 dragRegion={false}
                 onClose={close} />
@@ -116,7 +115,7 @@ export const ListingDrawerPage: React.FC = () => {
               </div>
             </>
           )}
-        </WindowPanel>
+        </PanelSurface>
       </TooltipProvider>
     </MotionConfig>
   );

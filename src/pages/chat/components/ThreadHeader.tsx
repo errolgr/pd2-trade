@@ -18,7 +18,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import {
-  buttonVariants,
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -33,10 +33,9 @@ import { useOverlay } from '@/overlay';
 import type { TraderPresence } from '../hooks/useTraderProfile';
 import { characterUrl, ChatAvatar, profileUrl, Tip } from './chat-parts';
 
-const iconButtonClass = cn(
-  buttonVariants({ variant: 'ghost', size: 'icon' }),
-  'size-8 shrink-0 text-muted-foreground hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground',
-);
+/** Extras on a ghost icon Button: a size-8 muted icon that stays highlighted while its menu is open. */
+const iconButtonClass =
+  'size-8 shrink-0 text-muted-foreground hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground';
 
 export function ThreadHeader({
   name,
@@ -91,36 +90,42 @@ export function ThreadHeader({
     <div className="relative flex h-16 shrink-0 items-center justify-between gap-2 border-b border-border/70 bg-linear-to-b from-card/80 to-card/30 px-3">
       <div className="flex min-w-0 items-center gap-2.5">
         {onBack && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             aria-label={t('header.back')}
             title={t('header.backHint')}
             onClick={onBack}
             className={cn(iconButtonClass, '-ml-1')}
           >
             <ArrowLeft className="size-4" />
-          </button>
+          </Button>
         )}
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="inline"
           tabIndex={-1}
           aria-label={t('bubble.traderDetails', { name })}
           onClick={traderOpen ? undefined : onToggleTrader}
-          className="shrink-0 rounded-full outline-none transition-transform duration-(--dur-fast) hover:scale-105 active:scale-95"
+          className="shrink-0 rounded-full hover:bg-transparent hover:scale-105 motion-safe:active:scale-95"
         >
           <ChatAvatar name={name}
             presence={presence}
             className="size-10" />
-        </button>
+        </Button>
         <div className="min-w-0">
           <h3 className="flex min-w-0 items-center gap-1.5 text-base font-semibold leading-tight tracking-tight text-foreground">
-            <button
+            <Button
               type="button"
+              variant="link"
+              size="inline"
               onClick={traderOpen ? undefined : onToggleTrader}
-              className="min-w-0 truncate rounded-sm outline-none hover:underline hover:decoration-primary/50 hover:underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring/60"
+              className="block min-w-0 truncate rounded-sm font-semibold text-foreground decoration-primary/50"
             >
               {name}
-            </button>
+            </Button>
             {muted && (
               <BellOff role="img"
                 aria-label={t('thread.muted')}
@@ -134,15 +139,17 @@ export function ThreadHeader({
             {username && (
               <Tip label={t('header.openProfile')}
                 side="bottom">
-                <button
+                <Button
                   type="button"
+                  variant="quiet"
+                  size="inline"
                   onClick={() => openUrl(profileUrl(username))}
-                  className="inline-flex min-w-0 items-center gap-0.5 rounded-sm outline-none transition-colors duration-(--dur-fast) hover:text-primary focus-visible:ring-2 focus-visible:ring-ring/60"
+                  className="min-w-0 gap-0.5 rounded-sm font-normal hover:text-primary"
                 >
                   <span className="truncate">@{username}</span>
                   <ExternalLink aria-hidden
                     className="size-3 shrink-0 opacity-70" />
-                </button>
+                </Button>
               </Tip>
             )}
             {presenceText && (
@@ -177,8 +184,10 @@ export function ThreadHeader({
       <div className="flex shrink-0 items-center gap-0.5">
         <Tip label={traderOpen ? t('header.hideTrader') : t('header.showTrader')}
           side="bottom">
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             aria-label={t('header.traderDetails')}
             aria-pressed={traderOpen}
             onClick={onToggleTrader}
@@ -188,12 +197,16 @@ export function ThreadHeader({
             )}
           >
             <PanelRight className="size-4" />
-          </button>
+          </Button>
         </Tip>
         <DropdownMenu>
-          <DropdownMenuTrigger aria-label={t('header.options')}
-            className={iconButtonClass}>
-            <MoreHorizontal className="size-4" />
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost"
+              size="icon"
+              aria-label={t('header.options')}
+              className={iconButtonClass}>
+              <MoreHorizontal className="size-4" />
+            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end"
             side="bottom"

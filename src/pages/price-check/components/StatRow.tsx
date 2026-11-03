@@ -3,11 +3,9 @@ import { AnimatePresence, animate, motion } from 'framer-motion';
 import type { Item, Stat, StatFilterInput } from '@/pages/price-check/lib/interfaces';
 import { DAMAGE_PAIRS, damagePairText, statIdToProperty, StatId } from '@/pages/price-check/lib/stat-mappings';
 import { statText } from '@/pages/price-check/lib/tooltip-lines';
-import { HoverPopover } from '@/components/custom/hover-popover';
 import { fuzzyClassSkillByName, fuzzyClassSubSkillByName } from '@/assets/class-skills';
 import { X, Check, Info, Eraser } from 'lucide-react';
-import { cn, Checkbox, Badge } from '@pd2-trader/ui';
-import { DUR, EASE_OUT, listItem, listStagger } from '@/lib/motion';
+import { cn, Button, Checkbox, Badge, HoverPopover, Input, DUR, EASE_OUT, listItem, listStagger } from '@pd2-trader/ui';
 import type { PseudoOption } from '@/pages/price-check/lib/pseudo-fold';
 import { PseudoChip } from './PseudoChip';
 import type { AppraisedStat } from '@/lib/rare-appraisal-api';
@@ -88,9 +86,9 @@ const rowPresence = {
   exit: { height: 0, opacity: 0, transition: { duration: DUR.med, ease: EASE_OUT } },
 } as const;
 
-// Rows are min-h-9 (py-1 + this 28px input) so selecting a stat doesn't change the row height.
-const numberInputClass =
-  'h-7 w-16 rounded-md border border-input bg-background/60 px-2 text-xs tabular-nums text-foreground shadow-xs outline-none transition-[border-color,box-shadow] duration-(--dur-fast) placeholder:text-muted-foreground hover:border-ring/40 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 dark:bg-input/30';
+// DS Input at the stat row's density (64px wide, 12px figures). Rows are min-h-9 (py-1 + this 28px input) so
+// selecting a stat doesn't change the row height.
+const numberInputClass = 'h-7 w-16 bg-background/60 px-2 py-0 text-xs tabular-nums text-foreground md:text-xs';
 
 export const StatRow: React.FC<StatRowProps> = ({
   stat,
@@ -392,7 +390,7 @@ export const StatRow: React.FC<StatRowProps> = ({
                     )}
                     <span data-range-line
                       className="relative flex items-center gap-1.5 overflow-hidden rounded-md">
-                      <input
+                      <Input
                         type="number"
                         className={numberInputClass}
                         placeholder={t('statRow.minPlaceholder')}
@@ -413,8 +411,10 @@ export const StatRow: React.FC<StatRowProps> = ({
                         >
                           –
                         </span>
-                        <button
+                        <Button
                           type="button"
+                          variant="quiet"
+                          size="inline"
                           aria-label={t('statRow.clearRangeAria', { label: aria })}
                           title={t('statRow.clearRangeTitle')}
                           tabIndex={hasRange ? 0 : -1}
@@ -431,14 +431,14 @@ export const StatRow: React.FC<StatRowProps> = ({
                               ?.focus({ preventScroll: true });
                           }}
                           className={cn(
-                            'absolute inset-0 inline-flex items-center justify-center rounded text-muted-foreground opacity-0 outline-none transition-[opacity,color] duration-(--dur-fast) hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/60',
+                            'absolute inset-0 rounded-sm opacity-0 transition-[opacity,color] focus-visible:opacity-100',
                             hasRange ? 'group-hover/row:opacity-70 hover:opacity-100!' : 'pointer-events-none',
                           )}
                         >
                           <Eraser className="size-3" />
-                        </button>
+                        </Button>
                       </span>
-                      <input
+                      <Input
                         type="number"
                         className={numberInputClass}
                         placeholder={t('statRow.maxPlaceholder')}

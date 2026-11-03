@@ -1,8 +1,8 @@
 import React from 'react';
 import { ChevronRight, Store, User as UserIcon } from 'lucide-react';
-import { Skeleton, cn } from '@pd2-trader/ui';
+import { Button, ItemName, PriceTag, Skeleton, cn } from '@pd2-trader/ui';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { ListingThumb, nameColor } from '@/pages/chat/components/ListingCard';
+import { ListingThumb } from '@/pages/chat/components/ListingCard';
 import type { TraderPresence } from '@/pages/chat/hooks/useTraderProfile';
 import { DealBadge } from './DealBadge';
 import { useSellerContext } from './useSellerContext';
@@ -18,8 +18,6 @@ const PRESENCE_TONE: Record<TraderPresence['kind'], string> = {
   seen: 'bg-muted-foreground/50',
   unknown: 'bg-muted-foreground/30',
 };
-
-const priceText = (listing: MarketListingEntry) => (listing.hr_price > 0 ? `${listing.hr_price} HR` : listing.price);
 
 /**
  * Detail-pane seller block: name + in-game account, presence (in game / online / last seen), account age, and
@@ -63,24 +61,30 @@ export function SellerCard({
       <ul className="space-y-0.5">
         {seller.others.map((other) => (
           <li key={other._id}>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="inline"
               disabled={!onSelectListing}
               onClick={() => onSelectListing?.(other)}
-              className="flex w-full min-w-0 items-center gap-2 rounded-md px-1 py-0.5 text-left outline-none transition-colors duration-(--dur-fast) hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring/60 disabled:cursor-default disabled:hover:bg-transparent"
+              className="flex w-full min-w-0 justify-start gap-2 px-1 py-0.5 text-left font-normal hover:bg-accent/40 hover:text-current disabled:cursor-default disabled:opacity-100"
             >
               <ListingThumb listing={other}
                 className="size-7"
                 artClassName="max-h-6 max-w-6" />
-              <span className={cn('min-w-0 flex-1 truncate text-xs font-semibold', nameColor(other))}>
-                {other.item.name}
-              </span>
+              <ItemName
+                name={other.item.name}
+                quality={other.item.quality?.name}
+                runeword={other.item.is_runeword}
+                className="min-w-0 flex-1 truncate text-xs font-semibold"
+              />
               <DealBadge deal={deals.get(other._id)}
                 compact />
               <span className="max-w-24 shrink-0 truncate text-2xs tabular-nums text-foreground/85">
-                {priceText(other) || '—'}
+                {other.hr_price > 0 ? <PriceTag amount={other.hr_price}
+                  unit="hr" /> : other.price || '—'}
               </span>
-            </button>
+            </Button>
           </li>
         ))}
       </ul>
@@ -135,14 +139,16 @@ export function SellerCard({
           </h4>
           {others}
           {onBrowseSeller && (
-            <button
+            <Button
               type="button"
+              variant="quiet"
+              size="inline"
               onClick={onBrowseSeller}
-              className="flex w-full items-center justify-center gap-1 rounded-md px-1.5 py-1 text-2xs font-medium text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+              className="flex w-full gap-1 px-1.5 py-1 text-2xs hover:bg-primary/10"
             >
               {seller.username ? t('seller.browseAllFrom', { name: seller.username }) : t('seller.browseAllThis')}
               <ChevronRight className="size-3" />
-            </button>
+            </Button>
           )}
         </div>
       )}

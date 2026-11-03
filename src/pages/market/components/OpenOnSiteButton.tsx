@@ -1,4 +1,5 @@
 import { ExternalLink } from 'lucide-react';
+import { Button } from '@pd2-trader/ui';
 import { openUrl } from '@/lib/browser-opener';
 import { trackEvent } from '@/lib/telemetry';
 import { showToast } from '@/overlay';
@@ -31,15 +32,17 @@ export function OpenOnSiteButton({ filters }: { filters: MarketFilters | null })
   };
 
   return (
-    <button
+    <Button
       type="button"
+      variant="outline"
+      size="icon-xs"
       aria-label={label}
       title={label}
       disabled={!link}
       onClick={open}
-      className="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-input bg-background/40 text-muted-foreground outline-none transition-[color,background-color,border-color] duration-(--dur-fast) hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 disabled:cursor-not-allowed disabled:opacity-50"
+      className="shrink-0 bg-background/40 text-muted-foreground shadow-none hover:border-input hover:text-foreground disabled:pointer-events-auto disabled:cursor-not-allowed"
     >
       <ExternalLink className="size-3.5" />
-    </button>
+    </Button>
   );
 }

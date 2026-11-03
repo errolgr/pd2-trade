@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import './globals.css';
 // UI language: initialized before the first render (bundled resources, synchronous)
-import { useTranslation } from '@/i18n';
+import { currentLocale, useTranslation } from '@/i18n';
 import { UiLabelsProvider } from '@pd2-trader/ui';
 import { initDebugLoggingFromSettings } from '@/lib/debug-logger';
 import { initTheme } from '@/lib/themes';
@@ -76,7 +76,7 @@ const AppRoot: React.FC = () => (
 // The native sign-in window (src-tauri commands::open_sign_in_window): only its view, Main runs the sign-in
 const signInWindow = new URLSearchParams(window.location.search).get('window') === 'sign-in';
 
-/** Translated built-in strings of @pd2-trader/ui components (screen-reader close/more, retry, loading). */
+/** Translated built-in strings of @pd2-trader/ui components (screen-reader close/more, retry, loading, units). */
 const UiLabels: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { t } = useTranslation();
   return (
@@ -86,6 +86,8 @@ const UiLabels: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         more: t('app:ui.more'),
         retry: t('common:actions.retry'),
         loading: t('common:status.loading'),
+        gold: (amount) => t('currency:overview.gold', { amount }),
+        locale: currentLocale(),
       }}
     >
       {children}

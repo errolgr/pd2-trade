@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { DUR, EASE_OUT } from '@/lib/motion';
+import { DUR, EASE_OUT } from '@pd2-trader/ui';
 
 /** Rows of a fresh result set that rise in (with a short stagger); the rest just appear. */
 const INTRO_ROWS = 8;

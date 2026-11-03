@@ -43,11 +43,15 @@ function renderTable(props: Partial<React.ComponentProps<typeof HoldingsTable>> 
 /** Item names of the body rows, top to bottom. */
 function rowNames(): string[] {
   const body = document.querySelector('tbody')!;
-  return [...body.querySelectorAll('tr')].map((tr) => tr.querySelector('td p')?.textContent ?? tr.textContent ?? '');
+  return [...body.querySelectorAll('tr')].map(
+    (tr) => tr.querySelector('td [data-slot="item-name"]')?.textContent ?? tr.textContent ?? '',
+  );
 }
 
 function rowCells(name: string): string[] {
-  const row = [...document.querySelectorAll('tbody tr')].find((tr) => tr.querySelector('td p')?.textContent === name)!;
+  const row = [...document.querySelectorAll('tbody tr')].find(
+    (tr) => tr.querySelector('td [data-slot="item-name"]')?.textContent === name,
+  )!;
   return [...row.querySelectorAll('td')].map((td) => td.textContent ?? '');
 }
 
