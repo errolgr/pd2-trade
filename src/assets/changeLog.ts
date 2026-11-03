@@ -2,6 +2,8 @@ export const changeLog = {
   '0.10.15': [
     "🆕 List Item, queued listings, Ctrl+U and auto-delist find items in your characters' personal stashes too, not only the shared stash (characters of the mode picked in Settings). Moving an item between a personal stash and the shared stash doesn't count as taking it out",
     '🔧 Chat: a listing made from a personal stash shows "Personal" as its stash instead of "Shared 0"',
+    '🔧 Price check: searching by Enhanced Damage finds listings again (it found none since 0.10.13)',
+    '🔧 Price check: All Resistances and All Attributes find every item with that line again, not only items that roll each resistance or attribute separately',
   ],
   '0.10.14': [
     '🆕 Price check: click Price or Age to sort (again to flip the order)',

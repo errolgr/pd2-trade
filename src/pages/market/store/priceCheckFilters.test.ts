@@ -61,12 +61,15 @@ describe('marketQueryToFilters', () => {
     ]);
   });
 
-  it('expands combined rows into real modifiers and fixes unprefixed names', () => {
+  // Listings carry these lines under these names; renaming or splitting them found nothing (ED) or only items
+  // rolling four separate resists / attributes (All Resistances, All Attributes)
+  it('keeps Enhanced Damage, All Resistances and All Attributes as the single modifiers listings carry', () => {
     const filters = read(
       {
         'item.modifiers': {
           $all: [
             { $elemMatch: { name: 'all_resist', 'values.0': { $gte: 15 } } },
+            { $elemMatch: { name: 'all_attributes', 'values.0': { $gte: 5 } } },
             { $elemMatch: { name: 'maxdamage_percent', 'values.0': { $gte: 200, $lte: 250 } } },
           ],
         },
@@ -75,11 +78,9 @@ describe('marketQueryToFilters', () => {
     );
     expect(filters).toMatchObject({ source: 'archive', maxAgeDays: 14 });
     expect(stripIds(filters)).toEqual([
-      { kind: 'mod', key: 'fireresist', min: 15, enabled: true },
-      { kind: 'mod', key: 'lightresist', min: 15, enabled: true },
-      { kind: 'mod', key: 'coldresist', min: 15, enabled: true },
-      { kind: 'mod', key: 'poisonresist', min: 15, enabled: true },
-      { kind: 'mod', key: 'item_maxdamage_percent', min: 200, max: 250, enabled: true },
+      { kind: 'mod', key: 'all_resist', min: 15, enabled: true },
+      { kind: 'mod', key: 'all_attributes', min: 5, enabled: true },
+      { kind: 'mod', key: 'maxdamage_percent', min: 200, max: 250, enabled: true },
     ]);
   });
 

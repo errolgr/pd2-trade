@@ -8,7 +8,6 @@
  * same thing. Modifier shapes the service's stat-key grammar can't express yet are reported as gaps
  * (`MarketFilterGap`); the price check sends those searches to PD2 instead.
  */
-import { modifierByName } from '@/assets/modifiers';
 import type { ItemType as PD2Item } from '@/assets/itemFuzzySearch';
 import { buildGetMarketListingQuery, type QualitySearch } from '@/pages/price-check/lib/tradeUrlBuilder';
 import type { Item, Stat, StatFilterInput } from '@/pages/price-check/lib/interfaces';
@@ -55,12 +54,6 @@ const RARITIES: readonly Rarity[] = ['Normal', 'Superior', 'Magic', 'Rare', 'Cra
 /** Charm base codes → item type codes (the price check queries charms by `$in` of all four charm types). */
 const CHARM_TYPE_BY_BASE: Record<string, string> = { cm1: 'scha', cm2: 'mcha', cm3: 'lcha' };
 
-/** Combined price-check rows that are no PD2 modifier: each expands to the modifiers it stands for. */
-const COMBINED_MODIFIERS: Record<string, string[]> = {
-  all_resist: ['fireresist', 'lightresist', 'coldresist', 'poisonresist'],
-  all_attributes: ['strength', 'energy', 'dexterity', 'vitality'],
-};
-
 type ElemMatch = Record<string, unknown> & { name: string | { $in: string[] } };
 
 /** Market browser keys of the physical min/max damage modifiers (stat-options `a|b` alternatives). */
@@ -72,12 +65,6 @@ const PHYSICAL_DAMAGE_KEYS = [
 /** `value[key]` when value is an object (query fragments are loosely typed). */
 function prop(value: unknown, key: string): unknown {
   return value && typeof value === 'object' && key in value ? (value as Record<string, unknown>)[key] : undefined;
-}
-
-/** The real PD2 modifier name (the price check's table drops the `item_` prefix of a few, e.g. maxdamage_percent). */
-function modifierName(name: string): string {
-  if (modifierByName[name]) return name;
-  return modifierByName[`item_${name}`] ? `item_${name}` : name;
 }
 
 function readRange(value: unknown): { min?: number; max?: number } {
@@ -108,12 +95,12 @@ function statRows(match: ElemMatch, gaps: Set<MarketFilterGap>): Omit<StatFilter
     const alternatives = match.name.$in;
     const physical = PHYSICAL_DAMAGE_KEYS.find((k) => alternatives.every((n) => k.split('|').includes(n)));
     if (physical) return [{ kind: 'mod', key: physical, ...readRange(match['values.0']), enabled: true }];
-  } else if (COMBINED_MODIFIERS[match.name]) {
-    const range = readRange(match['values.0']);
-    return COMBINED_MODIFIERS[match.name].map((key) => ({ kind: 'mod', key, ...range, enabled: true }));
   }
   if ('label' in match) gaps.add('label');
-  const names = typeof match.name === 'string' ? [modifierName(match.name)] : match.name.$in;
+  // The PD2 query's own modifier names: the service indexes the same ones. Enhanced Damage is `maxdamage_percent`
+  // (`item_maxdamage_percent` is Enhanced Maximum Damage alone), All Resistances `all_resist` and All Attributes
+  // `all_attributes` (one line on the listing, not four)
+  const names = typeof match.name === 'string' ? [match.name] : match.name.$in;
 
   const values = Array.from({ length: QUERY_SLOTS }, (_, i) => match[`values.${i}`]);
   const bounded = values.flatMap((v, i) => (Object.keys(readRange(v)).length > 0 ? [i] : []));
