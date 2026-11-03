@@ -16,13 +16,19 @@ import { ListingDrawerPage } from '@/pages/market/ListingDrawerPage';
 import CorruptedZoneTimerPage from '@/pages/corrupted-zones/CorruptedZoneTimerPage';
 import BuildsPage from '@/pages/builds/BuildsPage';
 import PalettePage from '@/pages/palette/PalettePage';
-import type { PanelDefs } from './types';
+import PluginsPage from '@/plugins/ui/PluginsPage';
+import PluginConsentPage from '@/plugins/ui/PluginConsentPage';
+import { PluginPanelPage } from '@/plugins/ui/PluginPanelPage';
+import { usePluginHost } from '@/plugins/ui/hooks';
+import type { PluginPanelInfo } from '@/plugins/host/manager';
+import React, { useMemo, type ComponentType } from 'react';
+import type { CorePanelDefs, PanelDef, PanelDefs, PluginPanelId } from './types';
 
 /**
  * Every overlay panel. Each page owner tunes ONLY its own entry. Passed to <OverlayProvider defs={PANEL_DEFS}>
  * from main.tsx (kept out of '@/overlay' so importing the overlay API never pulls in every page).
  */
-export const PANEL_DEFS: PanelDefs = {
+export const PANEL_DEFS: CorePanelDefs = {
   // ---- itemSearch (Group Search) ----
   itemSearch: {
     id: 'itemSearch',
@@ -259,4 +265,77 @@ export const PANEL_DEFS: PanelDefs = {
     closeOnBlur: true,
     interactive: 'children',
   },
+
+  // ---- plugins (Group Plugins): marketplace browse/search + installed plugins ----
+  plugins: {
+    id: 'plugins',
+    component: PluginsPage,
+    size: { width: 920, height: 640 },
+    minSize: { width: 640, height: 420 },
+    resizable: true,
+    placement: 'screenCenter',
+    persist: true,
+    keyboard: 'onPointerDown',
+    keepMounted: false,
+    // Like Settings: usable outside the game; closes when the user leaves it
+    hideOnGameBlur: false,
+    closeOnBlur: true,
+  },
+
+  // ---- pluginConsent (Group Plugins): opened by the plugin host while a consent request is pending ----
+  pluginConsent: {
+    id: 'pluginConsent',
+    component: PluginConsentPage,
+    size: { width: 440, height: 520 },
+    resizable: false,
+    placement: 'screenCenter',
+    persist: false,
+    keyboard: 'onPointerDown',
+    keepMounted: false,
+    hideOnGameBlur: false,
+    // Only an explicit Allow / Cancel answers it (a stray click must not count as either)
+  },
 };
+
+// ---- plugin:<pluginId>:<panel> (Group Plugins, B7): sandboxed plugin panels, defined while their plugin is enabled ----
+const pluginPanelComponents = new Map<PluginPanelId, ComponentType>();
+
+function pluginPanelComponent(info: PluginPanelInfo): ComponentType {
+  let component = pluginPanelComponents.get(info.panelId);
+  if (!component) {
+    const PluginPanel = () => <PluginPanelPage pluginId={info.pluginId}
+      panel={info.panel} />;
+    PluginPanel.displayName = `PluginPanel(${info.panelId})`;
+    component = PluginPanel;
+    pluginPanelComponents.set(info.panelId, component);
+  }
+  return component;
+}
+
+export function pluginPanelDef(info: PluginPanelInfo): PanelDef {
+  return {
+    id: info.panelId,
+    component: pluginPanelComponent(info),
+    size: { width: 420, height: 520 },
+    minSize: { width: 280, height: 200 },
+    resizable: true,
+    placement: 'screenCenter',
+    persist: true,
+    keyboard: 'onPointerDown',
+    keepMounted: false, // PRD R2: no iframe for a closed panel
+    hideOnGameBlur: true,
+  };
+}
+
+/** Core panels plus the panels of enabled plugins (passed to <OverlayProvider defs>). */
+export function usePanelDefs(): PanelDefs {
+  const { panels } = usePluginHost();
+  const key = panels.map((p) => p.panelId).join('|');
+  return useMemo(() => {
+    const defs: PanelDefs = { ...PANEL_DEFS };
+    for (const info of panels) defs[info.panelId] = pluginPanelDef(info);
+    return defs;
+    // key: the panel ids (panels is a new array on every host snapshot)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+}

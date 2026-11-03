@@ -3,6 +3,8 @@ import type { Conversation, Message } from '@/common/types/pd2-website/ChatTypes
 import { CONVERSATION_PAGE_SIZE, MESSAGE_PAGE_SIZE, type SocialActions } from '@/hooks/pd2website/useSocialActions';
 import type { SubscribeSocket } from '@/hooks/pd2website/useSocket';
 import { isNetworkError } from '@/lib/network-errors';
+import { fromWebsiteMessage } from '@/plugins/adapters/chat';
+import { pluginHost } from '@/plugins/host/manager';
 
 export type SendStatus = 'sending' | 'failed';
 
@@ -505,6 +507,7 @@ export function useChatStore({
       const known = stateRef.current.conversations.some((c) => c._id === message.conversation_id);
       dispatch({ type: 'messageReceived', message, currentUserId, viewingConversationId: viewing });
       if (message.sender_id === currentUserId) return;
+      pluginHost.emit('chat.message', fromWebsiteMessage(message, currentUserId));
       // A new conversation: the list comes from the server
       if (!known) void loadConversations();
       onIncomingRef.current?.(message, message.conversation_id === viewing);

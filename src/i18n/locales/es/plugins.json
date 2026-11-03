@@ -1,0 +1,203 @@
+{
+  "surfaces": {
+    "market": {
+      "filter": "Filtro del plugin: {{label}}",
+      "sort": "Orden del plugin",
+      "sortBy": "Ordenar esta página por",
+      "sortDefault": "Orden de búsqueda"
+    }
+  },
+  "price": {
+    "hr": "{{value}} HR",
+    "rune": "{{value}} runas",
+    "gold": "{{value}} de oro"
+  },
+  "slot": {
+    "error": "Error del plugin",
+    "retry": "Reintentar",
+    "from": "De {{name}}"
+  },
+  "command": {
+    "failed": "Falló el comando del plugin"
+  },
+  "notify": {
+    "from": "De {{name}}"
+  },
+  "disabled": {
+    "failures": "Se desactivó {{name}}",
+    "failuresHint": "Falló o agotó el tiempo de espera 5 veces en 10 minutos. Vuelve a activarlo en Ajustes → Plugins.",
+    "blocklisted": "Se desactivó {{name}}",
+    "blocklistedHint": "Esta versión se bloqueó por seguridad. Busca una actualización en Plugins."
+  },
+  "panel": {
+    "frameTitle": "Panel de {{name}}",
+    "unavailable": "Panel del plugin no disponible",
+    "unavailableHint": "El plugin está desactivado o se eliminó. Actívalo en Ajustes → Plugins."
+  },
+  "consent": {
+    "installTitle": "Instalar plugin",
+    "updateTitle": "La actualización del plugin necesita aprobación",
+    "updateIntro": "Esta actualización solicita accesos que la versión actual no tiene.",
+    "unpacked": "Sin empaquetar",
+    "signed": "Firmado",
+    "asks": "Solicita",
+    "network": "Enviar y recibir datos de {{host}}",
+    "networkHint": "Las solicitudes pasan por PD2 Trader, que solo permite este sitio.",
+    "alsoUses": "También usa",
+    "nothing": "Este plugin no solicita ningún acceso especial.",
+    "never": "Los plugins nunca pueden leer tu inicio de sesión de PD2, pulsar teclas en el juego, leer tus archivos ni escribir en tu portapapeles.",
+    "cancel": "Cancelar",
+    "allowInstall": "Permitir e instalar",
+    "allowUpdate": "Permitir y actualizar"
+  },
+  "permissions": {
+    "prices_read": {
+      "label": "Leer precios de pd2trader",
+      "description": "Datos de precios y del mercado para tu ladder y modo."
+    },
+    "items_read": {
+      "label": "Ver objetos tasados",
+      "description": "Los objetos que tasas y su precio base."
+    },
+    "chat_read": {
+      "label": "Leer tu chat",
+      "description": "El chat de comercio del juego y los susurros, incluidos los mensajes privados."
+    },
+    "stash_read": {
+      "label": "Leer el valor de tu alijo",
+      "description": "Resumen del patrimonio de tu cuenta con sesión iniciada."
+    },
+    "account_profile": {
+      "label": "Ver el nombre de tu cuenta",
+      "description": "El nombre de tu cuenta de PD2 y tus personajes."
+    },
+    "storage_local": {
+      "label": "Guardar datos en este equipo",
+      "description": "Hasta 5 MB de sus propios datos."
+    },
+    "notifications": {
+      "label": "Mostrar notificaciones",
+      "description": "Algunos avisos por minuto."
+    }
+  },
+  "marketplace": {
+    "title": "Plugins",
+    "closeLabel": "Cerrar plugins",
+    "tabs": {
+      "browse": "Explorar",
+      "installed": "Instalados"
+    },
+    "search": "Buscar plugins",
+    "categoryFilter": "Categoría",
+    "categories": {
+      "all": "Todas",
+      "pricing": "Precios",
+      "trading": "Comercio",
+      "chat": "Chat",
+      "stash": "Alijo",
+      "ui": "Interfaz",
+      "theme": "Temas",
+      "utility": "Utilidades"
+    },
+    "by": "por {{author}}",
+    "verified": "Verificado",
+    "installs_one": "{{count}} instalación",
+    "installs_many": "{{count}} instalaciones",
+    "installs_other": "{{count}} instalaciones",
+    "noAccess": "Sin acceso especial",
+    "loadMore": "Cargar más",
+    "install": "Instalar",
+    "installing": "Instalando…",
+    "installed": "Instalado",
+    "updateAvailable": "Actualizar a v{{version}}",
+    "blocked": "Bloqueado",
+    "blockedHint": "Bloqueado por seguridad: {{reason}}",
+    "installedToast": "{{name}} instalado",
+    "installFailed": "No se pudo instalar {{name}}",
+    "loadFailed": "No se pudieron cargar los plugins",
+    "loadFailedHint": "El catálogo no respondió. Comprueba tu conexión e inténtalo de nuevo.",
+    "retry": "Reintentar",
+    "empty": "No se encontraron plugins",
+    "emptyHint": "Prueba otra búsqueda o categoría.",
+    "emptyInstalled": "No hay plugins instalados",
+    "emptyInstalledHint": "Explora el catálogo para añadir precios, alertas y temas.",
+    "browse": "Explorar plugins",
+    "detail": {
+      "back": "Volver a los plugins",
+      "access": "Qué puede hacer",
+      "versions": "Versiones",
+      "published": "Publicado el {{date}}",
+      "latest": "Más reciente",
+      "current": "Instalada",
+      "noVersions": "No hay versiones publicadas",
+      "loadFailed": "No se pudo cargar este plugin"
+    },
+    "manage": {
+      "status": {
+        "on": "Activado",
+        "off": "Desactivado",
+        "starting": "Iniciando…",
+        "stopped": "Detenido",
+        "error": "Error",
+        "failed": "Desactivado",
+        "blocked": "Bloqueado",
+        "incompatible": "Incompatible"
+      },
+      "reason": {
+        "failures": "Se desactivó tras fallar o agotar el tiempo de espera 5 veces en 10 minutos.",
+        "blocklisted": "Esta versión se bloqueó por seguridad. Instala una actualización cuando esté disponible.",
+        "incompatible": "Necesita una versión más reciente de PD2 Trader.",
+        "invalid": "Sus archivos están dañados. Vuelve a instalarlo."
+      },
+      "enable": "Activar o desactivar {{name}}",
+      "uninstall": "Desinstalar {{name}}",
+      "uninstallTitle": "¿Desinstalar {{name}}?",
+      "uninstallHint": "Se eliminarán sus ajustes y datos guardados.",
+      "uninstallConfirm": "Desinstalar",
+      "reviewUpdate": "Revisar la actualización a v{{version}}",
+      "updateFailed": "No se pudo aplicar la actualización"
+    }
+  },
+  "settings": {
+    "title": "Plugins",
+    "description": "Activa o desactiva los plugins instalados, carga uno que estés desarrollando y cambia los ajustes de los plugins.",
+    "browse": "Explorar plugins",
+    "empty": {
+      "title": "No hay plugins instalados",
+      "description": "Los plugins añaden fuentes de precios, herramientas de chat y temas. Explora el catálogo para encontrar uno."
+    },
+    "installed": {
+      "group": "Instalados",
+      "version": "v{{version}}"
+    },
+    "unpacked": {
+      "group": "Desarrollador",
+      "label": "Cargar sin empaquetar",
+      "urlHint": "La URL del servidor de desarrollo de tu plugin (pd2-plugin dev). Se recarga cuando cambian sus archivos.",
+      "folderHint": "Una carpeta dentro de la carpeta de configuración de PD2 Trader, p. ej. plugins-dev/<name>. Se recarga cuando cambian sus archivos.",
+      "load": "Cargar",
+      "loading": "Cargando…",
+      "failed": "No se pudo cargar el plugin.",
+      "installed": "{{name}} instalado"
+    },
+    "form": {
+      "tooLong": "Como máximo {{max}} caracteres.",
+      "number": "Introduce un número.",
+      "integer": "Introduce un número entero.",
+      "numberRange": "Introduce un número entre {{min}} y {{max}}.",
+      "integerRange": "Introduce un número entero entre {{min}} y {{max}}.",
+      "numberMin": "Introduce un número de al menos {{min}}.",
+      "integerMin": "Introduce un número entero de al menos {{min}}.",
+      "numberMax": "Introduce un número de como máximo {{max}}.",
+      "integerMax": "Introduce un número entero de como máximo {{max}}."
+    },
+    "hotkeys": {
+      "group": "Comandos de plugins",
+      "from": "De {{name}}",
+      "unbind": "Desactivar el atajo de {{action}}"
+    },
+    "theme": {
+      "badge": "Plugin"
+    }
+  }
+}

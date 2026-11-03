@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useEffect, useMemo, useReducer, useState } from 'react';
-import { isTauri } from '@tauri-apps/api/core';
 import { listen } from '@/lib/browser-events';
 import { chatPrefsLoaded, useChatPrefs } from '@/lib/chat-prefs';
 import { holdListener } from '@/lib/listener';
@@ -23,6 +22,8 @@ import {
   type WhisperPerson,
 } from '@/lib/whisper-history';
 import { newTrades } from '@/pages/chat/lib/offers-seen';
+import { fromTradeMessageEvent, fromWhisperEvent } from '@/plugins/adapters/chat';
+import { pluginHost } from '@/plugins/host/manager';
 
 type HistoryAction =
   | { type: 'loaded'; history: WhisperHistory }
@@ -108,20 +109,27 @@ export function WhisperHistoryProvider({ children }: { children: React.ReactNode
     };
   }, []);
 
-  // Listen once loaded, so nothing recorded meanwhile is overwritten by the load
+  // Listen once loaded, so nothing recorded meanwhile is overwritten by the load (browser mode: only the dev
+  // builds' simulated events reach these, see emitDevEvent)
   useEffect(() => {
-    if (!loaded || !isTauri()) return;
+    if (!loaded) return;
     const releases = [
       holdListener(
-        listen<TradeMessageEvent>('trade-message', (event) =>
-          dispatch({ type: 'trade', event: event.payload, now: Date.now() }),
-        ),
+        listen<TradeMessageEvent>('trade-message', (event) => {
+          const now = Date.now();
+          dispatch({ type: 'trade', event: event.payload, now });
+          pluginHost.emit('chat.message', fromTradeMessageEvent(event.payload, now));
+        }),
         'trade-message',
       ),
       holdListener(
-        listen<WhisperEvent>('whisper-received', (event) =>
-          dispatch({ type: 'whisper', event: event.payload, now: Date.now() }),
-        ),
+        listen<WhisperEvent>('whisper-received', (event) => {
+          const now = Date.now();
+          dispatch({ type: 'whisper', event: event.payload, now });
+          // Trade whispers arrive here too, right after their trade-message: one chat.message per line
+          const message = event.payload.isTrade ? null : fromWhisperEvent(event.payload, now);
+          if (message) pluginHost.emit('chat.message', message);
+        }),
         'whisper-received',
       ),
     ];

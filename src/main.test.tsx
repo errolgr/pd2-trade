@@ -43,7 +43,8 @@ vi.mock('./hooks/useItems', () => ({ ItemsProvider: wrap('items') }));
 vi.mock('./hooks/useNetWorth', () => ({ NetWorthProvider: wrap('networth') }));
 vi.mock('./hooks/useWhisperHistory', () => ({ WhisperHistoryProvider: wrap('whispers') }));
 vi.mock('./overlay', () => ({ OverlayProvider: wrap('overlay'), OverlayRoot: () => <p>overlay-root</p> }));
-vi.mock('./overlay/registry', () => ({ PANEL_DEFS: {} }));
+vi.mock('./overlay/registry', () => ({ usePanelDefs: () => ({}) }));
+vi.mock('./plugins/PluginHostBridge', () => ({ default: () => <p>plugin-host</p> }));
 vi.mock('./components/GlobalErrorHandler', () => ({ GlobalErrorHandler: () => <p>error-handler</p> }));
 vi.mock('./pages/landing/AppController', () => ({ default: () => <p>app-controller</p> }));
 vi.mock('./pages/delist/DelistHandler', () => ({ default: () => <p>delist-handler</p> }));
@@ -98,7 +99,7 @@ describe('main routing', () => {
       expect(node, name).not.toBeNull();
     }
     expect(node!.textContent).toBe(
-      'error-handlerapp-controllerdelist-handlerstash-auto-delistnet-worth-controllerzone-timer-controlleroverlay-root',
+      'error-handlerapp-controllerdelist-handlerstash-auto-delistnet-worth-controllerzone-timer-controllerplugin-hostoverlay-root',
     );
   });
 

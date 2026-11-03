@@ -1,0 +1,204 @@
+{
+  "surfaces": {
+    "market": {
+      "filter": "Filtr wtyczki: {{label}}",
+      "sort": "Sortowanie wtyczki",
+      "sortBy": "Sortuj tę stronę według",
+      "sortDefault": "Kolejność wyszukiwania"
+    }
+  },
+  "price": {
+    "hr": "{{value}} HR",
+    "rune": "{{value}} run",
+    "gold": "{{value}} złota"
+  },
+  "slot": {
+    "error": "Błąd wtyczki",
+    "retry": "Spróbuj ponownie",
+    "from": "Od: {{name}}"
+  },
+  "command": {
+    "failed": "Polecenie wtyczki nie powiodło się"
+  },
+  "notify": {
+    "from": "Od: {{name}}"
+  },
+  "disabled": {
+    "failures": "Wtyczka {{name}} została wyłączona",
+    "failuresHint": "5 razy w ciągu 10 minut wystąpił błąd lub przekroczono limit czasu. Włącz ją ponownie w Ustawienia → Wtyczki.",
+    "blocklisted": "Wtyczka {{name}} została wyłączona",
+    "blocklistedHint": "Ta wersja została zablokowana ze względów bezpieczeństwa. Sprawdź dostępność aktualizacji w sekcji Wtyczki."
+  },
+  "panel": {
+    "frameTitle": "Panel {{name}}",
+    "unavailable": "Panel wtyczki jest niedostępny",
+    "unavailableHint": "Wtyczka jest wyłączona lub została usunięta. Włącz ją w Ustawienia → Wtyczki."
+  },
+  "consent": {
+    "installTitle": "Zainstaluj wtyczkę",
+    "updateTitle": "Aktualizacja wtyczki wymaga zatwierdzenia",
+    "updateIntro": "Ta aktualizacja prosi o dostęp, którego nie ma obecna wersja.",
+    "unpacked": "Rozpakowana",
+    "signed": "Podpisana",
+    "asks": "Prosi o możliwość",
+    "network": "Wysyłania i odbierania danych z {{host}}",
+    "networkHint": "Żądania przechodzą przez PD2 Trader, który zezwala tylko na tę witrynę.",
+    "alsoUses": "Używa również",
+    "nothing": "Ta wtyczka nie prosi o żaden specjalny dostęp.",
+    "never": "Wtyczki nigdy nie mogą odczytać Twoich danych logowania do PD2, naciskać klawiszy w grze, odczytywać Twoich plików ani zapisywać do schowka.",
+    "cancel": "Anuluj",
+    "allowInstall": "Zezwól i zainstaluj",
+    "allowUpdate": "Zezwól i zaktualizuj"
+  },
+  "permissions": {
+    "prices_read": {
+      "label": "Odczyt cen pd2trader",
+      "description": "Dane o cenach i rynku dla Twojej drabinki i trybu."
+    },
+    "items_read": {
+      "label": "Wgląd w wycenione przedmioty",
+      "description": "Przedmioty, które wyceniasz, oraz ich cena bazowa."
+    },
+    "chat_read": {
+      "label": "Odczyt czatu",
+      "description": "Czat handlowy w grze i szepty, w tym wiadomości prywatne."
+    },
+    "stash_read": {
+      "label": "Odczyt wartości skrytki",
+      "description": "Podsumowanie wartości majątku zalogowanego konta."
+    },
+    "account_profile": {
+      "label": "Wgląd w nazwę konta",
+      "description": "Nazwa Twojego konta PD2 i postacie."
+    },
+    "storage_local": {
+      "label": "Przechowywanie danych na tym komputerze",
+      "description": "Do 5 MB własnych danych."
+    },
+    "notifications": {
+      "label": "Wyświetlanie powiadomień",
+      "description": "Kilka powiadomień na minutę."
+    }
+  },
+  "marketplace": {
+    "title": "Wtyczki",
+    "closeLabel": "Zamknij wtyczki",
+    "tabs": {
+      "browse": "Przeglądaj",
+      "installed": "Zainstalowane"
+    },
+    "search": "Szukaj wtyczek",
+    "categoryFilter": "Kategoria",
+    "categories": {
+      "all": "Wszystkie",
+      "pricing": "Wycena",
+      "trading": "Handel",
+      "chat": "Czat",
+      "stash": "Skrytka",
+      "ui": "Interfejs",
+      "theme": "Motywy",
+      "utility": "Narzędzia"
+    },
+    "by": "autor: {{author}}",
+    "verified": "Zweryfikowana",
+    "installs_one": "{{count}} instalacja",
+    "installs_few": "{{count}} instalacje",
+    "installs_many": "{{count}} instalacji",
+    "installs_other": "{{count}} instalacji",
+    "noAccess": "Brak specjalnego dostępu",
+    "loadMore": "Wczytaj więcej",
+    "install": "Zainstaluj",
+    "installing": "Instalowanie…",
+    "installed": "Zainstalowana",
+    "updateAvailable": "Aktualizuj do v{{version}}",
+    "blocked": "Zablokowana",
+    "blockedHint": "Zablokowana ze względów bezpieczeństwa: {{reason}}",
+    "installedToast": "Zainstalowano {{name}}",
+    "installFailed": "Nie udało się zainstalować {{name}}",
+    "loadFailed": "Nie udało się wczytać wtyczek",
+    "loadFailedHint": "Sklep z wtyczkami nie odpowiedział. Sprawdź połączenie i spróbuj ponownie.",
+    "retry": "Spróbuj ponownie",
+    "empty": "Nie znaleziono wtyczek",
+    "emptyHint": "Spróbuj innego wyszukiwania lub kategorii.",
+    "emptyInstalled": "Brak zainstalowanych wtyczek",
+    "emptyInstalledHint": "Przeglądaj sklep, aby dodać ceny, alerty i motywy.",
+    "browse": "Przeglądaj wtyczki",
+    "detail": {
+      "back": "Wróć do wtyczek",
+      "access": "Co może robić",
+      "versions": "Wersje",
+      "published": "Opublikowano {{date}}",
+      "latest": "Najnowsza",
+      "current": "Zainstalowana",
+      "noVersions": "Brak opublikowanych wersji",
+      "loadFailed": "Nie udało się wczytać tej wtyczki"
+    },
+    "manage": {
+      "status": {
+        "on": "Włączona",
+        "off": "Wyłączona",
+        "starting": "Uruchamianie…",
+        "stopped": "Zatrzymana",
+        "error": "Błąd",
+        "failed": "Wyłączona",
+        "blocked": "Zablokowana",
+        "incompatible": "Niezgodna"
+      },
+      "reason": {
+        "failures": "Wyłączona po 5 błędach lub przekroczeniach limitu czasu w ciągu 10 minut.",
+        "blocklisted": "Ta wersja została zablokowana ze względów bezpieczeństwa. Zainstaluj aktualizację, gdy będzie dostępna.",
+        "incompatible": "Wymaga nowszej wersji PD2 Trader.",
+        "invalid": "Jej pliki są uszkodzone. Zainstaluj ją ponownie."
+      },
+      "enable": "Włącz lub wyłącz {{name}}",
+      "uninstall": "Odinstaluj {{name}}",
+      "uninstallTitle": "Odinstalować {{name}}?",
+      "uninstallHint": "Jej ustawienia i zapisane dane zostaną usunięte.",
+      "uninstallConfirm": "Odinstaluj",
+      "reviewUpdate": "Przejrzyj aktualizację do v{{version}}",
+      "updateFailed": "Nie udało się zastosować aktualizacji"
+    }
+  },
+  "settings": {
+    "title": "Wtyczki",
+    "description": "Włączaj i wyłączaj zainstalowane wtyczki, wczytuj tworzoną wtyczkę i zmieniaj ustawienia wtyczek.",
+    "browse": "Przeglądaj wtyczki",
+    "empty": {
+      "title": "Brak zainstalowanych wtyczek",
+      "description": "Wtyczki dodają źródła cen, narzędzia czatu i motywy. Przeglądaj katalog, aby jakąś znaleźć."
+    },
+    "installed": {
+      "group": "Zainstalowane",
+      "version": "v{{version}}"
+    },
+    "unpacked": {
+      "group": "Programista",
+      "label": "Wczytaj rozpakowaną",
+      "urlHint": "Adres URL serwera deweloperskiego wtyczki (pd2-plugin dev). Wtyczka przeładowuje się po zmianie plików.",
+      "folderHint": "Folder wewnątrz folderu konfiguracji PD2 Trader, np. plugins-dev/<name>. Wtyczka przeładowuje się po zmianie plików.",
+      "load": "Wczytaj",
+      "loading": "Wczytywanie…",
+      "failed": "Nie udało się wczytać wtyczki.",
+      "installed": "Zainstalowano {{name}}"
+    },
+    "form": {
+      "tooLong": "Maksymalnie {{max}} znaków.",
+      "number": "Wpisz liczbę.",
+      "integer": "Wpisz liczbę całkowitą.",
+      "numberRange": "Wpisz liczbę od {{min}} do {{max}}.",
+      "integerRange": "Wpisz liczbę całkowitą od {{min}} do {{max}}.",
+      "numberMin": "Wpisz liczbę nie mniejszą niż {{min}}.",
+      "integerMin": "Wpisz liczbę całkowitą nie mniejszą niż {{min}}.",
+      "numberMax": "Wpisz liczbę nie większą niż {{max}}.",
+      "integerMax": "Wpisz liczbę całkowitą nie większą niż {{max}}."
+    },
+    "hotkeys": {
+      "group": "Polecenia wtyczek",
+      "from": "Od: {{name}}",
+      "unbind": "Wyłącz skrót klawiszowy {{action}}"
+    },
+    "theme": {
+      "badge": "Wtyczka"
+    }
+  }
+}

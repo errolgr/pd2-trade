@@ -10,13 +10,14 @@ import type { Deal } from '@/pages/market/enrich/useDealIndicators';
 import { useOptions } from '@/hooks/useOptions';
 import { useListingActions } from '../hooks/useListingActions';
 import { listingAge } from '../lib/listing';
-import type { MarketApi, ScoredListing } from '../lib/types';
+import type { MarketApi, MarketFilters, ScoredListing } from '../lib/types';
 import { statWithValue } from './stat-text';
 import { ItemTooltip } from './ItemTooltip';
 import { OfferButton, WhisperButton } from './ListingActions';
 import { formatHrPrice } from './ResultsList';
 import { AddAllModsButton } from './ModMenu';
 import { useTranslation } from '@/i18n';
+import { PluginRowActions } from './PluginControls';
 
 export interface ListingDetailProps {
   row: ScoredListing;
@@ -33,6 +34,8 @@ export interface ListingDetailProps {
   onSelectListing: (listing: MarketListingEntry) => void;
   /** Enabled pseudo stat keys (their totals show above the tooltip). */
   pseudoKeys: string[];
+  /** The search the row came from (plugin row actions); absent = the listing's own realm. */
+  query?: MarketFilters | null;
 }
 
 /** Right pane: in-game tooltip, price, enrichments and the trade actions. */
@@ -47,6 +50,7 @@ export function ListingDetail({
   onBrowseSeller,
   onSelectListing,
   pseudoKeys,
+  query,
 }: ListingDetailProps) {
   const { t } = useTranslation('market');
   const { listing } = row;
@@ -159,6 +163,8 @@ export function ListingDetail({
           <ExternalLink className="size-3.5" />
           {t('detail.website')}
         </Button>
+        <PluginRowActions row={row}
+          query={query} />
       </div>
     </aside>
   );

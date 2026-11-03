@@ -3,25 +3,24 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import React from 'react';
 import { useOptions } from '@/hooks/useOptions';
-import { AlertTriangle, Plus } from 'lucide-react';
-import { hotkeyKeyFromEvent, hotkeyKeyLabel, hotkeyKeyToken, normalizeHotkeyKey } from '@/lib/hotkey-keys';
-import type { TFunction } from 'i18next';
+import { AlertTriangle } from 'lucide-react';
+import { hotkeyKeyToken, normalizeHotkeyKey } from '@/lib/hotkey-keys';
+import { pluginHost } from '@/plugins/host/manager';
+import { usePluginHost } from '@/plugins/ui/hooks';
 import {
   Form,
-  FormControl,
   FormField,
   FormMessage,
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  Input,
-  cn,
   SettingsGroup,
   SettingsHint,
   SettingsRow,
   SettingsSkeleton,
 } from '@pd2-trader/ui';
+import type { TFunction } from 'i18next';
 import { useTranslation } from '@/i18n';
+import { findHotkeyClash, hotkeyCombo, type HotkeyBinding } from './conflicts';
+import { HotkeyCapture } from './hotkey-capture';
+import { PluginHotkeys, pluginHotkeyBindings } from './plugin-hotkeys';
 
 /** Built per render language so validation messages follow the UI language. */
 const makeHotkeyFormSchema = (t: TFunction) => {
@@ -157,6 +156,8 @@ export const HOTKEY_ROWS: HotkeyRowConfig[] = [
 export function HotkeyForm() {
   const { t } = useTranslation('settings');
   const { settings, isLoading, updateSettings } = useOptions();
+  // Re-renders when plugins start/stop or a plugin hotkey is rebound (pluginHost.commands() below).
+  usePluginHost();
   const hotkeyFormSchema = React.useMemo(() => makeHotkeyFormSchema(t), [t]);
 
   const form = useForm<HotkeyFormValues>({
@@ -210,116 +211,80 @@ export function HotkeyForm() {
   }
 
   const values = form.watch();
-  // Compared by parser token, so a key saved by an older version ('х') clashes with its translation ('[')
-  const comboOf = (row: HotkeyRowConfig) => {
-    const token = hotkeyKeyToken(values[row.key] as string | undefined);
-    return token ? `${values[row.modifier]}+${token}` : null;
-  };
-  const warningFor = (row: HotkeyRowConfig): string | null => {
-    const key = values[row.key] as string | undefined;
+  const commands = pluginHost.commands();
+  // Core rows and plugin commands share one conflict list: a plugin may not silently shadow a core hotkey.
+  const bindings: HotkeyBinding[] = [
+    ...HOTKEY_ROWS.map((row) => ({
+      id: row.key,
+      label: t(row.labelKey),
+      modifier: values[row.modifier],
+      key: values[row.key] as string | undefined,
+    })),
+    ...pluginHotkeyBindings(commands),
+  ];
+  const warningFor = (binding: HotkeyBinding): string | null => {
+    const { key } = binding;
     if (key && !normalizeHotkeyKey(key)) return t('hotkeys.warning.invalidKey', { key: key.toUpperCase() });
-    const combo = comboOf(row);
+    const combo = hotkeyCombo(binding.modifier, key);
     if (!combo) return null;
     if (combo === 'ctrl+C') return t('hotkeys.warning.ctrlC');
-    const clash = HOTKEY_ROWS.find((other) => other !== row && comboOf(other) === combo);
-    return clash ? t('hotkeys.warning.clash', { action: t(clash.labelKey) }) : null;
+    const clash = findHotkeyClash(binding, bindings);
+    return clash ? t('hotkeys.warning.clash', { action: clash.label }) : null;
   };
 
   return (
-    <Form {...form}>
-      <div className="flex flex-col gap-y-4">
+    <div className="flex flex-col gap-y-4">
+      <Form {...form}>
         <SettingsGroup title={t('hotkeys.group')}>
-          {HOTKEY_ROWS.map((row) => {
-            const warning = warningFor(row);
-            const label = hotkeyKeyLabel(values[row.key] as string | undefined);
+          {HOTKEY_ROWS.map((row, index) => {
+            const warning = warningFor(bindings[index]);
             return (
               <FormField
                 key={row.key}
                 control={form.control}
-                name={row.key}
-                render={({ field: keyField }) => (
-                  <SettingsRow
-                    settingKey={row.key}
-                    label={t(row.labelKey)}
-                    description={t(row.descriptionKey)}
-                    control={
-                      <>
-                        <FormField
-                          control={form.control}
-                          name={row.modifier}
-                          render={({ field: modField }) => (
-                            <Tabs defaultValue={'ctrl'}
-                              value={modField.value as string}>
-                              <TabsList
-                                className="h-8"
-                                aria-label={t('hotkeys.modifierLabel', { action: t(row.labelKey) })}
-                              >
-                                <TabsTrigger
-                                  value={'ctrl'}
-                                  className="px-2.5"
-                                  onClick={() => modField.onChange('ctrl')}
-                                >
-                                  Ctrl
-                                </TabsTrigger>
-                                <TabsTrigger value={'alt'}
-                                  className="px-2.5"
-                                  onClick={() => modField.onChange('alt')}>
-                                  Alt
-                                </TabsTrigger>
-                              </TabsList>
-                            </Tabs>
-                          )}
-                        />
-                        <Plus aria-hidden
-                          className="size-3.5 text-muted-foreground" />
-                        <FormControl>
-                          <Input
-                            type="text"
-                            readOnly
-                            placeholder={row.optional ? t('hotkeys.off') : undefined}
-                            value={label}
-                            aria-invalid={warning ? true : undefined}
-                            className={cn(
-                              'h-9 w-11 rounded-md border-b-3 px-0 text-center font-mono text-sm font-semibold uppercase shadow-xs placeholder:text-3xs placeholder:font-normal',
-                              'focus-visible:border-b-primary',
-                              label.length > 1 && 'w-16 text-xs',
-                              warning &&
-                                'aria-invalid:border-warning/80 aria-invalid:ring-warning/30 dark:aria-invalid:ring-warning/30',
-                            )}
-                            // The key is recorded from the key press, not typed text: a Russian-layout press of
-                            // the [ key types 'х', which no global shortcut can be registered for
-                            onKeyDown={(e) => {
-                              if (row.optional && (e.key === 'Backspace' || e.key === 'Delete')) {
-                                e.preventDefault();
-                                keyField.onChange('');
-                                return;
-                              }
-                              const key = hotkeyKeyFromEvent(e);
-                              if (!key) return;
-                              e.preventDefault();
-                              keyField.onChange(key);
-                            }}
+                name={row.modifier}
+                render={({ field: modField }) => (
+                  // The key field is the inner one: the row's FormControl reports the key's validation
+                  <FormField
+                    control={form.control}
+                    name={row.key}
+                    render={({ field: keyField }) => (
+                      <SettingsRow
+                        settingKey={row.key}
+                        label={t(row.labelKey)}
+                        description={t(row.descriptionKey)}
+                        control={
+                          <HotkeyCapture
+                            actionLabel={t(row.labelKey)}
+                            modifier={modField.value}
+                            keyValue={keyField.value as string | undefined}
+                            onModifierChange={modField.onChange}
+                            onKeyChange={keyField.onChange}
+                            clearable={row.optional}
+                            warning={!!warning}
                           />
-                        </FormControl>
-                      </>
-                    }
-                  >
-                    {warning && (
-                      <p role="status"
-                        className="flex items-center gap-1.5 text-xs text-warning">
-                        <AlertTriangle className="size-3.5 shrink-0" />
-                        {warning}
-                      </p>
+                        }
+                      >
+                        {warning && (
+                          <p role="status"
+                            className="flex items-center gap-1.5 text-xs text-warning">
+                            <AlertTriangle className="size-3.5 shrink-0" />
+                            {warning}
+                          </p>
+                        )}
+                        <FormMessage />
+                      </SettingsRow>
                     )}
-                    <FormMessage />
-                  </SettingsRow>
+                  />
                 )}
               />
             );
           })}
         </SettingsGroup>
-        <SettingsHint>{t('hotkeys.hint')}</SettingsHint>
-      </div>
-    </Form>
+      </Form>
+      <PluginHotkeys commands={commands}
+        warningFor={warningFor} />
+      <SettingsHint>{t('hotkeys.hint')}</SettingsHint>
+    </div>
   );
 }

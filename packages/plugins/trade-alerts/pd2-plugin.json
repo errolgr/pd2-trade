@@ -1,0 +1,37 @@
+{
+  "id": "com.pd2trader.trade-alerts",
+  "name": "Trade Alerts",
+  "version": "1.0.0",
+  "sdk": "^1.0.0",
+  "description": "Highlights chat messages that mention your keywords and notifies you when one comes in.",
+  "author": "PD2 Trader",
+  "category": "chat",
+  "entry": { "worker": "src/worker.ts" },
+  "slots": ["chat.decorate", "settings.section"],
+  "commands": [{ "id": "clear", "title": "Clear trade alert matches", "defaultHotkey": null }],
+  "permissions": ["chat:read", "notifications", "storage:local"],
+  "settings": {
+    "type": "object",
+    "properties": {
+      "keywords": {
+        "type": "string",
+        "title": "Keywords",
+        "description": "Comma separated, e.g. shako, enigma, jah rune",
+        "default": "",
+        "maxLength": 500
+      },
+      "minPriceHr": {
+        "type": "number",
+        "title": "Minimum price (HR)",
+        "description": "Messages with a lower HR price are ignored. Messages without a price always match.",
+        "default": 0,
+        "minimum": 0
+      },
+      "notify": {
+        "type": "boolean",
+        "title": "Notify on match",
+        "default": true
+      }
+    }
+  }
+}

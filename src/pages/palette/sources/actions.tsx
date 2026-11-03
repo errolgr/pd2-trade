@@ -8,6 +8,7 @@ import {
   LogIn,
   LogOut,
   MessagesSquare,
+  Puzzle,
   RefreshCw,
   Settings,
   Store,
@@ -19,6 +20,8 @@ import { useSignIn } from '@/hooks/useSignIn';
 import { useNetWorth } from '@/hooks/useNetWorth';
 import { getBadgeCount } from '@/overlay';
 import { openOffers } from '@/pages/chat/chat-feed';
+import { pluginHost } from '@/plugins/host/manager';
+import { runPluginCommand, usePluginHost } from '@/plugins/ui/hooks';
 import { formatHotkey } from '../lib/hotkey';
 import { bestTier } from '../lib/match';
 import type { PaletteItem, PaletteRunContext, PaletteSource } from '../lib/types';
@@ -26,25 +29,48 @@ import { t } from '@/i18n';
 
 interface ActionDef {
   key: string;
-  labelKey: string;
+  /** Translated label; plugin commands carry their own `label` instead. */
+  labelKey?: string;
+  label?: string;
   icon: React.ReactNode;
   /** English search words besides the (translated) label. */
   keywords: string[];
   hotkey?: [keyof ISettings, keyof ISettings];
+  /** Keycap text when the hotkey is not a settings pair (plugin commands). */
+  hotkeyText?: string | null;
   /** Only listed when this holds. */
   when?: (signedIn: boolean) => boolean;
   run(ctx: PaletteRunContext): void | Promise<void>;
 }
 
+const labelOf = (def: ActionDef) => def.label ?? t(def.labelKey ?? '');
+
 const ICON = 'h-4 w-4';
 
-/** The palette's panel and app actions (the hotkey handlers' equivalents, see AppController). */
+/** The palette's panel and app actions (the hotkey handlers' equivalents, see AppController) and plugin commands. */
 export const useActionsSource: PaletteSource = ({ query, scope, limit, refs }) => {
   const { settings } = useOptions();
   const { logout } = usePd2Website();
   const { openSignIn } = useSignIn();
   const { takeSnapshot } = useNetWorth();
+  const host = usePluginHost();
   const signedIn = !!settings.pd2Token;
+
+  // B6: every running plugin's commands, "Plugin name: command title", with their bound hotkey.
+  const pluginDefs = useMemo<ActionDef[]>(
+    () =>
+      pluginHost.commands().map((command) => ({
+        key: `plugin:${command.pluginId}:${command.id}`,
+        label: `${command.pluginName}: ${command.title}`,
+        icon: <Puzzle className={ICON} />,
+        keywords: ['plugin'],
+        hotkeyText: command.hotkey && formatHotkey(command.hotkey.modifier, command.hotkey.key),
+        run: () => runPluginCommand(command.pluginId, command.id),
+      })),
+    // The host snapshot changes whenever a plugin starts/stops or a hotkey is rebound.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [host],
+  );
 
   const defs = useMemo<ActionDef[]>(
     () => [
@@ -154,8 +180,8 @@ export const useActionsSource: PaletteSource = ({ query, scope, limit, refs }) =
 
   return useMemo(() => {
     const toItem = (def: ActionDef): PaletteItem => {
-      const label = t(def.labelKey);
-      const hotkey = def.hotkey && formatHotkey(settings[def.hotkey[0]], settings[def.hotkey[1]]);
+      const label = labelOf(def);
+      const hotkey = def.hotkey ? formatHotkey(settings[def.hotkey[0]], settings[def.hotkey[1]]) : def.hotkeyText;
       return {
         ref: { id: `actions:${def.key}`, group: 'actions', title: label },
         icon: def.icon,
@@ -163,7 +189,7 @@ export const useActionsSource: PaletteSource = ({ query, scope, limit, refs }) =
         primary: { id: 'run', label, run: def.run },
       };
     };
-    const available = defs.filter((def) => !def.when || def.when(signedIn));
+    const available = [...defs, ...pluginDefs].filter((def) => !def.when || def.when(signedIn));
     if (limit === 0) return { items: [], loading: false };
 
     if (!query) {
@@ -177,10 +203,10 @@ export const useActionsSource: PaletteSource = ({ query, scope, limit, refs }) =
     }
 
     const ranked = available
-      .map((def, order) => ({ def, order, tier: bestTier([t(def.labelKey), ...def.keywords], query) }))
+      .map((def, order) => ({ def, order, tier: bestTier([labelOf(def), ...def.keywords], query) }))
       .filter((r) => r.tier > 0)
       .sort((a, b) => b.tier - a.tier || a.order - b.order)
       .slice(0, limit);
     return { items: ranked.map((r) => toItem(r.def)), loading: false };
-  }, [defs, limit, query, refs, scope, settings, signedIn]);
+  }, [defs, pluginDefs, limit, query, refs, scope, settings, signedIn]);
 };

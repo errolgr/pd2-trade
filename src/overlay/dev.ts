@@ -1,4 +1,5 @@
 import { encodeItem } from '@/lib/item-utils';
+import { emitDevEvent } from '@/lib/browser-events';
 import { showToast, type ToastPayload } from './toast';
 import type { OverlayState } from './OverlayProvider';
 import type { OpenOptions, PanelId, PanelPayloads } from './types';
@@ -31,6 +32,8 @@ export interface Pd2OverlayDevHook {
    * sample rare ring. `__pd2Overlay.priceCheck()` / `__pd2Overlay.priceCheck(JSON.parse(copiedText))`.
    */
   priceCheck(item?: object | string): void;
+  /** Simulates a Rust event in browser mode (`trade-message`, `whisper-received`, `diablo-focus-changed`…). */
+  rustEvent(event: string, payload: unknown): void;
   /** Snapshot of the panel state machine. */
   readonly state: OverlayState;
 }
@@ -44,13 +47,14 @@ declare global {
 
 /** Exposes window.__pd2Overlay in dev builds; returns the uninstall function. */
 export function installDevHook(
-  api: Omit<Pd2OverlayDevHook, 'showToast' | 'priceCheck' | 'state'> & { getState(): OverlayState },
+  api: Omit<Pd2OverlayDevHook, 'showToast' | 'priceCheck' | 'rustEvent' | 'state'> & { getState(): OverlayState },
 ) {
   if (!import.meta.env.DEV) return () => {};
   const { getState, ...actions } = api;
   window.__pd2Overlay = {
     ...actions,
     showToast,
+    rustEvent: emitDevEvent,
     priceCheck: (item = SAMPLE_ITEM) =>
       actions.openPanel('itemSearch', { text: encodeItem(typeof item === 'string' ? item : JSON.stringify(item)) }),
     get state() {

@@ -6,7 +6,7 @@ import type { SettingsSectionId } from '@/components/dialogs/optionsv2/settings-
 import type { ListingPanelPayload, MarketPanelPayload } from '@/pages/market/lib/types';
 import type { BuildsPanelPayload } from '@/pages/builds/lib/types';
 
-export type PanelId =
+export type CorePanelId =
   | 'itemSearch'
   | 'quickList'
   | 'currency'
@@ -22,7 +22,14 @@ export type PanelId =
   | 'corruptedZoneTimer'
   | 'listingDetail'
   | 'builds'
-  | 'palette';
+  | 'palette'
+  | 'plugins'
+  | 'pluginConsent';
+
+/** A plugin-owned panel (PRD §6.2 B7): `plugin:<pluginId>:<panel>`, defined at runtime by the plugin host. */
+export type PluginPanelId = `plugin:${string}:${string}`;
+
+export type PanelId = CorePanelId | PluginPanelId;
 
 export interface PanelPayloads {
   /** encodeItem(raw) output (what used to be ?text=). undefined only before the first search (the panel is keepMounted). */
@@ -71,6 +78,12 @@ export interface PanelPayloads {
   builds: BuildsPanelPayload | undefined;
   /** The command palette always opens fresh. */
   palette: undefined;
+  /** Plugins: the marketplace tab (optionally searching `q`) or the installed list. */
+  plugins: { tab?: 'browse' | 'installed'; q?: string; pluginId?: string } | undefined;
+  /** Opened by the plugin host while a consent request is pending. */
+  pluginConsent: undefined;
+  /** A plugin panel's payload (`sdk.panels.open(panel, payload)`), passed to the sandboxed frame. */
+  [id: PluginPanelId]: unknown;
 }
 
 /** CSS px relative to the overlay viewport. */
@@ -136,4 +149,6 @@ export interface PanelDef {
   interactive?: 'frame' | 'children';
 }
 
-export type PanelDefs = Record<PanelId, PanelDef>;
+export type CorePanelDefs = Record<CorePanelId, PanelDef>;
+/** Core panels always exist; plugin panels come and go with their plugins (always check before use). */
+export type PanelDefs = CorePanelDefs & Partial<Record<PluginPanelId, PanelDef>>;

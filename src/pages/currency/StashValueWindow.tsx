@@ -57,6 +57,7 @@ import { isCrafted } from '@/components/rares/rares-format';
 import { deltaPillClass, formatSignedHr } from './lib/networth-format';
 import { useNetWorthQuery } from './lib/useNetWorthQuery';
 import { PublicProfileToggle } from '../net-worth/PublicProfileToggle';
+import { useNetWorthPlugins, type PluginTabValue } from './components/NetWorthPlugins';
 import { currentLocale, useTranslation } from '@/i18n';
 
 type WindowTab =
@@ -95,7 +96,7 @@ export function StashValueWindow() {
   const simAccess = useSimAccess();
   const { payload, payloadVersion, close } = usePanel<'currency'>();
   const { gameFocused } = useOverlay();
-  const [tab, setTab] = useState<WindowTab>(() => payload?.tab ?? 'overview');
+  const [tab, setTab] = useState<WindowTab | PluginTabValue>(() => payload?.tab ?? 'overview');
 
   // Deep link from ticker / panel / hotkey: every openPanel('currency', { tab }) switches the tab
   const [seenVersion, setSeenVersion] = useState(payloadVersion);
@@ -134,6 +135,9 @@ export function StashValueWindow() {
   const valuation = latest?.valuation ?? null;
   // Rares come only with the sync response (server has rare appraisal on); never part of the total.
   const rares = latest?.rares && latest.raresSummary ? latest.rares : null;
+  const { tabs: pluginTabs, metrics: pluginMetrics } = useNetWorthPlugins(valuation);
+  // A plugin tab that went away (plugin stopped or has no tab for this snapshot) falls back to the overview
+  const activeTab = tab.startsWith('plugin:') && !pluginTabs.some((p) => p.value === tab) ? 'overview' : tab;
 
   return (
     <MotionConfig reducedMotion="user">
@@ -161,6 +165,7 @@ export function StashValueWindow() {
                     loading={status === 'loading'}
                     onRefresh={() => takeSnapshot('manual')}
                     token={token}
+                    pluginMetrics={pluginMetrics}
                   />
                 )}
 
@@ -185,8 +190,8 @@ export function StashValueWindow() {
                   )}
                 </AnimatePresence>
 
-                <Tabs value={tab}
-                  onValueChange={(v) => setTab(v as WindowTab)}
+                <Tabs value={activeTab}
+                  onValueChange={(v) => setTab(v as WindowTab | PluginTabValue)}
                   className="gap-3">
                   <TabsList
                     className="h-10 w-full justify-start overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -225,6 +230,13 @@ export function StashValueWindow() {
                       <History className="size-3.5" />
                       {t('window.tabs.history')}
                     </TabsTrigger>
+                    {pluginTabs.map((pluginTab) => (
+                      <TabsTrigger key={pluginTab.value}
+                        value={pluginTab.value}
+                        className={TRIGGER_CLASS}>
+                        {pluginTab.label}
+                      </TabsTrigger>
+                    ))}
                   </TabsList>
 
                   <TabsContent value="overview"
@@ -292,6 +304,14 @@ export function StashValueWindow() {
                       <TabSkeleton failed={false} />
                     )}
                   </TabsContent>
+
+                  {pluginTabs.map((pluginTab) => (
+                    <TabsContent key={pluginTab.value}
+                      value={pluginTab.value}
+                      className="pt-1">
+                      {pluginTab.content}
+                    </TabsContent>
+                  ))}
                 </Tabs>
               </>
             )}
@@ -351,6 +371,7 @@ function Header({
   loading,
   onRefresh,
   token,
+  pluginMetrics,
 }: {
   valuation: Valuation | null;
   sincePrevious: number | null;
@@ -360,6 +381,8 @@ function Header({
   loading: boolean;
   onRefresh: () => void;
   token: string | null;
+  /** `networth.metric` plugin metrics (B4), after the core facts. */
+  pluginMetrics: React.ReactNode;
 }) {
   const { t } = useTranslation('currency');
   const deltas = useMemo(() => {
@@ -465,6 +488,7 @@ function Header({
             {t('header.ladderFallback')}
           </span>
         )}
+        {pluginMetrics}
         {token && (
           <span className="ml-auto">
             <PublicProfileToggle token={token} />

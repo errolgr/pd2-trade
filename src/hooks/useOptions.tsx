@@ -6,8 +6,8 @@ import { startDebugLogging, stopDebugLogging } from '@/lib/debug-logger';
 import { applyTelemetryOptOut } from '@/lib/telemetry-opt-out';
 import SettingsLayout from '@/components/dialogs/optionsv2/options-layout';
 import { isTauri } from '@tauri-apps/api/core';
-import { DEFAULT_THEME_ID, getTheme } from '@pd2-trader/ui/tokens';
-import { applyTheme, applyWindowTransparency } from '@/lib/themes';
+import { DEFAULT_THEME_ID } from '@pd2-trader/ui/tokens';
+import { applyTheme, applyWindowTransparency, resolveTheme } from '@/lib/themes';
 import { DEFAULT_PRICE_WINDOW_HOURS, type PriceWindowHours } from '@/lib/price-window';
 import { DEFAULT_CHAT_TEMPLATES, type ChatTemplate } from '@/lib/message-templates';
 import { showToast } from '@/overlay';
@@ -18,6 +18,7 @@ import { applyLanguage, type LanguageSetting, t } from '@/i18n';
 import { DEFAULT_LISTINGS_SORT, type ListingsSort } from '@/pages/quick-list/listings/my-listings';
 import type { ChatDockItem } from '@/pages/chat/chat-dock';
 import type { PaletteRef } from '@/pages/palette/lib/types';
+import type { PluginsSettings } from '@/plugins/host/types';
 
 /** A tracked character the builds panel remembers (followed / recently viewed). */
 export interface BuildCharacterRef {
@@ -144,6 +145,7 @@ export interface ISettings {
   hotkeyKeyPalette?: string; // command palette; '' = unbound
   palettePins?: PaletteRef[]; // command palette: pinned results shown on the empty state, in order
   paletteRecents?: PaletteRef[]; // command palette: last picked results, newest first (PALETTE_RECENTS_MAX)
+  plugins?: PluginsSettings; // installed plugins: versions, grants, enabled, settings, hotkeys (src/plugins)
 }
 
 interface OptionsContextProps {
@@ -416,7 +418,7 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // theme, and initDebugLoggingFromSettings() / initTelemetryFromSettings() read the file directly.
   useEffect(() => {
     if (isLoading) return;
-    applyTheme(getTheme(settings.themeId));
+    applyTheme(resolveTheme(settings.themeId));
   }, [isLoading, settings.themeId]);
 
   useEffect(() => {

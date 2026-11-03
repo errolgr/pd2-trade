@@ -113,12 +113,6 @@ describe('WhisperHistoryProvider', () => {
     expect(vi.mocked(setBadgeCount).mock.calls.at(-1)).toEqual(['whisperTrades', 1]);
   });
 
-  it('does not listen outside Tauri', async () => {
-    vi.mocked(isTauri).mockReturnValue(false);
-    await renderHistory();
-    expect(bus.handlers.size).toBe(0);
-  });
-
   it('saves once changes settle, not on load, and flushes a pending save on unmount', async () => {
     const { result, unmount } = await renderHistory();
     await act(async () => vi.advanceTimersByTimeAsync(SAVE_DEBOUNCE_MS * 2));

@@ -1,0 +1,14 @@
+{
+  "name": "@pd2-trader/plugin-rune-ticker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "First-party PD2 Trader plugin: Rune Ticker.",
+  "type": "module",
+  "scripts": {
+    "build": "node ../../plugin-sdk/bin/pd2-plugin.mjs build",
+    "dev": "node ../../plugin-sdk/bin/pd2-plugin.mjs dev"
+  },
+  "dependencies": {
+    "@pd2-trader/plugin-sdk": "^1.0.0"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "@pd2-trader/plugin-craft-value",
+  "version": "1.0.0",
+  "private": true,
+  "description": "First-party PD2 Trader plugin: Craft Value.",
+  "type": "module",
+  "scripts": {
+    "build": "node ../../plugin-sdk/bin/pd2-plugin.mjs build",
+    "dev": "node ../../plugin-sdk/bin/pd2-plugin.mjs dev"
+  },
+  "dependencies": {
+    "@pd2-trader/plugin-sdk": "^1.0.0"
+  }
+}

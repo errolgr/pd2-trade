@@ -1,0 +1,202 @@
+{
+  "surfaces": {
+    "market": {
+      "filter": "Plugin-Filter: {{label}}",
+      "sort": "Plugin-Sortierung",
+      "sortBy": "Diese Seite sortieren nach",
+      "sortDefault": "Suchreihenfolge"
+    }
+  },
+  "price": {
+    "hr": "{{value}} HR",
+    "rune": "{{value}} Runen",
+    "gold": "{{value}} Gold"
+  },
+  "slot": {
+    "error": "Plugin-Fehler",
+    "retry": "Erneut versuchen",
+    "from": "Von {{name}}"
+  },
+  "command": {
+    "failed": "Plugin-Befehl fehlgeschlagen"
+  },
+  "notify": {
+    "from": "Von {{name}}"
+  },
+  "disabled": {
+    "failures": "{{name}} wurde deaktiviert",
+    "failuresHint": "Es ist innerhalb von 10 Minuten 5-mal fehlgeschlagen oder hat das Zeitlimit überschritten. Aktiviere es wieder unter Einstellungen → Plugins.",
+    "blocklisted": "{{name}} wurde deaktiviert",
+    "blocklistedHint": "Diese Version wurde aus Sicherheitsgründen gesperrt. Suche unter Plugins nach einem Update."
+  },
+  "panel": {
+    "frameTitle": "{{name}}-Panel",
+    "unavailable": "Plugin-Panel nicht verfügbar",
+    "unavailableHint": "Das Plugin ist deaktiviert oder wurde entfernt. Aktiviere es unter Einstellungen → Plugins."
+  },
+  "consent": {
+    "installTitle": "Plugin installieren",
+    "updateTitle": "Plugin-Update muss genehmigt werden",
+    "updateIntro": "Dieses Update fordert Zugriffe an, die die aktuelle Version nicht hat.",
+    "unpacked": "Entpackt",
+    "signed": "Signiert",
+    "asks": "Es möchte",
+    "network": "Daten mit {{host}} senden und empfangen",
+    "networkHint": "Anfragen laufen über PD2 Trader, das nur diese Seite zulässt.",
+    "alsoUses": "Verwendet außerdem",
+    "nothing": "Dieses Plugin fordert keine besonderen Zugriffe an.",
+    "never": "Plugins können niemals deinen PD2-Login lesen, Tasten im Spiel drücken, deine Dateien lesen oder in deine Zwischenablage schreiben.",
+    "cancel": "Abbrechen",
+    "allowInstall": "Erlauben und installieren",
+    "allowUpdate": "Erlauben und aktualisieren"
+  },
+  "permissions": {
+    "prices_read": {
+      "label": "pd2trader-Preise lesen",
+      "description": "Preis- und Marktdaten für deine Ladder und deinen Modus."
+    },
+    "items_read": {
+      "label": "Preisgeprüfte Gegenstände sehen",
+      "description": "Die Gegenstände, deren Preis du prüfst, und ihr Kernpreis."
+    },
+    "chat_read": {
+      "label": "Deinen Chat lesen",
+      "description": "Handelschat und Flüsternachrichten im Spiel, einschließlich privater Nachrichten."
+    },
+    "stash_read": {
+      "label": "Den Wert deiner Truhe lesen",
+      "description": "Vermögensübersicht deines angemeldeten Kontos."
+    },
+    "account_profile": {
+      "label": "Deinen Kontonamen sehen",
+      "description": "Dein PD2-Kontoname und deine Charaktere."
+    },
+    "storage_local": {
+      "label": "Daten auf diesem Computer speichern",
+      "description": "Bis zu 5 MB eigener Daten."
+    },
+    "notifications": {
+      "label": "Benachrichtigungen anzeigen",
+      "description": "Einige Hinweise pro Minute."
+    }
+  },
+  "marketplace": {
+    "title": "Plugins",
+    "closeLabel": "Plugins schließen",
+    "tabs": {
+      "browse": "Durchsuchen",
+      "installed": "Installiert"
+    },
+    "search": "Plugins suchen",
+    "categoryFilter": "Kategorie",
+    "categories": {
+      "all": "Alle",
+      "pricing": "Preise",
+      "trading": "Handel",
+      "chat": "Chat",
+      "stash": "Truhe",
+      "ui": "Oberfläche",
+      "theme": "Designs",
+      "utility": "Werkzeuge"
+    },
+    "by": "von {{author}}",
+    "verified": "Verifiziert",
+    "installs_one": "{{count}} Installation",
+    "installs_other": "{{count}} Installationen",
+    "noAccess": "Keine besonderen Zugriffe",
+    "loadMore": "Mehr laden",
+    "install": "Installieren",
+    "installing": "Wird installiert…",
+    "installed": "Installiert",
+    "updateAvailable": "Auf v{{version}} aktualisieren",
+    "blocked": "Gesperrt",
+    "blockedHint": "Aus Sicherheitsgründen gesperrt: {{reason}}",
+    "installedToast": "{{name}} installiert",
+    "installFailed": "{{name}} konnte nicht installiert werden",
+    "loadFailed": "Plugins konnten nicht geladen werden",
+    "loadFailedHint": "Der Marktplatz hat nicht geantwortet. Prüfe deine Verbindung und versuche es erneut.",
+    "retry": "Erneut versuchen",
+    "empty": "Keine Plugins gefunden",
+    "emptyHint": "Versuche eine andere Suche oder Kategorie.",
+    "emptyInstalled": "Keine Plugins installiert",
+    "emptyInstalledHint": "Durchsuche den Marktplatz, um Preise, Benachrichtigungen und Designs hinzuzufügen.",
+    "browse": "Plugins durchsuchen",
+    "detail": {
+      "back": "Zurück zu den Plugins",
+      "access": "Was es kann",
+      "versions": "Versionen",
+      "published": "Veröffentlicht am {{date}}",
+      "latest": "Neueste",
+      "current": "Installiert",
+      "noVersions": "Keine veröffentlichten Versionen",
+      "loadFailed": "Dieses Plugin konnte nicht geladen werden"
+    },
+    "manage": {
+      "status": {
+        "on": "An",
+        "off": "Aus",
+        "starting": "Wird gestartet…",
+        "stopped": "Gestoppt",
+        "error": "Fehler",
+        "failed": "Deaktiviert",
+        "blocked": "Gesperrt",
+        "incompatible": "Inkompatibel"
+      },
+      "reason": {
+        "failures": "Deaktiviert, nachdem es innerhalb von 10 Minuten 5-mal fehlgeschlagen ist oder das Zeitlimit überschritten hat.",
+        "blocklisted": "Diese Version wurde aus Sicherheitsgründen gesperrt. Installiere ein Update, sobald eines verfügbar ist.",
+        "incompatible": "Benötigt eine neuere Version von PD2 Trader.",
+        "invalid": "Seine Dateien sind beschädigt. Installiere es neu."
+      },
+      "enable": "{{name}} aktivieren oder deaktivieren",
+      "uninstall": "{{name}} deinstallieren",
+      "uninstallTitle": "{{name}} deinstallieren?",
+      "uninstallHint": "Seine Einstellungen und gespeicherten Daten werden entfernt.",
+      "uninstallConfirm": "Deinstallieren",
+      "reviewUpdate": "Update auf v{{version}} prüfen",
+      "updateFailed": "Das Update konnte nicht angewendet werden"
+    }
+  },
+  "settings": {
+    "title": "Plugins",
+    "description": "Aktiviere oder deaktiviere installierte Plugins, lade ein Plugin, das du entwickelst, und ändere Plugin-Einstellungen.",
+    "browse": "Plugins durchsuchen",
+    "empty": {
+      "title": "Keine Plugins installiert",
+      "description": "Plugins fügen Preisquellen, Chat-Werkzeuge und Designs hinzu. Durchsuche den Katalog, um eines zu finden."
+    },
+    "installed": {
+      "group": "Installiert",
+      "version": "v{{version}}"
+    },
+    "unpacked": {
+      "group": "Entwickler",
+      "label": "Entpackt laden",
+      "urlHint": "Die URL des Dev-Servers deines Plugins (pd2-plugin dev). Es wird neu geladen, wenn sich seine Dateien ändern.",
+      "folderHint": "Ein Ordner im PD2 Trader-Konfigurationsordner, z. B. plugins-dev/<name>. Es wird neu geladen, wenn sich seine Dateien ändern.",
+      "load": "Laden",
+      "loading": "Wird geladen…",
+      "failed": "Das Plugin konnte nicht geladen werden.",
+      "installed": "{{name}} installiert"
+    },
+    "form": {
+      "tooLong": "Höchstens {{max}} Zeichen.",
+      "number": "Gib eine Zahl ein.",
+      "integer": "Gib eine ganze Zahl ein.",
+      "numberRange": "Gib eine Zahl von {{min}} bis {{max}} ein.",
+      "integerRange": "Gib eine ganze Zahl von {{min}} bis {{max}} ein.",
+      "numberMin": "Gib eine Zahl von mindestens {{min}} ein.",
+      "integerMin": "Gib eine ganze Zahl von mindestens {{min}} ein.",
+      "numberMax": "Gib eine Zahl von höchstens {{max}} ein.",
+      "integerMax": "Gib eine ganze Zahl von höchstens {{max}} ein."
+    },
+    "hotkeys": {
+      "group": "Plugin-Befehle",
+      "from": "Von {{name}}",
+      "unbind": "Tastenkürzel für {{action}} deaktivieren"
+    },
+    "theme": {
+      "badge": "Plugin"
+    }
+  }
+}

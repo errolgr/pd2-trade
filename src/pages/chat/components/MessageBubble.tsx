@@ -11,6 +11,7 @@ import type { TimelineEntry } from '../lib/inbox';
 import { OfferListingHoverCard } from './OfferListingHoverCard';
 import { MessageContent } from './MessageContent';
 import { ChatAvatar, ReadReceipt, Tip } from './chat-parts';
+import { useMessagePlugins } from './MessagePlugins';
 import { dealStatusLabel, offerStatus, STATUS_CLASS } from './ThreadDeals';
 
 /** Messages from one side and source less than this far apart form a group (tight spacing, shared corners). */
@@ -102,6 +103,7 @@ export function MessageBubble({
   const time = moment(entry.createdAt).format('h:mm A');
   const whisper = entry.source === 'whisper';
   const SourceIcon = whisper ? Gamepad2 : Globe;
+  const plugins = useMessagePlugins(entry, otherName);
   const copyButton = (
     <Tip label={t('bubble.copyMessage')}>
       <Button
@@ -226,6 +228,7 @@ export function MessageBubble({
                   className="size-7 text-xs" />
               </Button>
             ))}
+          {isOwnMessage && plugins.actions}
           {isOwnMessage && copyButton}
           <div
             aria-busy={sending || undefined}
@@ -243,6 +246,7 @@ export function MessageBubble({
                     continuesGroup && 'rounded-tl-md',
                     groupContinues && 'rounded-bl-md',
                   ],
+              plugins.highlightClass,
               sending && 'opacity-60',
               failed && 'bg-none bg-destructive/10 ring-destructive/40',
             )}
@@ -255,6 +259,7 @@ export function MessageBubble({
                   onRetry={() => onRetry(message.conversation_id, message.clientId!)} />
               ) : (
                 <>
+                  {plugins.tags}
                   <SourceIcon
                     role="img"
                     aria-label={whisper ? t('bubble.inGameWhisper') : t('bubble.websiteMessage')}
@@ -280,6 +285,7 @@ export function MessageBubble({
             </div>
           </div>
           {!isOwnMessage && copyButton}
+          {!isOwnMessage && plugins.actions}
         </div>
       )}
     </motion.div>

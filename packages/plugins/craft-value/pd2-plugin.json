@@ -1,0 +1,12 @@
+{
+  "id": "com.pd2trader.craft-value",
+  "name": "Craft Value",
+  "version": "1.0.0",
+  "sdk": "^1.0.0",
+  "description": "Rune cost of runewords next to the market price, and any price in high-rune equivalents.",
+  "author": "PD2 Trader",
+  "category": "pricing",
+  "entry": { "worker": "src/worker.ts" },
+  "slots": ["priceCheck.section", "priceCheck.badge"],
+  "permissions": ["prices:read", "items:read"]
+}

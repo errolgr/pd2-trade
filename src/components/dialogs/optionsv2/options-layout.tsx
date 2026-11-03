@@ -13,6 +13,7 @@ import SettingsInterface from './interface/layout';
 import SettingsStats from './stats/layout';
 import SettingsNetWorth from './networth/layout';
 import SettingsMarket from './market/layout';
+import SettingsPlugins from './plugins/layout';
 import { SETTINGS_SECTIONS, SettingsNavContext, type SettingsSectionId } from './settings-ui';
 import { useTranslation } from '@/i18n';
 
@@ -31,6 +32,7 @@ const SECTION_CONTENT: Record<SettingsSectionId, React.ReactNode> = {
   Market: <SettingsMarket />,
   'Net Worth': <SettingsNetWorth />,
   Hotkeys: <SettingsHotkeys />,
+  Plugins: <SettingsPlugins />,
   About: <SettingsAbout />,
 };
 const sidebarNavItems: INavItem[] = SETTINGS_SECTIONS.map((section) => ({

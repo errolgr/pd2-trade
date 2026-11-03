@@ -1,9 +1,11 @@
 import React from 'react';
-import { Check } from 'lucide-react';
+import { Check, Puzzle } from 'lucide-react';
 import { useOptions } from '@/hooks/useOptions';
-import { getTheme, type Theme, THEMES } from '@pd2-trader/ui/tokens';
-import { Button, ToggleGroup, ToggleGroupItem, cn, SETTING_HIGHLIGHT } from '@pd2-trader/ui';
-import { themeStyle } from '@/lib/themes';
+import { type Theme, THEMES } from '@pd2-trader/ui/tokens';
+import { Badge, Button, ToggleGroup, ToggleGroupItem, cn, SETTING_HIGHLIGHT } from '@pd2-trader/ui';
+import { resolveTheme, themeStyle } from '@/lib/themes';
+import { pluginThemeToTheme } from '@/plugins/host/theme';
+import { usePluginHost } from '@/plugins/ui/hooks';
 import { Trans, useTranslation } from '@/i18n';
 
 type ModeFilter = 'all' | 'dark' | 'light';
@@ -52,6 +54,7 @@ function ThemePreview({ theme }: { theme: Theme }) {
 export function ThemePicker() {
   const { t } = useTranslation('settings');
   const { settings, isLoading, updateSettings } = useOptions();
+  const { themes: pluginThemeInfos } = usePluginHost();
   const [filter, setFilter] = React.useState<ModeFilter>('all');
   const optionRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -59,8 +62,12 @@ export function ThemePicker() {
     return null;
   }
 
-  const current = getTheme(settings.themeId);
-  const visible = filter === 'all' ? THEMES : THEMES.filter((theme) => theme.mode === filter);
+  // B8: installed theme plugins follow the built-in themes.
+  const pluginThemes = pluginThemeInfos.map(pluginThemeToTheme);
+  const pluginThemeIds = new Set(pluginThemes.map((theme) => theme.id));
+  const all = [...THEMES, ...pluginThemes];
+  const current = all.find((theme) => theme.id === settings.themeId) ?? resolveTheme(settings.themeId);
+  const visible = filter === 'all' ? all : all.filter((theme) => theme.mode === filter);
   // Roving tabindex: the checked option is the tab stop; fall back to the first visible one.
   const tabStopId = visible.some((theme) => theme.id === current.id) ? current.id : visible[0]?.id;
 
@@ -158,8 +165,16 @@ export function ThemePicker() {
               <div className="flex items-center justify-between gap-2 px-0.5">
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium text-card-foreground">{theme.name}</div>
-                  <div className="text-xs capitalize text-muted-foreground">
+                  <div className="flex items-center gap-1.5 text-xs capitalize text-muted-foreground">
                     {theme.mode === 'dark' ? t('theme.mode.dark') : t('theme.mode.light')}
+                    {pluginThemeIds.has(theme.id) && (
+                      <Badge variant="outline"
+                        className="gap-1 px-1.5 py-0 text-muted-foreground">
+                        <Puzzle aria-hidden
+                          className="size-3" />
+                        {t('plugins:settings.theme.badge')}
+                      </Badge>
+                    )}
                   </div>
                 </div>
                 <span

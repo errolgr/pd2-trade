@@ -5,6 +5,7 @@ import {
   Keyboard,
   LayoutPanelTop,
   MessageSquare,
+  Puzzle,
   Search,
   SlidersHorizontal,
   Store,
@@ -28,6 +29,7 @@ export type SettingsSectionId =
   | 'Market'
   | 'Net Worth'
   | 'Hotkeys'
+  | 'Plugins'
   | 'About';
 
 /** The sections in sidebar order, with their nav label and icon. */
@@ -40,6 +42,7 @@ export const SETTINGS_SECTIONS: readonly { id: SettingsSectionId; titleKey: stri
   { id: 'Market', titleKey: 'settings:nav.market', icon: Store },
   { id: 'Net Worth', titleKey: 'settings:nav.netWorth', icon: TrendingUp },
   { id: 'Hotkeys', titleKey: 'settings:nav.hotkeys', icon: Keyboard },
+  { id: 'Plugins', titleKey: 'settings:nav.plugins', icon: Puzzle },
   { id: 'About', titleKey: 'settings:nav.about', icon: Info },
 ];
 

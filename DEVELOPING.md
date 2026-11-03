@@ -225,6 +225,16 @@ A broken updater can only be fixed by users re-downloading the installer, so it 
 - Release workflow: its first step, `release.mjs check`, runs the same checks for the committed version and stops the run before a draft or any build. Before publishing, `verify-updater.mjs draft` checks the draft's `latest.json` (version, platforms, newer than live) and verifies every signature against its asset; after publishing, `verify-updater.mjs live` re-checks what installed apps download. Discord is only notified once that passes.
 - `ci.yml` runs the live check daily.
 
+### 6. Plugins
+
+- First-party plugins live in `packages/plugins/<name>` (`pd2-plugin.json` + `src/`). `npm run plugins:build` builds them all to `<name>/dist` (git-ignored).
+- One plugin: `npm run dev` inside its folder (`pd2-plugin dev`) rebuilds on save and serves `dist/` at http://localhost:5199/ (`--port <n>`; `--outdir <dir>` also copies the build, e.g. to `<AppConfig>/plugins-dev/<name>` for folder loading). Load it in the overlay via Settings → Plugins → Load unpacked.
+- Build contract (mirrored by the server's release build): `entry.worker` → `dist/worker.js` (IIFE, es2020), each `entry.panels.<name>` HTML → `dist/panels/<name>.html` with local `<script src>` bundled and inlined and local stylesheets inlined as `<style>`; `dist/manifest.json` has the entry rewritten and passes `parseManifest`. Code: `packages/plugin-sdk/bin/build.mjs`.
+- New plugins: `node packages/create-pd2-plugin/bin/create-pd2-plugin.mjs <dir> --id com.you.name` (template with DESIGN_RULES.md, llms.txt, lint and an example slot + panel).
+- Load it in the overlay: Settings → Plugins → Load unpacked with the dev server URL (browser mode) or, in the desktop app, a folder under the config dir (`pd2-plugin dev --outdir <config>/plugins-dev/<name>`). The consent sheet opens; the plugin hot-reloads on every rebuild.
+- Marketplace against a local mock: `node scripts/mock-plugin-marketplace.mjs 3999` (serves the built `packages/plugins/*` signed with the dev key, a theme plugin, a bad-signature and a blocklisted listing) and `VITE_BACKEND_URL=http://localhost:3999 npm run dev`, then open `?panel=plugins`.
+- Browser dev builds can simulate Rust events for smoke tests: `__pd2Overlay.rustEvent('whisper-received', { isTrade: false, from: 'Bob', message: 'wts shako', isJoin: false, isIncoming: true })`.
+
 ## 🐛 Debugging
 
 ### Frontend Debugging

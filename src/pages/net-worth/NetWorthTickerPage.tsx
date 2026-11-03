@@ -21,9 +21,15 @@ import {
 import { chatDockLayout, chatDockRect, useChatDockOffset } from '@/pages/chat/chat-dock';
 import { overlayViewport, useDragToMove } from '@/overlay/useDragToMove';
 import { currentLocale, useTranslation } from '@/i18n';
+import { toNetWorthSummary } from '@/plugins/adapters/net-worth';
+import { usePluginSlot } from '@/plugins/ui/hooks';
+import { PriceTag, SlotBadge, SlotText } from '@/plugins/ui/slot-components';
+import { useStableSlotResults } from '@/plugins/ui/useStableSlotResults';
 
 /** Px between the ticker and the mini panel opened from it. */
 const PANEL_GAP = 6;
+/** Plugin ticker widgets are asked again this often. */
+const WIDGET_REFRESH_MS = 60_000;
 
 /**
  * Overlay px of the old ticker window's saved top-left (`settings.netWorthTickerPosition`: physical screen px, or
@@ -170,6 +176,18 @@ const NetWorthTicker: React.FC = () => {
   const sessionDelta = currentSession?.isOpen ? currentSession.endHr - currentSession.startHr : null;
   const wealthRank = useWealthRank();
 
+  // B4 ticker.widget: asked again every minute and on each snapshot so live widgets (rune prices) update; a
+  // plugin being asked again keeps its last widget, so the pill (and the panel sized to it) doesn't jump
+  const takenAt = latest?.valuation.takenAt ?? null;
+  const { results: widgetResults } = usePluginSlot(
+    'ticker.widget',
+    () => ({ netWorth: toNetWorthSummary(latest?.valuation) }),
+    `${Math.floor(now / WIDGET_REFRESH_MS)}|${takenAt}`,
+  );
+  const widgets = useStableSlotResults(widgetResults).flatMap((r) =>
+    r.state === 'ok' && r.value?.length ? [{ pluginId: r.pluginId, nodes: r.value }] : [],
+  );
+
   return (
     <MotionConfig reducedMotion="user">
       <div className="inline-block">
@@ -222,6 +240,32 @@ const NetWorthTicker: React.FC = () => {
               <span className="tabular-nums text-muted-foreground">{wealthRank}</span>
             </>
           )}
+          {widgets.map((widget) => (
+            <React.Fragment key={widget.pluginId}>
+              <span aria-hidden
+                className="h-3 w-px bg-border" />
+              <span className="flex items-center gap-1"
+                data-plugin-slot="ticker.widget">
+                {widget.nodes.map((node, i) =>
+                  node.type === 'badge' ? (
+                    <SlotBadge key={i}
+                      text={node.text}
+                      tone={node.tone} />
+                  ) : node.type === 'price' ? (
+                    <PriceTag key={i}
+                      amount={node.amount}
+                      unit={node.unit}
+                      trend={node.trend} />
+                  ) : (
+                    <SlotText key={i}
+                      text={node.text}
+                      tone={node.tone}
+                      size="sm" />
+                  ),
+                )}
+              </span>
+            </React.Fragment>
+          ))}
           <span
             className={cn(
               'ml-0.5 size-2 shrink-0 rounded-full ring-3 transition-colors duration-(--dur-med)',

@@ -33,6 +33,11 @@ export default [
   {
     languageOptions: { globals: globals.browser }
   },
+  {
+    // Node CLIs and build scripts (plugin CLI, scaffolder, mock marketplace)
+    files: ["scripts/**/*.{js,mjs}", "packages/*/bin/**/*.{js,mjs}"],
+    languageOptions: { globals: globals.node },
+  },
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
   pluginReact.configs.flat.recommended,

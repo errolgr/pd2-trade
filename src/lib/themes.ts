@@ -19,6 +19,22 @@ export function themeStyle(theme: Theme): CSSProperties {
   return style as CSSProperties;
 }
 
+/** Themes outside the built-in list (installed theme plugins, PRD B8), keyed by theme id (`plugin:<id>`). */
+let extraThemes: ReadonlyMap<string, Theme> = new Map();
+
+export function setExtraThemes(themes: readonly Theme[]): void {
+  extraThemes = new Map(themes.map((theme) => [theme.id, theme]));
+}
+
+export function getExtraThemes(): Theme[] {
+  return [...extraThemes.values()];
+}
+
+/** A built-in or plugin theme by id; unknown ids fall back to the default theme. */
+export function resolveTheme(id?: string): Theme {
+  return (id && extraThemes.get(id)) || getTheme(id);
+}
+
 export function applyTheme(theme: Theme, root: HTMLElement = document.documentElement): void {
   for (const token of THEME_TOKENS) root.style.setProperty(`--${token}`, theme.vars[token]);
   root.dataset.theme = theme.id;

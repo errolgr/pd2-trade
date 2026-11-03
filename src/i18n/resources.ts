@@ -13,6 +13,7 @@ import rares from './locales/en/rares.json';
 import settings from './locales/en/settings.json';
 import system from './locales/en/system.json';
 import palette from './locales/en/palette.json';
+import plugins from './locales/en/plugins.json';
 
 /**
  * The English source strings, one namespace per UI area (src/i18n/locales/en/<namespace>.json). A new namespace
@@ -33,6 +34,7 @@ export const enResources = {
   rares,
   builds,
   palette,
+  plugins,
 } as const;
 
 export type Namespace = keyof typeof enResources;

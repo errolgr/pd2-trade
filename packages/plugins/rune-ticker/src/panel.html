@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      table { width: 100%; border-collapse: collapse; }
+      th, td { padding: 4px 6px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
+      th { color: var(--muted-foreground); font-weight: 500; }
+      th:first-child, td:first-child { text-align: left; }
+      tbody tr:last-child td { border-bottom: 0; }
+    </style>
+  </head>
+  <body>
+    <div class="pd2-stack">
+      <div class="pd2-row">
+        <span class="pd2-title">High runes</span>
+        <button id="refresh" class="pd2-button pd2-button-secondary" type="button">Refresh</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Rune</th>
+            <th>Price</th>
+            <th>Listings</th>
+            <th>Trend</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <span id="status" class="pd2-muted"></span>
+    </div>
+    <script src="./panel.ts"></script>
+  </body>
+</html>

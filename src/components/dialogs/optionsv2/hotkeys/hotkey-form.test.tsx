@@ -5,6 +5,8 @@ import { useOptions } from '@/hooks/useOptions';
 import type { ISettings } from '@/hooks/useOptions';
 import { createOptionsStore, type OptionsStore } from '../test-utils';
 import { HotkeyForm } from './hotkey-form';
+import { pluginHost } from '@/plugins/host/manager';
+import type { PluginCommand } from './plugin-hotkeys';
 
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 
@@ -180,5 +182,67 @@ describe('HotkeyForm', () => {
     pressKey('Chat Window', ' ', 'Space');
     const warnings = screen.getAllByRole('status').map((el) => el.textContent);
     expect(warnings).toEqual(['Also used by Command palette.', 'Also used by Chat Window.']);
+  });
+});
+
+describe('HotkeyForm plugin commands', () => {
+  const command = (over: Partial<PluginCommand> = {}): PluginCommand => ({
+    pluginId: 'com.example.tool',
+    pluginName: 'Tool',
+    id: 'open',
+    title: 'Open tool',
+    hotkey: null,
+    ...over,
+  });
+  let setHotkey: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    setHotkey = vi.spyOn(pluginHost, 'setHotkey').mockImplementation(() => {});
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it('lists no plugin group without plugin commands', () => {
+    vi.spyOn(pluginHost, 'commands').mockReturnValue([]);
+    renderForm();
+    expect(screen.queryByText('Plugin commands')).toBeNull();
+  });
+
+  it('warns on both sides when a plugin command takes a core combo', () => {
+    vi.spyOn(pluginHost, 'commands').mockReturnValue([command({ hotkey: { modifier: 'ctrl', key: 'm' } })]);
+    renderForm();
+    expect(screen.getByText('Plugin commands')).toBeTruthy();
+    expect(keyInput('Open tool').value).toBe('M');
+    const warnings = screen.getAllByRole('status').map((el) => el.textContent);
+    expect(warnings).toEqual(['Also used by Tool: Open tool.', 'Also used by Market.']);
+  });
+
+  it('warns when two plugin commands share a combo', () => {
+    vi.spyOn(pluginHost, 'commands').mockReturnValue([
+      command({ hotkey: { modifier: 'alt', key: 'k' } }),
+      command({ pluginId: 'com.example.other', pluginName: 'Other', id: 'go', title: 'Go', hotkey: { modifier: 'alt', key: 'k' } }),
+    ]);
+    renderForm();
+    const warnings = screen.getAllByRole('status').map((el) => el.textContent);
+    expect(warnings).toEqual(['Also used by Other: Go.', 'Also used by Tool: Open tool.']);
+  });
+
+  it('binds an unbound command with the modifier picked before the key', () => {
+    vi.spyOn(pluginHost, 'commands').mockReturnValue([command()]);
+    renderForm();
+    const tabs = screen.getByRole('tablist', { name: 'Tool: Open tool modifier' });
+    fireEvent.click(within(tabs).getByRole('tab', { name: 'Alt' }));
+    expect(setHotkey).not.toHaveBeenCalled();
+    pressKey('Open tool', 'j');
+    expect(setHotkey).toHaveBeenLastCalledWith('com.example.tool', 'open', { modifier: 'alt', key: 'j' });
+  });
+
+  it('unbinds with Backspace or the unbind button', () => {
+    vi.spyOn(pluginHost, 'commands').mockReturnValue([command({ hotkey: { modifier: 'ctrl', key: 'j' } })]);
+    renderForm();
+    pressKey('Open tool', 'Backspace');
+    expect(setHotkey).toHaveBeenLastCalledWith('com.example.tool', 'open', null);
+    setHotkey.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Turn off the Tool: Open tool hotkey' }));
+    expect(setHotkey).toHaveBeenCalledWith('com.example.tool', 'open', null);
   });
 });

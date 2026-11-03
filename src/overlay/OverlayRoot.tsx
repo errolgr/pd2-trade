@@ -30,7 +30,7 @@ export const OverlayRoot: React.FC = () => {
         data-overlay-root>
         {(Object.keys(defs) as PanelId[]).map((id) => {
           const panel = state.panels[id];
-          if (!panel || !(panel.open || defs[id].keepMounted)) return null;
+          if (!panel || !(panel.open || defs[id]?.keepMounted)) return null;
           return <Panel key={id}
             id={id} />;
         })}

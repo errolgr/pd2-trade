@@ -18,6 +18,8 @@ import { OfferBadge } from './OfferBadge';
 import type { ListingOffers } from '../lib/listing-offers';
 import { useOpenTrader } from '../hooks/useListingActions';
 import { useTranslation } from '@/i18n';
+import type { PluginCell } from '@/plugins/adapters/market';
+import { PluginCellsText } from './PluginControls';
 
 const ROW_HEIGHT = 58;
 /** Rows from the end at which the next server page is requested. */
@@ -121,6 +123,8 @@ export interface ResultsListProps {
   /** Entrance animations of this result set (rows enter once; see EnterOnce). */
   enter: EnterTracker;
   footer?: React.ReactNode;
+  /** Row id → `market.column` plugin cells (shown beside the price column). */
+  pluginCells?: ReadonlyMap<string, PluginCell[]>;
 }
 
 /** Virtualized compact listing rows. */
@@ -138,6 +142,7 @@ export function ResultsList({
   loadMore,
   enter,
   footer,
+  pluginCells,
 }: ResultsListProps) {
   const { t } = useTranslation('market');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -200,6 +205,7 @@ export function ResultsList({
                   offers={offers.get(row.listing._id)}
                   pseudoKeys={pseudoKeys}
                   favorite={favoriteIds.has(row.listing._id)}
+                  pluginCells={pluginCells?.get(row.listing._id)}
                 />
               </EnterOnce>
             </div>
@@ -221,6 +227,7 @@ const ResultRow = React.memo(function ResultRow({
   offers,
   pseudoKeys,
   favorite,
+  pluginCells,
 }: {
   row: ScoredListing;
   selected: boolean;
@@ -229,6 +236,7 @@ const ResultRow = React.memo(function ResultRow({
   offers: ListingOffers | undefined;
   pseudoKeys: string[];
   favorite: boolean;
+  pluginCells: PluginCell[] | undefined;
 }) {
   const { t } = useTranslation('market');
   const { listing } = row;
@@ -295,6 +303,8 @@ const ResultRow = React.memo(function ResultRow({
           </div>
         )}
       </div>
+
+      <PluginCellsText cells={pluginCells} />
 
       <div className="flex w-28 shrink-0 flex-col items-end gap-0.5">
         <div className="flex min-w-0 max-w-full items-center gap-1.5">

@@ -6,14 +6,26 @@ import type { ISettings } from '@/hooks/useOptions';
 import { DEFAULT_THEME_ID, THEMES } from '@pd2-trader/ui/tokens';
 import { createOptionsStore, type OptionsStore } from '../test-utils';
 import { ThemePicker } from './theme-picker';
+import { usePluginHost } from '@/plugins/ui/hooks';
+import type { PluginHostSnapshot, PluginThemeInfo } from '@/plugins/host/manager';
 
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
+vi.mock('@/plugins/ui/hooks', () => ({ usePluginHost: vi.fn() }));
+
+const hostWith = (themes: PluginThemeInfo[]): PluginHostSnapshot => ({
+  ready: true,
+  plugins: [],
+  consent: null,
+  panels: [],
+  themes,
+});
 
 let store: OptionsStore;
 
-function renderPicker(settings: Partial<ISettings>, isLoading = false) {
+function renderPicker(settings: Partial<ISettings>, isLoading = false, themes: PluginThemeInfo[] = []) {
   store = createOptionsStore(settings, isLoading);
   vi.mocked(useOptions).mockImplementation(store.useOptions);
+  vi.mocked(usePluginHost).mockReturnValue(hostWith(themes));
   return render(<ThemePicker />);
 }
 
@@ -101,5 +113,24 @@ describe('ThemePicker', () => {
     store.updateSettings.mockClear();
     fireEvent.keyDown(radios()[0], { key: 'a' });
     expect(store.updateSettings).not.toHaveBeenCalled();
+  });
+
+  it('lists plugin themes with a plugin badge and selects them by their plugin theme id', () => {
+    const pluginTheme: PluginThemeInfo = {
+      id: 'plugin:com.example.ember',
+      pluginId: 'com.example.ember',
+      name: 'Ember',
+      mode: 'dark',
+      vars: THEMES[0].vars as Record<string, string>,
+    };
+    renderPicker({ themeId: DEFAULT_THEME_ID }, false, [pluginTheme]);
+    expect(radios()).toHaveLength(THEMES.length + 1);
+    const option = screen.getByRole('radio', { name: 'Ember (dark)' });
+    expect(within(option).getByText('Plugin')).toBeTruthy();
+
+    fireEvent.click(option);
+    expect(store.updateSettings).toHaveBeenCalledWith({ themeId: 'plugin:com.example.ember' });
+    expect(checked().map((r) => r.getAttribute('aria-label'))).toEqual(['Ember (dark)']);
+    expect(screen.getByText('Current:').textContent).toContain('Ember');
   });
 });

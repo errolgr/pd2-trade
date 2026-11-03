@@ -23,7 +23,8 @@ import StashAutoDelistController from './pages/delist/StashAutoDelistController'
 import NetWorthOverlayController from './pages/net-worth/NetWorthOverlayController';
 import CorruptedZoneTimerController from './pages/corrupted-zones/CorruptedZoneTimerController';
 import { OverlayProvider, OverlayRoot } from './overlay';
-import { PANEL_DEFS } from './overlay/registry';
+import { usePanelDefs } from './overlay/registry';
+import PluginHostBridge from './plugins/PluginHostBridge';
 import PrimitivesGallery from './pages/dev/PrimitivesGallery';
 import { SignInWindowPage } from './pages/sign-in/SignInPage';
 import { SignInProvider } from './hooks/useSignIn';
@@ -45,10 +46,15 @@ if (isTauri()) document.addEventListener('contextmenu', (e) => e.preventDefault(
  * The single overlay window: every provider mounted once, every UI surface a panel.
  * OverlayProvider sits above the domain providers so they (sign-in, tray settings, net worth) can open panels.
  */
+/** Core panels plus enabled plugins' panels (`plugin:<id>:<panel>`). */
+const OverlayWithPlugins: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <OverlayProvider defs={usePanelDefs()}>{children}</OverlayProvider>
+);
+
 const AppRoot: React.FC = () => (
   <DialogProvider>
     <OptionsProvider>
-      <OverlayProvider defs={PANEL_DEFS}>
+      <OverlayWithPlugins>
         <SignInProvider>
           <TrayProvider>
             <ItemsProvider>
@@ -61,6 +67,7 @@ const AppRoot: React.FC = () => (
                     <StashAutoDelistController />
                     <NetWorthOverlayController />
                     <CorruptedZoneTimerController />
+                    <PluginHostBridge />
                     <OverlayRoot />
                   </NetWorthProvider>
                 </WhisperHistoryProvider>
@@ -68,7 +75,7 @@ const AppRoot: React.FC = () => (
             </ItemsProvider>
           </TrayProvider>
         </SignInProvider>
-      </OverlayProvider>
+      </OverlayWithPlugins>
     </OptionsProvider>
   </DialogProvider>
 );

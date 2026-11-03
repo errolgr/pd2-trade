@@ -6,7 +6,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@pd2-trader/ui": ["./packages/ui/src/index.ts"],
-      "@pd2-trader/ui/tokens": ["./packages/ui/src/tokens/index.ts"]
+      "@pd2-trader/ui/tokens": ["./packages/ui/src/tokens/index.ts"],
+      "@pd2-trader/plugin-sdk": ["./packages/plugin-sdk/src/index.ts"]
     },
     "jsx": "react-jsx",
     "module": "ESNext",

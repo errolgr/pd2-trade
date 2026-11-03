@@ -27,6 +27,8 @@ import { OfferBadge } from './OfferBadge';
 import type { ListingOffers } from '../lib/listing-offers';
 import type { AlertGlow } from '../hooks/useLiveAlertGlow';
 import { useTranslation } from '@/i18n';
+import type { PluginCell } from '@/plugins/adapters/market';
+import { PluginCellBadges } from './PluginControls';
 
 const ESTIMATED_CARD_HEIGHT = 340;
 const GAP = 8;
@@ -78,6 +80,8 @@ export interface ResultCardsProps {
   onLoadMore: () => void;
   /** A failed next page: the footer offers Retry instead of loading on scroll. */
   loadMore: LoadMoreState;
+  /** Row id → `market.column` plugin cells (shown in the card footer). */
+  pluginCells?: ReadonlyMap<string, PluginCell[]>;
 }
 
 /** Full-width result cards, one per row, virtualized (cards vary in height, so each is measured). */
@@ -102,6 +106,7 @@ export function ResultCards({
   loadingMore,
   onLoadMore,
   loadMore,
+  pluginCells,
 }: ResultCardsProps) {
   const { t } = useTranslation('market');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -180,6 +185,7 @@ export function ResultCards({
                   command={command && command.id === id ? command : null}
                   takeCommand={takeCommand}
                   pin={pinned && pinned.id === id ? pinned : null}
+                  pluginCells={pluginCells?.get(id)}
                 />
                 {glowIds.ids.has(id) && (
                   <GlowOnce
@@ -260,6 +266,7 @@ const ResultCard = React.memo(function ResultCard({
   command,
   takeCommand,
   pin,
+  pluginCells,
 }: {
   row: ScoredListing;
   selected: boolean;
@@ -275,6 +282,7 @@ const ResultCard = React.memo(function ResultCard({
   command: CardCommand | null;
   takeCommand: (nonce: number) => boolean;
   pin: CardPin | null;
+  pluginCells: PluginCell[] | undefined;
 }) {
   const { t } = useTranslation('market');
   const { listing } = row;
@@ -523,6 +531,7 @@ const ResultCard = React.memo(function ResultCard({
               {`${listing.is_hardcore ? 'HC' : 'SC'} · ${listing.is_ladder ? 'Ladder' : 'Non-ladder'}`}
             </span>
           </span>
+          <PluginCellBadges cells={pluginCells} />
         </span>
         <span className="flex shrink-0 items-center gap-1">
           <Button

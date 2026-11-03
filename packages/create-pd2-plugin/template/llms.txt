@@ -1,0 +1,63 @@
+# PD2 Trader plugin — rules for AI tools
+# Human version: DESIGN_RULES.md. Types: node_modules/@pd2-trader/plugin-sdk/src (ui.ts, slots.ts, worker.ts, panel.ts, manifest.ts).
+
+## Context
+- Plugins extend the PD2 Trader overlay (Project Diablo 2 trading). One transparent, always-on-top, non-focusable window, 21 themes.
+- Plugin = pd2-plugin.json (manifest) + src/worker.ts (logic, Web Worker, no DOM, no network) + optional panels (src/*.html + plain TS, sandboxed iframe).
+- Worker API: import { sdk, ui } from '@pd2-trader/plugin-sdk'. Panel API: window.pd2. Nothing else reaches the host. No React, no Tailwind, no npm UI kits.
+- Build: `npm run build` (pd2-plugin build) → dist/manifest.json, dist/worker.js (IIFE), dist/panels/<name>.html (local <script src>/<link rel=stylesheet> inlined).
+- Dev: `npm run dev` → http://localhost:5199/ (CORS, rebuild on save). Overlay: Settings → Plugins → Load unpacked → http://localhost:5199/. `--port <n>`, `--outdir <AppConfig>/plugins-dev/<name>` for folder loading in the desktop app.
+
+## Manifest (pd2-plugin.json; unknown keys rejected)
+id reverse-DNS (com.you.name) · name ≤48 · version x.y.z · sdk "^1.0.0" · description ≤200 · category pricing|trading|chat|stash|ui|theme|utility
+entry { worker: "src/worker.ts", panels: { <panelId>: "src/panel.html" } } (≤4 panels; paths point at SOURCE files, the build rewrites them)
+slots [ids below] · commands [{ id: /^[a-z][a-z0-9-]{0,31}$/, title ≤48, defaultHotkey: null }] (≤10)
+permissions [see below] · network ["api.example.com"] (≤10, hostname only) · settings { type: "object", properties: { key: { type: string|number|integer|boolean, title, description?, default?, enum?, minimum?, maximum?, maxLength? } } } (≤30)
+
+## Worker SDK (sdk.*)
+slots.register(slot, input => output) · events.on('item.priceChecked'|'chat.message'|'game.focus'|'theme.changed', fn) · commands.register(id, args => …)
+storage.get/set/remove/keys (storage:local, JSON, 5 MB) · prices.runes() → [{ name: "Ber Rune", priceHr, listings, fixed }] · prices.item(name) · prices.mode()
+settings.get() / settings.onChange(fn) · notify({ title, body?, tone?: default|success|warning|danger }) (notifications, 3/min, rejects when limited: always .catch)
+fetch(url, init) (https, declared hosts only, no cookies/redirects) · stash.summary() (stash:read) · account.profile() (account:profile)
+panels.open(panelId, payload?) · panels.post(panelId, data) (only reaches an open panel; .catch) · panels.onMessage((panelId, data) => …) · log(...)
+
+## Slot output = JSON from ui.* (host renders it; never DOM/classes/colors)
+ui.section(title 1-80, children ≤50) · ui.row(label 1-80, value ≤300, tone?) · ui.badge(text 1-40, tone='default') · ui.text(text ≤300, { tone?, size?: sm|md })
+ui.price(amount, unit: hr|rune|gold = hr, trend?: up|down|flat) · ui.button(label 1-40, commandId in manifest.commands, args? JSON ≤2KB) · ui.divider() · ui.list(items ≤50)
+tree: depth ≤6, ≤200 nodes. Invalid output is dropped and counts as a failure.
+tones: default muted success warning danger q-unique q-set q-rare q-magic q-crafted q-rune. q-* = item quality/item names ONLY.
+
+slot → output (permission):
+priceCheck.section → section|null (items:read) · priceCheck.badge → badge|null (items:read)
+market.column → { title ≤40, cells: { [rowId]: { text ≤40, tone? } } }|null (prices:read) · market.filter → { label ≤40, keep: rowId[] }|null
+market.sort → { label ≤40, scores: { [rowId]: number } }|null (higher first) · market.rowAction → button[] ≤3 (args default row id)
+chat.decorate → { tags: badge[] ≤3, highlight?: tone }|null (chat:read) · chat.action → button[] ≤3 (chat:read)
+networth.tab → { title ≤40, content: node[] ≤50 }|null (stash:read) · networth.metric → { label ≤40, value: price|text }|null (stash:read)
+ticker.widget → badge/text/price[] ≤4 | null (no permission) · settings.section → no handler; host renders manifest.settings
+Return null when there is nothing useful to show.
+
+## Budgets (hard)
+- Slot handler: 300 ms, then skeleton → error chip. 5 failures (timeout/crash/invalid UI) in 10 min auto-disables the plugin.
+- NEVER fetch or await the network/broker inside a slot handler: load at startup + setInterval refresh, answer from memory.
+- Commands: 5 s. Worker must answer host pings (no busy loops > 2 s).
+- No eval, new Function, string setTimeout, dynamic import of remote code, obfuscation (review rejects; CSP blocks).
+
+## Panels (theme kit + CSS vars only)
+classes: pd2-stack pd2-row pd2-grid pd2-tile pd2-title pd2-label pd2-value pd2-muted pd2-badge[data-tone=success|warning|danger] pd2-button pd2-button-secondary pd2-input pd2-divider pd2-skeleton
+text colors: tone-muted tone-success tone-warning tone-danger q-unique q-set q-rare q-magic q-crafted q-rune
+CSS vars (theme tokens, live-updated): --background --foreground --card --card-foreground --popover --popover-foreground --primary --primary-foreground
+  --secondary --secondary-foreground --muted --muted-foreground --accent --accent-foreground --destructive --destructive-foreground --border --input --ring
+  --success --success-foreground --warning --warning-foreground --info --info-foreground --surface --surface-foreground --surface-elevated --scrim --glow
+  --chart-1..5 --q-unique --q-set --q-rare --q-magic --q-crafted --q-rune --q-normal --q-gold --q-corrupted --q-corrupted-zone --radius
+BANNED in panel CSS/markup: raw colors (#fff, rgb(), hsl(), oklch(), named colors), remote <script>/<link>/fonts/images, background on body (stay transparent).
+OK: var(--token), color-mix(in oklab, var(--success) 15%, transparent), calc(var(--radius) - 2px).
+Loading: pd2-skeleton. Error: tone-danger text. Empty: pd2-muted text. Text via textContent, never innerHTML with data.
+window.pd2: onTheme(fn) onPayload(fn) onMessage(fn) post(data) call(method, params) close(); call methods = broker methods with your permissions, e.g. pd2.call('prices.runes').
+
+## Permissions (ask only for what you use)
+prices:read silent/auto · items:read silent/auto · chat:read prompt/auto · stash:read prompt/manual · account:profile prompt/manual
+network:<host> (manifest.network) prompt/manual-for-new-hosts · storage:local silent/auto (5 MB) · notifications silent/auto (rate-limited)
+Never grantable: PD2 JWT, game input/press_key, filesystem, clipboard write, Tauri commands. New permissions in an update wait for re-consent.
+
+## Copy
+Sentence case, terse, no exclamation marks. Prices "1.25 HR", "≈ 1.4 Ber". Errors say what failed + what to do.

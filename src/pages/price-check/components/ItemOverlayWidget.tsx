@@ -130,9 +130,25 @@ import { keyStatMin, matchRareStats } from '../lib/rare-stat-match';
 import type { AppraisedStat } from '@/lib/rare-appraisal-api';
 import { SimulatorButton } from './SimulatorButton';
 import { currentLocale, Trans, useTranslation } from '@/i18n';
+import type { Item } from '../lib/interfaces';
+import { pluginHost } from '@/plugins/host/manager';
+import { PriceCheckBadges, PriceCheckSections } from '@/plugins/ui/PluginSlot';
+import { toCorePrice, toGameMode, toPluginItem } from '@/plugins/adapters/price-check';
 
 /** The header's "Any" quality: searches every base quality (e.g. Rare and Crafted together). */
 const ANY_QUALITY = 'any' as const;
+
+/** Price-checked items by identity → a serial, so plugin slots re-run per item (items carry no id). */
+const pluginItemSerials = new WeakMap<Item, number>();
+let nextPluginItemSerial = 0;
+function pluginItemSerial(item: Item): number {
+  let serial = pluginItemSerials.get(item);
+  if (serial === undefined) {
+    serial = ++nextPluginItemSerial;
+    pluginItemSerials.set(item, serial);
+  }
+  return serial;
+}
 
 /** The search whose results are listed. */
 interface ActiveSearch {
@@ -250,9 +266,24 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   // Average price state for unique items
   const [averagePriceData, setAveragePriceData] = useState<AveragePriceResponse | null>(null);
   const [averagePriceLoading, setAveragePriceLoading] = useState(false);
+  /** The item `averagePriceData` was fetched for: plugin slots never see the previous item's price. */
+  const [averagePriceItem, setAveragePriceItem] = useState<Item | null>(null);
   const [averagePriceError, setAveragePriceError] = useState<{ reason: 'noData' | 'failed'; message?: string } | null>(
     null,
   );
+  /** `item.priceChecked` (B9): sent once per item, when its core price settled (items without one: at once). */
+  const priceCheckedItem = useRef<Item | null>(null);
+  const emitPriceChecked = useRef<(price: AveragePriceResponse | null) => void>(() => {});
+  emitPriceChecked.current = (price) => {
+    if (priceCheckedItem.current === item) return;
+    priceCheckedItem.current = item;
+    if (!pluginHost.getSnapshot().plugins.some((p) => p.status === 'running')) return;
+    pluginHost.emit('item.priceChecked', {
+      item: toPluginItem(item),
+      mode: toGameMode(settings),
+      price: toCorePrice(price),
+    });
+  };
 
   // Corruption prices state
   const [corruptionPrices, setCorruptionPrices] = useState<CorruptionPricesResponse | null>(null);
@@ -614,6 +645,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     const fetchAveragePrice = async () => {
       // Only fetch for unique and set items
       if ((item.quality !== ItemQuality.Unique && item.quality !== ItemQuality.Set) || !pd2Item?.name) {
+        emitPriceChecked.current(null);
         return;
       }
 
@@ -648,15 +680,18 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
         if (priceData) {
           setAveragePriceData(priceData);
+          setAveragePriceItem(item);
           setAveragePriceLoading(false);
         } else {
           setAveragePriceError({ reason: 'noData' });
           setAveragePriceLoading(false);
         }
+        emitPriceChecked.current(priceData);
       } catch (error: any) {
         console.error('[ItemOverlayWidget] Error fetching average price:', error);
         setAveragePriceError({ reason: 'failed', message: error.message || undefined });
         setAveragePriceLoading(false);
+        emitPriceChecked.current(null);
       }
     };
 
@@ -1103,6 +1138,15 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const openPd2Trader = () => openUrl(getPd2TraderUrl());
 
   const isUniqueOrSet = item.quality === ItemQuality.Unique || item.quality === ItemQuality.Set;
+  // priceCheck.section / priceCheck.badge: built only when a plugin implements them; re-run per item and once
+  // its core price lands
+  const pluginPrice = averagePriceItem === item && !averagePriceLoading ? averagePriceData : null;
+  const pluginInput = () => ({
+    item: toPluginItem(item),
+    mode: toGameMode(settings),
+    price: toCorePrice(pluginPrice),
+  });
+  const pluginInputKey = `${pluginItemSerial(item)}:${pluginPrice ? pluginPrice.medianPrice : 'none'}`;
   const canList = isStashItem(item);
   const itemIcon = getItemIcon();
   // Headline price: the 7-day moving average for the 7-day window and past seasons (as on pd2trader.com),
@@ -1351,6 +1395,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                   quality={item.quality}
                   className="min-w-0 truncate" />
                 {item.isRuneword && <Badge className="font-sans text-3xs uppercase tracking-wider">Runeword</Badge>}
+                <span className="contents font-sans">
+                  <PriceCheckBadges input={pluginInput}
+                    inputKey={pluginInputKey} />
+                </span>
               </h1>
               {item.type && (
                 <div className="-ml-1.5 flex flex-wrap items-center gap-0.5 text-base leading-tight">
@@ -1616,6 +1664,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 )}
               </div>
             )}
+            <PriceCheckSections input={pluginInput}
+              inputKey={pluginInputKey} />
           </motion.header>
 
           {/* Body */}

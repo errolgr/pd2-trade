@@ -80,6 +80,7 @@ vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => tauri.on, invoke: vi.fn(
 /** Rust events the provider listens to (e.g. the outside-click hook). */
 const events = vi.hoisted(() => new Map<string, () => void>());
 vi.mock('@/lib/browser-events', () => ({
+  emitDevEvent: vi.fn(),
   listen: vi.fn(async (event: string, cb: () => void) => {
     events.set(event, cb);
     return () => events.delete(event);
@@ -153,6 +154,8 @@ const DEFS = {
   listingDetail: def('listingDetail', { placement: 'gameRight', closeOnBlur: true }),
   builds: def('builds', { placement: 'screenCenter', persist: true, closeOnBlur: true }),
   palette: def('palette', { closeOnBlur: true, interactive: 'children' }),
+  plugins: def('plugins', { placement: 'screenCenter', persist: true, closeOnBlur: true }),
+  pluginConsent: def('pluginConsent', { placement: 'screenCenter' }),
 } satisfies PanelDefs;
 
 let api: OverlayApi;

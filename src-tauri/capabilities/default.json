@@ -80,6 +80,9 @@
         },
         {
           "url": "https://caritive-zoila-unhumorously.ngrok-free.dev/**"
+        },
+        {
+          "url": "https://*/**"
         }
       ]
     }

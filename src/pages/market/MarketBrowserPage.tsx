@@ -54,6 +54,8 @@ import { lookupListing } from './alerts/listing-lookup';
 import { useEnterTracker } from './components/EnterOnce';
 import { useLiveAlertGlow } from './hooks/useLiveAlertGlow';
 import { useSearchDefaults } from './hooks/useSearchDefaults';
+import { useMarketPlugins } from './hooks/useMarketPlugins';
+import { PluginControls } from './components/PluginControls';
 import { useTranslation } from '@/i18n';
 
 /** Card hotkeys (lowercase key → action on the selected card). */
@@ -175,11 +177,14 @@ const MarketBrowserPage: React.FC = () => {
   );
   const presence = useListingPresence(signedIn ? (marketApi ?? null) : null, presenceIds);
   const searchRows = useMemo(() => withRowPresence(search.items, presence), [search.items, presence]);
-  const rows = useMemo(
+  const pageRows = useMemo(
     () => (tab === 'favorites' ? favoriteRows : tab === 'search' ? searchRows : []),
     [tab, favoriteRows, searchRows],
   );
-  const listings = useMemo(() => rows.map((r) => r.listing), [rows]);
+  // Plugin columns/filters/sorts of the page (`rows` is `pageRows` itself while none apply)
+  const marketPlugins = useMarketPlugins(pageRows, filters);
+  const { rows } = marketPlugins;
+  const listings = useMemo(() => pageRows.map((r) => r.listing), [pageRows]);
   const deals = useDealIndicators(listings);
   // Offers hidden from the chat's deals still exist on PD2: they show here too
   const offers = useMemo(
@@ -563,6 +568,7 @@ const MarketBrowserPage: React.FC = () => {
                               )}
                               <ViewModeToggle value={viewMode}
                                 onChange={changeViewMode} />
+                              <PluginControls plugins={marketPlugins} />
                             </>
                           }
                         >
@@ -606,6 +612,7 @@ const MarketBrowserPage: React.FC = () => {
                                   loadingMore={tab === 'search' && search.loadingMore}
                                   onLoadMore={search.loadMore}
                                   loadMore={loadMore}
+                                  pluginCells={marketPlugins.cells}
                                 />
                               ) : (
                                 <ResultsList
@@ -621,6 +628,7 @@ const MarketBrowserPage: React.FC = () => {
                                   loadingMore={tab === 'search' && search.loadingMore}
                                   onLoadMore={search.loadMore}
                                   loadMore={loadMore}
+                                  pluginCells={marketPlugins.cells}
                                 />
                               )}
                             </motion.div>
@@ -658,6 +666,7 @@ const MarketBrowserPage: React.FC = () => {
                           );
                         }}
                         pseudoKeys={pseudoKeys}
+                        query={filters}
                       />
                     </motion.div>
                   )}

@@ -240,7 +240,7 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
     (id: PanelId, rect: Partial<OverlayRect>) => {
       apply({ type: 'setRect', id, rect });
       const panel = stateRef.current.panels[id];
-      if (defs[id].persist && panel) savePanelRect(id, panel.rect);
+      if (defs[id]?.persist && panel) savePanelRect(id, panel.rect);
     },
     [apply, defs],
   );
@@ -248,6 +248,7 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
   const openPanel = useCallback(
     <K extends PanelId>(id: K, payload?: PanelPayloads[K], opts: OpenOptions = {}) => {
       const def = defs[id];
+      if (!def) return; // a plugin panel whose plugin is gone
       const current = stateRef.current.panels[id];
 
       if (current?.open && !opts.reposition) {
@@ -295,9 +296,10 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
   const reflowPanels = useCallback(() => {
     const viewport = viewportRect();
     for (const [id, panel] of Object.entries(stateRef.current.panels) as [PanelId, PanelState][]) {
-      if (!panel.open || panel.placing) continue;
+      const def = defs[id];
+      if (!def || !panel.open || panel.placing) continue;
       const rect = panel.anchor
-        ? computePlacement(panel.anchor, defs[id].size, gameRef.current.gameRect, viewport)
+        ? computePlacement(panel.anchor, def.size, gameRef.current.gameRect, viewport)
         : clampRectInto(panel.rect, viewport);
       if (!sameRect(rect, panel.rect)) apply({ type: 'place', id, rect });
     }
@@ -316,7 +318,7 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
       placeTokens.current[id] = (placeTokens.current[id] ?? 0) + 1;
       apply({ type: 'close', id });
       const keyboardPanelOpen = Object.entries(stateRef.current.panels).some(
-        ([pid, panel]) => panel?.open && defs[pid as PanelId].keyboard === 'onPointerDown',
+        ([pid, panel]) => panel?.open && defs[pid as PanelId]?.keyboard === 'onPointerDown',
       );
       if (isKeyboardClaimed() && !keyboardPanelOpen) void releaseKeyboard();
     },
@@ -325,7 +327,8 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
 
   const togglePanel = useCallback(
     <K extends PanelId>(id: K, payload?: PanelPayloads[K], opts?: OpenOptions) => {
-      if (isPanelVisible(defs[id], stateRef.current.panels[id], gameRef.current.gameFocused)) closePanel(id);
+      const def = defs[id];
+      if (def && isPanelVisible(def, stateRef.current.panels[id], gameRef.current.gameFocused)) closePanel(id);
       else openPanel(id, payload, opts);
     },
     [closePanel, defs, openPanel],
@@ -349,7 +352,7 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
   // hand-off to the game (e.g. before a hotkey copies the next item) isn't the user leaving.
   const closeDismissablePanels = useCallback(() => {
     for (const [id, panel] of Object.entries(stateRef.current.panels) as [PanelId, PanelState][]) {
-      if (panel.open && defs[id].closeOnBlur) closePanel(id);
+      if (panel.open && defs[id]?.closeOnBlur) closePanel(id);
     }
   }, [closePanel, defs]);
 
@@ -373,7 +376,7 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
   // A click outside every panel (into the game or another app) closes closeOnBlur panels even though the overlay
   // never took focus from the game. The Rust mouse hook behind it only runs while one is open.
   const dismissableOpen = Object.entries(state.panels).some(
-    ([id, panel]) => panel?.open && defs[id as PanelId].closeOnBlur,
+    ([id, panel]) => panel?.open && defs[id as PanelId]?.closeOnBlur,
   );
   useEffect(() => {
     if (!isTauri()) return;

@@ -1,0 +1,13 @@
+{
+  "id": "com.pd2trader.rune-ticker",
+  "name": "Rune Ticker",
+  "version": "1.0.0",
+  "sdk": "^1.0.0",
+  "description": "Ber and Jah prices with trend in the ticker, plus a panel with every high rune.",
+  "author": "PD2 Trader",
+  "category": "pricing",
+  "entry": { "worker": "src/worker.ts", "panels": { "main": "src/panel.html" } },
+  "slots": ["ticker.widget"],
+  "commands": [{ "id": "open", "title": "Open rune ticker", "defaultHotkey": null }],
+  "permissions": ["prices:read", "storage:local"]
+}

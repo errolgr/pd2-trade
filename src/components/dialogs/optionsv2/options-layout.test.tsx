@@ -28,9 +28,10 @@ vi.mock('./stats/layout', () => ({ default: () => <p>price-check-body</p> }));
 vi.mock('./market/layout', () => ({ default: () => <p>market-body</p> }));
 vi.mock('./networth/layout', () => ({ default: () => <p>net-worth-body</p> }));
 vi.mock('./hotkeys/layout', () => ({ default: () => <p>hotkeys-body</p> }));
+vi.mock('./plugins/layout', () => ({ default: () => <p>plugins-body</p> }));
 vi.mock('./about/layout', () => ({ default: () => <p>about-body</p> }));
 
-const SECTIONS = ['General', 'Account', 'Chat', 'Interface', 'Price Check', 'Market', 'Net Worth', 'Hotkeys', 'About'];
+const SECTIONS = ['General', 'Account', 'Chat', 'Interface', 'Price Check', 'Market', 'Net Worth', 'Hotkeys', 'Plugins', 'About'];
 
 let store: OptionsStore;
 const close = vi.fn();

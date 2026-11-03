@@ -1,0 +1,201 @@
+{
+  "surfaces": {
+    "market": {
+      "filter": "插件筛选：{{label}}",
+      "sort": "插件排序",
+      "sortBy": "将本页排序依据",
+      "sortDefault": "搜索顺序"
+    }
+  },
+  "price": {
+    "hr": "{{value}} HR",
+    "rune": "{{value}} 个符文",
+    "gold": "{{value}} 金币"
+  },
+  "slot": {
+    "error": "插件错误",
+    "retry": "重试",
+    "from": "来自 {{name}}"
+  },
+  "command": {
+    "failed": "插件命令执行失败"
+  },
+  "notify": {
+    "from": "来自 {{name}}"
+  },
+  "disabled": {
+    "failures": "{{name}} 已被关闭",
+    "failuresHint": "它在 10 分钟内失败或超时了 5 次。可在 设置 → 插件 中重新开启。",
+    "blocklisted": "{{name}} 已被关闭",
+    "blocklistedHint": "出于安全考虑，此版本已被屏蔽。请在插件中检查更新。"
+  },
+  "panel": {
+    "frameTitle": "{{name}} 面板",
+    "unavailable": "插件面板不可用",
+    "unavailableHint": "该插件已关闭或已被移除。请在 设置 → 插件 中开启。"
+  },
+  "consent": {
+    "installTitle": "安装插件",
+    "updateTitle": "插件更新需要批准",
+    "updateIntro": "此更新请求了当前版本没有的权限。",
+    "unpacked": "未打包",
+    "signed": "已签名",
+    "asks": "它请求",
+    "network": "与 {{host}} 收发数据",
+    "networkHint": "请求经由 PD2 Trader 转发，且仅允许访问此网站。",
+    "alsoUses": "还使用",
+    "nothing": "此插件不需要任何特殊权限。",
+    "never": "插件永远无法读取你的 PD2 登录信息、在游戏中按键、读取你的文件或写入你的剪贴板。",
+    "cancel": "取消",
+    "allowInstall": "允许并安装",
+    "allowUpdate": "允许并更新"
+  },
+  "permissions": {
+    "prices_read": {
+      "label": "读取 pd2trader 价格",
+      "description": "你所在天梯和模式的价格与市场数据。"
+    },
+    "items_read": {
+      "label": "查看已查价的物品",
+      "description": "你查价的物品及其核心价格。"
+    },
+    "chat_read": {
+      "label": "读取你的聊天",
+      "description": "游戏内交易聊天和密语，包括私信。"
+    },
+    "stash_read": {
+      "label": "读取你的储物箱价值",
+      "description": "已登录账号的资产净值摘要。"
+    },
+    "account_profile": {
+      "label": "查看你的账号名称",
+      "description": "你的 PD2 账号名称和角色。"
+    },
+    "storage_local": {
+      "label": "在此电脑上存储数据",
+      "description": "最多 5 MB 的自有数据。"
+    },
+    "notifications": {
+      "label": "显示通知",
+      "description": "每分钟少量弹出提示。"
+    }
+  },
+  "marketplace": {
+    "title": "插件",
+    "closeLabel": "关闭插件",
+    "tabs": {
+      "browse": "浏览",
+      "installed": "已安装"
+    },
+    "search": "搜索插件",
+    "categoryFilter": "类别",
+    "categories": {
+      "all": "全部",
+      "pricing": "定价",
+      "trading": "交易",
+      "chat": "聊天",
+      "stash": "储物箱",
+      "ui": "界面",
+      "theme": "主题",
+      "utility": "实用工具"
+    },
+    "by": "作者：{{author}}",
+    "verified": "已验证",
+    "installs_other": "{{count}} 次安装",
+    "noAccess": "无特殊权限",
+    "loadMore": "加载更多",
+    "install": "安装",
+    "installing": "正在安装…",
+    "installed": "已安装",
+    "updateAvailable": "更新到 v{{version}}",
+    "blocked": "已屏蔽",
+    "blockedHint": "出于安全考虑已屏蔽：{{reason}}",
+    "installedToast": "{{name}} 已安装",
+    "installFailed": "无法安装 {{name}}",
+    "loadFailed": "无法加载插件",
+    "loadFailedHint": "插件市场没有响应。请检查网络连接后重试。",
+    "retry": "重试",
+    "empty": "未找到插件",
+    "emptyHint": "请尝试其他搜索词或类别。",
+    "emptyInstalled": "未安装任何插件",
+    "emptyInstalledHint": "浏览插件市场，添加价格、提醒和主题。",
+    "browse": "浏览插件",
+    "detail": {
+      "back": "返回插件",
+      "access": "它能做什么",
+      "versions": "版本",
+      "published": "发布于 {{date}}",
+      "latest": "最新",
+      "current": "已安装",
+      "noVersions": "没有已发布的版本",
+      "loadFailed": "无法加载此插件"
+    },
+    "manage": {
+      "status": {
+        "on": "开启",
+        "off": "关闭",
+        "starting": "正在启动…",
+        "stopped": "已停止",
+        "error": "错误",
+        "failed": "已被关闭",
+        "blocked": "已屏蔽",
+        "incompatible": "不兼容"
+      },
+      "reason": {
+        "failures": "在 10 分钟内失败或超时 5 次后已被关闭。",
+        "blocklisted": "出于安全考虑，此版本已被屏蔽。有可用更新时请安装。",
+        "incompatible": "需要更新版本的 PD2 Trader。",
+        "invalid": "其文件已损坏。请重新安装。"
+      },
+      "enable": "开启或关闭 {{name}}",
+      "uninstall": "卸载 {{name}}",
+      "uninstallTitle": "卸载 {{name}}？",
+      "uninstallHint": "其设置和存储的数据将被删除。",
+      "uninstallConfirm": "卸载",
+      "reviewUpdate": "查看更新到 v{{version}}",
+      "updateFailed": "无法应用更新"
+    }
+  },
+  "settings": {
+    "title": "插件",
+    "description": "开启或关闭已安装的插件、加载你正在开发的插件，以及更改插件设置。",
+    "browse": "浏览插件",
+    "empty": {
+      "title": "未安装任何插件",
+      "description": "插件可添加价格来源、聊天工具和主题。浏览目录来寻找插件。"
+    },
+    "installed": {
+      "group": "已安装",
+      "version": "v{{version}}"
+    },
+    "unpacked": {
+      "group": "开发者",
+      "label": "加载未打包插件",
+      "urlHint": "你的插件开发服务器（pd2-plugin dev）的 URL。文件更改时会自动重新加载。",
+      "folderHint": "PD2 Trader 配置文件夹内的某个文件夹，例如 plugins-dev/<name>。文件更改时会自动重新加载。",
+      "load": "加载",
+      "loading": "正在加载…",
+      "failed": "无法加载该插件。",
+      "installed": "{{name}} 已安装"
+    },
+    "form": {
+      "tooLong": "最多 {{max}} 个字符。",
+      "number": "请输入数字。",
+      "integer": "请输入整数。",
+      "numberRange": "请输入 {{min}} 到 {{max}} 之间的数字。",
+      "integerRange": "请输入 {{min}} 到 {{max}} 之间的整数。",
+      "numberMin": "请输入不小于 {{min}} 的数字。",
+      "integerMin": "请输入不小于 {{min}} 的整数。",
+      "numberMax": "请输入不大于 {{max}} 的数字。",
+      "integerMax": "请输入不大于 {{max}} 的整数。"
+    },
+    "hotkeys": {
+      "group": "插件命令",
+      "from": "来自 {{name}}",
+      "unbind": "关闭 {{action}} 快捷键"
+    },
+    "theme": {
+      "badge": "插件"
+    }
+  }
+}
