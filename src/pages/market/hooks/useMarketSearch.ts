@@ -4,6 +4,8 @@ import { runSearch } from '../lib/search';
 import { BROWSER_FACETS, wantsFacets, type MarketFacets } from '../lib/facets';
 import type { MarketApi, MarketFilters, ScoredListing, SearchResult } from '../lib/types';
 import { t } from '@/i18n';
+import { reportApiError } from '@/lib/error-reporting';
+import { trackMeasurement } from '@/lib/telemetry';
 
 /** Rows per page unless Settings → Market picks another — the list loads the next page when scrolled to the end. */
 export const MARKET_PAGE_SIZE = 25;
@@ -90,6 +92,57 @@ function queryKey(f: MarketFilters, page: number, pageSize: number): string {
 }
 
 const isAbort = (e: unknown) => e instanceof DOMException && e.name === 'AbortError';
+
+const SEARCH_MEASUREMENT = 'market_browser_search';
+
+/** The shape of a search for telemetry: flags and counts only, never the item name, seller or price text. */
+function searchContext(f: MarketFilters, page: number, pageSize: number) {
+  return {
+    source: f.source,
+    history: !!f.status?.length,
+    sort_by: f.sort.by,
+    item_name: !!f.itemName,
+    stat_filters: f.stats.length,
+    seller: !!(f.sellerUserId || f.sellerName),
+    page,
+    page_size: pageSize,
+  };
+}
+
+/** A page the service answered (cache hits aren't recorded). */
+function recordSearchSuccess(f: MarketFilters, page: number, pageSize: number, startedAt: number, r: SearchResult) {
+  trackMeasurement(
+    SEARCH_MEASUREMENT,
+    {
+      duration_ms: performance.now() - startedAt,
+      returned_items: r.items.length,
+      total_items: page === 0 ? r.total : undefined,
+    },
+    { outcome: 'success', total_exact: r.totalExact, ...searchContext(f, page, pageSize) },
+  );
+}
+
+/** A page that failed (aborted searches aren't failures); 5xx also go to Sentry. */
+function recordSearchFailure(f: MarketFilters, page: number, pageSize: number, startedAt: number, e: unknown) {
+  const backend = e instanceof MarketBackendError ? e : null;
+  trackMeasurement(
+    SEARCH_MEASUREMENT,
+    { duration_ms: performance.now() - startedAt },
+    {
+      outcome: 'error',
+      error_kind: backend?.kind ?? 'unexpected',
+      status: backend?.status,
+      ...searchContext(f, page, pageSize),
+    },
+  );
+  if (backend) {
+    reportApiError(backend, 'market-service', '/api/market/search', backend.status, {
+      kind: backend.kind,
+      page,
+      origin: 'market-browser',
+    });
+  }
+}
 
 /** What the results pane says when a search fails; retry is the pane's refresh. */
 export function searchErrorMessage(e: unknown): string {
@@ -191,6 +244,7 @@ export function useMarketSearch(
     setState((s) => ({ ...IDLE, status: 'loading', items: s.items, facets: s.facets }));
     const timer = window.setTimeout(
       async () => {
+        const startedAt = performance.now();
         try {
           const result = await runSearch(api, filters, {
             page: 0,
@@ -199,10 +253,12 @@ export function useMarketSearch(
             signal: controller.signal,
           });
           if (controller.signal.aborted) return;
+          recordSearchSuccess(filters, 0, pageSize, startedAt, result);
           cacheSet(queryKey(filters, 0, pageSize), result);
           show(result);
         } catch (e) {
           if (controller.signal.aborted || isAbort(e)) return;
+          recordSearchFailure(filters, 0, pageSize, startedAt, e);
           setState({ ...IDLE, status: 'error', error: searchErrorMessage(e) });
         }
       },
@@ -222,10 +278,13 @@ export function useMarketSearch(
       const controller = abortRef.current ?? new AbortController();
       abortRef.current = controller;
       setState((s) => ({ ...s, loadingMore: true, loadMoreError: null, loadMoreRetryAt: null }));
+      const startedAt = performance.now();
       try {
         const key = queryKey(filters, page, pageSize);
-        const result = cacheGet(key) ?? (await runSearch(api, filters, { page, pageSize, signal: controller.signal }));
+        const cached = cacheGet(key);
+        const result = cached ?? (await runSearch(api, filters, { page, pageSize, signal: controller.signal }));
         if (controller.signal.aborted) return;
+        if (!cached) recordSearchSuccess(filters, page, pageSize, startedAt, result);
         cacheSet(key, result);
         pageRef.current = page;
         setState((s) => {
@@ -244,6 +303,7 @@ export function useMarketSearch(
         });
       } catch (e) {
         if (controller.signal.aborted || isAbort(e)) return;
+        recordSearchFailure(filters, page, pageSize, startedAt, e);
         const retryAfterMs =
           e instanceof MarketBackendError && e.kind === 'rate-limited'
             ? (e.retryAfterMs ?? DEFAULT_RETRY_AFTER_MS)
