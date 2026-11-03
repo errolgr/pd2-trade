@@ -1,8 +1,9 @@
 /**
  * Client for the pd2-price-crawler builds API (`/api/builds/*`, public, no auth) plus PD2's public
- * `game/account` endpoint (a linked account's characters, live).
+ * `game/account` (a linked account's characters, live) and `game/character` (a character's saved items) endpoints.
  * Wire types mirror the server's src/builds/builds.types.ts; keep them in sync.
  */
+import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { fetch } from '@/lib/browser-http';
 import { BACKEND_URL } from '@/lib/pkce';
 
@@ -417,6 +418,23 @@ export async function getAccountCharacters(account: string, signal?: AbortSignal
         ]
       : [],
   );
+}
+
+/** What PD2 has saved of a character (public): its own items (inventory, cube, equipped) and its mercenary's. */
+export interface CharacterItems {
+  items: GameStashItem[];
+  mercenary: GameStashItem[];
+}
+
+export async function getCharacterItems(name: string, signal?: AbortSignal): Promise<CharacterItems> {
+  const data = await getJson<{ items?: unknown; mercenary?: { items?: unknown } | null }>(
+    `${PD2_GAME_URL}/character/${encodeURIComponent(name)}`,
+    signal,
+  );
+  return {
+    items: Array.isArray(data.items) ? data.items : [],
+    mercenary: Array.isArray(data.mercenary?.items) ? data.mercenary.items : [],
+  };
 }
 
 function parseSuggestCharacter(raw: unknown): BuildSuggestCharacter[] {

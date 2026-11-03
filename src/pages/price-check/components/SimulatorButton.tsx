@@ -4,22 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SimCharacterPicker } from '@/components/custom/SimCharacterPicker';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import { useSimAccess } from '@/hooks/useSimAccess';
 import { useSimLadderCharacters } from '@/hooks/useSimLadderCharacters';
 import { openUrl } from '@/lib/browser-opener';
-import { isStashItem } from '@/lib/item-utils';
 import { preferredSimCharacter } from '@/lib/sim-characters';
-import {
-  createSimExport,
-  describeSimExportError,
-  isSessionError,
-  isSimCandidate,
-  SimExportApiError,
-} from '@/lib/sim-export-api';
-import { matchStashItem } from '@/lib/sim-item-match';
+import { createSimExport, describeSimExportError, isSessionError, SimExportApiError } from '@/lib/sim-export-api';
+import { findSimItem, type FoundSimItem, type SimItemSource } from '@/lib/sim-item-sources';
 import { trackMeasurement } from '@/lib/telemetry';
 import { cn } from '@/lib/utils';
 import { useOverlay } from '@/overlay';
@@ -27,8 +19,8 @@ import { Banner } from '@/pages/currency/components/StatePanel';
 import type { Item as PriceCheckItem } from '../lib/interfaces';
 
 type Load<T> = { status: 'loading' } | { status: 'ok'; data: T } | { status: 'error'; error: unknown };
-/** The price-checked item in the stash: only stash items can be sent (the export needs PD2's copy of it). */
-type StashMatch = Load<GameStashItem | null> | { status: 'not-in-stash' };
+/** PD2's copy of the price-checked item (the export needs it), or null when PD2 has none. */
+type ItemMatch = Load<FoundSimItem | null>;
 type SendState = { status: 'idle' } | { status: 'sending' } | { status: 'sent' } | { status: 'error'; error: unknown };
 type Mode = 'try' | 'pool';
 
@@ -49,8 +41,9 @@ function savedCharacter(): string {
 }
 
 /**
- * "Simulator" in the price check's action row (Horadric Sim beta users only): sends the checked stash item with
- * one of the user's characters to the planner, tried on in its slot or as a Top Gear candidate.
+ * "Simulator" in the price check's action row (Horadric Sim beta users only): sends PD2's copy of the checked item
+ * (from the stash or a character) with one of the user's characters to the planner, tried on in its slot or as a
+ * Top Gear candidate.
  */
 export function SimulatorButton({ item }: { item: PriceCheckItem }) {
   const access = useSimAccess();
@@ -113,30 +106,36 @@ function SimulatorForm({ token, account, item }: { token: string; account: strin
   const { fetchAndCacheStash } = usePd2Website();
   const characters = useSimLadderCharacters(token, account);
   const [chosen, setChosen] = useState(savedCharacter);
-  const [found, setFound] = useState<Load<GameStashItem | null>>({ status: 'loading' });
-  const inStash = isStashItem(item);
-  const match: StashMatch = inStash ? found : { status: 'not-in-stash' };
+  const [match, setMatch] = useState<ItemMatch>({ status: 'loading' });
   const [mode, setMode] = useState<Mode>('try');
   const [send, setSend] = useState<SendState>({ status: 'idle' });
 
+  const list = characters.status === 'ok' ? characters.data : [];
+  const character = preferredSimCharacter(list, chosen);
+  // Searched once per item and character list; the chosen character, read when the search starts, goes first
+  const names = list.map((c) => c.name).join('\n');
+  const characterRef = useRef(character);
   // The provider's fetch changes identity with every settings update; only the item refetches.
   const fetchStashRef = useRef(fetchAndCacheStash);
   useEffect(() => {
+    characterRef.current = character;
     fetchStashRef.current = fetchAndCacheStash;
   });
+  const charactersReady = characters.status !== 'loading';
   useEffect(() => {
-    if (!inStash) return;
+    if (!charactersReady) return;
     let live = true;
-    setFound({ status: 'loading' });
-    fetchStashRef.current().then(
-      (data) =>
-        live && setFound({ status: 'ok', data: matchStashItem(item, (data.items ?? []).filter(isSimCandidate)) }),
-      (error) => live && setFound({ status: 'error', error }),
+    setMatch({ status: 'loading' });
+    const first = characterRef.current;
+    const order = [first, ...names.split('\n').filter((name) => name && name !== first)].filter(Boolean);
+    findSimItem(item, { stash: () => fetchStashRef.current(), characters: order }).then(
+      (data) => live && setMatch({ status: 'ok', data }),
+      (error) => live && setMatch({ status: 'error', error }),
     );
     return () => {
       live = false;
     };
-  }, [item, inStash]);
+  }, [item, names, charactersReady]);
 
   const chooseCharacter = (name: string) => {
     setChosen(name);
@@ -147,19 +146,17 @@ function SimulatorForm({ token, account, item }: { token: string; account: strin
     }
   };
 
-  const stashItem = match.status === 'ok' ? match.data : null;
-  const list = characters.status === 'ok' ? characters.data : [];
-  const character = preferredSimCharacter(list, chosen);
+  const found = match.status === 'ok' ? match.data : null;
   const openPlanner = async () => {
-    if (!stashItem || !character) return;
+    if (!found || !character) return;
     const started = performance.now();
     setSend({ status: 'sending' });
     try {
-      const { url } = await createSimExport(token, character, [stashItem], mode === 'try' ? { try: 0 } : {});
+      const { url } = await createSimExport(token, character, [found.item], mode === 'try' ? { try: 0 } : {});
       trackMeasurement(
         'sim_export',
         { duration_ms: performance.now() - started, stash_items: 1 },
-        { outcome: 'success', source: 'price_check', mode },
+        { outcome: 'success', source: 'price_check', mode, item_source: found.source },
       );
       setSend({ status: 'sent' });
       await openUrl(url).catch((error) => console.warn('[SimExport] Could not open the browser:', error));
@@ -171,6 +168,7 @@ function SimulatorForm({ token, account, item }: { token: string; account: strin
           outcome: 'error',
           source: 'price_check',
           mode,
+          item_source: found.source,
           status: error instanceof SimExportApiError ? error.status : undefined,
         },
       );
@@ -237,7 +235,7 @@ function SimulatorForm({ token, account, item }: { token: string; account: strin
         })}
       </div>
 
-      <StashStatus match={match} />
+      <ItemStatus match={match} />
 
       {send.status === 'error' &&
         (isSessionError(send.error) ? (
@@ -258,7 +256,7 @@ function SimulatorForm({ token, account, item }: { token: string; account: strin
         <Button
           size="sm"
           className="cursor-pointer"
-          disabled={!stashItem || !character || send.status === 'sending'}
+          disabled={!found || !character || send.status === 'sending'}
           onClick={() => void openPlanner()}
         >
           {send.status === 'sending' && <Loader2 className="animate-spin" />}
@@ -269,12 +267,20 @@ function SimulatorForm({ token, account, item }: { token: string; account: strin
   );
 }
 
-function StashStatus({ match }: { match: StashMatch }) {
+const SOURCE_TEXT: Record<SimItemSource, (holder: string) => string> = {
+  stash: (holder) => (holder ? `Found in ${holder}'s personal stash` : 'Found in your stash'),
+  inventory: (holder) => `Found in ${holder}'s inventory`,
+  cube: (holder) => `Found in ${holder}'s cube`,
+  equipped: (holder) => `Found on ${holder} (equipped)`,
+  mercenary: (holder) => `Found on ${holder}'s mercenary`,
+};
+
+function ItemStatus({ match }: { match: ItemMatch }) {
   if (match.status === 'loading') {
     return (
       <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <Loader2 className="size-3.5 animate-spin" />
-        Looking for this item in your stash…
+        Looking for this item in your stash and on your characters…
       </p>
     );
   }
@@ -289,15 +295,13 @@ function StashStatus({ match }: { match: StashMatch }) {
       </p>
     );
   }
-  const found = match.status === 'ok' && match.data !== null;
+  const found = match.data;
   return (
     <p className={cn('flex items-center gap-1.5 text-xs', found ? 'text-success' : 'text-muted-foreground')}>
       {found ? <PackageCheck className="size-3.5 shrink-0" /> : <PackageX className="size-3.5 shrink-0" />}
-      {match.status === 'not-in-stash'
-        ? 'Only items in your stash can be sent'
-        : found
-          ? 'Found in your stash'
-          : "Couldn't find this item in your stash — reload the stash in Net Worth"}
+      {found
+        ? SOURCE_TEXT[found.source](found.holder ?? '')
+        : "PD2 doesn't have this item yet: it isn't in your stash or on your ladder characters as of the last save"}
     </p>
   );
 }
