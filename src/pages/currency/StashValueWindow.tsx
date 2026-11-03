@@ -1,7 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import moment from 'moment';
 import { AnimatePresence, MotionConfig } from 'framer-motion';
-import { AlertTriangle, Clock, Coins, Gem, History, LogIn, PackageOpen, RefreshCw, Tag, UserRound } from 'lucide-react';
+import {
+  AlertTriangle,
+  Clock,
+  Coins,
+  FlaskConical,
+  Gem,
+  History,
+  LogIn,
+  PackageOpen,
+  RefreshCw,
+  Tag,
+  UserRound,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,6 +24,7 @@ import { useOptions } from '@/hooks/useOptions';
 import { useSignIn } from '@/hooks/useSignIn';
 import { useNetWorth } from '@/hooks/useNetWorth';
 import { useWealthRank } from '@/hooks/useWealthRank';
+import { useSimAccess } from '@/hooks/useSimAccess';
 import {
   getPoints,
   type NetWorthCategory,
@@ -28,6 +41,7 @@ import { OverviewTab } from './components/OverviewTab';
 import { HistoryTab } from './components/HistoryTab';
 import { AnimatedNumber } from './components/AnimatedNumber';
 import { RaresTab } from './components/RaresTab';
+import { SimExportTab } from './components/SimExportTab';
 import { isCrafted } from '@/components/rares/rares-format';
 import { Banner, EmptyState } from './components/StatePanel';
 import { deltaPillClass, formatSignedHr } from './lib/networth-format';
@@ -44,6 +58,7 @@ type WindowTab =
   | 'uniques-sets'
   | 'other'
   | 'rares'
+  | 'simulator'
   | 'history';
 
 const HOLDING_TABS: { value: WindowTab; labelKey: string; categories: NetWorthCategory[]; showTab?: boolean }[] = [
@@ -67,6 +82,7 @@ export function StashValueWindow() {
   const { settings } = useOptions();
   const token = settings.pd2Token ?? null;
   const wealthRank = useWealthRank();
+  const simAccess = useSimAccess();
   const { payload, payloadVersion, close } = usePanel<'currency'>();
   const { gameFocused } = useOverlay();
   const [tab, setTab] = useState<WindowTab>(() => payload?.tab ?? 'overview');
@@ -187,6 +203,13 @@ export function StashValueWindow() {
                         {rares.some(isCrafted) ? t('window.tabs.raresCrafted') : t('window.tabs.rares')}
                       </TabsTrigger>
                     )}
+                    {token && owner && simAccess && (
+                      <TabsTrigger value="simulator"
+                        className={cn(TRIGGER_CLASS, 'gap-1')}>
+                        <FlaskConical className="size-3.5" />
+                        Simulator
+                      </TabsTrigger>
+                    )}
                     <TabsTrigger value="history"
                       className={cn(TRIGGER_CLASS, 'gap-1')}>
                       <History className="size-3.5" />
@@ -226,6 +249,14 @@ export function StashValueWindow() {
                         craftedSummary={latest.craftedSummary}
                         hardcore={!!owner?.isHardcore}
                       />
+                    </TabsContent>
+                  )}
+
+                  {token && owner && simAccess && (
+                    <TabsContent value="simulator"
+                      className="pt-1">
+                      <SimExportTab token={token}
+                        account={owner.account} />
                     </TabsContent>
                   )}
 

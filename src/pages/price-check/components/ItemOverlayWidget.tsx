@@ -106,6 +106,7 @@ import { appraisalNote } from '@/components/rares/rares-format';
 import { PriceSparkline } from './PriceSparkline';
 import { keyStatMin, matchRareStats } from '../lib/rare-stat-match';
 import type { AppraisedStat } from '@/lib/rare-appraisal-api';
+import { SimulatorButton } from './SimulatorButton';
 import { currentLocale, Trans, useTranslation } from '@/i18n';
 
 /** The header's "Any" quality: searches every base quality (e.g. Rare and Crafted together). */
@@ -1718,6 +1719,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                   </TooltipContent>
                 )}
               </Tooltip>
+
+              <SimulatorButton item={item} />
 
               <div className="ml-auto flex items-center gap-2">
                 <Switch

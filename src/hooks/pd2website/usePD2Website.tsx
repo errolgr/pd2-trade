@@ -100,6 +100,8 @@ interface Pd2WebsiteContextType extends SocialActions, OfferNotificationsApi {
   authData: AuthData;
   updateMarketListing: (hash: string, update: Record<string, any>) => Promise<MarketListingEntry>;
   updateItemByHash: (hash: string, update: any) => boolean;
+  /** The selected account's stash from PD2 (refreshes the stash cache); throws AccountMismatchError / AuthenticationError. */
+  fetchAndCacheStash: () => Promise<GameData>;
   incomingOffers: TradeOffer[];
   outgoingOffers: TradeOffer[];
   hiddenOutgoingOffers: TradeOffer[];
@@ -375,6 +377,7 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
         authData,
         updateMarketListing,
         updateItemByHash,
+        fetchAndCacheStash,
         deleteConversation,
         getConversations,
         getMessages,
