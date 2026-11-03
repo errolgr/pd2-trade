@@ -154,14 +154,14 @@ describe('SimulatorButton', () => {
     expect(localStorage.getItem(SIM_CALLOUT_STORAGE_KEY)).toBe('1');
   });
 
-  it('tries the stash item on with the selected account’s highest ladder character and opens the planner', async () => {
+  it('tries the stash item on with the selected account’s highest ladder character, opens the planner and closes', async () => {
     await openPopover();
     await screen.findByText('Found in your stash');
     await waitFor(() => expect(planner().disabled).toBe(false));
     expect(screen.getByRole('radio', { name: /Try it on/ }).getAttribute('aria-checked')).toBe('true');
 
     fireEvent.click(planner());
-    await screen.findByText('The planner opened in your browser.');
+    await waitFor(() => expect(screen.queryByText('Send to Simulator')).toBeNull());
     expect(createSimExport).toHaveBeenCalledWith('tok', 'HammerPal', { stashItems: [SHAKO], try: { stash: 0 } });
     expect(openUrl).toHaveBeenCalledWith(URL_OUT);
     expect(trackMeasurement).toHaveBeenCalledWith('sim_export', expect.objectContaining({ stash_items: 1 }), {
@@ -244,7 +244,11 @@ describe('SimulatorButton', () => {
         try: { clipboard: 0 },
       }),
     );
-    expect(trackMeasurement).toHaveBeenCalledWith('sim_export', expect.anything(), expect.objectContaining({ item_source: 'clipboard' }));
+    expect(trackMeasurement).toHaveBeenCalledWith(
+      'sim_export',
+      expect.anything(),
+      expect.objectContaining({ item_source: 'clipboard' }),
+    );
   });
 
   it('asks to sign in without a PD2 login', async () => {
