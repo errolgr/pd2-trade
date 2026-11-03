@@ -25,6 +25,11 @@ import { scoreListings } from './lib/search';
 import { withRowPresence } from './lib/presence';
 import { type MarketSearch, searchCountText, useMarketSearch } from './hooks/useMarketSearch';
 import { type MarketFavorites, useMarketFavorites } from './hooks/useMarketFavorites';
+import { type Relaxation, useRelaxations } from './hooks/useRelaxations';
+import type { ActiveFilter } from './lib/active-filters';
+import { useActiveFilterText, useFilterHighlight } from './components/active-filter-text';
+import { FilterHighlightContext } from './components/controls';
+import { RelaxationChips, relaxationChips } from './components/RelaxationChips';
 import { FilterSidebar } from './components/FilterSidebar';
 import { ItemNameSearch } from './components/ItemNameSearch';
 import { type LoadMoreState, ResultsList } from './components/ResultsList';
@@ -118,6 +123,20 @@ const MarketBrowserPage: React.FC = () => {
     pageSize: settings?.marketPageSize,
   });
   const favorites = useMarketFavorites(marketApi ?? null, signedIn && activated);
+  // A search that found nothing: count what dropping each of its filters would find
+  const relaxations = useRelaxations(
+    marketApi?.searchListings ?? null,
+    tab === 'search' && search.status === 'ready' && search.total === 0 ? search.filters : null,
+    searchDefaults,
+  );
+  // The suggestion the pointer is on: its filter is marked in the sidebar (only while that suggestion is shown)
+  const [hoveredRelax, setHoveredRelax] = useState<string | null>(null);
+  const filterHighlight = useFilterHighlight();
+  const hoveredFilter = relaxations?.find((r) => r.id === hoveredRelax)?.value;
+  const highlight = useMemo(
+    () => (hoveredFilter ? filterHighlight(hoveredFilter.spec) : null),
+    [hoveredFilter, filterHighlight],
+  );
 
   // Remember the last search that actually ran (not per keystroke / re-rank: each call writes market-prefs.json)
   const { setLastFilters } = store;
@@ -470,16 +489,18 @@ const MarketBrowserPage: React.FC = () => {
               <div className="flex min-h-0 flex-1 overflow-hidden">
                 {tab === 'search' && (
                   <div className="w-[300px] shrink-0">
-                    <FilterSidebar
-                      filters={filters}
-                      onChange={setFilters}
-                      onReset={resetFilters}
-                      searchDefaults={searchDefaults}
-                      stats={presets}
-                      sectionsOpen={store.sectionsOpen}
-                      onSectionOpen={store.setSectionOpen}
-                      facets={search.facets}
-                    />
+                    <FilterHighlightContext.Provider value={highlight}>
+                      <FilterSidebar
+                        filters={filters}
+                        onChange={setFilters}
+                        onReset={resetFilters}
+                        searchDefaults={searchDefaults}
+                        stats={presets}
+                        sectionsOpen={store.sectionsOpen}
+                        onSectionOpen={store.setSectionOpen}
+                        facets={search.facets}
+                      />
+                    </FilterHighlightContext.Provider>
                   </div>
                 )}
 
@@ -519,6 +540,9 @@ const MarketBrowserPage: React.FC = () => {
                               ? () => setFilters(withSource(filters, 'archive', searchDefaults))
                               : undefined
                           }
+                          relaxations={relaxations}
+                          onRelax={(r) => search.filters && setFilters(r.value.clear(search.filters))}
+                          onRelaxHover={setHoveredRelax}
                           itemName={filters?.itemName}
                           toolbar={
                             <>
@@ -691,6 +715,9 @@ function ResultsPane({
   onSignIn,
   onSearchArchive,
   itemName,
+  relaxations,
+  onRelax,
+  onRelaxHover,
   toolbar,
   children,
 }: {
@@ -706,11 +733,17 @@ function ResultsPane({
   onSearchArchive?: () => void;
   /** The searched item name, for the empty-state wording. */
   itemName?: string;
+  /** The empty search's filters that find something when dropped, best first (null: none, or still counting). */
+  relaxations: Relaxation<ActiveFilter>[] | null;
+  onRelax: (relaxation: Relaxation<ActiveFilter>) => void;
+  /** The suggestion the pointer is on (null: none), to mark its filter in the sidebar. */
+  onRelaxHover: (id: string | null) => void;
   /** Right end of the status strip (view toggle). */
   toolbar: React.ReactNode;
   children: React.ReactNode;
 }) {
   const { t } = useTranslation(['market', 'common']);
+  const filterText = useActiveFilterText();
   if (!signedIn || (tab === 'search' && search.status === 'auth')) {
     return (
       <EmptyState
@@ -804,6 +837,32 @@ function ResultsPane({
           icon={<Heart />}
           title={t('results.noFavoritesTitle')}
           description={t('results.noFavoritesDescription')}
+        />
+      ) : relaxations?.length ? (
+        <EmptyState
+          className="m-6"
+          icon={<SearchX />}
+          title={t('results.noMatchAll')}
+          description={t('results.relaxHint')}
+          action={
+            <div className="flex flex-col items-center gap-3">
+              <RelaxationChips
+                chips={relaxationChips(relaxations, (filter) => filterText(filter.spec))}
+                onPick={(id) => {
+                  const picked = relaxations.find((r) => r.id === id);
+                  if (picked) onRelax(picked);
+                }}
+                onHover={onRelaxHover}
+              />
+              {onSearchArchive && (
+                <Button size="sm"
+                  variant="ghost"
+                  onClick={onSearchArchive}>
+                  {t('results.searchArchive')}
+                </Button>
+              )}
+            </div>
+          }
         />
       ) : onSearchArchive ? (
         <EmptyState

@@ -89,6 +89,15 @@
       "noListings": "Nenhum anúncio encontrado",
       "loosenFilters": "Tente afrouxar seus filtros de atributos.",
       "loosenFiltersOrExpired": "Tente afrouxar seus filtros de atributos ou ative Mostrar expirados.",
+      "relax": {
+        "title": "Nenhum anúncio atende a todos estes filtros",
+        "hint": "Remova um: cada um mostra o que sobra.",
+        "ranges": "Faixas de atributos",
+        "corrupted": "Corrompido",
+        "notCorrupted": "Não corrompido",
+        "corruptions": "Filtro de corrupção",
+        "showExpired": "Mostrar expirados"
+      },
       "readyTitle": "Pronto para buscar",
       "readyHint": "Escolha os atributos relevantes e clique em Buscar ou pressione Enter em um campo mín/máx.",
       "price": "Preço",

@@ -36,7 +36,12 @@
     "loadMoreFailed": "Не удалось загрузить ещё",
     "rateLimitedUntil": "Лимит запросов до {{time}}",
     "listings": "Объявления",
-    "favorite": "В избранное"
+    "favorite": "В избранное",
+    "noMatchAll": "Нет объявлений, подходящих под все фильтры",
+    "relaxHint": "Уберите один: на каждом видно, что останется.",
+    "relaxDrop": "Без {{filter}}",
+    "relaxLabel": "Фильтры, которые можно убрать",
+    "relaxDropCount": "Без {{filter}}: {{count}} объявлений"
   },
   "search": {
     "rateLimited": "Слишком много поисков на рынке. Попробуйте чуть позже.",
@@ -172,7 +177,10 @@
     "sellerPlaceholder": "Аккаунт или имя пользователя",
     "sellerPicked": "Этот продавец (выбран из объявления)",
     "clearSeller": "Сбросить продавца",
-    "modeLabel": "Softcore или hardcore"
+    "modeLabel": "Softcore или hardcore",
+    "applied": {
+      "not": "Без {{name}}"
+    }
   },
   "controls": {
     "min": "мин",

@@ -43,7 +43,7 @@ import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT, fadeInUp, scaleIn, useReducedMotionSafe } from '@/lib/motion';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { qualityColor } from '../lib/qualityColor';
-import { RANGE_FIELDS, StatRow } from './StatRow';
+import { StatRow } from './StatRow';
 import { useOptions } from '@/hooks/useOptions';
 import { openUrl } from '@/lib/browser-opener';
 import { Props } from '../lib/types';
@@ -52,19 +52,22 @@ import { useStatSelection } from '../hooks/useStatSelection';
 import ItemStatsDisplay from '../../quick-list/components/ItemStatsDisplay';
 import { BASE_QUALITIES, buildGetMarketListingQuery, buildTradeUrl, type QualitySearch } from '../lib/tradeUrlBuilder';
 import {
-  ARCHIVE_STATUSES,
-  priceCheckMarketSearch,
+  priceCheckServiceSearch,
   priceCheckToMarketFilters,
   type PriceCheckSearch,
 } from '@/pages/market/store/priceCheckFilters';
-import { defaultFilters, mergeFilters } from '@/pages/market/lib/defaults';
+import { useRelaxationCounts } from '@/pages/market/hooks/useRelaxations';
+import { RelaxationChips, relaxationChips } from '@/pages/market/components/RelaxationChips';
+import { FILTER_HIGHLIGHT_CLASS } from '@/pages/market/components/controls';
+import { type PriceCheckRelaxation, priceCheckRelaxations } from '../lib/relaxations';
+import { statText } from '../lib/tooltip-lines';
 import type { MarketFilters, ScoredListing } from '@/pages/market/lib/types';
 import { withRowPresence } from '@/pages/market/lib/presence';
 import { MarketBackendError, searchMarketListings } from '@/lib/market-search-api';
 import { reportApiError } from '@/lib/error-reporting';
 import { rememberListingPresence, useListingPresence } from '@/hooks/useListingPresence';
 import { RunePricePopover } from './RunePricePopover';
-import { getStatKey, PSEUDO_KEY_PREFIX } from '../lib/utils';
+import { getStatKey, PSEUDO_KEY_PREFIX, RANGE_FIELDS } from '../lib/utils';
 import moment from 'moment';
 import { HoverPopover } from '@/components/custom/hover-popover';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
@@ -188,6 +191,12 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const [searched, setSearched] = useState(false);
   // Set with filter changes that search as soon as they apply (corruption/socket price clicks, a Keep rare)
   const [searchPending, setSearchPending] = useState(false);
+  /** The last search sent: what an empty result's relaxations widen (`pd2Only`: PD2 answered, nothing to count). */
+  const [ranSearch, setRanSearch] = useState<{
+    search: PriceCheckSearch;
+    sort: MarketFilters['sort'];
+    pd2Only: boolean;
+  } | null>(null);
   const [selectedCorruptionNames, setSelectedCorruptionNames] = useState<string[]>([]);
   const ITEMS_PER_PAGE = 20;
   // Column-header sort and the header dots' seller filter; both outlive item changes (a habit, not a search)
@@ -884,7 +893,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         corruptionNames,
         qualityOverride: searchedQuality,
       };
-      const { filters: marketFilters, gaps } = priceCheckMarketSearch(priceCheck);
+      const serviceSort = { by: sort.by, dir: sort.dir };
+      const { filters: marketFilters, gaps } = priceCheckServiceSearch(priceCheck, serviceSort);
       const hasPseudo = [...selected].some((key) => key.startsWith(PSEUDO_KEY_PREFIX));
       const query = buildGetMarketListingQuery(
         item,
@@ -909,13 +919,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
           sort.by === 'price'
             ? { ...query, $sort: { hr_price: order }, ...(order === 1 && { hr_price: { $gt: 0 } }) }
             : { ...query, $sort: { bumped_at: order } },
-        marketFilters: mergeFilters(
-          defaultFilters({ hardcore: settings.mode === 'hardcore', ladder: settings.ladder === 'ladder' }),
-          {
-            ...(searchArchived ? { ...marketFilters, status: ARCHIVE_STATUSES } : marketFilters),
-            sort: { by: sort.by, dir: sort.dir },
-          },
-        ),
+        marketFilters,
         // PD2 can't filter pseudo stats either: with one selected the service answers, without the gapped row
         pd2Only: gaps.length > 0 && !hasPseudo,
         hasPseudo,
@@ -924,6 +928,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         skip: 0,
       };
       searchGeneration.current += 1;
+      // The relaxations of an empty search widen this search, not controls changed since
+      setRanSearch({ search: priceCheck, sort: serviceSort, pd2Only: search.pd2Only });
       activeSearch.current = search;
       setHasMore(false);
       fetchPage(search);
@@ -1177,6 +1183,83 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
   const showIdleHint = !searched && !marketLoading && !marketError && marketListings.length === 0;
   const showNoResults = searched && !marketLoading && !marketError && marketListings.length === 0;
+  // A search that found nothing (not just hidden by the seller filter): count what each relaxation would find
+  const relaxCandidates = useMemo(
+    () =>
+      showNoResults && totalCount === 0 && ranSearch && !ranSearch.pd2Only
+        ? priceCheckRelaxations(ranSearch.search, ranSearch.sort, {
+            searchType: shouldUseToggle && !!matchedItemType,
+            anyQuality: shouldUseToggle,
+          })
+        : null,
+    [showNoResults, totalCount, ranSearch, shouldUseToggle, matchedItemType],
+  );
+  const relaxations = useRelaxationCounts(searchMarketListings, relaxCandidates);
+  // The suggestion the pointer is on: the rows or header control it would change are ringed (only while shown)
+  const [hoveredRelax, setHoveredRelax] = useState<string | null>(null);
+  const hoveredRelaxation = relaxations?.find((r) => r.id === hoveredRelax)?.value;
+  const markedRows = useMemo(() => {
+    switch (hoveredRelaxation?.kind) {
+      case 'stat':
+        return new Set([hoveredRelaxation.key]);
+      case 'ranges':
+        return new Set([...selected].filter((k) => RANGE_FIELDS.some((field) => !!filters[k]?.[field])));
+      case 'corrupted':
+        return new Set([`id:${StatId.Corrupted}`]);
+      default:
+        return new Set<string>();
+    }
+  }, [hoveredRelaxation, selected, filters]);
+  /** A relaxation's chip: the filter it drops (the base, the quality, a stat row…). */
+  const relaxationLabel = (r: PriceCheckRelaxation): string => {
+    switch (r.kind) {
+      case 'ranges':
+        return t('overlay.results.relax.ranges');
+      case 'stat': {
+        const row = sortedStats.find((s) => getStatKey(s) === r.key);
+        return row ? (statText(row, item) ?? row.name) : r.key;
+      }
+      case 'type':
+        return item.type;
+      case 'quality': {
+        const quality = ranSearch?.search.qualityOverride;
+        return typeof quality === 'string' ? quality : item.quality;
+      }
+      case 'corrupted':
+        return ranSearch?.search.corruptedState === 2
+          ? t('overlay.results.relax.notCorrupted')
+          : t('overlay.results.relax.corrupted');
+      case 'corruptions':
+        return t('overlay.results.relax.corruptions');
+    }
+  };
+  /** Picks a relaxation: the one change on the controls, then the search again. */
+  const relax = (r: PriceCheckRelaxation) => {
+    trackEvent('item_overlay_relax_search', { kind: r.kind });
+    switch (r.kind) {
+      case 'ranges':
+        clearAllRanges();
+        break;
+      case 'stat':
+        setSelected((prev) => new Set([...prev].filter((k) => k !== r.key)));
+        setFilters(({ [r.key]: _dropped, ...rest }) => rest);
+        break;
+      case 'type':
+        setSearchMode(1);
+        break;
+      case 'quality':
+        setQualityOverride(ANY_QUALITY);
+        break;
+      case 'corrupted':
+        setCorruptedState(0);
+        setSelected((prev) => new Set([...prev].filter((k) => k !== `id:${StatId.Corrupted}`)));
+        break;
+      case 'corruptions':
+        setSelectedCorruptionNames([]);
+        break;
+    }
+    setSearchPending(true);
+  };
 
   /** -------------------
    *  Render
@@ -1254,6 +1337,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                       onClick={toggleSearchMode}
                       title={t('overlay.header.toggleSearchMode')}
                       className="text-muted-foreground"
+                      marked={hoveredRelaxation?.kind === 'type'}
                     >
                       {getSearchModeDisplay()}
                     </HeaderToggle>
@@ -1273,6 +1357,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                         className={
                           effectiveQuality === ANY_QUALITY ? 'text-foreground' : qualityColor(effectiveQuality)
                         }
+                        marked={hoveredRelaxation?.kind === 'quality'}
                       >
                         {effectiveQuality === ANY_QUALITY ? t('overlay.header.anyQuality') : effectiveQuality}
                       </HeaderToggle>
@@ -1570,6 +1655,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                             rare={rareStats.get(getStatKey(s))}
                             pseudoOptions={pseudos.filter((o) => o.covers.some((k) => keys.includes(k)))}
                             wipe={rangeWipe}
+                            marked={markedRows.has(getStatKey(s))}
                             onPseudo={togglePseudo}
                           />
                         );
@@ -1738,9 +1824,44 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 </motion.div>
               )}
               {showNoResults && (
-                <EmptyState icon={<SearchX />}
-                  title={t('overlay.results.noListings')}>
-                  {searchArchived ? t('overlay.results.loosenFilters') : t('overlay.results.loosenFiltersOrExpired')}
+                <EmptyState
+                  icon={<SearchX />}
+                  title={relaxations?.length ? t('overlay.results.relax.title') : t('overlay.results.noListings')}
+                  action={
+                    (relaxations?.length || !searchArchived) && (
+                      <div className="flex flex-col items-center gap-2">
+                        {!!relaxations?.length && (
+                          <RelaxationChips
+                            chips={relaxationChips(relaxations, relaxationLabel)}
+                            onPick={(id) => {
+                              const picked = relaxations.find((r) => r.id === id);
+                              if (picked) relax(picked.value);
+                            }}
+                            onHover={setHoveredRelax}
+                          />
+                        )}
+                        {!searchArchived && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => {
+                              setSearchArchived(true);
+                              setSearchPending(true);
+                            }}
+                          >
+                            {t('overlay.results.relax.showExpired')}
+                          </Button>
+                        )}
+                      </div>
+                    )
+                  }
+                >
+                  {relaxations?.length
+                    ? t('overlay.results.relax.hint')
+                    : searchArchived
+                      ? t('overlay.results.loosenFilters')
+                      : t('overlay.results.loosenFiltersOrExpired')}
                 </EmptyState>
               )}
               {showIdleHint && (
@@ -1914,11 +2035,14 @@ function HeaderToggle({
   onClick,
   title,
   className,
+  marked,
   children,
 }: {
   onClick: () => void;
   title: string;
   className?: string;
+  /** An empty search's hovered suggestion would change this: ringed. */
+  marked?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -1929,6 +2053,7 @@ function HeaderToggle({
       className={cn(
         'group/toggle inline-flex cursor-pointer items-center gap-1 overflow-hidden rounded-md px-1.5 py-0.5 outline-none transition-[background-color,color,filter] duration-(--dur-fast) hover:bg-accent/60 hover:brightness-125 focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-[0.98]',
         className,
+        marked && FILTER_HIGHLIGHT_CLASS,
       )}
       style={{ fontFamily: 'DiabloFont' }}
     >
@@ -2022,11 +2147,14 @@ function EmptyState({
   icon,
   title,
   subtle,
+  action,
   children,
 }: {
   icon: React.ReactNode;
   title: string;
   subtle?: boolean;
+  /** Under the text, e.g. the no-results search suggestions. */
+  action?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -2041,6 +2169,7 @@ function EmptyState({
       </div>
       <div className="text-sm font-medium text-foreground">{title}</div>
       <p className="max-w-[260px] text-xs leading-relaxed text-muted-foreground">{children}</p>
+      {action && <div className="mt-2">{action}</div>}
     </motion.div>
   );
 }

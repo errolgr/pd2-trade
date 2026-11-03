@@ -89,6 +89,15 @@
       "noListings": "Aucune annonce trouvée",
       "loosenFilters": "Essayez d'assouplir vos filtres de stats.",
       "loosenFiltersOrExpired": "Essayez d'assouplir vos filtres de stats ou activez Afficher expirées.",
+      "relax": {
+        "title": "Aucune annonce ne correspond à tous ces filtres",
+        "hint": "Retirez-en un : chacun montre ce qui reste.",
+        "ranges": "Plages de stats",
+        "corrupted": "Corrompu",
+        "notCorrupted": "Non corrompu",
+        "corruptions": "Filtre de corruption",
+        "showExpired": "Afficher expirées"
+      },
       "readyTitle": "Prêt à rechercher",
       "readyHint": "Choisissez les stats importantes, puis cliquez sur Rechercher ou appuyez sur Enter dans un champ min/max.",
       "price": "Prix",

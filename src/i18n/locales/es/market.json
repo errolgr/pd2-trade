@@ -35,7 +35,12 @@
     "loadMoreFailed": "No se pudo cargar más",
     "rateLimitedUntil": "Límite de solicitudes hasta las {{time}}",
     "listings": "Anuncios",
-    "favorite": "Favorito"
+    "favorite": "Favorito",
+    "noMatchAll": "Ningún anuncio cumple todos estos filtros",
+    "relaxHint": "Quita uno: cada uno muestra lo que queda.",
+    "relaxDrop": "Sin {{filter}}",
+    "relaxLabel": "Filtros para quitar",
+    "relaxDropCount": "Sin {{filter}}: {{count}} anuncios"
   },
   "search": {
     "rateLimited": "Demasiadas búsquedas en el mercado. Inténtalo de nuevo en un momento.",
@@ -164,7 +169,10 @@
     "sellerPlaceholder": "Cuenta o nombre de usuario",
     "sellerPicked": "Este vendedor (elegido de un anuncio)",
     "clearSeller": "Limpiar vendedor",
-    "modeLabel": "Softcore o hardcore"
+    "modeLabel": "Softcore o hardcore",
+    "applied": {
+      "not": "Sin {{name}}"
+    }
   },
   "controls": {
     "min": "mín.",

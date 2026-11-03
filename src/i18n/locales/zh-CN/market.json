@@ -33,7 +33,12 @@
     "loadMoreFailed": "无法加载更多",
     "rateLimitedUntil": "请求受限，直到 {{time}}",
     "listings": "挂单",
-    "favorite": "收藏"
+    "favorite": "收藏",
+    "noMatchAll": "没有挂单符合全部筛选",
+    "relaxHint": "去掉一个：每个都显示剩下多少。",
+    "relaxDrop": "去掉 {{filter}}",
+    "relaxLabel": "可去掉的筛选",
+    "relaxDropCount": "去掉 {{filter}}：{{count}} 个挂单"
   },
   "search": {
     "rateLimited": "市场搜索过于频繁，请稍后重试。",
@@ -148,7 +153,10 @@
     "sellerPlaceholder": "账号或用户名",
     "sellerPicked": "此卖家（从挂单中选取）",
     "clearSeller": "清除卖家",
-    "modeLabel": "Softcore 或 Hardcore"
+    "modeLabel": "Softcore 或 Hardcore",
+    "applied": {
+      "not": "排除 {{name}}"
+    }
   },
   "controls": {
     "min": "最小",

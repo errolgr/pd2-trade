@@ -55,6 +55,9 @@ export function getTypeFromBaseType(
 /** Stat key prefix of pseudo rows (`pseudo:pseudo_total_res`). */
 export const PSEUDO_KEY_PREFIX = 'pseudo:';
 
+/** The min / max inputs of a stat row (damage pairs use all four). */
+export const RANGE_FIELDS = ['min', 'max', 'maxMin', 'maxMax'] as const;
+
 /**
  * A stat row's key, unique among an item's rows: it names the row for React and the selection/filter state.
  * Skill-parameterised rows (auras, chance to cast, charges) are keyed by stat and skill; BH lines left without a

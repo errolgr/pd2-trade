@@ -17,6 +17,7 @@ import { starsText, starTitle } from '@/components/rares/rares-format';
 import { formatStatRange, skillByName } from '@/pages/price-check/lib/stat-ranges';
 import { getStatKey } from '@/pages/price-check/lib/utils';
 import { useTranslation } from '@/i18n';
+import { FILTER_HIGHLIGHT_CLASS } from '@/pages/market/components/controls';
 
 /**
  * The row as the item's tooltip draws it ("+20% Faster Cast Rate", "Adds 4-14 fire damage", "Socketed (4)"),
@@ -44,9 +45,6 @@ function itemLine(stat: Stat, item?: Item): string | null {
   return statText(source ?? stat, item);
 }
 
-/** The min / max inputs of a row (damage pairs use all four). */
-export const RANGE_FIELDS = ['min', 'max', 'maxMin', 'maxMax'] as const;
-
 interface StatRowProps {
   stat: Stat;
   nested?: boolean;
@@ -67,6 +65,8 @@ interface StatRowProps {
   item?: Item;
   /** Bumped by the Stats header's "Clear ranges": every range line plays its clear wipe. */
   wipe?: number;
+  /** An empty search's hovered suggestion would drop or change this row: ringed. */
+  marked?: boolean;
 }
 
 /** Counts from `from` to `value` once on mount: a Σ row's total adding up its folded lines. */
@@ -108,6 +108,7 @@ export const StatRow: React.FC<StatRowProps> = ({
   onPseudo,
   item,
   wipe,
+  marked,
 }) => {
   const { t } = useTranslation('priceCheck');
   const statKey = getStatKey(stat);
@@ -226,6 +227,7 @@ export const StatRow: React.FC<StatRowProps> = ({
             : !isUnknown && 'hover:bg-foreground/4',
           !isActive && rare?.stars && 'bg-glow/6 hover:bg-glow/10',
           nested && 'pl-8',
+          marked && FILTER_HIGHLIGHT_CLASS,
           isUnknown && 'cursor-not-allowed',
           stat.folded && 'rounded-b-none',
         )}

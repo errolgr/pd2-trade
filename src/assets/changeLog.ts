@@ -4,6 +4,7 @@ export const changeLog = {
     '🔧 Chat: a listing made from a personal stash shows "Personal" as its stash instead of "Shared 0"',
     '🔧 Price check: searching by Enhanced Damage finds listings again (it found none since 0.10.13)',
     '🔧 Price check: All Resistances and All Attributes find every item with that line again, not only items that roll each resistance or attribute separately',
+    '✨ Market browser and price check: a search that finds nothing shows its filters as chips, each with how many listings you would get without it (the best one marked); hover a chip to see that filter, click it to drop it and search again',
   ],
   '0.10.14': [
     '🆕 Price check: click Price or Age to sort (again to flip the order)',

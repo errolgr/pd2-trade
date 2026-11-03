@@ -14,6 +14,7 @@ import type { Item, Stat, StatFilterInput } from '@/pages/price-check/lib/interf
 import { StatId } from '@/pages/price-check/lib/stat-mappings';
 import { PSEUDO_KEY_PREFIX } from '@/pages/price-check/lib/utils';
 import { findBaseOption, findTypeOption } from '@/pages/market/lib/catalog';
+import { defaultFilters, mergeFilters } from '@/pages/market/lib/defaults';
 import type { MarketFilters, MarketListingStatus, Rarity, StatFilter } from '@/pages/market/lib/types';
 
 export interface PriceCheckSearch {
@@ -239,6 +240,26 @@ export function priceCheckMarketSearch(search: PriceCheckSearch): MarketQueryFil
     });
   }
   return { filters, gaps };
+}
+
+/**
+ * What the price check asks the market service for (its searches, and the counts of an empty search's
+ * relaxations): the search in the user's realm, over the ended listings for Show Expired, in `sort` order. Gaps:
+ * the parts only PD2 can filter, which send the search there instead.
+ */
+export function priceCheckServiceSearch(
+  search: PriceCheckSearch,
+  sort: MarketFilters['sort'],
+): { filters: MarketFilters; gaps: MarketFilterGap[] } {
+  const { filters, gaps } = priceCheckMarketSearch(search);
+  const realm = { hardcore: search.settings.mode === 'hardcore', ladder: search.settings.ladder === 'ladder' };
+  return {
+    filters: mergeFilters(defaultFilters(realm), {
+      ...(search.archive ? { ...filters, status: ARCHIVE_STATUSES } : filters),
+      sort,
+    }),
+    gaps,
+  };
 }
 
 /** The price check's current search as market filters ("Open in market"). */

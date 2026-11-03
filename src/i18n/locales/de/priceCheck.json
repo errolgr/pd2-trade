@@ -86,6 +86,15 @@
       "noListings": "Keine Inserate gefunden",
       "loosenFilters": "Lockere deine Wertefilter.",
       "loosenFiltersOrExpired": "Lockere deine Wertefilter oder aktiviere „Abgelaufene zeigen“.",
+      "relax": {
+        "title": "Keine Inserate passen zu allen Filtern",
+        "hint": "Entferne einen: jeder zeigt, was übrig bleibt.",
+        "ranges": "Wertebereiche",
+        "corrupted": "Korrumpiert",
+        "notCorrupted": "Nicht korrumpiert",
+        "corruptions": "Korrumpierungsfilter",
+        "showExpired": "Abgelaufene zeigen"
+      },
       "readyTitle": "Bereit zur Suche",
       "readyHint": "Wähle die wichtigen Werte und klicke auf Suchen oder drücke Enter in einem Min/Max-Feld.",
       "price": "Preis",
