@@ -284,6 +284,10 @@
       "debugLogging": {
         "label": "Log de depuração",
         "description": "Grava a saída do console em um arquivo de log para solução de problemas."
+      },
+      "telemetryOptOut": {
+        "label": "Desativar telemetria",
+        "description": "Para de enviar relatórios de erros e estatísticas de uso."
       }
     }
   },

@@ -287,6 +287,10 @@
       "debugLogging": {
         "label": "Logowanie debugowania",
         "description": "Zapisuj wyjście konsoli do pliku logu w celu diagnozy."
+      },
+      "telemetryOptOut": {
+        "label": "Rezygnacja z telemetrii",
+        "description": "Nie wysyłaj raportów o błędach ani statystyk użycia."
       }
     }
   },

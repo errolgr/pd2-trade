@@ -281,6 +281,10 @@
       "debugLogging": {
         "label": "Debug-Protokoll",
         "description": "Konsolenausgabe zur Fehlerbehebung in eine Logdatei schreiben."
+      },
+      "telemetryOptOut": {
+        "label": "Telemetrie-Opt-out",
+        "description": "Keine Fehlerberichte und Nutzungsstatistiken mehr senden."
       }
     }
   },

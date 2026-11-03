@@ -284,6 +284,10 @@
       "debugLogging": {
         "label": "Registro de depuración",
         "description": "Escribe la salida de la consola en un archivo de registro para solucionar problemas."
+      },
+      "telemetryOptOut": {
+        "label": "Exclusión de telemetría",
+        "description": "Deja de enviar informes de errores y estadísticas de uso."
       }
     }
   },

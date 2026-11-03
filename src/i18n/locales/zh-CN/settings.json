@@ -278,6 +278,10 @@
       "debugLogging": {
         "label": "调试日志",
         "description": "将控制台输出写入日志文件以便排查问题。"
+      },
+      "telemetryOptOut": {
+        "label": "退出遥测",
+        "description": "停止发送错误报告和使用统计。"
       }
     }
   },
