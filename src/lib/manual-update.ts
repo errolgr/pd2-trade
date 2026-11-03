@@ -1,4 +1,5 @@
 import { t } from '@/i18n';
+import { invoke } from '@tauri-apps/api/core';
 import { CustomToastPayload, ToastActionType } from '@/common/types/Events';
 
 /** Where users download a build to install themselves (deb/rpm via their package manager, or a new AppImage). */
@@ -13,6 +14,20 @@ const MANUAL_UPDATE_ERROR = /\(os error 13\)|invalid updater binary format/i;
 export function requiresManualUpdate(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   return MANUAL_UPDATE_ERROR.test(message);
+}
+
+/**
+ * Asks Rust whether this install can update itself (false for Linux deb/rpm or an AppImage in a read-only folder),
+ * so callers skip downloading an update that can't install. Asked each time so every webview gets the same answer.
+ * If the check itself fails, assume yes: the install error still falls back to requiresManualUpdate.
+ */
+export async function selfUpdateSupported(): Promise<boolean> {
+  try {
+    return await invoke<boolean>('self_update_supported');
+  } catch (error) {
+    console.warn('Could not check whether self-update is supported:', error);
+    return true;
+  }
 }
 
 // Set once self-update failed for good this session, so update prompts link to the release page instead

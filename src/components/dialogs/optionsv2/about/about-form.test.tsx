@@ -2,20 +2,21 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MotionGlobalConfig } from 'framer-motion';
-import { isTauri } from '@tauri-apps/api/core';
+import { invoke, isTauri } from '@tauri-apps/api/core';
 import { useOptions } from '@/hooks/useOptions';
 import type { ISettings } from '@/hooks/useOptions';
 import { getVersion } from '@/lib/browser-app';
 import { useUpdater } from '@/hooks/useUpdater';
-import { useOverlay } from '@/overlay';
+import { showToast, useOverlay } from '@/overlay';
+import { manualUpdateToast } from '@/lib/manual-update';
 import { createOptionsStore, type OptionsStore } from '../test-utils';
 import { AboutForm } from './about-form';
 
-vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn() }));
+vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(), invoke: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/lib/browser-app', () => ({ getVersion: vi.fn() }));
 vi.mock('@/hooks/useUpdater', () => ({ useUpdater: vi.fn() }));
-vi.mock('@/overlay', () => ({ useOverlay: vi.fn() }));
+vi.mock('@/overlay', () => ({ useOverlay: vi.fn(), showToast: vi.fn() }));
 
 const openPanel = vi.fn();
 
@@ -42,6 +43,8 @@ afterAll(() => {
 
 beforeEach(() => {
   vi.mocked(isTauri).mockReturnValue(true);
+  vi.mocked(invoke).mockResolvedValue(true);
+  vi.mocked(showToast).mockReset();
   vi.mocked(getVersion).mockResolvedValue('1.4.0');
   vi.mocked(useOverlay).mockReturnValue({ openPanel } as never);
   checkForUpdates.mockReset();
@@ -74,6 +77,18 @@ describe('AboutForm', () => {
 
     await click(/Update Now \(v1\.5\.0\)/);
     expect(downloadUpdate).toHaveBeenCalledWith(update);
+  });
+
+  it('links the release page instead of downloading when this install cannot update itself', async () => {
+    checkForUpdates.mockResolvedValue({ available: true, version: '1.5.0' });
+    vi.mocked(invoke).mockResolvedValue(false);
+    await renderForm();
+
+    await click(/Check for Updates/);
+    await click(/Update Now \(v1\.5\.0\)/);
+
+    expect(downloadUpdate).not.toHaveBeenCalled();
+    expect(showToast).toHaveBeenCalledWith(manualUpdateToast('1.5.0'));
   });
 
   it('stays on "latest" when the check finds nothing', async () => {
