@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
 import React from 'react';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { TooltipProvider } from '@pd2-trader/ui';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { showToast } from '@/overlay';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import { openUrl } from '@/lib/browser-opener';
 import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';

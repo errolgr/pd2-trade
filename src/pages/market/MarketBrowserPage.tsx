@@ -1,12 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import { AlertTriangle, Heart, LayoutGrid, List, LogIn, RefreshCw, SearchX, Store } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, Button, Skeleton, Tabs, TabsList, TabsTrigger, TooltipProvider } from '@pd2-trader/ui';
 import { DUR, EASE_OUT, fadeIn, slideInRight, springSnappy } from '@/lib/motion';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
 import { showToast, usePanel } from '@/overlay';
@@ -449,7 +445,7 @@ const MarketBrowserPage: React.FC = () => {
                                   ? t('page.tabs.favorites')
                                   : t('page.tabs.saved')}
                               {count > 0 && (
-                                <span className="ml-1 text-[10px] text-muted-foreground tabular-nums">{count}</span>
+                                <span className="ml-1 text-3xs text-muted-foreground tabular-nums">{count}</span>
                               )}
                             </span>
                           </TabsTrigger>
@@ -488,7 +484,7 @@ const MarketBrowserPage: React.FC = () => {
             ) : (
               <div className="flex min-h-0 flex-1 overflow-hidden">
                 {tab === 'search' && (
-                  <div className="w-[300px] shrink-0">
+                  <div className="w-sidebar shrink-0">
                     <FilterHighlightContext.Provider value={highlight}>
                       <FilterSidebar
                         filters={filters}
@@ -630,7 +626,7 @@ const MarketBrowserPage: React.FC = () => {
                       initial="hidden"
                       animate="visible"
                       exit="exit"
-                      className="w-[380px] shrink-0"
+                      className="w-95 shrink-0"
                     >
                       <ListingDetail
                         row={detailRow}
@@ -685,7 +681,7 @@ function ViewModeToggle({ value, onChange }: { value: MarketViewMode; onChange: 
           title={o.label}
           onClick={() => onChange(o.mode)}
           className={cn(
-            'relative inline-flex w-6 items-center justify-center rounded-[4px] text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
+            'relative inline-flex w-6 items-center justify-center rounded-sm text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
             value === o.mode && 'text-accent-foreground',
           )}
         >
@@ -694,7 +690,7 @@ function ViewModeToggle({ value, onChange }: { value: MarketViewMode; onChange: 
               layoutId="market-view-active"
               transition={springSnappy}
               aria-hidden
-              className="absolute inset-0 rounded-[4px] bg-accent shadow-xs"
+              className="absolute inset-0 rounded-sm bg-accent shadow-xs"
             />
           )}
           <span className="relative">{o.icon}</span>
@@ -806,7 +802,7 @@ function ResultsPane({
           <div key={i}
             className="space-y-2 rounded-lg border border-border/50 p-3">
             <div className="flex gap-3">
-              <Skeleton className="h-[76px] w-16 shrink-0" />
+              <Skeleton className="h-19 w-16 shrink-0" />
               <div className="flex-1 space-y-2 pt-1">
                 <Skeleton className="h-3.5 w-1/3" />
                 <Skeleton className="h-3 w-1/4" />
@@ -825,7 +821,7 @@ function ResultsPane({
         className="space-y-1 p-2">
         {Array.from({ length: SKELETON_ROWS }, (_, i) => (
           <Skeleton key={i}
-            className="h-[52px] w-full" />
+            className="h-13 w-full" />
         ))}
       </div>
     );
@@ -891,7 +887,7 @@ function ResultsPane({
   const refetching = loading && rows.length > 0;
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="relative flex h-8 shrink-0 items-center gap-2 border-b border-border/60 bg-muted/20 px-2.5 text-[11px] text-muted-foreground">
+      <div className="relative flex h-8 shrink-0 items-center gap-2 border-b border-border/60 bg-muted/20 px-2.5 text-2xs text-muted-foreground">
         {status}
         {error && rows.length > 0 && <span className="min-w-0 truncate text-destructive">{error}</span>}
         <span className="ml-auto" />

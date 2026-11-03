@@ -1,17 +1,17 @@
 import React, { useMemo, useState } from 'react';
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, ChevronDown, RotateCcw, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
+  cn,
+  Button,
+  Input,
+  ScrollArea,
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@pd2-trader/ui';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import { CLASSES, ITEM_TYPES, RARITIES, basesForType, optionCodes } from '../lib/catalog';
 import { defaultAgeDays, MAX_FILTER_TEXT, MAX_SELLER_NAME, type SearchDefaults, withSource } from '../lib/defaults';
@@ -247,7 +247,7 @@ export function FilterSidebar({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-6 shrink-0 px-1.5 text-[11px] text-muted-foreground hover:text-destructive"
+                className="h-6 shrink-0 px-1.5 text-2xs text-muted-foreground hover:text-destructive"
                 onClick={() => set({ stats: [] })}
                 title={t('filters.clearStats')}
               >
@@ -380,7 +380,7 @@ export function FilterSidebar({
           </Field>
           {f.sort.by === 'stat' && f.sort.key && (
             <Field label="">
-              <span className="inline-flex h-6 max-w-full items-center gap-1 rounded-full border border-primary/40 bg-primary/10 pl-2 pr-0.5 text-[11px] text-primary">
+              <span className="inline-flex h-6 max-w-full items-center gap-1 rounded-full border border-primary/40 bg-primary/10 pl-2 pr-0.5 text-2xs text-primary">
                 <span className="truncate">{t('filters.sort.stat', { stat: statName(f.sort.key) })}</span>
                 <button
                   type="button"

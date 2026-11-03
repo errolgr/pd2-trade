@@ -116,5 +116,5 @@ function SelectValue() {
   return null;
 }
 
-/** Module shape for `vi.mock('@/components/ui/select', () => selectShim)`. */
+/** Select parts to spread over `@pd2-trader/ui` in `vi.mock('@pd2-trader/ui', …)`. */
 export const selectShim = { Select, SelectTrigger, SelectContent, SelectItem, SelectValue };

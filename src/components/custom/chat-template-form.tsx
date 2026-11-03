@@ -1,8 +1,6 @@
 import React, { useId, useLayoutEffect, useRef, useState } from 'react';
 import { Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Button, Input, Textarea, cn } from '@pd2-trader/ui';
 import type { ChatTemplateDraft } from '@/hooks/useChatTemplates';
 import {
   CHAT_TEMPLATE_TEXT_MAX,
@@ -10,7 +8,6 @@ import {
   chatTemplateSchema,
   templatePlaceholders,
 } from '@/lib/message-templates';
-import { cn } from '@/lib/utils';
 import { useTranslation } from '@/i18n';
 
 type FieldErrors = Partial<Record<'name' | 'text', string>>;
@@ -144,7 +141,7 @@ export function ChatTemplateForm({
           </label>
           <span
             className={cn(
-              'text-[11px] tabular-nums',
+              'text-2xs tabular-nums',
               text.trim().length > CHAT_TEMPLATE_TEXT_MAX ? 'text-destructive' : 'text-muted-foreground',
             )}
           >
@@ -179,7 +176,7 @@ export function ChatTemplateForm({
         )}
         <div id={`${id}-tokens`}
           className="flex flex-wrap items-center gap-1.5 pt-0.5">
-          <span className="text-[11px] text-muted-foreground">Insert:</span>
+          <span className="text-2xs text-muted-foreground">Insert:</span>
           {tokens.map(({ token, description }) => (
             <button
               key={token}
@@ -188,14 +185,14 @@ export function ChatTemplateForm({
               // Keep the text's caret: the token goes where the user was typing
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => insertToken(token)}
-              className="rounded-sm border border-border/70 bg-muted/60 px-1.5 py-0.5 font-mono text-[11px] text-foreground/80 outline-none transition-[color,background-color,border-color] duration-(--dur-fast) hover:border-ring/50 hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+              className="rounded-sm border border-border/70 bg-muted/60 px-1.5 py-0.5 font-mono text-2xs text-foreground/80 outline-none transition-[color,background-color,border-color] duration-(--dur-fast) hover:border-ring/50 hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
             >
               {token}
             </button>
           ))}
         </div>
         <p id={`${id}-asks`}
-          className="text-[11px] leading-relaxed text-muted-foreground">
+          className="text-2xs leading-relaxed text-muted-foreground">
           {asks.length > 0 ? (
             <>
               {t('chatTemplateForm.asksWhenUsed')}

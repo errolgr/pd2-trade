@@ -1,12 +1,21 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Form, FormControl, FormField, FormMessage } from '@/components/ui/form';
 import React from 'react';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormMessage,
+  Input,
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+  Switch,
+} from '@pd2-trader/ui';
 import { useOptions } from '@/hooks/useOptions';
-import { Input } from '@/components/ui/input';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import {
   CORRUPTED_FILTER_OPTIONS,
@@ -116,13 +125,11 @@ export function StatsForm() {
                     onValueChange={(value) => field.onChange(Number(value))}
                   >
                     <FormControl>
-                      <SelectTrigger className="w-[220px]">
+                      <SelectTrigger className="w-control">
                         <SelectValue placeholder={t('stats.priceWindow.label')} />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
-                      {selectItems(PRICE_WINDOW_SELECT_OPTIONS)}
-                    </SelectContent>
+                    <SelectContent>{selectItems(PRICE_WINDOW_SELECT_OPTIONS)}</SelectContent>
                   </Select>
                 }
               >
@@ -148,7 +155,7 @@ export function StatsForm() {
                     : t('stats.fillStatValue.descriptionFlat')
                 }
                 control={
-                  <div className="flex w-[220px] items-center gap-2">
+                  <div className="flex w-control items-center gap-2">
                     <FormControl>
                       <Input
                         type="number"
@@ -189,13 +196,11 @@ export function StatsForm() {
                   <Select value={field.value ?? 'percent'}
                     onValueChange={field.onChange}>
                     <FormControl>
-                      <SelectTrigger className="w-[220px]">
+                      <SelectTrigger className="w-control">
                         <SelectValue placeholder={t('stats.marginUnit.placeholder')} />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
-                      {selectItems(MARGIN_UNIT_OPTIONS)}
-                    </SelectContent>
+                    <SelectContent>{selectItems(MARGIN_UNIT_OPTIONS)}</SelectContent>
                   </Select>
                 }
               >
@@ -256,13 +261,11 @@ export function StatsForm() {
                   <Select value={field.value ?? 'both'}
                     onValueChange={field.onChange}>
                     <FormControl>
-                      <SelectTrigger className="w-[220px]">
+                      <SelectTrigger className="w-control">
                         <SelectValue placeholder={t('stats.corruptedFilter.placeholder')} />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
-                      {selectItems(CORRUPTED_FILTER_OPTIONS)}
-                    </SelectContent>
+                    <SelectContent>{selectItems(CORRUPTED_FILTER_OPTIONS)}</SelectContent>
                   </Select>
                 }
               >
@@ -285,13 +288,11 @@ export function StatsForm() {
                   <Select value={field.value ?? 'bar'}
                     onValueChange={field.onChange}>
                     <FormControl>
-                      <SelectTrigger className="w-[220px]">
+                      <SelectTrigger className="w-control">
                         <SelectValue placeholder={t('stats.rankDisplay.placeholder')} />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
-                      {selectItems(RANK_DISPLAY_OPTIONS)}
-                    </SelectContent>
+                    <SelectContent>{selectItems(RANK_DISPLAY_OPTIONS)}</SelectContent>
                   </Select>
                 }
               >

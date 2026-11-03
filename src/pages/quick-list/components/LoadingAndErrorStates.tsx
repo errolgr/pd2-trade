@@ -1,9 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
 import { Search, Loader2, AlertTriangle, CircleAlert } from 'lucide-react';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Button, Alert, AlertTitle, AlertDescription, Skeleton } from '@pd2-trader/ui';
 import { fadeIn, fadeInUp } from '@/lib/motion';
 import { Trans, useTranslation } from '@/i18n';
 

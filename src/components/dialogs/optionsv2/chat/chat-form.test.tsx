@@ -9,7 +9,10 @@ import { ChatForm } from './chat-form';
 
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 // vi.mock factories are hoisted above static imports, so the shim must be loaded inside the factory.
-vi.mock('@/components/ui/select', async () => (await import('../test-utils')).selectShim);
+vi.mock('@pd2-trader/ui', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  ...(await import('../test-utils')).selectShim,
+}));
 
 let store: OptionsStore;
 

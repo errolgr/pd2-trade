@@ -1,9 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ExternalLink, Gem, History, Repeat, SearchX, Skull, Star, Swords, Users } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { cn, Badge, Button, Skeleton } from '@pd2-trader/ui';
 import { HoverPopover } from '@/components/custom/hover-popover';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
 import { openUrl } from '@/lib/browser-opener';
@@ -187,18 +184,18 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h2
-              className="truncate text-lg leading-tight font-semibold text-foreground"
+              className="truncate text-base leading-tight font-semibold text-foreground"
               style={{ fontFamily: 'DiabloFont' }}
             >
               {detail.name}
             </h2>
             <Badge variant="outline"
-              className="px-1.5 py-0 text-[10px]">
+              className="px-1.5 py-0 text-2xs">
               {detail.mode === 'hardcore' ? 'Hardcore' : 'Softcore'}
             </Badge>
             {shown.isDead && detail.mode === 'hardcore' && (
               <Badge variant="outline"
-                className="gap-1 border-destructive/40 px-1.5 py-0 text-[10px] text-destructive">
+                className="gap-1 border-destructive/40 px-1.5 py-0 text-2xs text-destructive">
                 <Skull /> {t('characters.dead')}
               </Badge>
             )}
@@ -219,12 +216,12 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
         </div>
         <div className="ml-auto flex items-center gap-3">
           <div className="text-right">
-            <div className="text-[10px] tracking-wide text-muted-foreground uppercase">{t('character.gearValue')}</div>
+            <div className="text-3xs tracking-wide text-muted-foreground uppercase">{t('character.gearValue')}</div>
             <div className="text-base font-semibold text-q-gold tabular-nums">
               {shown.gearValueHr != null ? t('character.hr', { value: fmtHr(shown.gearValueHr) }) : '—'}
             </div>
           </div>
-          <div className="text-right text-[11px] text-muted-foreground">
+          <div className="text-right text-2xs text-muted-foreground">
             <div title={fmtDateTime(detail.lastUpdated)}>
               {t('character.updated', { time: timeAgo(detail.lastUpdated) })}
             </div>
@@ -273,7 +270,7 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
           </span>
           <Button variant="outline"
             size="sm"
-            className="ml-auto h-6 px-2 text-[11px]"
+            className="ml-auto h-6 px-2 text-2xs"
             onClick={() => setSnapId(null)}>
             {t('character.backToNow')}
           </Button>
@@ -282,7 +279,7 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* Dolls + skills */}
-        <div className="flex w-[290px] shrink-0 flex-col divide-y divide-border/50 overflow-y-auto border-r border-border/50">
+        <div className="flex w-72.5 shrink-0 flex-col divide-y divide-border/50 overflow-y-auto border-r border-border/50">
           <Section
             title={t('character.equipment')}
             icon={<Swords />}
@@ -292,7 +289,7 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 gap-1 px-1.5 text-[11px] text-muted-foreground"
+                  className="h-6 gap-1 px-1.5 text-2xs text-muted-foreground"
                   aria-pressed={weaponSet === 1}
                   title={t('character.weaponSwitch')}
                   onClick={() => setWeaponSet(weaponSet ? 0 : 1)}
@@ -403,7 +400,7 @@ function CharacterSkeleton({ onBack }: { onBack: () => void }) {
         </div>
       </div>
       <div className="flex flex-1 gap-3 p-3">
-        <Skeleton className="h-[420px] w-[300px]" />
+        <Skeleton className="h-105 w-75" />
         <div className="flex-1 space-y-2">
           <Skeleton className="h-7 w-40" />
           <Skeleton className="h-64 w-full" />
@@ -447,7 +444,7 @@ function DollCell({ cell, item, merc }: { cell: DollCellDef; item: DollItem | un
   if (!item) {
     return (
       <div
-        className="flex items-center justify-center rounded-md border border-dashed border-border/60 bg-background/20 text-[10px] text-muted-foreground/70"
+        className="flex items-center justify-center rounded-md border border-dashed border-border/60 bg-background/20 text-2xs text-muted-foreground/70"
         style={{ gridArea: cell.area, height }}
       >
         {t(cell.labelKey)}
@@ -475,7 +472,7 @@ function DollCell({ cell, item, merc }: { cell: DollCellDef; item: DollItem | un
               className="border-0 bg-transparent" />
             {item.ethereal && (
               <span
-                className="absolute top-0.5 left-1 text-[9px] font-semibold text-muted-foreground"
+                className="absolute top-0.5 left-1 text-3xs font-semibold text-muted-foreground"
                 title={t('character.ethereal')}
               >
                 E
@@ -488,7 +485,7 @@ function DollCell({ cell, item, merc }: { cell: DollCellDef; item: DollItem | un
               />
             )}
             {item.priceHr != null && (
-              <span className="absolute right-0.5 bottom-0.5 rounded-sm bg-background/80 px-1 text-[9px] leading-tight font-medium text-q-gold tabular-nums">
+              <span className="absolute right-0.5 bottom-0.5 rounded-sm bg-background/80 px-1 text-3xs leading-tight font-medium text-q-gold tabular-nums">
                 {fmtHr(item.priceHr)}
               </span>
             )}
@@ -519,7 +516,7 @@ function CharmGrid({ charms }: { charms: CharmItem[] }) {
         <div
           key={i}
           aria-hidden
-          className="rounded-[3px] border border-border/40 bg-background/20"
+          className="rounded-sm border border-border/40 bg-background/20"
           style={{ gridColumn: (i % CHARM_COLS) + 1, gridRow: Math.floor(i / CHARM_COLS) + 1 }}
         />
       ))}
@@ -542,7 +539,7 @@ function CharmCell({ charm }: { charm: CharmItem }) {
             type="button"
             aria-label={charm.name}
             className={cn(
-              'relative flex w-full items-center justify-center rounded-[3px] border bg-background/40 outline-none transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring',
+              'relative flex w-full items-center justify-center rounded-sm border bg-background/40 outline-none transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring',
               qualityBorder(charm.quality, charm.runeword),
             )}
             style={{ height }}
@@ -567,7 +564,7 @@ function SkillsList({ skills }: { skills: CharacterSkill[] }) {
     <Section
       title={t('character.skills')}
       bodyClassName="px-0 py-1"
-      action={<span className="text-[10px] text-muted-foreground">{t('character.hardTotal')}</span>}
+      action={<span className="text-2xs text-muted-foreground">{t('character.hardTotal')}</span>}
     >
       {shown.length === 0 ? (
         <p className="p-2 text-center text-xs text-muted-foreground">{t('character.noSkills')}</p>
@@ -581,7 +578,7 @@ function SkillsList({ skills }: { skills: CharacterSkill[] }) {
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline gap-1.5">
                   <span className="min-w-0 flex-1 truncate text-xs">{s.name}</span>
-                  <span className="text-[11px] tabular-nums">
+                  <span className="text-2xs tabular-nums">
                     <span className="text-foreground">{s.base}</span>
                     <span className="text-muted-foreground"> / {s.total}</span>
                   </span>

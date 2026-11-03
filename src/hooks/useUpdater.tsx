@@ -3,8 +3,7 @@ import { useCallback, useState } from 'react';
 import { check, Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { useDialog } from '@/hooks/useDialog';
-import { Progress } from '@/components/ui/progress';
-import { AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Progress, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@pd2-trader/ui';
 import React from 'react';
 import { t } from '@/i18n';
 

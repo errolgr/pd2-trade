@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@pd2-trader/ui';
 import { useOptions } from '@/hooks/useOptions';
 import { getSeasonDateConfig } from '@/lib/seasons';
 import { DEFAULT_PRICE_WINDOW_HOURS, basisLabel, windowLabel } from '@/lib/price-window';
@@ -128,7 +128,7 @@ export function ItemNameSearch({
               <span className="flex items-baseline gap-2">
                 <span
                   className={cn(
-                    'min-w-0 flex-1 truncate text-[13px]',
+                    'min-w-0 flex-1 truncate text-sm',
                     o.quality === 'Runeword' ? 'text-q-rune' : qualityColor(o.quality),
                   )}
                 >
@@ -138,7 +138,7 @@ export function ItemNameSearch({
                   {price ? formatHrPrice(price.hr) : price === undefined && priced ? '' : '—'}
                 </span>
               </span>
-              <span className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <span className="flex items-center gap-2 text-2xs text-muted-foreground">
                 <span className="min-w-0 flex-1 truncate">
                   {[o.quality, o.slot, o.closeMatch && t('nameSearch.closeMatch')].filter(Boolean).join(' · ')}
                 </span>
@@ -151,7 +151,7 @@ export function ItemNameSearch({
           );
         }}
         footer={
-          <div className="mt-1 border-t border-border px-2 pt-1.5 pb-1 text-[11px] text-muted-foreground">
+          <div className="mt-1 border-t border-border px-2 pt-1.5 pb-1 text-2xs text-muted-foreground">
             {`${ladder ? 'Ladder' : 'Non-ladder'} · ${hardcore ? 'Hardcore' : 'Softcore'} · ${basis}`}
           </div>
         }

@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
 import { openUrl } from '@/lib/browser-opener';
 import { ExternalLink } from 'lucide-react';
+import { cn } from '@pd2-trader/ui';
 import { findMarketLinks, parseMessage } from '../lib/market-links';
 import { type ChatListingState, useChatListings } from '../hooks/useChatListings';
-import { cn } from '@/lib/utils';
 import { ListingCard, ListingCardSkeleton, listingIconBoxClass, listingPillClass } from './ListingCard';
 
 /** A message shown outside a thread (a toast): it looks its listing links up itself, for their item pills. */

@@ -4,13 +4,10 @@ import { Sparkles } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { getVersion } from '@/lib/browser-app';
 import { motion, MotionConfig } from 'framer-motion';
+import { Badge, ScrollArea, Skeleton, cn } from '@pd2-trader/ui';
 import { changeLog } from '@/assets/changeLog';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 import { listItem, listStagger } from '@/lib/motion';
-import { cn } from '@/lib/utils';
 import { useTranslation } from '@/i18n';
 
 type EntryType = 'feature' | 'fix' | 'other';
@@ -82,7 +79,7 @@ function VersionSection({
             {t('changeLog.current')}
           </Badge>
         )}
-        <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
+        <span className="ml-auto text-2xs tabular-nums text-muted-foreground">
           {t('changeLog.changes', { count: entries.length })}
         </span>
       </div>

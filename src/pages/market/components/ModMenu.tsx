@@ -1,14 +1,14 @@
 import React, { createContext, useContext, useMemo, useState } from 'react';
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, Filter, ListFilter, Sigma } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import {
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@pd2-trader/ui';
 import type { ItemDetail, Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { coveringPseudos, modStatValue, modToStatKey, modsAsFilters } from '../lib/mod-keys';
 import { computePseudo } from '../lib/pseudo';
@@ -93,7 +93,7 @@ export function ModMenu({
         className="w-72 origin-(--radix-dropdown-menu-content-transform-origin) text-xs"
         onClick={(e) => e.stopPropagation()}
       >
-        <DropdownMenuLabel className="truncate text-[11px] text-muted-foreground">{name}</DropdownMenuLabel>
+        <DropdownMenuLabel className="truncate text-2xs text-muted-foreground">{name}</DropdownMenuLabel>
         {key && value !== null && (
           <>
             <DropdownMenuItem onSelect={() => actions.addFilters([{ kind: 'mod', key, min: value }])}>

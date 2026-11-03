@@ -17,18 +17,18 @@ import {
   Trash2,
   UserRound,
 } from 'lucide-react';
-import type { Participant } from '@/common/types/pd2-website/ChatTypes';
-import { buttonVariants } from '@/components/ui/button';
 import {
+  buttonVariants,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  cn,
+} from '@pd2-trader/ui';
+import type { Participant } from '@/common/types/pd2-website/ChatTypes';
 import { useTranslation } from '@/i18n';
 import { openUrl } from '@/lib/browser-opener';
-import { cn } from '@/lib/utils';
 import { useOverlay } from '@/overlay';
 import type { TraderPresence } from '../hooks/useTraderProfile';
 import { characterUrl, ChatAvatar, profileUrl, Tip } from './chat-parts';
@@ -113,7 +113,7 @@ export function ThreadHeader({
             className="size-10" />
         </button>
         <div className="min-w-0">
-          <h3 className="flex min-w-0 items-center gap-1.5 text-[15px] font-semibold leading-tight tracking-tight text-foreground">
+          <h3 className="flex min-w-0 items-center gap-1.5 text-base font-semibold leading-tight tracking-tight text-foreground">
             <button
               type="button"
               onClick={traderOpen ? undefined : onToggleTrader}
@@ -165,7 +165,7 @@ export function ThreadHeader({
             )}
             {inGameOnly && (
               <span
-                className="shrink-0 rounded-sm bg-muted px-1 text-[10px] font-medium uppercase tracking-wide"
+                className="shrink-0 rounded-sm bg-muted px-1 text-3xs font-medium uppercase tracking-wide"
                 title={t('header.inGameOnlyHint')}
               >
                 {t('header.inGameOnly')}

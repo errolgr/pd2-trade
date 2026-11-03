@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Copy, Eye, EyeOff, Shield, Store } from 'lucide-react';
+import { cn } from '@pd2-trader/ui';
 import { useOptions, type ISettings } from '@/hooks/useOptions';
 import { writeText } from '@/lib/browser-clipboard';
 import type { BuildsFilters } from '@/lib/builds-api';
@@ -21,7 +22,6 @@ import { defaultFilters, mergeFilters, type SearchDefaults, upgradeFilters } fro
 import { suggestionKey, type ItemNameSuggestion } from '@/pages/market/lib/name-suggestions';
 import type { MarketFilters } from '@/pages/market/lib/types';
 import { type MarketStore, useMarketStore } from '@/pages/market/store/useMarketStore';
-import { cn } from '@/lib/utils';
 import { t } from '@/i18n';
 import { matchTier } from '../lib/match';
 import {
@@ -77,7 +77,7 @@ function ItemPrice({ price }: { price: ListingMarketPrice | null | undefined }) 
     <span className="flex items-baseline gap-1.5 tabular-nums">
       <span className="font-semibold text-foreground">{hr}</span>
       {change !== 0 && (
-        <span className={cn('text-[11px]', change > 0 ? 'text-success' : 'text-destructive')}>
+        <span className={cn('text-2xs', change > 0 ? 'text-success' : 'text-destructive')}>
           {`${change > 0 ? '+' : '−'}${Math.abs(change)}%`}
         </span>
       )}
@@ -93,7 +93,10 @@ interface ItemContext {
   prices: ReadonlyMap<string, ListingMarketPrice | null>;
 }
 
-function toItem(option: ItemNameSuggestion, { query, settings, searchDefaults, store, prices }: ItemContext): PaletteItem {
+function toItem(
+  option: ItemNameSuggestion,
+  { query, settings, searchDefaults, store, prices }: ItemContext,
+): PaletteItem {
   const { name, quality } = option;
   const ref = itemRef(option);
   const priced = ref.data?.baseCode != null;
@@ -103,7 +106,10 @@ function toItem(option: ItemNameSuggestion, { query, settings, searchDefaults, s
   // The market's own full filters for this search (what opening it would show), so Watch matches its saved searches
   const watchFilters = upgradeFilters(
     mergeFilters(
-      defaultFilters({ hardcore: settings.mode === 'hardcore', ladder: settings.ladder !== 'non-ladder' }, searchDefaults),
+      defaultFilters(
+        { hardcore: settings.mode === 'hardcore', ladder: settings.ladder !== 'non-ladder' },
+        searchDefaults,
+      ),
       filters,
     ),
   );

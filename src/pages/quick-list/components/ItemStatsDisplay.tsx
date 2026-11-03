@@ -1,7 +1,7 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@pd2-trader/ui';
 import { Trans, useTranslation } from '@/i18n';
 import { DUR, EASE_OUT } from '@/lib/motion';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
@@ -16,7 +16,7 @@ interface ItemStatsDisplayProps {
 
 const COLLAPSED_COUNT = 3;
 
-const chip = 'inline-flex h-5 items-center gap-1 rounded-full border px-2 text-[11px] font-medium leading-none';
+const chip = 'inline-flex h-5 items-center gap-1 rounded-full border px-2 text-2xs font-medium leading-none';
 
 const ItemStatsDisplay: React.FC<ItemStatsDisplayProps> = ({ stashItem, isExpanded, onToggleExpanded, hideToggle }) => {
   const { t } = useTranslation('quickList');
@@ -77,7 +77,7 @@ const ItemStatsDisplay: React.FC<ItemStatsDisplayProps> = ({ stashItem, isExpand
                 values={{ count: stashItem.socket_count }}
                 components={{
                   num: (
-                    <span className="inline-flex size-4 items-center justify-center rounded-full bg-foreground/90 text-[10px] font-semibold tabular-nums text-background" />
+                    <span className="inline-flex size-4 items-center justify-center rounded-full bg-foreground/90 text-3xs font-semibold tabular-nums text-background" />
                   ),
                 }}
               />

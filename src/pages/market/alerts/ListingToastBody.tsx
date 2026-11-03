@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
+import { Popover, PopoverAnchor, PopoverContent } from '@pd2-trader/ui';
 import { ItemTooltip } from '@/pages/market/components/ItemTooltip';
 import { useListingLookup } from './listing-lookup';
 import { useTranslation } from '@/i18n';

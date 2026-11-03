@@ -1,12 +1,23 @@
 import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Loader2, NotebookPen } from 'lucide-react';
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+  Input,
+  Button,
+  Sheet,
+  SheetTrigger,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@pd2-trader/ui';
 import { DUR, EASE_OUT, fadeIn, slideInRight } from '@/lib/motion';
-import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { useOptions } from '@/hooks/useOptions';
 import { Trans, useTranslation } from '@/i18n';
 import { ShortcutFormData } from './types';
@@ -99,7 +110,7 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
           >
             <NotebookPen className="h-4 w-4" />
             {macros.length > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-bold leading-none tabular-nums text-primary-foreground ring-2 ring-card">
+              <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-0.5 text-3xs font-bold leading-none tabular-nums text-primary-foreground ring-2 ring-card">
                 {macros.length}
               </span>
             )}
@@ -141,7 +152,7 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
                 {pendingPlaceholders.map((name, i) => (
                   <label key={name}
                     className="flex flex-col gap-1">
-                    <span className="font-mono text-[11px] text-muted-foreground">{`{${name}}`}</span>
+                    <span className="font-mono text-2xs text-muted-foreground">{`{${name}}`}</span>
                     <Input
                       placeholder={name}
                       value={placeholderValues[name] || ''}

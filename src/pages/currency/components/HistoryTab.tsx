@@ -15,26 +15,6 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { cn } from '@/lib/utils';
 import { fadeInUp, listItem, listStagger, useReducedMotionSafe } from '@/lib/motion';
 import {
   deleteHistory,
@@ -66,6 +46,31 @@ import { useNetWorthQuery } from '../lib/useNetWorthQuery';
 import { Banner, EmptyState } from './StatePanel';
 import { useTranslation } from '@/i18n';
 import type { TFunction } from 'i18next';
+import {
+  ChartContainer,
+  type ChartConfig,
+  Button,
+  buttonVariants,
+  Checkbox,
+  Label,
+  Switch,
+  Skeleton,
+  ToggleGroup,
+  ToggleGroupItem,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+  cn,
+} from '@pd2-trader/ui';
 
 type Range = '24h' | '7d' | 'season' | 'all';
 
@@ -559,7 +564,7 @@ function SessionRow({ session: s, best }: { session: SessionSummary; best: boole
               {formatSessionStart(s.start, t)}–{formatClock(s.end)}
             </span>
             {s.manual && (
-              <span className="shrink-0 rounded-sm border border-border px-1 text-[10px] leading-4 text-muted-foreground">
+              <span className="shrink-0 rounded-sm border border-border px-1 text-2xs leading-4 text-muted-foreground">
                 {t('history.sessions.manual')}
               </span>
             )}
@@ -681,7 +686,7 @@ function SnapshotsSection({ token, owner, points }: { token: string; owner: NetW
                     {change === null ? '' : formatSignedHr(change)}
                   </span>
                   <span className="flex justify-end">
-                    <span className="rounded-full bg-muted/60 px-1.5 text-[11px] leading-5 text-muted-foreground">
+                    <span className="rounded-full bg-muted/60 px-1.5 text-2xs leading-5 text-muted-foreground">
                       {p.trigger}
                     </span>
                   </span>
@@ -838,7 +843,7 @@ function SnapshotsSection({ token, owner, points }: { token: string; owner: NetW
 function DiffStat({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="rounded-md border border-border/70 bg-muted/30 px-2.5 py-1.5">
-      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-2xs uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="text-sm font-semibold tabular-nums">{children}</p>
     </div>
   );

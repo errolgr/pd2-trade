@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { cn } from '@pd2-trader/ui';
 import { fetchPriceHistory, type PriceHistoryPoint } from '@/pages/currency/lib/price-api';
-import { cn } from '@/lib/utils';
 import { useTranslation } from '@/i18n';
 
 const DAY_MS = 24 * 60 * 60 * 1000;

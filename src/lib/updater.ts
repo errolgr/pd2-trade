@@ -2,7 +2,7 @@ import { t } from '@/i18n';
 import { isTauri } from '@tauri-apps/api/core';
 import { check } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
-import { toast } from 'sonner';
+import { toast } from '@pd2-trader/ui';
 import { resetUpdateNotification } from '@/hooks/useAppUpdates';
 import { openUrl } from '@/lib/browser-opener';
 import {

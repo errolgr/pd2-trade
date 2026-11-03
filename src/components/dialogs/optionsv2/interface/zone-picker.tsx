@@ -1,9 +1,7 @@
 import React from 'react';
 import { Check, ChevronDown, Search } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger, Input, cn } from '@pd2-trader/ui';
 import { CORRUPTED_ZONES } from '@/lib/corrupted-zones';
-import { cn } from '@/lib/utils';
 import { useTranslation } from '@/i18n';
 
 interface ZonePickerProps {
@@ -27,7 +25,7 @@ export function ZonePicker({ value, onChange }: ZonePickerProps) {
         <button
           type="button"
           aria-label={t('zonePicker.triggerLabel')}
-          className="flex h-9 w-[220px] items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring hover:border-ring/60"
+          className="flex h-9 w-control items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring hover:border-ring/60"
         >
           <span className={cn('truncate', value.length === 0 && 'text-muted-foreground')}>
             {value.length === 0
@@ -40,7 +38,7 @@ export function ZonePicker({ value, onChange }: ZonePickerProps) {
         </button>
       </PopoverTrigger>
       <PopoverContent align="end"
-        className="w-[380px] p-0">
+        className="w-95 p-0">
         <div className="relative border-b border-border p-2">
           <Search className="pointer-events-none absolute top-1/2 left-4 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input

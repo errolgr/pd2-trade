@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
+import { Skeleton } from '@pd2-trader/ui';
 import { HoverPopover } from '@/components/custom/hover-popover';
-import { Skeleton } from '@/components/ui/skeleton';
 import { scaleIn } from '@/lib/motion';
 import type { RareAppraisal, RareHistory } from '@/lib/rare-appraisal-api';
 import { CraftedBadges, VerdictBadge } from '@/components/rares/RareParts';
@@ -66,14 +66,14 @@ export function RareAppraisalPill({
       animate="visible">
       <HoverPopover
         content={
-          <div className="max-h-[calc(100vh-180px)] w-[400px] max-w-[calc(100vw-16px)] space-y-3 overflow-y-auto rounded-lg border border-border bg-popover p-3 text-sm text-popover-foreground shadow-panel">
+          <div className="max-h-[calc(100vh-180px)] w-popover max-w-viewport space-y-3 overflow-y-auto rounded-lg border border-border bg-popover p-3 text-sm text-popover-foreground shadow-panel">
             <div className="flex items-center justify-between gap-3">
               <span
                 className={isCrafted(appraisal) ? 'truncate font-semibold text-q-crafted' : 'truncate font-semibold'}
               >
                 {title}
               </span>
-              <span className="shrink-0 text-[11px] text-muted-foreground">
+              <span className="shrink-0 text-2xs text-muted-foreground">
                 {t('rareAppraisal.estimatedFrom', { slot: slotLabel(appraisal.slot), season: modelSeason(appraisal) })}
               </span>
             </div>
@@ -94,7 +94,7 @@ export function RareAppraisalPill({
             className="flex-col items-start" />
           <div className="flex flex-col leading-tight">
             <span className="text-sm font-semibold tabular-nums text-foreground">{rankText(appraisal.rank)}</span>
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            <span className="text-3xs uppercase tracking-wider text-muted-foreground">
               {t('rareAppraisal.ofSlots', { slots })}
             </span>
           </div>
@@ -106,7 +106,7 @@ export function RareAppraisalPill({
                 <span className="text-sm font-semibold tabular-nums text-foreground">
                   {bandRange(market.lowHr, market.highHr)} HR
                 </span>
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                <span className="text-3xs uppercase tracking-wider text-muted-foreground">
                   {t('rareAppraisal.usuallyListed')}
                 </span>
               </div>

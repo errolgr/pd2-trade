@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cn, formatHr, formatWithUnderscore } from './utils';
-
-describe('cn', () => {
-  it('drops falsy classes and lets later Tailwind utilities win conflicts', () => {
-    expect(cn('px-2 text-sm', false, undefined, { hidden: false, block: true }, 'px-4')).toBe('text-sm block px-4');
-  });
-});
+import { formatHr, formatWithUnderscore } from './utils';
 
 describe('formatWithUnderscore', () => {
   it.each([

@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 import React, { useState } from 'react';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { TooltipProvider } from '@pd2-trader/ui';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import type { AppraisedStat, RareAppraisal, RareHistory, VerdictRule } from '@/lib/rare-appraisal-api';
 import {
   HardcoreNote,
@@ -80,8 +80,10 @@ describe('VerdictBadge', () => {
   });
 
   it('ignores a stray priority on non-check verdicts and adds the hardcore note', () => {
-    withTooltips(<VerdictBadge rare={rare({ verdict: 'vendor', checkPriority: 'high', rankReference: 'hardcore' })}
-      hardcore />);
+    withTooltips(
+      <VerdictBadge rare={rare({ verdict: 'vendor', checkPriority: 'high', rankReference: 'hardcore' })}
+        hardcore />,
+    );
     expect(tooltipOf(screen.getByText('Vendor'))).toBe(
       'Hardcore: price model and stars from softcore data; ranked against hardcore listings; prices from softcore listings',
     );

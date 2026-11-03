@@ -15,15 +15,18 @@ import {
   Undo2,
   X,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import {
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+  Input,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  cn,
+} from '@pd2-trader/ui';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
@@ -32,7 +35,6 @@ import { t as tGlobal, useTranslation } from '@/i18n';
 import { fillTemplate } from '@/lib/message-templates';
 import type { TradeOutcome, WhisperPerson, WhisperTrade } from '@/lib/whisper-history';
 import { confirmToast, showToast } from '@/overlay';
-import { cn } from '@/lib/utils';
 import { useChatListings } from '../hooks/useChatListings';
 import { type ListingMarketPrice, useListingMarketPrices } from '../hooks/useListingMarketPrices';
 import { shortAgo } from '../hooks/useTraderProfile';
@@ -160,10 +162,7 @@ export function OfferHoverCard({
           {offer.isIncoming ? t('deals.offerFrom', { name: offer.playerName }) : t('deals.yourOffer')}
         </span>
         <span
-          className={cn(
-            'shrink-0 rounded-sm px-1 text-[10px] font-medium uppercase tracking-wide',
-            STATUS_CLASS[status],
-          )}
+          className={cn('shrink-0 rounded-sm px-1 text-3xs font-medium uppercase tracking-wide', STATUS_CLASS[status])}
         >
           {dealStatusLabel(status)}
         </span>
@@ -212,7 +211,7 @@ export function OfferHoverCard({
           </ListingDetails>
         ) : (
           // Same frame as ListingDetails
-          <div className="w-80 max-w-[calc(100vw-16px)] rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-panel">
+          <div className="w-80 max-w-viewport rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-panel">
             <div className="truncate text-sm font-semibold">{offer.itemName ?? t('deals.unknownItem')}</div>
             <div className="text-xs text-muted-foreground">
               {loading ? t('deals.lookingUp') : t('deals.listingGone')}
@@ -790,7 +789,7 @@ export function ThreadDeals({
                     <div className="min-w-0 flex-1">
                       <div
                         className={cn(
-                          'truncate text-[10px] font-bold uppercase leading-tight tracking-wider',
+                          'truncate text-3xs font-bold uppercase leading-tight tracking-wider',
                           colors.text,
                         )}
                       >
@@ -827,7 +826,7 @@ export function ThreadDeals({
               {price && (
                 <span
                   className={cn(
-                    'shrink-0 whitespace-nowrap text-lg font-extrabold tabular-nums leading-none text-foreground',
+                    'shrink-0 whitespace-nowrap text-base font-extrabold tabular-nums leading-none text-foreground',
                   )}
                 >
                   {price}

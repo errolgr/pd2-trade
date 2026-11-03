@@ -1,9 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { PackageOpen, Search, SearchX, X } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { formatHr } from '@/lib/utils';
 import type { ValuationLine } from '@/lib/networth-api';
 import { DataTable } from './DataTable';
@@ -11,6 +8,7 @@ import { DataTableColumnHeader } from './DataTableColumnHeader';
 import { ConfidenceBadge, HoldingName, PriceChange } from './HoldingCells';
 import { formatUnitPrice } from '../lib/networth-format';
 import type { TFunction } from 'i18next';
+import { Input, Switch, Label } from '@pd2-trader/ui';
 import { useTranslation } from '@/i18n';
 
 interface HoldingsTableProps {

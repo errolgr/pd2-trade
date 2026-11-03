@@ -1,16 +1,13 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Form, FormControl, FormField, FormMessage } from '@/components/ui/form';
 import React from 'react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
 import { useOptions } from '@/hooks/useOptions';
 import { AlertTriangle, Plus } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { hotkeyKeyFromEvent, hotkeyKeyLabel, hotkeyKeyToken, normalizeHotkeyKey } from '@/lib/hotkey-keys';
 import { SettingsGroup, SettingsHint, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import type { TFunction } from 'i18next';
+import { Form, FormControl, FormField, FormMessage, Tabs, TabsList, TabsTrigger, Input, cn } from '@pd2-trader/ui';
 import { useTranslation } from '@/i18n';
 
 /** Built per render language so validation messages follow the UI language. */
@@ -270,7 +267,7 @@ export function HotkeyForm() {
                             value={label}
                             aria-invalid={warning ? true : undefined}
                             className={cn(
-                              'h-9 w-11 rounded-md border-b-[3px] px-0 text-center font-mono text-sm font-semibold uppercase shadow-xs placeholder:text-[10px] placeholder:font-normal',
+                              'h-9 w-11 rounded-md border-b-3 px-0 text-center font-mono text-sm font-semibold uppercase shadow-xs placeholder:text-3xs placeholder:font-normal',
                               'focus-visible:border-b-primary',
                               label.length > 1 && 'w-16 text-xs',
                               warning &&

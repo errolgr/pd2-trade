@@ -2,8 +2,8 @@
 import React from 'react';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TooltipProvider } from '@pd2-trader/ui';
 import { MotionGlobalConfig } from 'framer-motion';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import type { RaresSummary } from '@/lib/networth-api';
 import { fetchRareHistory, type AppraisedStat, type RareAppraisal, type RareHistory } from '@/lib/rare-appraisal-api';
 import type * as RareApi from '@/lib/rare-appraisal-api';

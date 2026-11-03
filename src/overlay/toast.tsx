@@ -1,8 +1,8 @@
 import React from 'react';
 import { Loader2, Skull } from 'lucide-react';
-import { toast } from 'sonner';
-import { Toaster } from '@/components/ui/sonner';
+import { toast, Toaster } from '@pd2-trader/ui';
 import { installUpdateAndRelaunch } from '@/lib/updater';
+import { useThemeMode } from '@/lib/themes';
 import { RELEASE_PAGE_URL } from '@/lib/manual-update';
 import { openUrl } from '@/lib/browser-opener';
 import { CustomToastPayload, GenericToastPayload, ToastActionType } from '@/common/types/Events';
@@ -227,6 +227,7 @@ export function undoToast({ title, description, duration, onUndo }: UndoToastOpt
 export function ToastLayer() {
   const { gameRect, gameFocused } = useOverlay();
   const dockShown = usePanelOpen('chatButton') && gameFocused;
+  const themeMode = useThemeMode();
   const anchor = gameFocused ? gameRect : { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
   const dockWidth = chatDockWidth(gameRect.height);
 
@@ -239,6 +240,7 @@ export function ToastLayer() {
 
   return (
     <Toaster
+      theme={themeMode}
       position="bottom-right"
       richColors
       closeButton
@@ -260,7 +262,7 @@ export function ToastLayer() {
           info: '[--toast-accent:var(--info)]',
           loading: '[--toast-accent:var(--muted-foreground)]',
           title: '!text-sm !font-semibold !leading-tight tracking-tight',
-          description: '!text-[13px] !leading-snug !text-popover-foreground/80',
+          description: '!text-sm !leading-snug !text-popover-foreground/80',
           icon: '!size-4 text-[var(--toast-accent,var(--glow))] [&>svg]:!size-4',
           actionButton: ACTION_BUTTON_CLASS,
           cancelButton: CANCEL_BUTTON_CLASS,

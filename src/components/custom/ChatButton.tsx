@@ -15,7 +15,7 @@ import {
   TrendingUp,
   X,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@pd2-trader/ui';
 import { popIn, scaleIn } from '@/lib/motion';
 import { useTranslation } from '@/i18n';
 import { CARET_HEIGHT, type ChatDockItem } from '@/pages/chat/chat-dock';

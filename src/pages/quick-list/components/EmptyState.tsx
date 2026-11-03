@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { cn } from '@pd2-trader/ui';
 import { fadeInUp } from '@/lib/motion';
 
 interface EmptyStateProps {
@@ -32,7 +32,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, children, classNam
     </span>
     <div className="space-y-1.5">
       <h3 className="text-base font-semibold tracking-tight">{title}</h3>
-      {children && <div className="mx-auto max-w-[280px] text-sm leading-relaxed text-muted-foreground">{children}</div>}
+      {children && <div className="mx-auto max-w-70 text-sm leading-relaxed text-muted-foreground">{children}</div>}
     </div>
   </motion.div>
 );

@@ -1,9 +1,8 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import { Search, Trophy } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TooltipProvider } from '@pd2-trader/ui';
 import { fadeIn, springSnappy } from '@/lib/motion';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 import { usePanel, useOverlay } from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';

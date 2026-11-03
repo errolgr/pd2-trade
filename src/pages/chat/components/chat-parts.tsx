@@ -1,9 +1,8 @@
 import React from 'react';
 import { Check, CheckCheck } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, cn } from '@pd2-trader/ui';
 import type { Conversation, Message, Participant } from '@/common/types/pd2-website/ChatTypes';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { t } from '@/i18n';
-import { cn } from '@/lib/utils';
 import type { TraderPresence } from '../hooks/useTraderProfile';
 
 /** The other participant of a 1:1 conversation. */
@@ -142,7 +141,7 @@ export function CountBadge({ count, className, ...props }: { count: number } & R
     <span
       {...props}
       className={cn(
-        'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold tabular-nums leading-none text-primary-foreground shadow-xs',
+        'inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-primary px-1.5 text-3xs font-bold tabular-nums leading-none text-primary-foreground shadow-xs',
         className,
       )}
     >

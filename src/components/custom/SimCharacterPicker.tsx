@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { Command } from 'cmdk';
 import { Check, ChevronDown, Search } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger, cn } from '@pd2-trader/ui';
 import type { SimCharacter } from '@/lib/sim-characters';
-import { cn } from '@/lib/utils';
 import { ClassEmblem } from '@/pages/builds/components/parts';
 
 /** class · level · Hardcore (· account when the user has several). */
@@ -102,22 +101,24 @@ export function SimCharacterPicker({
                     size={20} />
                 ) : (
                   <span aria-hidden
-                    className="w-[22px] shrink-0" />
+                    className="w-5.5 shrink-0" />
                 )}
                 {/* PD2 names are at most 15 characters: the name stays whole, the details give way */}
-                <span className={cn('shrink-0 text-[13px]', c.name === value && 'font-semibold')}>{c.name}</span>
-                <span className="min-w-0 flex-1 truncate text-right text-[11px] text-muted-foreground tabular-nums">
+                <span className={cn('shrink-0 text-sm', c.name === value && 'font-semibold')}>{c.name}</span>
+                <span className="min-w-0 flex-1 truncate text-right text-2xs text-muted-foreground tabular-nums">
                   {details(c, manyAccounts)}
                 </span>
-                <Check aria-hidden
-                  className={cn('size-3.5 shrink-0', c.name === value ? 'opacity-100' : 'opacity-0')} />
+                <Check
+                  aria-hidden
+                  className={cn('size-3.5 shrink-0', c.name === value ? 'opacity-100' : 'opacity-0')}
+                />
               </Command.Item>
             ))}
             {options.length === 0 && (
               <div className="px-2 py-3 text-center text-xs text-muted-foreground">No ladder character matches</div>
             )}
           </Command.List>
-          <div className="border-t border-border px-2.5 py-1.5 text-[11px] text-muted-foreground">
+          <div className="border-t border-border px-2.5 py-1.5 text-2xs text-muted-foreground">
             Ladder characters only
           </div>
         </Command>

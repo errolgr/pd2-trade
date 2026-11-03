@@ -2,13 +2,14 @@ import React, { useEffect, useImperativeHandle, useMemo, useRef, useState } from
 import { createPortal } from 'react-dom';
 import { BookmarkPlus, ChevronDown, GripVertical, RotateCcw, Sigma, Sparkles, Trash2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { DUR, EASE_OUT } from '@/lib/motion';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
+  cn,
+  Button,
+  Input,
+  Checkbox,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -17,7 +18,8 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@pd2-trader/ui';
+import { DUR, EASE_OUT } from '@/lib/motion';
 import { CORRUPTION_OPTIONS, corruptionOption } from '../lib/catalog';
 import { newStatFilter } from '../lib/defaults';
 import { MAX_OR_BLOCKS, compactBlocks, groupOf, moveToGroup, orBlockNumbers, type StatGroup } from '../lib/stat-groups';
@@ -47,7 +49,7 @@ function StatNumber({
   const { t } = useTranslation('market');
   return (
     <label className="flex min-w-0 items-center gap-1">
-      <span className="shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground">
+      <span className="shrink-0 text-3xs uppercase tracking-wider text-muted-foreground">
         {label === 'Min' ? t('stats.min') : t('stats.max')}
       </span>
       <NumberInput
@@ -66,7 +68,7 @@ function CorruptionBadge() {
   return (
     <span
       title={t('stats.cubeCorruption')}
-      className="shrink-0 rounded-sm border border-q-corrupted/40 bg-q-corrupted/10 px-1 text-[9px] leading-4 font-semibold tracking-wide text-q-corrupted uppercase"
+      className="shrink-0 rounded-sm border border-q-corrupted/40 bg-q-corrupted/10 px-1 text-3xs leading-4 font-semibold tracking-wide text-q-corrupted uppercase"
     >
       {t('stats.corrBadge')}
     </span>
@@ -338,7 +340,7 @@ export function StatFilters({
                 onChange={(max) => update(s.id, { max })} />
             </div>
           ) : (
-            <p className="pl-9 text-[10px] text-muted-foreground">{tr('stats.hasCorruption')}</p>
+            <p className="pl-9 text-2xs text-muted-foreground">{tr('stats.hasCorruption')}</p>
           )}
         </div>
       </motion.li>
@@ -350,7 +352,7 @@ export function StatFilters({
     <div
       {...dropProps(target)}
       className={cn(
-        'rounded-md border border-dashed px-1.5 py-1.5 text-center text-[10px] font-semibold tracking-wider uppercase',
+        'rounded-md border border-dashed px-1.5 py-1.5 text-center text-3xs font-semibold tracking-wider uppercase',
         tone,
         overClass,
       )}
@@ -403,7 +405,7 @@ export function StatFilters({
                   disabled={counts[t.id] === 0}
                   onClick={() => setPickedTab(t.id)}
                   className={cn(
-                    'flex-1 rounded px-1.5 py-0.5 text-[11px] outline-none transition-colors disabled:opacity-40',
+                    'flex-1 rounded px-1.5 py-0.5 text-2xs outline-none transition-colors disabled:opacity-40',
                     tab === t.id
                       ? t.id === 'corruption'
                         ? 'bg-q-corrupted/15 text-q-corrupted'
@@ -434,7 +436,7 @@ export function StatFilters({
               </span>
               {/* The tab already says pseudo / corruption; mods keep their group */}
               {!isPseudo(choice) && !isCorruption(choice) && (
-                <span className="shrink-0 text-[10px] text-muted-foreground">{choice.group}</span>
+                <span className="shrink-0 text-2xs text-muted-foreground">{choice.group}</span>
               )}
             </span>
           )}
@@ -476,8 +478,8 @@ export function StatFilters({
                 className={cn('overflow-hidden rounded-md border border-info/40 bg-info/5', overClass)}
               >
                 <header className="flex items-baseline justify-between gap-2 border-b border-info/20 px-1.5 py-0.5">
-                  <span className="text-[10px] font-semibold tracking-wider text-info uppercase">{label}</span>
-                  <span className="truncate text-[10px] text-muted-foreground">
+                  <span className="text-3xs font-semibold tracking-wider text-info uppercase">{label}</span>
+                  <span className="truncate text-2xs text-muted-foreground">
                     {enabled > 1 ? tr('stats.groups.atLeastOne', { count: enabled }) : tr('stats.groups.addAnother')}
                   </span>
                 </header>
@@ -502,10 +504,10 @@ export function StatFilters({
               className={cn('overflow-hidden rounded-md border border-destructive/40 bg-destructive/5', overClass)}
             >
               <header className="flex items-baseline justify-between gap-2 border-b border-destructive/20 px-1.5 py-0.5">
-                <span className="text-[10px] font-semibold tracking-wider text-destructive uppercase">
+                <span className="text-3xs font-semibold tracking-wider text-destructive uppercase">
                   {tr('stats.groups.noneOf')}
                 </span>
-                <span className="truncate text-[10px] text-muted-foreground">
+                <span className="truncate text-2xs text-muted-foreground">
                   {excluded.length > 1 ? tr('stats.groups.hiddenMany') : tr('stats.groups.hiddenOne')}
                 </span>
               </header>
@@ -519,7 +521,7 @@ export function StatFilters({
         </div>
       )}
       {stats.length === 0 && (
-        <p className="px-0.5 text-[11px] leading-snug text-muted-foreground">
+        <p className="px-0.5 text-2xs leading-snug text-muted-foreground">
           <Trans
             t={tr}
             i18nKey="stats.emptyHint"
@@ -547,7 +549,7 @@ function GroupBadge({ group, text, className }: { group: StatGroup; text: string
   return (
     <span
       className={cn(
-        'inline-flex h-5 min-w-8 shrink-0 items-center justify-center rounded border px-1 text-[10px] font-semibold tracking-wide whitespace-nowrap',
+        'inline-flex h-5 min-w-8 shrink-0 items-center justify-center rounded border px-1 text-3xs font-semibold tracking-wide whitespace-nowrap',
         group === 'and'
           ? 'border-border text-muted-foreground'
           : group === 'not'
@@ -682,7 +684,7 @@ function PresetMenu({
       className="group text-xs"
     >
       <span className="min-w-0 flex-1 truncate">{presetName(p)}</span>
-      <span className="text-[10px] text-muted-foreground">{p.stats.length}</span>
+      <span className="text-2xs text-muted-foreground">{p.stats.length}</span>
       <button
         type="button"
         tabIndex={-1}
@@ -700,7 +702,7 @@ function PresetMenu({
       </button>
     </DropdownMenuItem>
   );
-  const sectionLabel = 'text-[10px] uppercase tracking-wider text-muted-foreground';
+  const sectionLabel = 'text-3xs uppercase tracking-wider text-muted-foreground';
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

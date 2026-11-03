@@ -1,14 +1,21 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowRightLeft, ChevronDown, ChevronRight, ChevronUp, ExternalLink, Info } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import {
+  Button,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Skeleton,
+  cn,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@pd2-trader/ui';
 import { openUrl } from '@/lib/browser-opener';
 import { DUR, EASE_OUT, fadeInUp, listItem, listStagger } from '@/lib/motion';
 import { ItemValue, RuneCombination } from '../lib/types';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Trans, useTranslation } from '@/i18n';
 
 interface RunePricePopoverProps {
@@ -157,7 +164,7 @@ export function RunePricePopover({
                         {hrAmount(rune.price)} HR
                         {rune.isFixed && <span className="ml-1 text-xs">*</span>}
                       </span>
-                      <span className="w-[86px] text-right text-xs tabular-nums text-muted-foreground">
+                      <span className="w-21.5 text-right text-xs tabular-nums text-muted-foreground">
                         ({rune.isFixed ? t('runePrices.fixed') : t('runePrices.listings', { count: rune.numListings })})
                       </span>
                     </span>

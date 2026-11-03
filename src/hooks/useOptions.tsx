@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { Dialog } from '@/components/ui/dialog';
 import { useCallback, useEffect } from 'react';
 import { readTextFile, writeTextFile, BaseDirectory, mkdir, exists } from '@/lib/browser-fs';
 import mergeWith from 'lodash/mergeWith';
@@ -13,6 +12,7 @@ import { DEFAULT_PRICE_WINDOW_HOURS, type PriceWindowHours } from '@/lib/price-w
 import { DEFAULT_CHAT_TEMPLATES, type ChatTemplate } from '@/lib/message-templates';
 import { showToast } from '@/overlay';
 import * as Sentry from '@sentry/react';
+import { Dialog } from '@pd2-trader/ui';
 import type { BuildsMode } from '@/lib/builds-api';
 import { applyLanguage, type LanguageSetting, t } from '@/i18n';
 import { DEFAULT_LISTINGS_SORT, type ListingsSort } from '@/pages/quick-list/listings/my-listings';

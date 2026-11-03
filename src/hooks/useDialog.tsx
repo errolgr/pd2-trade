@@ -1,6 +1,6 @@
 // components/DialogProvider.tsx
+import { AlertDialog, AlertDialogContent } from '@pd2-trader/ui';
 import React, { createContext, useContext, useState } from 'react';
-import { AlertDialog, AlertDialogContent } from '@/components/ui/alert-dialog';
 
 interface DialogContextProps {
   openDialog: (content: React.ReactNode) => void;

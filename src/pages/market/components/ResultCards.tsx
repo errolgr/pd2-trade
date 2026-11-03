@@ -3,12 +3,9 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { motion } from 'framer-motion';
 import { DUR, EASE_OUT } from '@/lib/motion';
 import { Bell, Clock, ExternalLink, Gamepad2, Heart, MessageSquare, Shield, Sigma, Swords, X } from 'lucide-react';
+import { cn, Button, ScrollArea, Tooltip, TooltipContent, TooltipTrigger } from '@pd2-trader/ui';
 import { useSimAccess } from '@/hooks/useSimAccess';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ListingThumb } from '@/pages/chat/components/ListingCard';
 import { useListingMarketPrices } from '@/pages/chat/hooks/useListingMarketPrices';
 import { DealBadge } from '@/pages/market/enrich/DealBadge';
@@ -247,7 +244,7 @@ function SocketIcon({ listing, className }: { listing: MarketListingEntry; class
   );
 }
 
-const pill = 'inline-flex h-5 items-center rounded-full border px-2 text-[10px] font-medium leading-none';
+const pill = 'inline-flex h-5 items-center rounded-full border px-2 text-3xs font-medium leading-none';
 
 const ResultCard = React.memo(function ResultCard({
   row,
@@ -333,7 +330,7 @@ const ResultCard = React.memo(function ResultCard({
       )}
     >
       {pin && (
-        <div className="flex items-center gap-1.5 border-b border-primary/30 bg-primary/10 px-3 py-1 text-[11px] text-primary">
+        <div className="flex items-center gap-1.5 border-b border-primary/30 bg-primary/10 px-3 py-1 text-2xs text-primary">
           <Bell className="size-3 shrink-0" />
           <span className="min-w-0 flex-1 truncate">
             {pin.searchName ? t('cards.fromAlertNamed', { name: pin.searchName }) : t('cards.fromAlert')}
@@ -355,16 +352,16 @@ const ResultCard = React.memo(function ResultCard({
       )}
       {/* 1. Header */}
       <header className="flex gap-3 p-3 pb-2">
-        <div className="flex h-[76px] w-16 shrink-0 items-center justify-center rounded-md border border-border/50">
+        <div className="flex h-19 w-16 shrink-0 items-center justify-center rounded-md border border-border/50">
           <ListingThumb
             listing={listing}
             className="size-full border-0 bg-none shadow-none"
-            artClassName="max-h-[68px] max-w-14"
+            artClassName="max-h-17 max-w-14"
           />
         </div>
         <div className="min-w-0 flex-1">
           <h3
-            className={cn('truncate text-sm font-bold uppercase tracking-[0.08em]', itemNameColor(item))}
+            className={cn('truncate text-sm font-bold uppercase tracking-caps', itemNameColor(item))}
             title={item.name}
           >
             {item.name}
@@ -390,18 +387,18 @@ const ResultCard = React.memo(function ResultCard({
             />
           </div>
         </div>
-        <div className="flex max-w-[40%] shrink-0 flex-col items-end gap-1 text-right">
+        <div className="flex max-w-2/5 shrink-0 flex-col items-end gap-1 text-right">
           <span
             className={cn(
               'max-w-full truncate font-bold tabular-nums',
-              price ? 'text-xl text-foreground' : 'text-sm text-foreground',
+              price ? 'text-base text-foreground' : 'text-sm text-foreground',
             )}
             title={listing.price || undefined}
           >
             {price ?? (listing.price || t('cards.noPrice'))}
           </span>
           {price && listing.price && (
-            <span className="max-w-full truncate text-[11px] text-muted-foreground"
+            <span className="max-w-full truncate text-2xs text-muted-foreground"
               title={listing.price}>
               {t('cards.note', { note: listing.price })}
             </span>
@@ -461,7 +458,7 @@ const ResultCard = React.memo(function ResultCard({
                 <span
                   key={key}
                   title={statWithValue(key, row.pseudo[key] ?? 0)}
-                  className="inline-flex h-5 items-center gap-0.5 rounded-sm bg-muted/60 px-1.5 text-[11px] tabular-nums text-muted-foreground"
+                  className="inline-flex h-5 items-center gap-0.5 rounded-sm bg-muted/60 px-1.5 text-2xs tabular-nums text-muted-foreground"
                 >
                   <Sigma className="size-3" />
                   {statWithValue(key, row.pseudo[key] ?? 0, { short: true })}
@@ -515,13 +512,13 @@ const ResultCard = React.memo(function ResultCard({
             )}
           </span>
           {/* When / where */}
-          <span className="inline-flex items-center gap-2 text-[11px] text-muted-foreground">
+          <span className="inline-flex items-center gap-2 text-2xs text-muted-foreground">
             <span className="inline-flex items-center gap-1 tabular-nums"
               title={t('filters.sort.bumpedTitle')}>
               <Clock className="size-3" />
               {listingAge(listing)}
             </span>
-            <span className="rounded border border-border/60 px-1.5 py-px text-[10px] font-medium uppercase tracking-wide">
+            <span className="rounded border border-border/60 px-1.5 py-px text-3xs font-medium uppercase tracking-wide">
               {`${listing.is_hardcore ? 'HC' : 'SC'} · ${listing.is_ladder ? 'Ladder' : 'Non-ladder'}`}
             </span>
           </span>
@@ -657,7 +654,7 @@ function SourceSuffix({
       </TooltipTrigger>
       <TooltipContent side="top"
         align="start"
-        className="space-y-1 text-[11px]">
+        className="space-y-1 text-2xs">
         {ownLabel && <div className="text-muted-foreground">{ownLabel}</div>}
         {sources.map((s) => {
           const group = groups[s.group];
@@ -705,7 +702,7 @@ function ModLine({
       mod={mod}
       item={item}
       className={cn(
-        'relative flex min-h-6 items-center gap-2 overflow-hidden rounded-sm px-2 py-0.5 text-[13px] transition-colors duration-(--dur-fast)',
+        'relative flex min-h-6 items-center gap-2 overflow-hidden rounded-sm px-2 py-0.5 text-sm transition-colors duration-(--dur-fast)',
         highlighted && 'bg-muted/60',
       )}
     >
@@ -728,7 +725,7 @@ function ModLine({
             onHoverGroup={onHoverGroup} />
         )}
       </span>
-      {matched && <span className="relative shrink-0 text-[11px] text-primary">{t('cards.matchedFilter')}</span>}
+      {matched && <span className="relative shrink-0 text-2xs text-primary">{t('cards.matchedFilter')}</span>}
     </ModMenu>
   );
 }
@@ -763,7 +760,7 @@ function SocketSection({
     <section className="border-t border-border/50 px-3 py-2"
       onMouseLeave={() => onHover(null)}>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        <span className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">
           {t('cards.socketed', { count: filled })}
         </span>
         <span className="flex items-center gap-1">
@@ -780,7 +777,7 @@ function SocketSection({
               <ListingThumb
                 listing={groupListings[g]}
                 className="size-full rounded-full border-0 bg-none shadow-none"
-                artClassName="max-h-[18px] max-w-[18px]"
+                artClassName="max-h-4.5 max-w-4.5"
               />
             </span>
           ))}
@@ -790,10 +787,10 @@ function SocketSection({
           ))}
         </span>
         {emptySockets > 0 && (
-          <span className="text-[11px] text-muted-foreground">{t('cards.emptySockets', { count: emptySockets })}</span>
+          <span className="text-2xs text-muted-foreground">{t('cards.emptySockets', { count: emptySockets })}</span>
         )}
         {total !== null && total > 0 && (
-          <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
+          <span className="ml-auto text-2xs tabular-nums text-muted-foreground">
             {t('cards.socketsValue', { value: formatStat(total) })}
           </span>
         )}
@@ -806,21 +803,21 @@ function SocketSection({
               key={group.key}
               onMouseEnter={() => onHover(g)}
               className={cn(
-                'min-w-0 rounded-md border border-border/60 px-2 py-1 text-[11px] transition-colors duration-(--dur-fast)',
+                'min-w-0 rounded-md border border-border/60 px-2 py-1 text-2xs transition-colors duration-(--dur-fast)',
                 hovered === g && 'bg-muted/50',
               )}
             >
               <div className="flex items-center gap-1.5">
                 <SocketIcon listing={groupListings[g]}
                   className="size-7" />
-                <span className={cn('truncate text-[12px] font-semibold', groupNameColor(group))}>
+                <span className={cn('truncate text-xs font-semibold', groupNameColor(group))}>
                   {group.items.length > 1 ? `${group.items.length} × ${group.name}` : group.name}
                 </span>
                 {values[g] !== null && (
                   <span className="ml-auto shrink-0 tabular-nums text-muted-foreground">{`~${formatStat(values[g] ?? 0)} HR`}</span>
                 )}
               </div>
-              {group.subtitle && <div className="pl-[26px] text-[10px] text-muted-foreground">{group.subtitle}</div>}
+              {group.subtitle && <div className="pl-6.5 text-2xs text-muted-foreground">{group.subtitle}</div>}
               {group.lines.length > 0 && (
                 <div className="mt-0.5 ml-[9px] space-y-px border-l border-border/60 pl-2">
                   {group.lines.map((l, i) => {
@@ -832,7 +829,7 @@ function SocketSection({
                         )}
                       </>
                     );
-                    const lineClass = 'truncate rounded-sm text-[11px] text-q-magic/80';
+                    const lineClass = 'truncate rounded-sm text-2xs text-q-magic/80';
                     // Flag-only lines (Zod's Indestructible) have no mod to filter on
                     const mod = group.mods[i];
                     return mod ? (

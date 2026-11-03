@@ -32,7 +32,7 @@ const ItemWindow: React.FC = () => {
       className="h-full w-full">
       <WindowChrome
         title={t('overlay.title')}
-        titleClassName="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground"
+        titleClassName="text-xs font-medium uppercase tracking-caps text-muted-foreground"
         showGrip={false}
         onClose={close}
       />
@@ -40,8 +40,8 @@ const ItemWindow: React.FC = () => {
         <div className="flex size-12 items-center justify-center rounded-full border border-border bg-muted/40 text-muted-foreground">
           <PackageSearch className="size-6" />
         </div>
-        <p className="max-w-[260px] text-sm text-muted-foreground">{t('itemPage.noItem')}</p>
-        <p className="max-w-[260px] text-xs text-muted-foreground/80">{t('itemPage.noItemHint')}</p>
+        <p className="max-w-65 text-sm text-muted-foreground">{t('itemPage.noItem')}</p>
+        <p className="max-w-65 text-xs text-muted-foreground/80">{t('itemPage.noItemHint')}</p>
       </div>
     </WindowPanel>
   ) : (

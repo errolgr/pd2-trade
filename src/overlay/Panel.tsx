@@ -1,12 +1,12 @@
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import * as Sentry from '@sentry/react';
 import { Z_LAYERS } from '@pd2-trader/ui/tokens';
+import { PanelPortalContext } from '@pd2-trader/ui';
 import { claimKeyboard, isHeldOverFullscreenGame, isKeyboardClaimed, releaseKeyboard } from './keyboard';
 import { holdRegionLoop } from './region';
 import { clampRectInto, clampRectVisible } from './layout-storage';
 import { viewportRect } from './game';
 import { isPanelVisible, useOverlay, useOverlayInternals } from './OverlayProvider';
-import { PanelPortalContext } from './portal';
 import type { OverlayRect, PanelId, PanelPayloads } from './types';
 import { t } from '@/i18n';
 

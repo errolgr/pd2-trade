@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Gem } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, Tooltip, TooltipContent, TooltipTrigger } from '@pd2-trader/ui';
 import { DUR, EASE_OUT } from '@/lib/motion';
 import type { RaresSummary } from '@/lib/networth-api';
 import { fetchRareHistory, type RareAppraisal, type RareHistory, type VerdictRule } from '@/lib/rare-appraisal-api';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { PopoverSectionTitle } from '@/components/custom/popover-parts';
 import { CraftedBadges, VerdictBadge } from '@/components/rares/RareParts';
 import { RareAppraisalDetail } from '@/components/rares/RareAppraisalDetail';
@@ -266,7 +265,7 @@ function RowChips({ rare }: { rare: RareAppraisal }) {
       {keys.slice(0, MAX_ROW_CHIPS).map((s, i) => (
         <Tooltip key={`${i}-${s.label}`}>
           <TooltipTrigger asChild>
-            <span className="inline-flex min-w-0 shrink items-center gap-1 rounded border border-border/60 bg-muted/40 px-1.5 text-[11px] leading-[18px] text-foreground/90">
+            <span className="inline-flex min-w-0 shrink items-center gap-1 rounded border border-border/60 bg-muted/40 px-1.5 text-2xs leading-4.5 text-foreground/90">
               <span className="shrink-0 tracking-tighter text-glow">{starsText(s.stars)}</span>
               <span className="truncate">{statChipText(s.label)}</span>
             </span>
@@ -279,7 +278,7 @@ function RowChips({ rare }: { rare: RareAppraisal }) {
       {rest.length > 0 && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="shrink-0 cursor-help text-[11px] text-muted-foreground">+{rest.length}</span>
+            <span className="shrink-0 cursor-help text-2xs text-muted-foreground">+{rest.length}</span>
           </TooltipTrigger>
           <TooltipContent className="max-w-xs">
             {rest.map((s) => `${starsText(s.stars)} ${s.label}`).join(' · ')}
@@ -377,7 +376,7 @@ function RareRow({
             <CraftedBadges rare={rare} />
           </span>
           <span className="flex min-w-0 items-center gap-2">
-            <span className="shrink-0 whitespace-nowrap text-[11px] text-muted-foreground">{locationText(rare)}</span>
+            <span className="shrink-0 whitespace-nowrap text-2xs text-muted-foreground">{locationText(rare)}</span>
             <RowChips rare={rare} />
           </span>
         </span>
@@ -444,7 +443,7 @@ function RareFold({
         </span>
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-sm">{title}</span>
-          <span className="text-[11px] text-muted-foreground">{note}</span>
+          <span className="text-2xs text-muted-foreground">{note}</span>
         </span>
         <ChevronDown
           className={cn(

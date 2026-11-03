@@ -4,13 +4,10 @@ import { useOptions } from '@/hooks/useOptions';
 import imgPath from '../../../../assets/img.png';
 import { getVersion } from '@/lib/browser-app';
 import { useUpdater } from '@/hooks/useUpdater';
-import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField } from '@/components/ui/form';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
 import { isTauri } from '@tauri-apps/api/core';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowUpCircle, CheckCircle2, Download, FileText, Loader2, RefreshCw } from 'lucide-react';
+import { Button, Form, FormControl, FormField, Skeleton, Switch } from '@pd2-trader/ui';
 import { fadeInUp, springSoft } from '@/lib/motion';
 import { showToast, useOverlay } from '@/overlay';
 import { manualUpdateToast, markManualUpdateRequired, requiresManualUpdate } from '@/lib/manual-update';
@@ -256,7 +253,7 @@ function UpdateSettingsForm() {
 function CreditTile({ role, names }: { role: string; names: string[] }) {
   return (
     <div className="flex flex-col items-center gap-1 rounded-lg border border-border/70 bg-card/50 px-4 py-3 text-center shadow-xs">
-      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{role}</span>
+      <span className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground">{role}</span>
       {names.map((name) => (
         <span key={name}
           className="text-sm font-medium text-foreground">

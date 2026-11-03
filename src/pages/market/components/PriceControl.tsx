@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@pd2-trader/ui';
 import { currentLocale, useTranslation } from '@/i18n';
 import {
   bucketLight,
@@ -99,7 +99,7 @@ export function PriceControl({
                     // keeps headroom under the top border while the tints behind it still fill the full height.
                     style={{ height: b.count ? `${Math.max(8, Math.sqrt(b.count / peak) * 82)}%` : 2 }}
                     className={cn(
-                      'relative block w-full overflow-hidden rounded-t-[2px] bg-muted-foreground/35 transition-colors duration-(--dur-fast) group-hover:bg-muted-foreground/60',
+                      'relative block w-full overflow-hidden rounded-t-xs bg-muted-foreground/35 transition-colors duration-(--dur-fast) group-hover:bg-muted-foreground/60',
                       b.count === 0 && FACET_DIM,
                     )}
                   >

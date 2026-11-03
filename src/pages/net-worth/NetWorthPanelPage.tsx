@@ -1,16 +1,14 @@
 import React, { useEffect, useId, useMemo, useState } from 'react';
 import { motion, MotionConfig } from 'framer-motion';
 import { AlertTriangle, Camera, ExternalLink, LogIn, Loader2, Play, Square, TrendingUp } from 'lucide-react';
+import { Button, Skeleton, cn } from '@pd2-trader/ui';
 import { useOptions } from '@/hooks/useOptions';
 import { useNetWorth } from '@/hooks/useNetWorth';
 import { getPoints, NetWorthPoint } from '@/lib/networth-api';
 import { usePanel } from '@/overlay';
 import { useSignIn } from '@/hooks/useSignIn';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 import { EASE_OUT, listItem, listStagger, useReducedMotionSafe } from '@/lib/motion';
-import { cn } from '@/lib/utils';
 import { AnimatedNumber } from '@/pages/currency/components/AnimatedNumber';
 import { deltaPillClass } from '@/pages/currency/lib/networth-format';
 import { formatHr, formatSignedHr } from './overlay';
@@ -217,13 +215,13 @@ const NetWorthPanel: React.FC = () => {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 {latest ? (
-                  <div className="text-3xl font-semibold leading-none tracking-tight">
+                  <div className="text-display font-semibold leading-none tracking-tight">
                     <AnimatedNumber value={latest.valuation.totalHr}
                       format={formatHr} />{' '}
-                    <span className="text-lg font-medium text-muted-foreground">HR</span>
+                    <span className="text-base font-medium text-muted-foreground">HR</span>
                   </div>
                 ) : status === 'error' ? (
-                  <div className="text-3xl font-semibold leading-none text-muted-foreground">— HR</div>
+                  <div className="text-display font-semibold leading-none text-muted-foreground">— HR</div>
                 ) : (
                   <Skeleton className="h-8 w-28" />
                 )}

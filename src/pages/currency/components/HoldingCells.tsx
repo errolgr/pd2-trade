@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
+import { Badge, Tooltip, TooltipContent, TooltipTrigger, cn } from '@pd2-trader/ui';
 import { BACKEND_URL } from '@/lib/pkce';
 import type { ValuationLine } from '@/lib/networth-api';
 import { CATEGORY_COLORS, CATEGORY_NAME_CLASS } from '../lib/networth-format';
@@ -34,7 +32,7 @@ export function HoldingName({ line, showTab = false }: { line: ValuationLine; sh
         <p className={cn('truncate text-sm font-medium', CATEGORY_NAME_CLASS[line.category] ?? 'text-foreground')}>
           {line.name}
         </p>
-        {showTab && line.tab && <p className="truncate text-[11px] text-muted-foreground">{line.tab}</p>}
+        {showTab && line.tab && <p className="truncate text-2xs text-muted-foreground">{line.tab}</p>}
       </div>
     </div>
   );
@@ -46,7 +44,7 @@ export function PriceChange({ percent }: { percent: number | null }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-0.5 rounded px-1 py-px text-[11px] font-medium tabular-nums',
+        'inline-flex items-center gap-0.5 rounded px-1 py-px text-2xs font-medium tabular-nums',
         rounded > 0
           ? 'bg-success/12 text-success'
           : rounded < 0

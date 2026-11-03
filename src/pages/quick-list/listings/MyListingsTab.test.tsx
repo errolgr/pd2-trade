@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 import React from 'react';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { TooltipProvider } from '@pd2-trader/ui';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import { publishListingDeleted } from '@/hooks/pd2website/listing-events';
@@ -19,7 +19,10 @@ vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
 vi.mock('@/lib/telemetry', () => ({ trackEvent: vi.fn(), trackMeasurement: vi.fn() }));
-vi.mock('@/components/ui/select', async () => (await import('@/components/dialogs/optionsv2/test-utils')).selectShim);
+vi.mock('@pd2-trader/ui', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  ...(await import('@/components/dialogs/optionsv2/test-utils')).selectShim,
+}));
 const NO_DEALS = new Map();
 vi.mock('@/pages/market/enrich/useDealIndicators', () => ({ useDealIndicators: () => NO_DEALS }));
 vi.mock('@/pages/market/enrich/useNow', () => ({ useNow: () => Date.parse('2026-03-01T12:00:00Z') }));

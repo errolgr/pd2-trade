@@ -2,10 +2,10 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import moment from 'moment';
 import { AlertCircle, ClipboardCopy, Copy, Gamepad2, Globe, HandCoins, Loader2, RotateCw } from 'lucide-react';
+import { cn } from '@pd2-trader/ui';
 import { t, Trans, useTranslation } from '@/i18n';
 import { writeText } from '@/lib/browser-clipboard';
 import { fadeInUp, slideInRight } from '@/lib/motion';
-import { cn } from '@/lib/utils';
 import { showToast } from '@/overlay';
 import type { ChatListingState } from '../hooks/useChatListings';
 import type { TimelineEntry } from '../lib/inbox';
@@ -127,7 +127,7 @@ export function MessageBubble({
       {startsDay && (
         <div className="mb-3 flex items-center justify-center gap-3 px-2">
           <span className="h-px max-w-24 flex-1 bg-linear-to-r from-transparent to-border" />
-          <span className="rounded-full border border-border/70 bg-linear-to-b from-card to-card/70 px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground shadow-sm">
+          <span className="rounded-full border border-border/70 bg-linear-to-b from-card to-card/70 px-3 py-0.5 text-3xs font-semibold uppercase tracking-wider text-muted-foreground shadow-sm">
             {formatDayLabel(entry.createdAt)}
           </span>
           <span className="h-px max-w-24 flex-1 bg-linear-to-l from-transparent to-border" />
@@ -138,7 +138,7 @@ export function MessageBubble({
           aria-label={t('bubble.newMessages')}
           className="mb-2.5 flex items-center gap-2 px-1">
           <span className="h-px flex-1 bg-linear-to-r from-transparent to-destructive/60" />
-          <span className="rounded-full bg-destructive/12 px-2 py-px text-[10px] font-semibold uppercase tracking-wider text-destructive ring-1 ring-inset ring-destructive/30">
+          <span className="rounded-full bg-destructive/12 px-2 py-px text-3xs font-semibold uppercase tracking-wider text-destructive ring-1 ring-inset ring-destructive/30">
             {t('bubble.new')}
           </span>
           <span className="h-px flex-1 bg-linear-to-l from-transparent to-destructive/60" />
@@ -170,13 +170,13 @@ export function MessageBubble({
               </span>
               <span
                 className={cn(
-                  'shrink-0 rounded px-1.5 text-[10px] font-semibold uppercase tracking-wide',
+                  'shrink-0 rounded px-1.5 text-3xs font-semibold uppercase tracking-wide',
                   STATUS_CLASS[offerStatus(entry.offer)],
                 )}
               >
                 {dealStatusLabel(offerStatus(entry.offer))}
               </span>
-              <span className="shrink-0 text-[10px] tabular-nums">{time}</span>
+              <span className="shrink-0 text-3xs tabular-nums">{time}</span>
             </div>
           </OfferListingHoverCard>
         </div>
@@ -196,13 +196,13 @@ export function MessageBubble({
             </span>
             <span
               className={cn(
-                'shrink-0 rounded px-1.5 text-[10px] font-semibold uppercase tracking-wide',
+                'shrink-0 rounded px-1.5 text-3xs font-semibold uppercase tracking-wide',
                 STATUS_CLASS[entry.trade.outcome],
               )}
             >
               {dealStatusLabel(entry.trade.outcome)}
             </span>
-            <span className="shrink-0 text-[10px] tabular-nums">{time}</span>
+            <span className="shrink-0 text-3xs tabular-nums">{time}</span>
           </div>
         </div>
       ) : (
@@ -246,7 +246,7 @@ export function MessageBubble({
           >
             <MessageContent content={entry.displayContent ?? entry.content}
               listings={listings} />
-            <div className="flex items-center justify-end gap-1 text-[10px] leading-4 tabular-nums text-muted-foreground">
+            <div className="flex items-center justify-end gap-1 text-3xs leading-4 tabular-nums text-muted-foreground">
               {failed && message.clientId ? (
                 <span className="flex items-center gap-1 text-destructive">
                   <AlertCircle className="size-3" />

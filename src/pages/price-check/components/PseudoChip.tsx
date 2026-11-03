@@ -1,15 +1,15 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Check, Sigma } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { springSnappy } from '@/lib/motion';
 import {
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@pd2-trader/ui';
+import { springSnappy } from '@/lib/motion';
 import type { PseudoOption } from '@/pages/price-check/lib/pseudo-fold';
 import { useTranslation } from '@/i18n';
 
@@ -61,7 +61,7 @@ export function PseudoChip({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start"
         className="min-w-56">
-        <DropdownMenuLabel className="text-[11px] font-normal text-muted-foreground">
+        <DropdownMenuLabel className="text-2xs font-normal text-muted-foreground">
           {t('pseudoChip.menuLabel')}
         </DropdownMenuLabel>
         {options.map((o) => (

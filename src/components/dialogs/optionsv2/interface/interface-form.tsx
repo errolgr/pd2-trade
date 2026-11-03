@@ -1,12 +1,21 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Form, FormControl, FormField, FormMessage } from '@/components/ui/form';
 import React from 'react';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormMessage,
+  Switch,
+  Slider,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@pd2-trader/ui';
 import { ISettings, useOptions } from '@/hooks/useOptions';
-import { Switch } from '@/components/ui/switch';
-import { Slider } from '@/components/ui/slider';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { applyWindowTransparency, clampWindowTransparency, WINDOW_TRANSPARENCY_MAX } from '@/lib/themes';
 import { ZonePicker } from './zone-picker';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
@@ -117,15 +126,17 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
                       <Select value={field.value}
                         onValueChange={field.onChange}>
                         <FormControl>
-                          <SelectTrigger className="w-[220px]">
+                          <SelectTrigger className="w-control">
                             <SelectValue placeholder={t('interface.language.label')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           {LANGUAGE_OPTIONS.map((option) => (
-                            <SelectItem key={option.value}
+                            <SelectItem
+                              key={option.value}
                               value={option.value}
-                              lang={option.value === 'system' ? undefined : option.value}>
+                              lang={option.value === 'system' ? undefined : option.value}
+                            >
                               {optionLabel(t, option)}
                             </SelectItem>
                           ))}
@@ -177,7 +188,7 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
                     control={
                       <FormControl>
                         <Slider
-                          className="w-[220px]"
+                          className="w-control"
                           min={0}
                           max={WINDOW_TRANSPARENCY_MAX}
                           step={5}
@@ -232,7 +243,7 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
                     <Select value={field.value}
                       onValueChange={field.onChange}>
                       <FormControl>
-                        <SelectTrigger className="w-[220px]">
+                        <SelectTrigger className="w-control">
                           <SelectValue placeholder={t('interface.zoneTimer.position.placeholder')} />
                         </SelectTrigger>
                       </FormControl>
@@ -282,7 +293,7 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
                     <Select value={field.value}
                       onValueChange={field.onChange}>
                       <FormControl>
-                        <SelectTrigger className="w-[220px]">
+                        <SelectTrigger className="w-control">
                           <SelectValue placeholder={t('interface.zoneTimer.layout.placeholder')} />
                         </SelectTrigger>
                       </FormControl>
@@ -318,7 +329,7 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
                   control={
                     <FormControl>
                       <Slider
-                        className="w-[220px]"
+                        className="w-control"
                         min={30}
                         max={100}
                         step={5}
@@ -344,7 +355,7 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
                     <Select value={field.value}
                       onValueChange={field.onChange}>
                       <FormControl>
-                        <SelectTrigger className="w-[220px]">
+                        <SelectTrigger className="w-control">
                           <SelectValue placeholder={t('interface.zoneTimer.zones.placeholder')} />
                         </SelectTrigger>
                       </FormControl>
@@ -375,7 +386,7 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
                     <Select value={field.value}
                       onValueChange={field.onChange}>
                       <FormControl>
-                        <SelectTrigger className="w-[220px]">
+                        <SelectTrigger className="w-control">
                           <SelectValue placeholder={t('interface.zoneTimer.alerts.placeholder')} />
                         </SelectTrigger>
                       </FormControl>
@@ -410,7 +421,7 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
                     control={
                       <FormControl>
                         <Slider
-                          className="w-[220px]"
+                          className="w-control"
                           aria-label={t('interface.zoneTimer.lead.ariaLabel')}
                           min={0}
                           max={MAX_ALERT_LEAD_MINUTES}

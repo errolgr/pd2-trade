@@ -4,7 +4,8 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import './globals.css';
 // UI language: initialized before the first render (bundled resources, synchronous)
-import '@/i18n';
+import { useTranslation } from '@/i18n';
+import { UiLabelsProvider } from '@pd2-trader/ui';
 import { initDebugLoggingFromSettings } from '@/lib/debug-logger';
 import { initTheme } from '@/lib/themes';
 import { initTelemetryFromSettings } from '@/lib/telemetry-opt-out';
@@ -75,31 +76,50 @@ const AppRoot: React.FC = () => (
 // The native sign-in window (src-tauri commands::open_sign_in_window): only its view, Main runs the sign-in
 const signInWindow = new URLSearchParams(window.location.search).get('window') === 'sign-in';
 
+/** Translated built-in strings of @pd2-trader/ui components (screen-reader close/more, retry, loading). */
+const UiLabels: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { t } = useTranslation();
+  return (
+    <UiLabelsProvider
+      labels={{
+        close: t('common:actions.close'),
+        more: t('app:ui.more'),
+        retry: t('common:actions.retry'),
+        loading: t('common:status.loading'),
+      }}
+    >
+      {children}
+    </UiLabelsProvider>
+  );
+};
+
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-  signInWindow ? (
-    <SignInWindowPage />
-  ) : (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/"
-          element={<AppRoot />} />
-        {/* Browser mode: open straight into the market or builds panel (see overlay/browser-launch.ts) */}
-        <Route path="/market"
-          element={<AppRoot />} />
-        <Route path="/builds"
-          element={<AppRoot />} />
-        {/* Dev-only primitives gallery (screenshot harness); tree-shaken from production builds */}
-        {process.env.NODE_ENV !== 'production' && (
-          <Route
-            path="/dev/gallery"
-            element={
-              <OptionsProvider>
-                <PrimitivesGallery />
-              </OptionsProvider>
-            }
-          />
-        )}
-      </Routes>
-    </BrowserRouter>
-  ),
+  <UiLabels>
+    {signInWindow ? (
+      <SignInWindowPage />
+    ) : (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/"
+            element={<AppRoot />} />
+          {/* Browser mode: open straight into the market or builds panel (see overlay/browser-launch.ts) */}
+          <Route path="/market"
+            element={<AppRoot />} />
+          <Route path="/builds"
+            element={<AppRoot />} />
+          {/* Dev-only primitives gallery (screenshot harness); tree-shaken from production builds */}
+          {process.env.NODE_ENV !== 'production' && (
+            <Route
+              path="/dev/gallery"
+              element={
+                <OptionsProvider>
+                  <PrimitivesGallery />
+                </OptionsProvider>
+              }
+            />
+          )}
+        </Routes>
+      </BrowserRouter>
+    )}
+  </UiLabels>,
 );

@@ -3,12 +3,21 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import React from 'react';
 import { Volume1, Volume2, VolumeX } from 'lucide-react';
-import { Form, FormControl, FormField, FormMessage } from '@/components/ui/form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormMessage,
+  Switch,
+  Input,
+  Slider,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@pd2-trader/ui';
 import { ISettings, useOptions } from '@/hooks/useOptions';
-import { Switch } from '@/components/ui/switch';
-import { Input } from '@/components/ui/input';
-import { Slider } from '@/components/ui/slider';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DEFAULT_WHISPER_TEMPLATE } from '@/pages/market/lib/whisper';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import {
@@ -94,7 +103,7 @@ function SelectRow({
         <Select value={value}
           onValueChange={onChange}>
           <FormControl>
-            <SelectTrigger className="w-[220px]"
+            <SelectTrigger className="w-control"
               aria-label={label}>
               <SelectValue />
             </SelectTrigger>
@@ -348,7 +357,7 @@ export function MarketForm() {
                   }
                   description={t('market.alerts.volume.description')}
                   control={
-                    <div className="flex w-[240px] items-center gap-3">
+                    <div className="flex w-60 items-center gap-3">
                       <VolumeIcon aria-hidden
                         className="size-4 shrink-0 text-muted-foreground" />
                       <FormControl>

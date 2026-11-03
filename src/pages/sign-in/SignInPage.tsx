@@ -1,13 +1,11 @@
 import React from 'react';
 import { useRemoteSignIn, useSignIn, type SignInAction, type SignInState } from '@/hooks/useSignIn';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import pd2Logo from '@/assets/pd2_logo.png';
 import { X, Check, ChevronRight, Copy, Loader2, ShieldCheck, KeyRound, Eye, ArrowRight } from 'lucide-react';
 import { motion, MotionConfig } from 'framer-motion';
-import { Button } from '@/components/ui/button';
+import { ScrollArea, Button, cn } from '@pd2-trader/ui';
 import { WindowPanel } from '@/components/custom/window-chrome';
 import { fadeInUp, listItem, listStagger } from '@/lib/motion';
-import { cn } from '@/lib/utils';
 import { useTranslation } from '@/i18n';
 
 const TRUST_POINTS = [
@@ -36,14 +34,14 @@ function BrandHeader({ eyebrow, lead, compact = false }: { eyebrow: string; lead
         initial="hidden"
         animate="visible"
         className="flex flex-col items-center gap-1">
-        <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">{eyebrow}</span>
+        <span className="text-2xs font-medium uppercase tracking-caps text-muted-foreground">{eyebrow}</span>
         <h1
-          className={cn('font-bold leading-none tracking-wide', compact ? 'text-2xl' : 'text-[28px]')}
+          className={cn('font-bold leading-none tracking-wide', compact ? 'text-2xl' : 'text-display')}
           style={{ fontFamily: 'DiabloFont' }}
         >
           PD2 Trader
         </h1>
-        <p className="mt-1.5 max-w-[19rem] text-sm leading-snug text-muted-foreground">{lead}</p>
+        <p className="mt-1.5 max-w-76 text-sm leading-snug text-muted-foreground">{lead}</p>
       </motion.div>
     </div>
   );
@@ -168,7 +166,7 @@ function SignInView({ state, dispatch, showClose }: SignInViewProps) {
           <motion.li
             key={labelKey}
             variants={listItem}
-            className="inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] font-medium text-muted-foreground"
+            className="inline-flex items-center gap-1.5 whitespace-nowrap text-2xs font-medium text-muted-foreground"
           >
             <Icon aria-hidden
               className="size-3 text-glow" />
@@ -189,7 +187,7 @@ function SignInView({ state, dispatch, showClose }: SignInViewProps) {
           disabled={loading}
           aria-busy={loading}
           size="lg"
-          className="group h-11 w-full justify-between px-4 text-[15px] shadow-glow disabled:opacity-100"
+          className="group h-11 w-full justify-between px-4 text-base shadow-glow disabled:opacity-100"
         >
           <span className="inline-flex items-center gap-2.5">
             {loading ? (
@@ -213,10 +211,8 @@ function SignInView({ state, dispatch, showClose }: SignInViewProps) {
           )}
         </Button>
 
-        <p
-          className={cn('h-4 text-[11px]', openFailed ? 'text-destructive' : 'text-muted-foreground')}
-          aria-live="polite"
-        >
+        <p className={cn('h-4 text-2xs', openFailed ? 'text-destructive' : 'text-muted-foreground')}
+          aria-live="polite">
           {loading ? (openFailed ? t('signIn.openFailed') : t('signIn.finishInBrowser')) : t('signIn.opensSite')}
         </p>
 

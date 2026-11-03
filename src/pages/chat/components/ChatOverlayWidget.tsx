@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 import { MessageSquare, MessagesSquare } from 'lucide-react';
+import { Badge } from '@pd2-trader/ui';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
-import { Badge } from '@/components/ui/badge';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { isOfferNews, type OfferNotification } from '@/hooks/pd2website/useOfferNotifications';
 import { useOptions } from '@/hooks/useOptions';

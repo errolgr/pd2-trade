@@ -1,11 +1,19 @@
 import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { ChevronRight, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import {
+  cn,
+  Input,
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@pd2-trader/ui';
 import { DUR, EASE_OUT } from '@/lib/motion';
-import { Input } from '@/components/ui/input';
-import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { facetShare } from '../lib/facets';
 import type { Tri } from '../lib/types';
 import { useTranslation } from '@/i18n';
@@ -75,14 +83,14 @@ export function Section({
             setOpenState(!open);
             onOpenChange?.(!open);
           }}
-          className="flex min-w-0 flex-1 items-center gap-1 rounded-sm text-[11px] font-semibold uppercase tracking-wider text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+          className="flex min-w-0 flex-1 items-center gap-1 rounded-sm text-2xs font-semibold uppercase tracking-wider text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
         >
           <ChevronRight
             className={cn('size-3.5 shrink-0 transition-transform duration-(--dur-fast)', open && 'rotate-90')}
           />
           <span className="truncate">{title}</span>
           {active > 0 && (
-            <span className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary/15 px-1 text-[10px] font-semibold tabular-nums text-primary">
+            <span className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary/15 px-1 text-3xs font-semibold tabular-nums text-primary">
               {active}
             </span>
           )}
@@ -168,7 +176,7 @@ export function Segmented<T extends string>({
             title={o.title}
             onClick={() => onChange(o.value)}
             className={cn(
-              'relative min-w-0 flex-1 truncate rounded-[5px] px-1.5 text-[11px] font-medium text-muted-foreground outline-none transition-[color,background-color,opacity] duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
+              'relative min-w-0 flex-1 truncate rounded-sm px-1.5 text-2xs font-medium text-muted-foreground outline-none transition-[color,background-color,opacity] duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
               value === o.value && cn('bg-accent text-accent-foreground shadow-xs', selectedClassName),
               o.facet?.empty && value !== o.value && FACET_DIM,
             )}

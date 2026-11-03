@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { animate } from 'framer-motion';
+import { cn } from '@pd2-trader/ui';
 import { EASE_OUT, useReducedMotionSafe } from '@/lib/motion';
-import { cn } from '@/lib/utils';
 
 interface AnimatedNumberProps {
   value: number;

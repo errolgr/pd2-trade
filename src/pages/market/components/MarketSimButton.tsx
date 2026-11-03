@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { FlaskConical } from 'lucide-react';
+import { Button, Popover, PopoverContent, PopoverTrigger } from '@pd2-trader/ui';
 import { SIM_WAITLIST_POPOVER_CLASS, SimWaitlist } from '@/components/custom/SimWaitlist';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { openUrl } from '@/lib/browser-opener';
 import { BACKEND_URL } from '@/lib/pkce';
 import type { SimAccess } from '@/lib/sim-export-api';

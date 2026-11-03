@@ -12,11 +12,7 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Slider } from '@/components/ui/slider';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn, Button, Skeleton, Slider, Tooltip, TooltipContent, TooltipTrigger } from '@pd2-trader/ui';
 import {
   BUILD_CLASSES,
   type BuildsFilters,
@@ -114,7 +110,7 @@ export function MetaTab({
         onChange={onChange}
         itemNames={itemNames} />
       <div className="flex min-h-0 flex-1 border-t border-border/50">
-        <aside className="flex w-[260px] shrink-0 flex-col border-r border-border/50">
+        <aside className="flex w-65 shrink-0 flex-col border-r border-border/50">
           <UsagePanel usage={usage}
             filters={filters}
             onToggle={toggle} />
@@ -129,7 +125,7 @@ export function MetaTab({
             onSort={(sort, dir) => setList({ ...list, filterKey, sort, dir, page: 1 })}
           />
         </main>
-        <aside className="flex w-[260px] shrink-0 flex-col divide-y divide-border/50 overflow-y-auto border-l border-border/50">
+        <aside className="flex w-65 shrink-0 flex-col divide-y divide-border/50 overflow-y-auto border-l border-border/50">
           <CoreKit query={shopping}
             filters={filters}
             onToggleItem={(key) => toggle('items', key)} />
@@ -184,7 +180,7 @@ function ClassBar({
               boxShadow: active ? `inset 0 0 0 1px ${meta.color}` : undefined,
             }}
             className={cn(
-              'flex min-w-[128px] items-center gap-2 px-2.5 py-2 text-left outline-none transition-[opacity,background-color,box-shadow,flex-grow] duration-(--dur-fast) hover:brightness-125 focus-visible:brightness-125',
+              'flex min-w-32 items-center gap-2 px-2.5 py-2 text-left outline-none transition-[opacity,background-color,box-shadow,flex-grow] duration-(--dur-fast) hover:brightness-125 focus-visible:brightness-125',
               dim && 'opacity-45 hover:opacity-90',
             )}
           >
@@ -275,7 +271,7 @@ function FilterBar({
         {chips.map((chip) => (
           <span
             key={chip.key}
-            className="inline-flex h-6 items-center gap-1 rounded-full border border-border bg-muted/40 pr-0.5 pl-2.5 text-[11px]"
+            className="inline-flex h-6 items-center gap-1 rounded-full border border-border bg-muted/40 pr-0.5 pl-2.5 text-2xs"
           >
             {chip.label}
             <button
@@ -292,7 +288,7 @@ function FilterBar({
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 gap-1 px-2 text-[11px] text-muted-foreground"
+            className="h-6 gap-1 px-2 text-2xs text-muted-foreground"
             onClick={() =>
               onChange({
                 ...filters,
@@ -310,7 +306,7 @@ function FilterBar({
             <RotateCcw className="size-3" /> {t('common:actions.reset')}
           </Button>
         )}
-        {chips.length === 0 && <span className="text-[11px] text-muted-foreground">{t('meta.filterHint')}</span>}
+        {chips.length === 0 && <span className="text-2xs text-muted-foreground">{t('meta.filterHint')}</span>}
       </div>
     </div>
   );
@@ -332,7 +328,7 @@ function BudgetControl({ value, onChange }: { value: number | null; onChange: (v
   return (
     <div className="flex items-center gap-2"
       title={t('meta.maxGearValue')}>
-      <span className="text-[11px] text-muted-foreground">{t('meta.gear')}</span>
+      <span className="text-2xs text-muted-foreground">{t('meta.gear')}</span>
       <Slider
         aria-label={t('meta.maxGearValue')}
         className="w-28 [&_[role=slider]]:size-3.5"
@@ -346,7 +342,7 @@ function BudgetControl({ value, onChange }: { value: number | null; onChange: (v
           onChange(i >= BUDGET_STEPS.length ? null : BUDGET_STEPS[i]);
         }}
       />
-      <span className={cn('w-16 text-[11px] tabular-nums', any ? 'text-muted-foreground' : 'text-q-gold')}>
+      <span className={cn('w-16 text-2xs tabular-nums', any ? 'text-muted-foreground' : 'text-q-gold')}>
         {any ? t('meta.any') : t('meta.atMostHr', { value: fmtHr(BUDGET_STEPS[index]) })}
       </span>
     </div>
@@ -443,7 +439,7 @@ function UsagePanel({
           {view === 'skills' && (
             <>
               {skills.length > 0 && (
-                <p className="px-3 pt-1 pb-1 text-[10px] tracking-wide text-muted-foreground uppercase">
+                <p className="px-3 pt-1 pb-1 text-3xs tracking-wide text-muted-foreground uppercase">
                   {t('meta.maxedSkills')}
                 </p>
               )}
@@ -472,7 +468,7 @@ function UsagePanel({
           {view === 'merc' && (
             <>
               {mercTypes.length > 0 && (
-                <p className="px-3 pt-1 pb-1 text-[10px] tracking-wide text-muted-foreground uppercase">
+                <p className="px-3 pt-1 pb-1 text-3xs tracking-wide text-muted-foreground uppercase">
                   {t('meta.mercTypes')}
                 </p>
               )}
@@ -487,7 +483,7 @@ function UsagePanel({
                 />
               ))}
               {mercItems.length > 0 && (
-                <p className="mt-1 border-t border-border/50 px-3 pt-2 pb-1 text-[10px] tracking-wide text-muted-foreground uppercase">
+                <p className="mt-1 border-t border-border/50 px-3 pt-2 pb-1 text-3xs tracking-wide text-muted-foreground uppercase">
                   {t('meta.mercItems')}
                 </p>
               )}
@@ -545,7 +541,7 @@ function UsageRow({
           <span className="flex items-baseline gap-1.5">
             <span className={cn('min-w-0 flex-1 truncate text-xs', nameClassName)}>{name}</span>
             <span
-              className="shrink-0 text-[11px] text-muted-foreground tabular-nums"
+              className="shrink-0 text-2xs text-muted-foreground tabular-nums"
               title={t('meta.usageCount', {
                 count: usage.count,
                 formatted: usage.count.toLocaleString(currentLocale()),
@@ -584,7 +580,7 @@ function ItemUsageRow({
       active={active}
       onClick={onClick}
       trailing={
-        <span className="flex w-[74px] shrink-0 items-center justify-end gap-0.5">
+        <span className="flex w-18.5 shrink-0 items-center justify-end gap-0.5">
           <PriceChip hr={item.priceHr} />
           <ItemActionsMenu item={item}
             merc={merc} />
@@ -645,7 +641,7 @@ function CoreKit({
               active={filters.items.includes(item.key)}
               onClick={() => onToggleItem(item.key)}
               trailing={
-                <span className="flex w-[66px] shrink-0 items-center justify-end gap-0.5">
+                <span className="flex w-16.5 shrink-0 items-center justify-end gap-0.5">
                   <PriceChip hr={item.priceHr} />
                   <SearchMarketButton item={item} />
                 </span>
@@ -731,10 +727,10 @@ function CharacterList({
         <>
           <div
             role="row"
-            className="sticky top-0 z-10 flex items-center gap-2.5 border-b border-border/50 bg-surface/95 px-3 py-1 text-[10px] tracking-wide text-muted-foreground uppercase backdrop-blur-sm"
+            className="sticky top-0 z-10 flex items-center gap-2.5 border-b border-border/50 bg-surface/95 px-3 py-1 text-3xs tracking-wide text-muted-foreground uppercase backdrop-blur-sm"
           >
             <SortHeader
-              className="w-[216px]"
+              className="w-54"
               label={t('meta.columns.character')}
               by="level"
               sort={sort}
@@ -742,7 +738,7 @@ function CharacterList({
               onSort={onSort}
             />
             <span role="columnheader"
-              className="w-[74px] shrink-0">
+              className="w-18.5 shrink-0">
               {t('character.skills')}
             </span>
             <SortHeader className="w-14 justify-end"
@@ -782,7 +778,7 @@ function CharacterList({
         </>
       )}
       {data && pages > 1 && (
-        <div className="sticky bottom-0 flex items-center justify-center gap-2 border-t border-border/50 bg-surface/95 py-1 text-[11px] text-muted-foreground backdrop-blur-sm">
+        <div className="sticky bottom-0 flex items-center justify-center gap-2 border-t border-border/50 bg-surface/95 py-1 text-2xs text-muted-foreground backdrop-blur-sm">
           <Button
             variant="ghost"
             size="sm"
@@ -881,12 +877,12 @@ function CharacterRow({ character: c }: { character: CharacterListEntry }) {
                 aria-label={t('characters.dead')} />
             )}
           </div>
-          <div className="text-[11px] text-muted-foreground">
+          <div className="text-2xs text-muted-foreground">
             <span className="tabular-nums">{t('meta.lv', { level: c.level })}</span> ·{' '}
             <span style={{ color: meta.color }}>{meta.name}</span>
           </div>
         </div>
-        <div className="flex w-[74px] shrink-0 gap-1">
+        <div className="flex w-18.5 shrink-0 gap-1">
           {c.topSkills.slice(0, 3).map((s) => (
             <Tooltip key={s.name}>
               <TooltipTrigger asChild>
@@ -908,7 +904,7 @@ function CharacterRow({ character: c }: { character: CharacterListEntry }) {
           <PriceChip hr={c.gearValueHr}
             unpriced />
         </span>
-        <span className="w-16 shrink-0 text-right text-[10px] text-muted-foreground">{timeAgo(c.lastUpdated)}</span>
+        <span className="w-16 shrink-0 text-right text-2xs text-muted-foreground">{timeAgo(c.lastUpdated)}</span>
       </div>
     </li>
   );

@@ -1,15 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, Filter, MoreHorizontal, RefreshCw, Store } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@pd2-trader/ui';
 import { springSnappy } from '@/lib/motion';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import type { EquippedItem, SocketedItem } from '@/lib/builds-api';
 import type { BuildsQuery } from '../lib/useBuildsQuery';
 import { useBuildsActions } from '../lib/context';
@@ -43,7 +36,7 @@ export function ClassEmblem({ className, size = 32 }: { className: string; size?
       aria-hidden
       loading="lazy"
       onError={() => setBroken(true)}
-      className="shrink-0 rounded-[3px] ring-1"
+      className="shrink-0 rounded-sm ring-1"
       style={{ width, height: size, ['--tw-ring-color' as string]: `${meta.color}80` }}
     />
   );
@@ -55,7 +48,7 @@ export function SkillIcon({ name, size = 24, className }: { name: string; size?:
   return (
     <span
       className={cn(
-        'inline-flex shrink-0 items-center justify-center overflow-hidden rounded-[3px] border border-border bg-muted/40 text-muted-foreground',
+        'inline-flex shrink-0 items-center justify-center overflow-hidden rounded-sm border border-border bg-muted/40 text-muted-foreground',
         className,
       )}
       style={{ width: size, height: size }}
@@ -111,7 +104,7 @@ export function ItemIcon({
   return (
     <span
       className={cn(
-        'inline-flex shrink-0 items-center justify-center overflow-hidden rounded-[3px] border bg-background/50',
+        'inline-flex shrink-0 items-center justify-center overflow-hidden rounded-sm border bg-background/50',
         qualityBorder(item.quality, item.runeword),
         className,
       )}
@@ -150,7 +143,7 @@ export function PriceChip({
   const { t } = useTranslation('builds');
   if (hr == null) {
     return unpriced ? (
-      <span className={cn('text-[11px] text-muted-foreground', className)}
+      <span className={cn('text-2xs text-muted-foreground', className)}
         title={t('price.noReliablePrice')}>
         {t('price.na')}
       </span>
@@ -158,10 +151,10 @@ export function PriceChip({
   }
   return (
     <span
-      className={cn('shrink-0 text-[11px] font-medium whitespace-nowrap text-q-gold tabular-nums', className)}
+      className={cn('shrink-0 text-2xs font-medium whitespace-nowrap text-q-gold tabular-nums', className)}
       title={t('price.hrTitle', { hr })}
     >
-      {fmtHr(hr)} <span className="text-[10px] opacity-75">HR</span>
+      {fmtHr(hr)} <span className="text-2xs opacity-75">HR</span>
     </span>
   );
 }
@@ -192,7 +185,7 @@ export function ItemTooltipCard({ item }: { item: TooltipItem }) {
   const nameClass = qualityText(item.quality, item.runeword);
   const flagCorrupted = item.corrupted && !item.mods.some((m) => /^corrupted$/i.test(m));
   return (
-    <div className="w-72 rounded-md border border-border bg-background/95 px-3 py-2.5 text-center text-xs leading-[1.45] shadow-panel">
+    <div className="w-72 rounded-md border border-border bg-background/95 px-3 py-2.5 text-center text-xs leading-normal shadow-panel">
       <div className={cn('text-sm font-semibold', nameClass)}
         style={{ fontFamily: 'DiabloFont' }}>
         {item.name}
@@ -200,7 +193,7 @@ export function ItemTooltipCard({ item }: { item: TooltipItem }) {
       {item.base && item.base !== item.name && (
         <div className={cn(item.runeword ? 'text-muted-foreground' : nameClass, 'opacity-90')}>{item.base}</div>
       )}
-      <div className="text-[11px] text-muted-foreground">
+      <div className="text-2xs text-muted-foreground">
         {item.slot}
         {item.runeword ? ' · Runeword' : item.quality ? ` · ${item.quality}` : ''}
       </div>
@@ -226,7 +219,7 @@ export function ItemTooltipCard({ item }: { item: TooltipItem }) {
           {item.socketed.map((s, i) => (
             <span
               key={i}
-              className={cn('rounded-sm border border-border/70 px-1.5 py-px text-[11px]', qualityText(s.quality))}
+              className={cn('rounded-sm border border-border/70 px-1.5 py-px text-2xs', qualityText(s.quality))}
             >
               {s.name}
             </span>
@@ -234,7 +227,7 @@ export function ItemTooltipCard({ item }: { item: TooltipItem }) {
         </div>
       )}
       {item.priceHr !== undefined && (
-        <div className="mt-2 border-t border-border/60 pt-1.5 text-[11px]">
+        <div className="mt-2 border-t border-border/60 pt-1.5 text-2xs">
           {item.priceHr != null ? (
             <span className="text-muted-foreground">
               <Trans
@@ -278,7 +271,7 @@ export function SearchMarketButton({
         searchMarket(item);
       }}
       className={cn(
-        label ? 'h-6 gap-1 px-2 text-[11px]' : 'size-6 p-0',
+        label ? 'h-6 gap-1 px-2 text-2xs' : 'size-6 p-0',
         'text-muted-foreground hover:text-foreground',
         className,
       )}
@@ -389,7 +382,7 @@ export function Section({
     <section className={cn('flex flex-col', className)}>
       <header className="flex h-8 shrink-0 items-center gap-2 border-b border-border/50 px-3">
         {icon && <span className="text-muted-foreground [&_svg]:size-3.5">{icon}</span>}
-        <h3 className="min-w-0 flex-1 truncate text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+        <h3 className="min-w-0 flex-1 truncate text-2xs font-semibold tracking-wide text-muted-foreground uppercase">
           {title}
         </h3>
         {action}
@@ -431,7 +424,7 @@ export function Segmented<T extends string>({
           title={o.title}
           onClick={() => onChange(o.value)}
           className={cn(
-            'relative inline-flex items-center justify-center rounded-[4px] px-2 text-xs text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50',
+            'relative inline-flex items-center justify-center rounded-sm px-2 text-xs text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50',
             value === o.value && 'text-accent-foreground',
           )}
         >
@@ -440,7 +433,7 @@ export function Segmented<T extends string>({
               layoutId={layoutId}
               transition={springSnappy}
               aria-hidden
-              className="absolute inset-0 rounded-[4px] bg-accent shadow-xs"
+              className="absolute inset-0 rounded-sm bg-accent shadow-xs"
             />
           )}
           <span className="relative flex items-center gap-1">{o.label}</span>

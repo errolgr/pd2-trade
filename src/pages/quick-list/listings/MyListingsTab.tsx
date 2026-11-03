@@ -14,6 +14,20 @@ import {
   Store,
   X as XIcon,
 } from 'lucide-react';
+import {
+  Button,
+  Input,
+  Skeleton,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  cn,
+} from '@pd2-trader/ui';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
@@ -23,13 +37,7 @@ import { indexListingOffers } from '@/pages/market/lib/listing-offers';
 import { PD2Website } from '@/common/constants';
 import { openUrl } from '@/lib/browser-opener';
 import { trackEvent, trackMeasurement } from '@/lib/telemetry';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { showToast } from '@/overlay';
-import { cn } from '@/lib/utils';
 import { useTranslation } from '@/i18n';
 import EmptyState from '../components/EmptyState';
 import {
@@ -463,7 +471,7 @@ const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange, focus
             aria-busy>
             {[0, 1, 2, 3].map((i) => (
               <Skeleton key={i}
-                className={view === 'cards' ? 'h-[92px] w-full' : 'h-9 w-full'} />
+                className={view === 'cards' ? 'h-23 w-full' : 'h-9 w-full'} />
             ))}
           </div>
         ) : shown.length === 0 ? (

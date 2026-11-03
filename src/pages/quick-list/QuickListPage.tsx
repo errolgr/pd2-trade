@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
+import { TooltipProvider } from '@pd2-trader/ui';
 import ListItemShortcutForm from './components/ListItemShortcut';
 import { Item as PriceCheckItem } from '../price-check/lib/interfaces';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import { usePanel } from '@/overlay';
 
 export const QuickListPage: React.FC = () => {

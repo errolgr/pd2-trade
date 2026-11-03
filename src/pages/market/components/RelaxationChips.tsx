@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@pd2-trader/ui';
 import { currentLocale, useTranslation } from '@/i18n';
 import type { Relaxation } from '../hooks/useRelaxations';
 
@@ -74,7 +74,7 @@ export function RelaxationChips({
                 <span
                   aria-hidden
                   className={cn(
-                    'inline-flex h-4 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[10px] font-semibold tabular-nums',
+                    'inline-flex h-4 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-3xs font-semibold tabular-nums',
                     'animate-in fade-in-0 zoom-in-90 duration-150',
                     top ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground',
                   )}

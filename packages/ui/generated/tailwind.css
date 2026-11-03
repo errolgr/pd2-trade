@@ -86,6 +86,31 @@
     --z-index-drawer: 30;
     --z-index-panel: 10;
     --z-index-floating: 50;
+
+    /* Type scale: only the named steps exist (Tailwind defaults reset). */
+    --text-*: initial;
+    --text-3xs: 0.625rem;
+    --text-3xs--line-height: 0.875rem;
+    --text-2xs: 0.6875rem;
+    --text-2xs--line-height: 1rem;
+    --text-xs: 0.75rem;
+    --text-xs--line-height: 1rem;
+    --text-sm: 0.8125rem;
+    --text-sm--line-height: 1.125rem;
+    --text-base: 1rem;
+    --text-base--line-height: 1.5rem;
+    --text-2xl: 1.5rem;
+    --text-2xl--line-height: 2rem;
+    --text-display: 1.875rem;
+    --text-display--line-height: 2.25rem;
+
+    --tracking-caps: 0.12em;
+
+    --container-control: 13.75rem;
+    --container-sidebar: 18.75rem;
+    --container-popover: 25rem;
+    --container-viewport: calc(100vw - 1rem);
+    --container-contained: calc(100% - 2rem);
 }
 
 /* Inline: per-theme values resolve where used, so themed subtrees (picker previews) get their own vars. */

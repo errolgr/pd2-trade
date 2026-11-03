@@ -1,9 +1,7 @@
 import React from 'react';
 import moment from 'moment';
 import { ExternalLink, Heart, MessageSquare, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn, Button, ScrollArea } from '@pd2-trader/ui';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { DealBadge } from '@/pages/market/enrich/DealBadge';
 import { PriceHistoryMini } from '@/pages/market/enrich/PriceHistoryMini';
@@ -101,7 +99,7 @@ export function ListingDetail({
                 <div
                   key={key}
                   title={statWithValue(key, row.pseudo[key] ?? 0)}
-                  className="truncate rounded-md bg-info/10 px-2 py-0.5 text-[11px] tabular-nums text-info"
+                  className="truncate rounded-md bg-info/10 px-2 py-0.5 text-2xs tabular-nums text-info"
                 >
                   {statWithValue(key, row.pseudo[key] ?? 0, { short: true })}
                 </div>
@@ -119,7 +117,7 @@ export function ListingDetail({
             {listing.price && (
               <p className="mt-1 whitespace-pre-wrap break-words text-xs text-foreground/90">{listing.price}</p>
             )}
-            <div className="mt-1 text-[11px] text-muted-foreground"
+            <div className="mt-1 text-2xs text-muted-foreground"
               title={moment(listing.bumped_at).format('LLL')}>
               {t('detail.bumpedListed', {
                 bumped: moment(listing.bumped_at).fromNow(),

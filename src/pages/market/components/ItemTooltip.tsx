@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@pd2-trader/ui';
 import type { ItemDetail, Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { itemCorruptions } from '@/lib/item-utils';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
@@ -27,9 +27,7 @@ function ModLine({ item, mod }: { item: ItemDetail; mod: Modifier }) {
       className={cn('rounded-sm text-q-magic', isCorruptedMod(item, mod) && 'text-q-corrupted')}
     >
       {mod.label}
-      {range && (
-        <span className="ml-1 text-[11px] text-muted-foreground tabular-nums">{`[${mod.min} - ${mod.max}]`}</span>
-      )}
+      {range && <span className="ml-1 text-2xs text-muted-foreground tabular-nums">{`[${mod.min} - ${mod.max}]`}</span>}
     </ModMenu>
   );
 }
@@ -55,7 +53,7 @@ export function ItemTooltip({
     <div
       className={cn(
         'rounded-md border border-border/70 bg-background/90 text-center shadow-inner',
-        compact ? 'px-2 py-1.5 text-[11px] leading-[1.4]' : 'px-3 py-2.5 text-xs leading-[1.45]',
+        compact ? 'px-2 py-1.5 text-2xs leading-snug' : 'px-3 py-2.5 text-xs leading-normal',
         className,
       )}
     >
@@ -122,7 +120,7 @@ export function ItemTooltip({
                   mod={mod}
                   item={item}
                   socketLine
-                  className="rounded-sm pl-2 text-[11px] text-muted-foreground"
+                  className="rounded-sm pl-2 text-2xs text-muted-foreground"
                 >
                   {mod.label}
                 </ModMenu>

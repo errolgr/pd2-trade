@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, Eye, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@pd2-trader/ui';
 import { EASE_OUT, springSnappy } from '@/lib/motion';
 import { showToast, usePanel } from '@/overlay';
 import type { MarketFilters } from '@/pages/market/lib/types';
@@ -103,7 +103,7 @@ export function WatchButton({ filters, className }: { filters: MarketFilters | n
       disabled={disabled}
       onClick={toggle}
       className={cn(
-        'relative inline-flex h-6 shrink-0 items-center gap-1 rounded-md border border-input bg-background/40 px-2 text-[11px] font-medium text-muted-foreground outline-none',
+        'relative inline-flex h-6 shrink-0 items-center gap-1 rounded-md border border-input bg-background/40 px-2 text-2xs font-medium text-muted-foreground outline-none',
         'transition-[color,background-color,border-color] duration-(--dur-fast) hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
         // Disabled keeps hover so the title says why
         'disabled:cursor-not-allowed disabled:opacity-50',

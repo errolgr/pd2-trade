@@ -8,11 +8,11 @@ import { OfferBadge } from '@/pages/market/components/OfferBadge';
 import { displayMods } from '@/pages/market/components/ItemTooltip';
 import type { Deal } from '@/pages/market/enrich/useDealIndicators';
 import type { ListingOffers } from '@/pages/market/lib/listing-offers';
-import { cn } from '@/lib/utils';
 import { itemCorruptions } from '@/lib/item-utils';
 import { DUR, EASE_OUT } from '@/lib/motion';
 import { useTranslation } from '@/i18n';
 import { ArrowDown, ArrowUp } from 'lucide-react';
+import { cn } from '@pd2-trader/ui';
 import { bumpReadyAt, type ListingsSort, type ListingsSortKey } from './my-listings';
 import {
   baseName,
@@ -128,14 +128,14 @@ function CardStats({ listing }: { listing: MarketListingEntry }) {
           </motion.span>
         ))}
       </button>
-      {note && <span className="max-w-[40%] shrink-0 truncate text-muted-foreground italic">{note}</span>}
+      {note && <span className="max-w-2/5 shrink-0 truncate text-muted-foreground italic">{note}</span>}
       {(hidden > 0 || open) && (
         <button
           type="button"
           onClick={toggle}
           aria-hidden
           tabIndex={-1}
-          className="inline-flex shrink-0 items-center gap-0.5 rounded-sm text-[11px] text-muted-foreground hover:text-foreground"
+          className="inline-flex shrink-0 items-center gap-0.5 rounded-sm text-2xs text-muted-foreground hover:text-foreground"
         >
           {!open && `+${hidden}`}
           <ChevronDown className={cn('size-3.5 transition-transform duration-(--dur-med)', open && 'rotate-180')} />
@@ -195,7 +195,7 @@ export const ListingCard = React.memo(function ListingCard(props: ListingViewPro
                 <DealBadge deal={deal} />
                 <OfferBadge offers={offers} />
               </span>
-              <span className="min-w-0 truncate text-[11px] text-muted-foreground">
+              <span className="min-w-0 truncate text-2xs text-muted-foreground">
                 {ready
                   ? t('myListings.readyListed', { listed: moment(listing.created_at).fromNow() })
                   : t('myListings.bumpedListed', {
@@ -264,7 +264,7 @@ export const ListingRow = React.memo(function ListingRow(props: ListingViewProps
                   compact />
               </span>
             )}
-            {note && <span className="min-w-0 truncate text-[11px] text-muted-foreground italic">{note}</span>}
+            {note && <span className="min-w-0 truncate text-2xs text-muted-foreground italic">{note}</span>}
           </span>
           <PriceText listing={listing}
             className="block text-right text-xs" />
@@ -299,7 +299,7 @@ export function ListingRowsHeader({ sort, onSort }: { sort: ListingsSort; onSort
   return (
     <div
       className={cn(
-        'sticky top-0 z-10 h-7 border-b border-border bg-card pr-1.5 pl-2.5 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase',
+        'sticky top-0 z-10 h-7 border-b border-border bg-card pr-1.5 pl-2.5 text-3xs font-semibold tracking-wider text-muted-foreground uppercase',
         ROW_GRID,
       )}
       role="row"

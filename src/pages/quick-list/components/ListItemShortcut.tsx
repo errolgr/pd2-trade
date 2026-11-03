@@ -1,8 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Form } from '@/components/ui/form';
-import { Button } from '@/components/ui/button';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import {
   X,
@@ -15,7 +13,20 @@ import {
   PackageSearch,
   SearchX,
 } from 'lucide-react';
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
+import {
+  Form,
+  Button,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  ScrollArea,
+  cn,
+} from '@pd2-trader/ui';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { buildGetMarketListingByStashItemQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
@@ -34,9 +45,7 @@ import { shortcutFormSchema, ShortcutFormData } from './types';
 import ItemSelectionList from './ItemSelectionList';
 import ListingFormFields from './ListingFormFields';
 import LoadingAndErrorStates from './LoadingAndErrorStates';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import MyListingsTab, { type ListingFocus } from '../listings/MyListingsTab';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { buildGetAllUserMarketListingsQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
 import { trackEvent, trackMeasurement } from '@/lib/telemetry';
 import { usePendingListingsQueue, PendingListing } from '@/hooks/usePendingListingsQueue';
@@ -44,7 +53,6 @@ import MultipleMatchSelector from './MultipleMatchSelector';
 import EmptyState from './EmptyState';
 import { countChip, itemCard } from './styles';
 import { WindowPanel } from '@/components/custom/window-chrome';
-import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT, fadeInUp, listItem, listStagger, popIn } from '@/lib/motion';
 import { showToast, usePanel } from '@/overlay';
 import { subscribeListingDeleted } from '@/hooks/pd2website/listing-events';
@@ -108,8 +116,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   const { close: handleClose, payload, payloadVersion } = usePanel<'quickList'>();
   // openPanel('quickList', { listingId, edit }) (the palette): the Manage tab, on that listing
   const focusListing = useMemo<ListingFocus | null>(
-    () =>
-      payload?.listingId ? { listingId: payload.listingId, edit: payload.edit, version: payloadVersion } : null,
+    () => (payload?.listingId ? { listingId: payload.listingId, edit: payload.edit, version: payloadVersion } : null),
     [payload, payloadVersion],
   );
 
@@ -976,7 +983,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       return (
         <EmptyState icon={<PackageSearch />}
           title={t('shortcut.noItemTitle')}
-          className="h-[300px]">
+          className="h-75">
           {t('shortcut.noItemDescription')}
         </EmptyState>
       );
@@ -1169,7 +1176,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
             initial="hidden"
             animate="visible"
             exit="exit"
-            className={cn(countChip, 'h-[18px] min-w-[18px] text-[11px]')}
+            className={cn(countChip, 'h-4.5 min-w-4.5 text-2xs')}
           >
             {count}
           </motion.span>

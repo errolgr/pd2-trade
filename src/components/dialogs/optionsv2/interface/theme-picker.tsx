@@ -2,9 +2,8 @@ import React from 'react';
 import { Check } from 'lucide-react';
 import { useOptions } from '@/hooks/useOptions';
 import { getTheme, type Theme, THEMES } from '@pd2-trader/ui/tokens';
+import { ToggleGroup, ToggleGroupItem, cn } from '@pd2-trader/ui';
 import { themeStyle } from '@/lib/themes';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { cn } from '@/lib/utils';
 import { SETTING_HIGHLIGHT } from '../settings-ui';
 import { Trans, useTranslation } from '@/i18n';
 
@@ -23,12 +22,12 @@ function ThemePreview({ theme }: { theme: Theme }) {
     >
       <div className="flex h-5 items-center gap-1 border-b border-border bg-surface-elevated px-1.5">
         <span className="h-2 w-0.5 rounded-full bg-muted-foreground/60" />
-        <span className="truncate text-[9px] font-medium text-surface-foreground">PD2 Trader</span>
+        <span className="truncate text-3xs font-medium text-surface-foreground">PD2 Trader</span>
         <span className="ml-auto size-1.5 rounded-full bg-muted-foreground/60" />
       </div>
       <div className="space-y-1.5 bg-surface p-1.5">
         <div
-          className="space-y-0.5 rounded-sm border border-border bg-card px-1.5 py-1 text-[10px] leading-tight"
+          className="space-y-0.5 rounded-sm border border-border bg-card px-1.5 py-1 text-2xs leading-tight"
           style={{ fontFamily: 'DiabloFont' }}
         >
           <div className="truncate text-q-unique">Harlequin Crest</div>
@@ -36,13 +35,13 @@ function ThemePreview({ theme }: { theme: Theme }) {
           <div className="truncate text-q-magic">Jeweler&apos;s Monarch</div>
         </div>
         <div className="flex items-center gap-1">
-          <span className="rounded-sm bg-primary px-1.5 py-0.5 text-[9px] font-semibold text-primary-foreground">
+          <span className="rounded-sm bg-primary px-1.5 py-0.5 text-3xs font-semibold text-primary-foreground">
             {t('theme.preview.list')}
           </span>
-          <span className="rounded-sm bg-secondary px-1.5 py-0.5 text-[9px] text-secondary-foreground">
+          <span className="rounded-sm bg-secondary px-1.5 py-0.5 text-3xs text-secondary-foreground">
             {t('theme.preview.offers')}
           </span>
-          <span className="ml-auto text-[9px] text-muted-foreground">
+          <span className="ml-auto text-3xs text-muted-foreground">
             <span className="text-q-gold">1.5</span> HR
           </span>
         </div>

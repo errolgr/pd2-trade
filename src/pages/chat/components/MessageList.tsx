@@ -1,12 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { AlertTriangle, ArrowDown, Loader2, MessageSquareDashed, RotateCw } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
+import { ScrollArea, Skeleton, Button, cn } from '@pd2-trader/ui';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
 import { useTranslation } from '@/i18n';
-import { cn } from '@/lib/utils';
 import type { ChatListingState } from '../hooks/useChatListings';
 import type { ThreadState } from '../hooks/useChatStore';
 import type { TimelineEntry } from '../lib/inbox';

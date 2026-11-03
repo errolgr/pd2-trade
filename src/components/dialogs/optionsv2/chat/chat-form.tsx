@@ -1,19 +1,28 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Form, FormControl, FormField, FormMessage } from '@/components/ui/form';
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { BellOff, Check, Plus, UserX, Volume1, Volume2, VolumeX, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormMessage,
+  Button,
+  Switch,
+  Input,
+  Badge,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Slider,
+  cn,
+} from '@pd2-trader/ui';
 import { useOptions } from '@/hooks/useOptions';
-import { Switch } from '@/components/ui/switch';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
 import { DUR, EASE_OUT, fadeIn, popIn } from '@/lib/motion';
-import { cn } from '@/lib/utils';
 import { templatePlaceholders } from '@/lib/message-templates';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import { CHAT_TIMING_OPTIONS, optionLabel } from '../setting-options';
@@ -154,7 +163,7 @@ export function ChatForm() {
                   <Select onValueChange={field.onChange}
                     value={field.value || 'both'}>
                     <FormControl>
-                      <SelectTrigger className="w-[220px]">
+                      <SelectTrigger className="w-control">
                         <SelectValue placeholder={t('chat.timing.placeholder')} />
                       </SelectTrigger>
                     </FormControl>
@@ -389,7 +398,7 @@ export function ChatForm() {
                 }
               >
                 {ignoreList.length > 0 ? (
-                  <div className="flex min-h-[44px] flex-wrap gap-2 rounded-md border border-border/70 bg-background/40 p-2">
+                  <div className="flex min-h-11 flex-wrap gap-2 rounded-md border border-border/70 bg-background/40 p-2">
                     <AnimatePresence initial={false}>
                       {ignoreList.map((playerName) => (
                         <motion.div
@@ -449,7 +458,7 @@ export function ChatForm() {
                   }
                   description={t('chat.sound.notificationVolume.description')}
                   control={
-                    <div className="flex w-[240px] items-center gap-3">
+                    <div className="flex w-60 items-center gap-3">
                       <VolumeIcon aria-hidden
                         className="size-4 shrink-0 text-muted-foreground" />
                       <FormControl>
@@ -594,7 +603,7 @@ function PlaceholderHint({
             type="button"
             title={t('chat.templates.insertToken', { token })}
             onClick={() => onInsert(token)}
-            className="rounded-sm border border-border/70 bg-muted/60 px-1.5 py-0.5 font-mono text-[11px] text-foreground/80 outline-none transition-[color,background-color,border-color,transform] duration-(--dur-fast) ease-out hover:border-primary/60 hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-95"
+            className="rounded-sm border border-border/70 bg-muted/60 px-1.5 py-0.5 font-mono text-2xs text-foreground/80 outline-none transition-[color,background-color,border-color,transform] duration-(--dur-fast) ease-out hover:border-primary/60 hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-95"
           >
             {token}
           </button>

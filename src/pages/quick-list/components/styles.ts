@@ -20,8 +20,8 @@ export const itemCard = cva(
 );
 
 /** Small uppercase section label used above lists. */
-export const sectionLabel = 'text-[11px] font-semibold uppercase tracking-wider text-muted-foreground';
+export const sectionLabel = 'text-2xs font-semibold uppercase tracking-wider text-muted-foreground';
 
 /** Count chip shown next to section labels and tab names. */
 export const countChip =
-  'inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary/15 px-1 text-[10px] font-bold tabular-nums leading-none text-primary';
+  'inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary/15 px-1 text-3xs font-bold tabular-nums leading-none text-primary';

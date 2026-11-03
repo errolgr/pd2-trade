@@ -1,10 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, ClipboardCheck, FlaskConical, Loader2, LogIn, PackageCheck, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button, Popover, PopoverContent, PopoverTrigger, Skeleton, cn } from '@pd2-trader/ui';
 import { SimCharacterPicker } from '@/components/custom/SimCharacterPicker';
 import { SIM_WAITLIST_POPOVER_CLASS, SimWaitlist } from '@/components/custom/SimWaitlist';
-import { Skeleton } from '@/components/ui/skeleton';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import { useSimAccess } from '@/hooks/useSimAccess';
@@ -20,7 +18,6 @@ import {
 } from '@/lib/sim-export-api';
 import { findSimItem, type FoundSimItem, type SimItemSource } from '@/lib/sim-item-sources';
 import { trackMeasurement } from '@/lib/telemetry';
-import { cn } from '@/lib/utils';
 import { useOverlay } from '@/overlay';
 import { Banner } from '@/pages/currency/components/StatePanel';
 import type { Item as PriceCheckItem } from '../lib/interfaces';
@@ -96,7 +93,7 @@ export function SimulatorButton({ item }: { item: PriceCheckItem }) {
           >
             <FlaskConical />
             Sim
-            <span className="rounded-full bg-primary/20 px-1.5 py-px text-[10px] font-bold tracking-wider">BETA</span>
+            <span className="rounded-full bg-primary/20 px-1.5 py-px text-3xs font-bold tracking-wider">BETA</span>
           </Button>
         </PopoverTrigger>
         {!access.canUse ? (
@@ -109,8 +106,8 @@ export function SimulatorButton({ item }: { item: PriceCheckItem }) {
         ) : (
           <PopoverContent side="top"
             align="start"
-            className="w-[420px] space-y-3 p-3">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            className="w-105 space-y-3 p-3">
+            <div className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
               Send to Simulator
             </div>
             {token ? (
@@ -136,7 +133,7 @@ export function SimulatorButton({ item }: { item: PriceCheckItem }) {
             className="absolute -top-[7px] right-6 size-3 rotate-45 border-l border-t border-primary bg-popover"
           />
           <div className="flex items-start gap-2">
-            <span className="mt-0.5 rounded-full bg-primary px-1.5 py-px text-[10px] font-bold tracking-wider text-primary-foreground">
+            <span className="mt-0.5 rounded-full bg-primary px-1.5 py-px text-3xs font-bold tracking-wider text-primary-foreground">
               NEW
             </span>
             <div className="min-w-0 flex-1">

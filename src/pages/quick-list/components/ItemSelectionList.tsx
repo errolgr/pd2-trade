@@ -1,13 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ChevronsDownUp, ChevronsUpDown, Loader2 } from 'lucide-react';
+import { ScrollArea, cn } from '@pd2-trader/ui';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import ItemStatsDisplay from './ItemStatsDisplay';
 import MarketListingBadge from './MarketListingBadge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { cn } from '@/lib/utils';
 import { useTranslation } from '@/i18n';
 import { listItem, listStagger } from '@/lib/motion';
 import { countChip, itemCard, sectionLabel } from './styles';
@@ -55,7 +54,7 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
           </span>
           <span className="sr-only">{t('selection.foundCount', { count: matchingItems.length })}</span>
           {isMarketListingsLoading && (
-            <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+            <span className="flex items-center gap-1 text-2xs text-muted-foreground">
               <Loader2 className="size-3 animate-spin" /> {t('selection.loadingMarketListings')}
             </span>
           )}

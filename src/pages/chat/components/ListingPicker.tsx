@@ -1,14 +1,10 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Loader2, PackagePlus, RotateCw, Search } from 'lucide-react';
+import { Button, Input, Popover, PopoverContent, PopoverTrigger, Skeleton, cn } from '@pd2-trader/ui';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Skeleton } from '@/components/ui/skeleton';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import { useTranslation } from '@/i18n';
-import { cn } from '@/lib/utils';
 import { buildGetAllUserMarketListingsQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
 import { ListingThumb, nameColor } from './ListingCard';
 import { Tip } from './chat-parts';
@@ -121,7 +117,7 @@ export function ListingPicker({
                   {listing.item.name}
                 </span>
                 {listing.item.base?.name && listing.item.base.name !== listing.item.name && (
-                  <span className="block truncate text-[11px] text-muted-foreground">{listing.item.base.name}</span>
+                  <span className="block truncate text-2xs text-muted-foreground">{listing.item.base.name}</span>
                 )}
               </span>
               <span className="max-w-24 shrink-0 truncate text-xs font-medium tabular-nums text-foreground/85">

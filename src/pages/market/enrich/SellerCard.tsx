@@ -1,8 +1,7 @@
 import React from 'react';
 import { ChevronRight, Store, User as UserIcon } from 'lucide-react';
+import { Skeleton, cn } from '@pd2-trader/ui';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
 import { ListingThumb, nameColor } from '@/pages/chat/components/ListingCard';
 import type { TraderPresence } from '@/pages/chat/hooks/useTraderProfile';
 import { DealBadge } from './DealBadge';
@@ -78,7 +77,7 @@ export function SellerCard({
               </span>
               <DealBadge deal={deals.get(other._id)}
                 compact />
-              <span className="max-w-24 shrink-0 truncate text-[11px] tabular-nums text-foreground/85">
+              <span className="max-w-24 shrink-0 truncate text-2xs tabular-nums text-foreground/85">
                 {priceText(other) || '—'}
               </span>
             </button>
@@ -126,7 +125,7 @@ export function SellerCard({
 
       {(others || onBrowseSeller) && (
         <div className="space-y-1">
-          <h4 className="flex items-center gap-1.5 px-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <h4 className="flex items-center gap-1.5 px-0.5 text-3xs font-semibold uppercase tracking-wider text-muted-foreground">
             <Store className="size-3" />
             <span className="flex-1">
               {seller.othersTotal > 0
@@ -139,7 +138,7 @@ export function SellerCard({
             <button
               type="button"
               onClick={onBrowseSeller}
-              className="flex w-full items-center justify-center gap-1 rounded-md px-1.5 py-1 text-[11px] font-medium text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+              className="flex w-full items-center justify-center gap-1 rounded-md px-1.5 py-1 text-2xs font-medium text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
             >
               {seller.username ? t('seller.browseAllFrom', { name: seller.username }) : t('seller.browseAllThis')}
               <ChevronRight className="size-3" />

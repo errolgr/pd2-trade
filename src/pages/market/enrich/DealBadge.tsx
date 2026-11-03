@@ -1,7 +1,6 @@
 import React from 'react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, cn } from '@pd2-trader/ui';
 import { bandRange, fmtBandHr } from '@/components/rares/rares-format';
-import { cn } from '@/lib/utils';
 import type { Deal, DealVerdict } from './deal';
 import { useTranslation } from '@/i18n';
 
@@ -78,7 +77,7 @@ export function DealBadge({ deal, compact = false }: { deal: Deal | undefined; c
           tabIndex={0}
           aria-label={t('deal.ariaLabel', { text })}
           className={cn(
-            'inline-flex shrink-0 cursor-default items-center gap-1 rounded-full border px-1.5 py-px text-[10px] leading-4 whitespace-nowrap tabular-nums',
+            'inline-flex shrink-0 cursor-default items-center gap-1 rounded-full border px-1.5 py-px text-3xs leading-4 whitespace-nowrap tabular-nums',
             verdict ? VERDICT_CLASSES[verdict] : 'border-border/60 text-muted-foreground',
             deal.confidence === 'low' && 'border-dashed',
           )}

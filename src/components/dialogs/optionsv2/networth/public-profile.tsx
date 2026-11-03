@@ -1,10 +1,18 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { ExternalLink, Loader2, RotateCw } from 'lucide-react';
-import { Form, FormControl, FormField } from '@/components/ui/form';
-import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Form,
+  FormControl,
+  FormField,
+  Switch,
+  Button,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@pd2-trader/ui';
 import { useOptions } from '@/hooks/useOptions';
 import { getProfileSettings, NetWorthApiError, ProfileSettings, updateProfileSettings } from '@/lib/networth-api';
 import { BACKEND_URL } from '@/lib/pkce';
@@ -165,7 +173,7 @@ export function PublicProfileGroup() {
                         onValueChange={(value) => save({ displayName: value })}
                       >
                         <FormControl>
-                          <SelectTrigger className="w-[220px]">
+                          <SelectTrigger className="w-control">
                             <SelectValue placeholder={t('publicProfile.displayName.placeholder')} />
                           </SelectTrigger>
                         </FormControl>

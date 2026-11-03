@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { ArrowUp, Check, Loader2, SquareArrowOutUpRight, Trash2 } from 'lucide-react';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import moment from 'moment';
+import { Tooltip, TooltipTrigger, TooltipContent, cn } from '@pd2-trader/ui';
 import { PD2Website } from '@/common/constants';
 import { openUrl } from '@/lib/browser-opener';
-import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT } from '@/lib/motion';
 import { showToast, usePanel } from '@/overlay';
 import { useTranslation } from '@/i18n';
@@ -21,7 +20,7 @@ interface MarketListingBadgeProps {
 }
 
 const pill =
-  'inline-flex h-6 w-16 select-none items-center justify-center gap-1 rounded-full border text-[11px] font-semibold leading-none';
+  'inline-flex h-6 w-16 select-none items-center justify-center gap-1 rounded-full border text-2xs font-semibold leading-none';
 const iconButton =
   'inline-flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none transition-[color,background-color,transform] duration-(--dur-fast) ease-out focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-90 [&_svg]:size-4';
 const swap = { duration: DUR.fast, ease: EASE_OUT };

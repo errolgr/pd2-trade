@@ -17,16 +17,13 @@ import {
   Swords,
   UserRound,
 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger, ScrollArea, Skeleton, cn } from '@pd2-trader/ui';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
 import { t as tGlobal, useTranslation } from '@/i18n';
 import { writeText } from '@/lib/browser-clipboard';
 import { openUrl } from '@/lib/browser-opener';
 import { showToast, useOverlay } from '@/overlay';
-import { cn } from '@/lib/utils';
 import { whisperTarget } from '@/lib/whisper-history';
 import { type ChatListingState, useChatListings } from '../hooks/useChatListings';
 import { type ListingMarketPrice, useListingMarketPrices } from '../hooks/useListingMarketPrices';
@@ -79,7 +76,7 @@ function Section({
   return (
     <section aria-label={title}
       className="space-y-2">
-      <h4 className="flex items-center gap-1.5 px-0.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <h4 className="flex items-center gap-1.5 px-0.5 text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
         <Icon className="size-3.5" />
         <span className="flex-1">{title}</span>
         {aside}
@@ -128,7 +125,7 @@ function MarketTile({
             className="size-10 border-0 bg-transparent shadow-none"
             artClassName="max-h-9 max-w-9 transition-transform duration-(--dur-fast) group-hover/tile:scale-110"
           />
-          <span className="w-full truncate text-center text-[10px] font-semibold tabular-nums text-foreground/85">
+          <span className="w-full truncate text-center text-3xs font-semibold tabular-nums text-foreground/85">
             {priceText(listing) || '—'}
           </span>
         </button>
@@ -234,7 +231,7 @@ export function TraderSidebar({
         <span className="sr-only">{t('trader.loadingListings')}</span>
         {Array.from({ length: MARKET_GRID_LIMIT }, (_, i) => (
           <Skeleton key={i}
-            className="h-[66px] rounded-lg" />
+            className="h-16.5 rounded-lg" />
         ))}
       </div>
     );
@@ -257,7 +254,7 @@ export function TraderSidebar({
             />
           ))}
         </div>
-        <p className="px-0.5 text-[11px] text-muted-foreground">{t('trader.clickItemHint')}</p>
+        <p className="px-0.5 text-2xs text-muted-foreground">{t('trader.clickItemHint')}</p>
         {thread.userId && (
           <button
             type="button"
@@ -267,7 +264,7 @@ export function TraderSidebar({
                 tab: 'search',
               })
             }
-            className="inline-flex h-7 w-full items-center justify-center gap-1.5 rounded-md border border-border/60 text-[11px] font-medium text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+            className="inline-flex h-7 w-full items-center justify-center gap-1.5 rounded-md border border-border/60 text-2xs font-medium text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
           >
             <Store className="size-3.5" />
             {t('trader.browseAll')}
@@ -281,7 +278,7 @@ export function TraderSidebar({
     <aside
       aria-label={t('trader.title')}
       className={cn(
-        'flex min-h-0 w-[300px] shrink-0 flex-col overflow-hidden border-l border-border bg-card/40',
+        'flex min-h-0 w-sidebar shrink-0 flex-col overflow-hidden border-l border-border bg-card/40',
         className,
       )}
     >
@@ -312,7 +309,7 @@ export function TraderSidebar({
                 name={thread.name}
                 solid
                 presence={profile.status === 'ready' ? profile.presence.kind : undefined}
-                className="size-11 shrink-0 text-lg shadow-sm"
+                className="size-11 shrink-0 text-base shadow-sm"
               />
               <div className="min-w-0 flex-1">
                 <h4 className="truncate text-sm font-semibold leading-tight text-foreground">{thread.name}</h4>
@@ -332,7 +329,7 @@ export function TraderSidebar({
                     <span className="block truncate text-xs text-muted-foreground">{t('trader.notLinked')}</span>
                   )
                 )}
-                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-2xs text-muted-foreground">
                   {presence}
                   {joined?.isValid() && (
                     <span className="flex items-center gap-1">
@@ -353,7 +350,7 @@ export function TraderSidebar({
                       type="button"
                       aria-label={t('trader.copyAccount', { account })}
                       onClick={() => void copyAccount(account)}
-                      className="inline-flex max-w-full items-center gap-1 rounded-full border border-border/70 bg-background/60 px-2 py-0.5 text-[11px] font-medium text-foreground/90 outline-none transition-colors duration-(--dur-fast) hover:border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring/60"
+                      className="inline-flex max-w-full items-center gap-1 rounded-full border border-border/70 bg-background/60 px-2 py-0.5 text-2xs font-medium text-foreground/90 outline-none transition-colors duration-(--dur-fast) hover:border-primary/40 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring/60"
                     >
                       <Gamepad2 aria-hidden
                         className="size-3 shrink-0 text-muted-foreground" />
@@ -441,8 +438,8 @@ export function TraderSidebar({
                   key={labelKey}
                   className="rounded-lg border border-border/60 bg-linear-to-b from-background/60 to-background/20 px-2.5 py-1.5"
                 >
-                  <div className="text-lg font-semibold leading-tight tabular-nums text-foreground">{value}</div>
-                  <div className="text-[11px] text-muted-foreground">{t(labelKey)}</div>
+                  <div className="text-base font-semibold leading-tight tabular-nums text-foreground">{value}</div>
+                  <div className="text-2xs text-muted-foreground">{t(labelKey)}</div>
                 </div>
               ))}
             </div>
@@ -478,7 +475,7 @@ export function TraderSidebar({
                         )}
                         <span
                           className={cn(
-                            'shrink-0 rounded-sm px-1 text-[10px] font-medium uppercase tracking-wide',
+                            'shrink-0 rounded-sm px-1 text-3xs font-medium uppercase tracking-wide',
                             STATUS_CLASS[status],
                           )}
                         >
@@ -509,7 +506,7 @@ export function TraderSidebar({
                           <span className={cn('block truncate text-xs font-semibold', nameColor(listing))}>
                             {listing.item.name}
                           </span>
-                          <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                          <span className="flex items-center gap-1 text-2xs text-muted-foreground">
                             <span className="truncate tabular-nums text-foreground/85">
                               {priceText(listing) || '—'}
                             </span>
@@ -519,11 +516,11 @@ export function TraderSidebar({
                               </span>
                             )}
                           </span>
-                          {delta && <span className={cn('block text-[10px]', delta.className)}>{delta.text}</span>}
+                          {delta && <span className={cn('block text-2xs', delta.className)}>{delta.text}</span>}
                         </span>
                         <span
                           className={cn(
-                            'shrink-0 rounded-sm px-1 text-[10px] font-medium uppercase tracking-wide',
+                            'shrink-0 rounded-sm px-1 text-3xs font-medium uppercase tracking-wide',
                             listed ? 'bg-success/15 text-success' : 'bg-muted text-muted-foreground',
                           )}
                         >

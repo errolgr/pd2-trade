@@ -1,11 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { CartesianGrid, ComposedChart, Line, ReferenceLine, Tooltip as ChartTooltip, XAxis, YAxis } from 'recharts';
 import { ArrowRight, History, Skull } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, Button, Skeleton, ChartContainer, type ChartConfig } from '@pd2-trader/ui';
 import { useReducedMotionSafe } from '@/lib/motion';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
 import {
   type BuildsMode,
   getCharacterSnapshot,
@@ -86,7 +83,7 @@ export function Timeline({
           })}
           icon={<History />}
           action={
-            <span className="flex items-center gap-3 text-[10px] text-muted-foreground">
+            <span className="flex items-center gap-3 text-2xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <span className="h-0.5 w-3 rounded-full bg-chart-2" /> {t('timeline.level')}
               </span>
@@ -209,7 +206,7 @@ function FeedEntry({
       >
         <div className="flex items-center gap-2">
           <span className="font-medium text-foreground">{fmtDateTime(entry.takenAt)}</span>
-          {latest && <span className="text-[10px] text-muted-foreground uppercase">{t('timeline.now')}</span>}
+          {latest && <span className="text-3xs text-muted-foreground uppercase">{t('timeline.now')}</span>}
           {d?.gearValueDelta != null && (
             <span className={cn('ml-auto tabular-nums', d.gearValueDelta > 0 ? 'text-success' : 'text-destructive')}>
               {d.gearValueDelta > 0 ? '+' : '−'}
@@ -374,7 +371,7 @@ function SnapshotChart({
                     components={{ num: <span className="font-semibold text-q-gold tabular-nums" /> }}
                   />
                 </p>
-                <p className="mt-0.5 text-[10px] text-muted-foreground">{t('timeline.clickToView')}</p>
+                <p className="mt-0.5 text-2xs text-muted-foreground">{t('timeline.clickToView')}</p>
               </div>
             );
           }}

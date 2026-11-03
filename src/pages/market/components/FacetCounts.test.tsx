@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 import React from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
+import { TooltipProvider } from '@pd2-trader/ui';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import { TriField } from './controls';
 
 afterEach(() => {

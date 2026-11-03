@@ -1,8 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { AlertCircle, Check, CircleDashed, Info, Users } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn, Skeleton, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@pd2-trader/ui';
 import {
   type CharacterDetail,
   filterParams,
@@ -158,7 +156,7 @@ function TopItems({ query, worn }: { query: BuildsQuery<ShoppingListResponse>; w
                       <span className={cn('min-w-0 flex-1 truncate text-xs', qualityText(item.quality))}>
                         {item.name}
                       </span>
-                      <span className="text-[11px] text-muted-foreground tabular-nums">{fmtPct(item.pct)}</span>
+                      <span className="text-2xs text-muted-foreground tabular-nums">{fmtPct(item.pct)}</span>
                     </div>
                     <ShareBar pct={item.pct}
                       className="mt-1"
@@ -167,11 +165,11 @@ function TopItems({ query, worn }: { query: BuildsQuery<ShoppingListResponse>; w
                   <PriceChip hr={item.priceHr}
                     className="w-14 text-right" />
                   {has ? (
-                    <span className="flex w-[72px] items-center gap-1 text-[11px] font-medium text-success">
+                    <span className="flex w-18 items-center gap-1 text-2xs font-medium text-success">
                       <Check className="size-3.5" /> {t('gearUp.worn')}
                     </span>
                   ) : (
-                    <span className="flex w-[72px] items-center gap-1 text-[11px] text-muted-foreground">
+                    <span className="flex w-18 items-center gap-1 text-2xs text-muted-foreground">
                       <CircleDashed className="size-3.5" /> {t('gearUp.missing')}
                     </span>
                   )}
@@ -227,7 +225,7 @@ function PeerSkills({ query, detail }: { query: BuildsQuery<UsageResponse>; deta
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline gap-1.5">
                     <span className="min-w-0 flex-1 truncate text-xs">{s.name}</span>
-                    <span className="text-[11px] text-muted-foreground tabular-nums">{fmtPct(s.pct)}</span>
+                    <span className="text-2xs text-muted-foreground tabular-nums">{fmtPct(s.pct)}</span>
                   </div>
                   <ShareBar pct={s.pct}
                     className="mt-1" />

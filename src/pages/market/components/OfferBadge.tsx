@@ -1,8 +1,7 @@
 import React from 'react';
 import moment from 'moment';
 import { HandCoins } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger, cn } from '@pd2-trader/ui';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
 import { isAccepted, type ListingOffers } from '../lib/listing-offers';
 import { useTranslation } from '@/i18n';
@@ -50,7 +49,7 @@ export function OfferBadge({ offers, compact = false }: { offers: ListingOffers 
           tabIndex={0}
           aria-label={text}
           className={cn(
-            'inline-flex min-w-0 shrink cursor-default items-center gap-1 rounded-full border px-1.5 py-px text-[10px] leading-4 whitespace-nowrap',
+            'inline-flex min-w-0 shrink cursor-default items-center gap-1 rounded-full border px-1.5 py-px text-3xs leading-4 whitespace-nowrap',
             accepted ? 'border-success/50 bg-success/15 text-success' : 'border-primary/40 bg-primary/10 text-primary',
           )}
         >

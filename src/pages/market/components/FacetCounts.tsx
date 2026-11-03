@@ -1,6 +1,5 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn, Tooltip, TooltipContent, TooltipTrigger } from '@pd2-trader/ui';
 import { facetShare } from '../lib/facets';
 import { useTranslation } from '@/i18n';
 
@@ -26,7 +25,7 @@ export function FacetHairline({ share, inset = 3 }: { share: number; inset?: num
     <span
       aria-hidden
       data-facet-hairline
-      className="pointer-events-none absolute bottom-[2px] h-[2px] rounded-full bg-primary/60"
+      className="pointer-events-none absolute bottom-0.5 h-0.5 rounded-full bg-primary/60"
       style={{ left: inset, width: `calc((100% - ${2 * inset}px) * ${share})` }}
     />
   );
@@ -51,7 +50,7 @@ export function FacetTip({ text, children }: { text: string | undefined; childre
       <TooltipTrigger asChild>{children}</TooltipTrigger>
       {text && (
         <TooltipContent side="top"
-          className="px-2 py-1 text-[11px] tabular-nums">
+          className="px-2 py-1 text-2xs tabular-nums">
           {text}
         </TooltipContent>
       )}
@@ -71,7 +70,7 @@ export function FacetRowTip({ text, open }: { text: string; open: boolean }) {
           className="pointer-events-none absolute inset-0" />
       </TooltipTrigger>
       <TooltipContent side="right"
-        className="px-2 py-1 text-[11px] tabular-nums">
+        className="px-2 py-1 text-2xs tabular-nums">
         {text}
       </TooltipContent>
     </Tooltip>

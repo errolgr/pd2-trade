@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import moment from 'moment';
 import { Package, User as UserIcon } from 'lucide-react';
+import { cn, Popover, PopoverContent, PopoverTrigger, Skeleton } from '@pd2-trader/ui';
 import { t, Trans, useTranslation } from '@/i18n';
 import { openUrl } from '@/lib/browser-opener';
-import { cn } from '@/lib/utils';
 import { useItems } from '@/hooks/useItems';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PopoverKeyValue } from '@/components/custom/popover-parts';
-import { Skeleton } from '@/components/ui/skeleton';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import ItemStatsDisplay from '@/pages/quick-list/components/ItemStatsDisplay';
 import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
@@ -29,13 +27,13 @@ export const listingPillClass = cn(
 
 /** Thumbnail tile at the pill's start, a shade off the pill so the art reads as its own slot. */
 export const listingIconBoxClass =
-  'flex size-6 shrink-0 items-center justify-center rounded-[5px] border border-border/60 bg-linear-to-b from-muted/90 to-muted/50';
+  'flex size-6 shrink-0 items-center justify-center rounded-sm border border-border/60 bg-linear-to-b from-muted/90 to-muted/50';
 
 /** Same footprint as a loaded pill, so the sentence doesn't reflow much when the listing arrives. */
 export function ListingCardSkeleton() {
   const { t } = useTranslation('chat');
   return <Skeleton aria-label={t('listing.loading')}
-    className="mx-0.5 inline-block h-[30px] w-36 align-middle" />;
+    className="mx-0.5 inline-block h-7.5 w-36 align-middle" />;
 }
 
 /**
@@ -132,7 +130,7 @@ export function ListingDetails({
   const online = listed && isUserOnlineIngame(listing.user_last_ingame);
   const delta = market && listing.hr_price > 0 ? marketDelta(listing.hr_price, market.hr) : null;
   return (
-    <div className="w-80 max-w-[calc(100vw-16px)] rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-panel">
+    <div className="w-80 max-w-viewport rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-panel">
       <div className={cn('truncate text-sm font-semibold', nameColor(listing))}>{item.name}</div>
       {item.base?.name && item.base.name !== item.name && (
         <div className="truncate text-xs text-muted-foreground">{item.base.name}</div>
@@ -203,9 +201,7 @@ export function ListingDetails({
         )}
       </div>
       {children}
-      {shownHint && (
-        <div className="mt-2 border-t border-border pt-2 text-[11px] text-muted-foreground">{shownHint}</div>
-      )}
+      {shownHint && <div className="mt-2 border-t border-border pt-2 text-2xs text-muted-foreground">{shownHint}</div>}
     </div>
   );
 }
@@ -239,7 +235,7 @@ export function ListingCard({ listing, listed, url }: { listing: MarketListingEn
           </span>
           <span className={cn('truncate font-semibold', nameColor(listing))}>{listing.item.name}</span>
           {!listed && (
-            <span className="shrink-0 rounded-sm bg-muted px-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            <span className="shrink-0 rounded-sm bg-muted px-1 text-3xs font-medium uppercase tracking-wide text-muted-foreground">
               {t('listing.unlisted')}
             </span>
           )}

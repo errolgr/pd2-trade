@@ -18,6 +18,9 @@ import {
   SHADOWS,
   SHAPE_TOKENS,
   THEME_TOKENS,
+  TRACKING,
+  TYPE_SCALE,
+  WIDTHS,
   Z_LAYERS,
   type ColorToken,
 } from '../src/tokens';
@@ -60,6 +63,17 @@ export function renderTailwindCss(): string {
       `--ease-spring: ${cubicBezier(EASING.spring)};`,
       '',
       ...Object.entries(Z_LAYERS).map(([k, z]) => `--z-index-${k}: ${z};`),
+      '',
+      '/* Type scale: only the named steps exist (Tailwind defaults reset). */',
+      '--text-*: initial;',
+      ...Object.entries(TYPE_SCALE).flatMap(([k, [size, lineHeight]]) => [
+        `--text-${k}: ${size};`,
+        `--text-${k}--line-height: ${lineHeight};`,
+      ]),
+      '',
+      ...Object.entries(TRACKING).map(([k, v]) => `--tracking-${k}: ${v};`),
+      '',
+      ...Object.entries(WIDTHS).map(([k, v]) => `--container-${k}: ${v};`),
     ]),
     block(
       'Inline: per-theme values resolve where used, so themed subtrees (picker previews) get their own vars.',

@@ -1,13 +1,22 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Form, FormControl, FormField, FormMessage } from '@/components/ui/form';
 import React from 'react';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormMessage,
+  Switch,
+  Input,
+  Slider,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@pd2-trader/ui';
 import { ISettings, useOptions } from '@/hooks/useOptions';
-import { Switch } from '@/components/ui/switch';
-import { Input } from '@/components/ui/input';
-import { Slider } from '@/components/ui/slider';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SettingsGroup, SettingsHint, SettingsLink, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import { AUTO_SNAPSHOT_OPTIONS, optionLabel, TICKER_ANCHOR_OPTIONS } from '../setting-options';
 import { PublicProfileGroup } from './public-profile';
@@ -128,7 +137,7 @@ export function NetWorthForm() {
                   <Select value={String(field.value)}
                     onValueChange={(value) => field.onChange(Number(value))}>
                     <FormControl>
-                      <SelectTrigger className="w-[220px]">
+                      <SelectTrigger className="w-control">
                         <SelectValue placeholder={t('networth.history.autoSnapshot.placeholder')} />
                       </SelectTrigger>
                     </FormControl>
@@ -183,7 +192,7 @@ export function NetWorthForm() {
                   <Select value={field.value}
                     onValueChange={field.onChange}>
                     <FormControl>
-                      <SelectTrigger className="w-[220px]">
+                      <SelectTrigger className="w-control">
                         <SelectValue placeholder={t('networth.ticker.position.placeholder')} />
                       </SelectTrigger>
                     </FormControl>
@@ -217,7 +226,7 @@ export function NetWorthForm() {
                   />
                 }
                 control={
-                  <div className="flex w-[220px] items-center gap-3">
+                  <div className="flex w-control items-center gap-3">
                     <FormControl>
                       <Slider
                         className="flex-1"
@@ -232,7 +241,7 @@ export function NetWorthForm() {
                       aria-hidden
                       title={t('networth.ticker.preview')}
                       style={{ opacity: field.value / 100 }}
-                      className="rounded-md border border-border bg-surface px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-surface-foreground shadow-xs transition-opacity duration-(--dur-fast)"
+                      className="rounded-md border border-border bg-surface px-1.5 py-0.5 text-2xs font-semibold tabular-nums text-surface-foreground shadow-xs transition-opacity duration-(--dur-fast)"
                     >
                       <span className="text-q-gold">HR</span>
                     </span>
@@ -267,7 +276,7 @@ export function NetWorthForm() {
                         type="number"
                         min={0}
                         step={0.1}
-                        className="w-[120px] tabular-nums"
+                        className="w-30 tabular-nums"
                         value={Number.isFinite(field.value) ? field.value : ''}
                         onChange={(e) => field.onChange(e.target.value === '' ? NaN : Number(e.target.value))}
                       />

@@ -1,7 +1,5 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import moment from 'moment';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
 import type {
   CheckPriority,
   RareAppraisal,
@@ -28,6 +26,7 @@ import {
 } from './rares-format';
 import { Trans, useTranslation } from '@/i18n';
 import type { TFunction } from 'i18next';
+import { Tooltip, TooltipContent, TooltipTrigger, cn } from '@pd2-trader/ui';
 
 /*
  * Building blocks shared by the price-check rare card and the Net Worth "Rares" tab.
@@ -43,7 +42,7 @@ const PRIORITY_TITLES: Record<CheckPriority, { titleKey: string }> = {
 /** Section caption, same as the price-check "Stats" label. */
 export function SectionLabel({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <span className={cn('text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground', className)}>
+    <span className={cn('text-2xs font-medium uppercase tracking-caps text-muted-foreground', className)}>
       {children}
     </span>
   );
@@ -76,7 +75,7 @@ export function VerdictBadge({
     <Hint text={title}>
       <span
         className={cn(
-          'inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase leading-none tracking-wider',
+          'inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-2xs font-semibold uppercase leading-none tracking-wider',
           VERDICT_BADGE_CLASS[rare.verdict],
           title && 'cursor-help',
           className,
@@ -95,12 +94,12 @@ export function CraftedBadges({ rare, className }: { rare: RareAppraisal; classN
   const recipe = rare.recipe ? RECIPE_LABELS[rare.recipe] : 'Crafted';
   return (
     <span className={cn('inline-flex shrink-0 items-center gap-1', className)}>
-      <span className="inline-flex shrink-0 items-center rounded-full border border-q-crafted/40 bg-q-crafted/10 px-2 py-0.5 text-[11px] font-medium leading-none text-q-crafted">
+      <span className="inline-flex shrink-0 items-center rounded-full border border-q-crafted/40 bg-q-crafted/10 px-2 py-0.5 text-2xs font-medium leading-none text-q-crafted">
         {recipe}
       </span>
       {rare.confidence === 'low' && (
         <Hint text={t('crafted.lowConfidenceTitle')}>
-          <span className="inline-flex shrink-0 cursor-help items-center gap-1 rounded-full border border-amber-500/50 bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold leading-none text-amber-500">
+          <span className="inline-flex shrink-0 cursor-help items-center gap-1 rounded-full border border-amber-500/50 bg-amber-500/10 px-2 py-0.5 text-2xs font-semibold leading-none text-amber-500">
             <TriangleAlert aria-hidden
               className="size-3" />
             {t('crafted.lowConfidence')}
@@ -130,27 +129,27 @@ export function RankBar({ rare, rule }: { rare: RareAppraisal; rule: VerdictRule
   ] as const;
   return (
     <div
-      className="relative h-[40px] select-none"
+      className="relative h-10 select-none"
       role="img"
       aria-label={t('rankBar.ariaLabel', { percentile: label, slots, error: Math.round(rare.rankError * 100) })}
     >
       {rules.map(([name, at]) => (
         <React.Fragment key={name}>
           <span
-            className="absolute top-0 -translate-x-1/2 text-[9px] uppercase leading-none tracking-wider text-muted-foreground"
+            className="absolute top-0 -translate-x-1/2 text-3xs uppercase leading-none tracking-wider text-muted-foreground"
             style={{ left: pct(at) }}
           >
             {name === 'vendor' ? t('rankBar.vendor') : t('rankBar.keep')}
           </span>
           <span
-            className="absolute top-[10px] h-[18px] border-l border-dashed border-muted-foreground/60"
+            className="absolute top-2.5 h-4.5 border-l border-dashed border-muted-foreground/60"
             style={{ left: pct(at) }}
           />
         </React.Fragment>
       ))}
-      <span className="absolute inset-x-0 top-[16px] h-1.5 rounded-full bg-muted" />
+      <span className="absolute inset-x-0 top-4 h-1.5 rounded-full bg-muted" />
       <span
-        className="absolute top-[16px] h-1.5 rounded-full"
+        className="absolute top-4 h-1.5 rounded-full"
         style={{ left: pct(lo), width: pct(hi - lo), background: color, opacity: 0.3 }}
       />
       <span
@@ -158,13 +157,13 @@ export function RankBar({ rare, rule }: { rare: RareAppraisal; rule: VerdictRule
         style={{ left: pct(rare.rank), background: color, color }}
       />
       {rare.rank > 0.1 && (
-        <span className="absolute left-0 top-[30px] text-[9px] leading-none text-muted-foreground/70">0</span>
+        <span className="absolute left-0 top-7.5 text-3xs leading-none text-muted-foreground/70">0</span>
       )}
       {rare.rank < 0.9 && (
-        <span className="absolute right-0 top-[30px] text-[9px] leading-none text-muted-foreground/70">100</span>
+        <span className="absolute right-0 top-7.5 text-3xs leading-none text-muted-foreground/70">100</span>
       )}
       <span
-        className="absolute top-[30px] -translate-x-1/2 text-[10px] font-semibold leading-none tabular-nums"
+        className="absolute top-7.5 -translate-x-1/2 text-3xs font-semibold leading-none tabular-nums"
         style={{ left: pct(Math.min(0.95, Math.max(0.05, rare.rank))), color }}
       >
         {label}
@@ -191,7 +190,7 @@ export function RankBlocks({ rare }: { rare: RareAppraisal }) {
         block: t(RANK_BLOCKS[at]?.labelKey),
       })}
     >
-      <SectionLabel className="text-[10px]">
+      <SectionLabel className="text-2xs">
         <Trans
           t={t}
           i18nKey="rankBlocks.title"
@@ -209,7 +208,7 @@ export function RankBlocks({ rare }: { rare: RareAppraisal }) {
             />
             <span
               className={cn(
-                'whitespace-nowrap text-[10px] leading-none tabular-nums',
+                'whitespace-nowrap text-3xs leading-none tabular-nums',
                 i === at ? 'font-semibold' : 'text-muted-foreground/80',
               )}
               style={i === at ? { color } : undefined}
@@ -324,7 +323,7 @@ export function ItemStatsSection({
                   <Hint text={note}>
                     <span
                       className={cn(
-                        'shrink-0 cursor-help rounded border px-1 text-[10px] font-semibold leading-4 tabular-nums',
+                        'shrink-0 cursor-help rounded border px-1 text-3xs font-semibold leading-4 tabular-nums',
                         tag === 'C'
                           ? 'border-q-corrupted/40 bg-q-corrupted/10 text-q-corrupted'
                           : 'border-border bg-muted/60 text-muted-foreground',
@@ -343,14 +342,14 @@ export function ItemStatsSection({
                           style={{ width: `${Math.round((s.roll ?? 0) * 100)}%` }}
                         />
                       </span>
-                      <span className="text-[10px] text-muted-foreground">
+                      <span className="text-2xs text-muted-foreground">
                         {t('stats.roll', { percent: Math.round((s.roll ?? 0) * 100) })}
                       </span>
                     </>
                   )}
                   {mult && (
                     <>
-                      {roll && <span className="text-[10px] text-muted-foreground">·</span>}
+                      {roll && <span className="text-2xs text-muted-foreground">·</span>}
                       <span className="font-semibold text-foreground">{mult}</span>
                     </>
                   )}
@@ -376,7 +375,7 @@ export function HardcoreNote({
 }) {
   const note = hardcoreNote(rare, hardcore);
   if (!note) return null;
-  return <p className={cn('text-[11px] leading-snug text-muted-foreground', className)}>{note}.</p>;
+  return <p className={cn('text-2xs leading-snug text-muted-foreground', className)}>{note}.</p>;
 }
 
 /** Asking price of one listing: HR without trailing zeros ("3.5 HR", "2 HR", "0.15 HR"), else the seller's text. */
@@ -413,7 +412,7 @@ export function RareHistorySection({ history }: { history: RareHistory | null })
             <span className="flex min-w-0 items-center gap-2">
               <span className="tabular-nums text-muted-foreground">{moment(l.listedAt).format('MMM D')}</span>
               {l.sellerChanged && (
-                <span className="rounded-full border border-info/40 bg-info/10 px-1.5 py-px text-[10px] font-medium leading-none text-info">
+                <span className="rounded-full border border-info/40 bg-info/10 px-1.5 py-px text-3xs font-medium leading-none text-info">
                   {t('history.newOwner')}
                 </span>
               )}

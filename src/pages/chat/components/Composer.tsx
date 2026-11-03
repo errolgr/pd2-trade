@@ -26,16 +26,15 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem, cn } from '@pd2-trader/ui';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { ChatListingState } from '../hooks/useChatListings';
 import { ChatTemplateForm } from '@/components/custom/chat-template-form';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useChatTemplates, type ChatTemplateDraft } from '@/hooks/useChatTemplates';
 import { useOptions, type ISettings } from '@/hooks/useOptions';
 import { Trans, useTranslation } from '@/i18n';
 import { CHAT_TEMPLATE_TOKENS, fillTemplate, templatePlaceholders } from '@/lib/message-templates';
 import { fadeInUp } from '@/lib/motion';
-import { cn } from '@/lib/utils';
 import { undoToast, useOverlay } from '@/overlay';
 import { useChatListings } from '../hooks/useChatListings';
 import {
@@ -540,7 +539,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
             animate="visible"
             className="absolute inset-x-0 bottom-full z-20 mb-2 overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-panel"
           >
-            <div className="flex items-center gap-1.5 border-b border-border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <div className="flex items-center gap-1.5 border-b border-border px-3 py-1.5 text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
               <FileText className="size-3 shrink-0" />
               <span className="shrink-0">{t('composer.templates')}</span>
               <span className="ml-auto truncate font-normal normal-case tracking-normal">
@@ -802,11 +801,11 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               </button>
             ))
           ) : (
-            <span className="shrink-0 whitespace-nowrap text-[11px] text-muted-foreground/80">
+            <span className="shrink-0 whitespace-nowrap text-2xs text-muted-foreground/80">
               {t('composer.starHint')}
             </span>
           )}
-          <span className="ml-auto hidden truncate pr-1 text-[10px] text-muted-foreground/80 @min-[640px]:inline">
+          <span className="ml-auto hidden truncate pr-1 text-2xs text-muted-foreground/80 @min-[640px]:inline">
             <Trans t={t}
               i18nKey="composer.newLine"
               components={{ kbd: <kbd className="font-sans font-semibold" /> }} />
@@ -861,7 +860,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               }}
               onDrop={(e) => e.preventDefault()}
               // 1–6 lines: grows with its content, then scrolls
-              className="max-h-[8.25rem] min-h-8 overflow-y-auto whitespace-pre-wrap break-words px-1.5 py-1.5 text-sm leading-5 text-foreground outline-none"
+              className="max-h-33 min-h-8 overflow-y-auto whitespace-pre-wrap break-words px-1.5 py-1.5 text-sm leading-5 text-foreground outline-none"
             />
             {pills.map((node, index) => {
               const { url, key } = pillInfo(node);
@@ -892,7 +891,7 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
           </Tip>
         </div>
         {channel === 'whisper' && (
-          <p className="flex items-center gap-1.5 border-t border-border/50 px-3 py-1 text-[11px] text-muted-foreground">
+          <p className="flex items-center gap-1.5 border-t border-border/50 px-3 py-1 text-2xs text-muted-foreground">
             <ClipboardCopy aria-hidden
               className="size-3 shrink-0 text-warning" />
             <span className="truncate">

@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Coins, Info, PackageOpen } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@pd2-trader/ui';
 import { formatHr } from '@/lib/utils';
 import { EASE_OUT, listItem, listStagger } from '@/lib/motion';
 import { NET_WORTH_CATEGORIES, type Valuation } from '@/lib/networth-api';

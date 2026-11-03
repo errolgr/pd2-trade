@@ -1,8 +1,7 @@
 import * as React from 'react';
 import { motion } from 'framer-motion';
 import { GripVertical, X } from 'lucide-react';
-
-import { cn } from '@/lib/utils';
+import { cn } from '@pd2-trader/ui';
 import { scaleIn, useReducedMotionSafe } from '@/lib/motion';
 import { useTranslation } from '@/i18n';
 

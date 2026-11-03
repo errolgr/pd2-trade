@@ -159,7 +159,7 @@ export const useActionsSource: PaletteSource = ({ query, scope, limit, refs }) =
       return {
         ref: { id: `actions:${def.key}`, group: 'actions', title: label },
         icon: def.icon,
-        trailing: hotkey ? <kbd className="font-sans text-[11px] text-muted-foreground">{hotkey}</kbd> : undefined,
+        trailing: hotkey ? <kbd className="font-sans text-2xs text-muted-foreground">{hotkey}</kbd> : undefined,
         primary: { id: 'run', label, run: def.run },
       };
     };

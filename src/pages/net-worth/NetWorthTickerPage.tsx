@@ -2,13 +2,13 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { MotionConfig } from 'framer-motion';
+import { cn } from '@pd2-trader/ui';
 import { useOptions } from '@/hooks/useOptions';
 import { useNetWorth } from '@/hooks/useNetWorth';
 import { useWealthRank } from '@/hooks/useWealthRank';
 import { usePanel, useOverlay } from '@/overlay';
 import { screenToOverlayRect } from '@/overlay/game';
 import { loadPanelRect } from '@/overlay/layout-storage';
-import { cn } from '@/lib/utils';
 import { AnimatedNumber, useChangeFlash } from '@/pages/currency/components/AnimatedNumber';
 import {
   clampToArea,
@@ -192,14 +192,14 @@ const NetWorthTicker: React.FC = () => {
           >
             {total !== null ? <AnimatedNumber value={total}
               format={formatHr} /> : status === 'loading' ? '…' : '—'}{' '}
-            <span className="text-[11px] font-medium text-muted-foreground">HR</span>
+            <span className="text-2xs font-medium text-muted-foreground">HR</span>
           </span>
           {sessionDelta !== null && (
             <>
               <span aria-hidden
                 className="h-3 w-px bg-border" />
               <span className={cn('tabular-nums', sessionDelta >= 0 ? 'text-success' : 'text-destructive')}>
-                <span className="text-[10px]">{sessionDelta >= 0 ? '▲' : '▼'}</span> {formatSignedHr(sessionDelta)}{' '}
+                <span className="text-2xs">{sessionDelta >= 0 ? '▲' : '▼'}</span> {formatSignedHr(sessionDelta)}{' '}
                 <span className="font-normal opacity-80">{t('ticker.session')}</span>
               </span>
             </>
@@ -222,7 +222,7 @@ const NetWorthTicker: React.FC = () => {
           )}
           <span
             className={cn(
-              'ml-0.5 size-2 shrink-0 rounded-full ring-[3px] transition-colors duration-(--dur-med)',
+              'ml-0.5 size-2 shrink-0 rounded-full ring-3 transition-colors duration-(--dur-med)',
               dotClass,
               status === 'loading' && 'motion-safe:animate-pulse',
             )}

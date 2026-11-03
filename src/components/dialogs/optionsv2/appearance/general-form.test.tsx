@@ -12,7 +12,10 @@ vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(), invoke: vi.fn() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 // vi.mock factories are hoisted above static imports, so the shim must be loaded inside the factory.
-vi.mock('@/components/ui/select', async () => (await import('../test-utils')).selectShim);
+vi.mock('@pd2-trader/ui', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  ...(await import('../test-utils')).selectShim,
+}));
 
 const BASE: Partial<ISettings> = { mode: 'softcore', ladder: 'ladder', diablo2Directory: '' };
 

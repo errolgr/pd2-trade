@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@pd2-trader/ui';
 
 /*
  * Building blocks of the price-check market popovers (uniques' price popover, rares' appraisal popover),
@@ -29,7 +29,7 @@ export function PopoverTile({
       )}
       style={style}
     >
-      <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="text-3xs font-medium uppercase tracking-wider text-muted-foreground">{label}</div>
       <div className={cn('text-sm tabular-nums', emphasis ? 'font-bold text-foreground' : 'font-medium')}>
         {children}
       </div>
@@ -60,7 +60,7 @@ export function PopoverSectionTitle({
   return (
     <div className={cn('mb-1.5 flex items-center justify-between gap-3 text-xs font-semibold', className)}>
       <span>{children}</span>
-      {aside && <span className="flex items-center gap-1 text-[10px] font-normal text-muted-foreground">{aside}</span>}
+      {aside && <span className="flex items-center gap-1 text-2xs font-normal text-muted-foreground">{aside}</span>}
     </div>
   );
 }

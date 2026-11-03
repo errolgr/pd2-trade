@@ -1,20 +1,29 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Form, FormControl, FormField, FormMessage } from '@/components/ui/form';
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import { useOptions } from '@/hooks/useOptions';
-import { Input } from '@/components/ui/input';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { isTauri, invoke } from '@tauri-apps/api/core';
 import { FolderSearch, Wand2 } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
 import { getSeasonSettingOptions } from '@/lib/seasons';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import { LADDER_OPTIONS, MODE_OPTIONS, optionLabel } from '../setting-options';
 import { showToast } from '@/overlay';
 import type { TFunction } from 'i18next';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormMessage,
+  Button,
+  Input,
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+  Switch,
+} from '@pd2-trader/ui';
 import { useTranslation } from '@/i18n';
 
 const makeAppearanceFormSchema = (t: TFunction) =>
@@ -114,7 +123,7 @@ export function GeneralForm() {
                     onValueChange={field.onChange}
                     defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger className="w-[220px]">
+                      <SelectTrigger className="w-control">
                         <SelectValue placeholder="Ladder" />
                       </SelectTrigger>
                     </FormControl>
@@ -145,7 +154,7 @@ export function GeneralForm() {
                     onValueChange={field.onChange}
                     defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger className="w-[220px]">
+                      <SelectTrigger className="w-control">
                         <SelectValue placeholder={t('general.game.mode')} />
                       </SelectTrigger>
                     </FormControl>
@@ -174,7 +183,7 @@ export function GeneralForm() {
                 onValueChange={(value) => updateSettings({ selectedSeasonId: value })}
               >
                 <FormControl>
-                  <SelectTrigger className="w-[220px]">
+                  <SelectTrigger className="w-control">
                     <SelectValue placeholder={t('general.game.season.label')} />
                   </SelectTrigger>
                 </FormControl>
@@ -215,7 +224,7 @@ export function GeneralForm() {
                     <FormControl>
                       <Input
                         placeholder="C:\Diablo II"
-                        className="flex-1 font-mono text-[13px]"
+                        className="flex-1 font-mono text-sm"
                         spellCheck={false}
                         value={field.value || ''}
                         onChange={(e) => field.onChange(e.target.value)}

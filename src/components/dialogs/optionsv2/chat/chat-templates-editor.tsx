@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, ChevronUp, FileText, Pencil, Plus, Star, X } from 'lucide-react';
+import { Button, cn } from '@pd2-trader/ui';
 import { ChatTemplateForm } from '@/components/custom/chat-template-form';
-import { Button } from '@/components/ui/button';
 import { useChatTemplates } from '@/hooks/useChatTemplates';
 import { listItem, springSnappy } from '@/lib/motion';
-import { cn } from '@/lib/utils';
 import { SETTING_HIGHLIGHT } from '../settings-ui';
 import { MacroTemplate } from '@/pages/quick-list/components/MacroManagerSheet';
 import { Trans, useTranslation } from '@/i18n';
@@ -31,13 +30,13 @@ export function ChatTemplatesEditor() {
         SETTING_HIGHLIGHT,
       )}
     >
-      <p className="text-[13px] leading-relaxed text-muted-foreground">
+      <p className="text-sm leading-relaxed text-muted-foreground">
         <Trans
           t={t}
           i18nKey="chatTemplates.intro"
           values={{ placeholder: '{name}' }}
           components={{
-            kbd: <kbd className="rounded-sm border border-border/70 bg-muted/60 px-1 font-mono text-[11px]" />,
+            kbd: <kbd className="rounded-sm border border-border/70 bg-muted/60 px-1 font-mono text-2xs" />,
           }}
         />
       </p>

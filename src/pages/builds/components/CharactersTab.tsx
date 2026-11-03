@@ -1,9 +1,6 @@
 import React from 'react';
 import { ChevronRight, Clock, LogIn, Skull, Star, StarOff, Trash2, UserRound, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { cn, Badge, Button, Skeleton } from '@pd2-trader/ui';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
 import { useOptions, type BuildCharacterRef } from '@/hooks/useOptions';
 import { useSignIn } from '@/hooks/useSignIn';
@@ -112,7 +109,7 @@ export function CharactersTab({ view, onView }: { view: CharactersView; onView: 
   );
 }
 
-const Count = ({ n }: { n: number }) => <span className="text-[10px] text-muted-foreground tabular-nums">{n}</span>;
+const Count = ({ n }: { n: number }) => <span className="text-3xs text-muted-foreground tabular-nums">{n}</span>;
 
 function CharacterRows({ children }: { children: React.ReactNode }) {
   return <div className="divide-y divide-border/40">{children}</div>;
@@ -225,7 +222,7 @@ function AccountSection({ account }: { account: string }) {
           )}
           {others.length > 0 && (
             <>
-              <p className="border-t border-border/50 px-3 pt-2 pb-1 text-[10px] tracking-wide text-muted-foreground uppercase">
+              <p className="border-t border-border/50 px-3 pt-2 pb-1 text-3xs tracking-wide text-muted-foreground uppercase">
                 {t('characters.otherModes')}
               </p>
               <CharacterRows>
@@ -254,7 +251,7 @@ function MyCharacterCard({ character: c, secondary = false }: { character: Accou
           size={30} />
         <div className="min-w-0 flex-1">
           <div className="truncate text-xs font-medium text-foreground">{c.name}</div>
-          <div className="flex flex-wrap items-center gap-1 text-[11px] text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-1 text-2xs text-muted-foreground">
             <span className="tabular-nums">{t('characters.level', { level: c.level })}</span>
             <span style={{ color: classMeta(c.className).color }}>{c.className}</span>
           </div>
@@ -262,12 +259,12 @@ function MyCharacterCard({ character: c, secondary = false }: { character: Accou
       </div>
       <div className="flex w-36 shrink-0 items-center gap-1">
         <Badge variant="outline"
-          className="px-1.5 py-0 text-[10px]">
+          className="px-1.5 py-0 text-2xs">
           {c.ladder ? 'Ladder' : 'Non-ladder'}
         </Badge>
         {c.hardcore && (
           <Badge variant="outline"
-            className="border-destructive/40 px-1.5 py-0 text-[10px] text-destructive">
+            className="border-destructive/40 px-1.5 py-0 text-2xs text-destructive">
             Hardcore
           </Badge>
         )}
@@ -277,7 +274,7 @@ function MyCharacterCard({ character: c, secondary = false }: { character: Accou
           <TrackedSummary name={c.name}
             mode={charMode} />
         ) : !c.ladder ? (
-          <p className="text-[11px] text-muted-foreground">{t('characters.onlyLadder')}</p>
+          <p className="text-2xs text-muted-foreground">{t('characters.onlyLadder')}</p>
         ) : (
           <BelowMinLevel className={c.className} />
         )}
@@ -291,12 +288,10 @@ function BelowMinLevel({ className }: { className: string }) {
   const { showClassMeta } = useBuildsActions();
   return (
     <div className="flex items-center justify-between gap-2">
-      <span className="text-[11px] text-muted-foreground">
-        {t('characters.trackedFrom', { level: BUILDS_MIN_LEVEL })}
-      </span>
+      <span className="text-2xs text-muted-foreground">{t('characters.trackedFrom', { level: BUILDS_MIN_LEVEL })}</span>
       <Button variant="outline"
         size="sm"
-        className="h-6 px-2 text-[11px]"
+        className="h-6 px-2 text-2xs"
         onClick={() => showClassMeta(className)}>
         {t('characters.seeClassBuilds', { level: BUILDS_MIN_LEVEL, className })}
       </Button>
@@ -310,7 +305,7 @@ function TrackedSummary({ name, mode }: { name: string; mode: BuildsMode }) {
   const { openCharacter } = useBuildsActions();
   const query = useBuildCharacter(name, mode);
   if (query.status === 404) {
-    return <p className="text-[11px] text-muted-foreground">{t('characters.notCrawled')}</p>;
+    return <p className="text-2xs text-muted-foreground">{t('characters.notCrawled')}</p>;
   }
   if (query.error) return <QueryError query={query}
     compact
@@ -328,7 +323,7 @@ function TrackedSummary({ name, mode }: { name: string; mode: BuildsMode }) {
           name={s.name}
           size={20} />
       ))}
-      <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">
+      <span className="min-w-0 flex-1 truncate text-2xs text-muted-foreground">
         {signatureSkills(detail.skills, 1)[0]?.name ?? t('characters.build')} · {timeAgo(detail.lastUpdated)}
       </span>
       <PriceChip hr={detail.gearValueHr} />
@@ -362,7 +357,7 @@ function TrackedCard({
         className="flex w-full items-center gap-2.5 px-3 py-2 text-left outline-none focus-visible:bg-accent/40"
       >
         {detail ? <ClassEmblem className={detail.className}
-          size={30} /> : <Skeleton className="h-[30px] w-[34px]" />}
+          size={30} /> : <Skeleton className="h-7.5 w-8.5" />}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1 truncate text-xs font-medium text-foreground">
             {charRef.name}
@@ -371,7 +366,7 @@ function TrackedCard({
                 aria-label={t('characters.dead')} />
             )}
           </div>
-          <div className="text-[11px] text-muted-foreground">
+          <div className="text-2xs text-muted-foreground">
             {query.status === 404 ? (
               t('characters.notInMode', { mode: charRef.mode })
             ) : query.error ? (

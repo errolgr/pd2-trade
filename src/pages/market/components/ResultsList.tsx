@@ -2,8 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import moment from 'moment';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Heart, Loader2, Sigma } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn, ScrollArea } from '@pd2-trader/ui';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
 import { ListingThumb } from '@/pages/chat/components/ListingCard';
 import { DealBadge } from '@/pages/market/enrich/DealBadge';
@@ -257,13 +256,13 @@ const ResultRow = React.memo(function ResultRow({
 
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-baseline gap-1.5">
-          <span className={cn('truncate text-[13px] font-semibold', itemNameColor(item))}>{item.name}</span>
-          {base && <span className="truncate text-[11px] text-muted-foreground">{base}</span>}
-          {item.is_ethereal && <span className="shrink-0 text-[10px] text-info">eth</span>}
+          <span className={cn('truncate text-sm font-semibold', itemNameColor(item))}>{item.name}</span>
+          {base && <span className="truncate text-2xs text-muted-foreground">{base}</span>}
+          {item.is_ethereal && <span className="shrink-0 text-2xs text-info">eth</span>}
           {item.socket_count > 0 && (
-            <span className="shrink-0 text-[10px] text-muted-foreground">{`${item.socket_count}os`}</span>
+            <span className="shrink-0 text-2xs text-muted-foreground">{`${item.socket_count}os`}</span>
           )}
-          {item.corrupted && <span className="shrink-0 text-[10px] text-q-corrupted">corr</span>}
+          {item.corrupted && <span className="shrink-0 text-2xs text-q-corrupted">corr</span>}
           {favorite && (
             <Heart className="size-3 shrink-0 fill-destructive text-destructive"
               aria-label={t('results.favorite')} />
@@ -271,7 +270,7 @@ const ResultRow = React.memo(function ResultRow({
           <OfferBadge offers={offers}
             compact />
         </div>
-        <div className="truncate text-[11px] leading-4 text-muted-foreground"
+        <div className="truncate text-2xs leading-4 text-muted-foreground"
           title={summary}>
           {summary || '\u00a0'}
         </div>
@@ -281,7 +280,7 @@ const ResultRow = React.memo(function ResultRow({
               <span
                 key={key}
                 title={statWithValue(key, row.pseudo[key] ?? 0)}
-                className="inline-flex h-4 max-w-40 shrink-0 items-center gap-0.5 rounded-sm bg-info/10 px-1 text-[10px] tabular-nums text-info"
+                className="inline-flex h-4 max-w-40 shrink-0 items-center gap-0.5 rounded-sm bg-info/10 px-1 text-3xs tabular-nums text-info"
               >
                 <Sigma className="size-2.5 shrink-0" />
                 <span className="truncate">{statWithValue(key, row.pseudo[key] ?? 0, { short: true })}</span>
@@ -303,12 +302,12 @@ const ResultRow = React.memo(function ResultRow({
           </span>
         </div>
         {price && listing.price && (
-          <span className="max-w-full truncate text-[10px] text-muted-foreground"
+          <span className="max-w-full truncate text-2xs text-muted-foreground"
             title={listing.price}>
             {listing.price}
           </span>
         )}
-        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-2xs text-muted-foreground">
           {listing.user?.username && (
             <SellerName onOpen={openTrader}
               className="max-w-16">

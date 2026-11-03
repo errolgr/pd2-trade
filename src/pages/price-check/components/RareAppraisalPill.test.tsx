@@ -2,8 +2,8 @@
 import React from 'react';
 import { MotionGlobalConfig } from 'framer-motion';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { TooltipProvider } from '@pd2-trader/ui';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import type { RareAppraisal } from '@/lib/rare-appraisal-api';
 import { RareAppraisalPill, RareAppraisalPillSkeleton } from './RareAppraisalPill';
 

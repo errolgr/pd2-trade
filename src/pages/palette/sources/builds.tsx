@@ -124,7 +124,12 @@ const norm = (s: string) =>
 const compact = (s: string) => s.replace(/ /g, '');
 
 function buildIndex(): LocalEntry[] {
-  const entries: LocalEntry[] = CLASS_META.map((c) => ({ kind: 'class', value: c.name, className: c.name, nicknames: [] }));
+  const entries: LocalEntry[] = CLASS_META.map((c) => ({
+    kind: 'class',
+    value: c.name,
+    className: c.name,
+    nicknames: [],
+  }));
   const seen = new Set<string>();
   for (const skill of Object.values(characterSkillMap)) {
     if (!skill.class || /temp\d$/i.test(skill.name)) continue;
@@ -294,7 +299,7 @@ function CharacterTrailing({ t, level, className, mode }: { t: TFunction } & Omi
   return (
     <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
       {mode === 'hardcore' && (
-        <span className="rounded border border-destructive/40 px-1 text-[10px] leading-4 font-semibold text-destructive">
+        <span className="rounded border border-destructive/40 px-1 text-2xs leading-4 font-semibold text-destructive">
           {t('palette.hardcore')}
         </span>
       )}
@@ -318,10 +323,12 @@ function characterItem(c: CharacterRow, { t, followed, updateSettings }: RowDeps
     subtitle: t('palette.character'),
     icon: c.className ? <ClassEmblem className={c.className}
       size={ICON_SIZE} /> : <User className="size-4" />,
-    trailing: hasTrailing ? <CharacterTrailing t={t}
-      level={c.level}
-      className={c.className}
-      mode={c.mode} /> : undefined,
+    trailing: hasTrailing ? (
+      <CharacterTrailing t={t}
+        level={c.level}
+        className={c.className}
+        mode={c.mode} />
+    ) : undefined,
     primary: {
       id: 'open',
       label: t('palette.openBuild'),
@@ -347,7 +354,12 @@ function characterItem(c: CharacterRow, { t, followed, updateSettings }: RowDeps
 
 function accountItem(account: string, characters: number | null, t: TFunction): PaletteItem {
   return {
-    ref: { id: `builds:account:${account.toLowerCase()}`, group: 'builds', title: account, data: { account, characters } },
+    ref: {
+      id: `builds:account:${account.toLowerCase()}`,
+      group: 'builds',
+      title: account,
+      data: { account, characters },
+    },
     subtitle: t('palette.account'),
     icon: <UserRound className="size-4" />,
     trailing:
@@ -379,9 +391,13 @@ function localItem(entry: LocalEntry, t: TFunction, badge?: string): PaletteItem
     },
     subtitle: isClass ? t('palette.class') : t('palette.skillOf', { className: entry.className }),
     badge,
-    icon: isClass ? <ClassEmblem className={entry.value}
-      size={ICON_SIZE} /> : <SkillIcon name={entry.value}
-      size={ICON_SIZE} />,
+    icon: isClass ? (
+      <ClassEmblem className={entry.value}
+        size={ICON_SIZE} />
+    ) : (
+      <SkillIcon name={entry.value}
+        size={ICON_SIZE} />
+    ),
     primary: {
       id: 'meta',
       label: t('palette.showMeta'),

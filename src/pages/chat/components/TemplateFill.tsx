@@ -1,7 +1,6 @@
 import React, { useId, useRef, useState } from 'react';
 import { CornerDownLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button, Input } from '@pd2-trader/ui';
 import { useTranslation } from '@/i18n';
 import { fillTemplate } from '@/lib/message-templates';
 
@@ -65,7 +64,7 @@ export function TemplateFill({ label, template, placeholders, vars, onInsert, on
             className="flex min-w-0 items-center gap-2">
             <label
               htmlFor={`${id}-${index}`}
-              className="max-w-24 shrink-0 truncate font-mono text-[11px] text-muted-foreground"
+              className="max-w-24 shrink-0 truncate font-mono text-2xs text-muted-foreground"
             >
               {`{${name}}`}
             </label>
@@ -115,7 +114,7 @@ export function TemplateFill({ label, template, placeholders, vars, onInsert, on
         </Button>
       </div>
       {blank.length > 0 && (
-        <p className="-mt-1 text-[11px] text-muted-foreground">
+        <p className="-mt-1 text-2xs text-muted-foreground">
           {t('templateFill.leftEmpty', { names: blank.map((name) => `{${name}}`).join(' ') })}
         </p>
       )}

@@ -1,9 +1,9 @@
 import React from 'react';
 import type { TFunction } from 'i18next';
 import { SlidersHorizontal } from 'lucide-react';
+import { cn } from '@pd2-trader/ui';
 import { type ISettings, useOptions } from '@/hooks/useOptions';
 import { useTranslation } from '@/i18n';
-import { cn } from '@/lib/utils';
 import { SETTINGS_SECTIONS } from '@/components/dialogs/optionsv2/settings-ui';
 import { optionLabel, type SettingOption } from '@/components/dialogs/optionsv2/setting-options';
 import type {
@@ -94,11 +94,11 @@ function settingItem(ctx: Ctx, entry: SettingEntry): PaletteItem {
         primary: disabled
           ? open
           : {
-            id: 'toggle',
-            label: on ? t('palette.turnOff') : t('palette.turnOn'),
-            keepOpen: true,
-            run: () => ctx.updateSettings({ [entry.key]: !on } as Partial<ISettings>),
-          },
+              id: 'toggle',
+              label: on ? t('palette.turnOff') : t('palette.turnOn'),
+              keepOpen: true,
+              run: () => ctx.updateSettings({ [entry.key]: !on } as Partial<ISettings>),
+            },
         actions: disabled ? undefined : [open],
       };
     }
@@ -149,7 +149,12 @@ export function settingTier(label: string, extras: readonly string[], query: str
   if (tier > 0) return tier + 1;
   if (bestTier(extras, query) > 0) return 1;
   const haystack = [label, ...extras].join('\n').toLowerCase();
-  return query.toLowerCase().split(/\s+/).every((word) => haystack.includes(word)) ? 1 : 0;
+  return query
+    .toLowerCase()
+    .split(/\s+/)
+    .every((word) => haystack.includes(word))
+    ? 1
+    : 0;
 }
 
 /** The matching candidates, best tier first, keeping registry / option order within a tier. */
@@ -212,11 +217,7 @@ export const useSettingsSource: PaletteSource = ({ query, scope, limit, refs }) 
     const matching = ranked(entries, (entry) =>
       settingTier(
         entryLabel(ctx, entry),
-        [
-          t(sectionOf(entry).titleKey),
-          ...(entry.groupKeys ?? []).map((key) => t(key)),
-          ...(entry.keywords ?? []),
-        ],
+        [t(sectionOf(entry).titleKey), ...(entry.groupKeys ?? []).map((key) => t(key)), ...(entry.keywords ?? [])],
         query,
       ),
     );

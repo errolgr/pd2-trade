@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { useOptions } from '@/hooks/useOptions';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus, X, ChevronUp, ChevronDown, Pencil, Check, NotebookPen } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Input, Button, cn } from '@pd2-trader/ui';
 import { Trans, useTranslation } from '@/i18n';
 import { fadeInUp, listItem, listStagger, springSnappy } from '@/lib/motion';
 
@@ -275,7 +273,7 @@ const MacroManagerSheet: React.FC<MacroManagerSheetProps> = ({ onApply }) => {
       )}
 
       <div className="flex flex-col gap-2 border-t border-border pt-4">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <span className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
           {t('macros.newMacro')}
         </span>
         <AnimatePresence>
@@ -312,7 +310,7 @@ const MacroManagerSheet: React.FC<MacroManagerSheetProps> = ({ onApply }) => {
             }
           }}
         />
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
+        <p className="text-2xs leading-relaxed text-muted-foreground">
           <Trans t={t}
             i18nKey="macros.hint"
             components={{ token: <code className={tokenClass} /> }} />

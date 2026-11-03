@@ -1,13 +1,10 @@
 import React, { useState } from 'react';
 import moment from 'moment';
 import { ArrowUp, Check, Clock, Loader2, Pencil, SquareArrowOutUpRight, Trash2, X as XIcon } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger, Input, Button, cn } from '@pd2-trader/ui';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { ListingThumb, nameColor } from '@/pages/chat/components/ListingCard';
 import { ItemTooltip } from '@/pages/market/components/ItemTooltip';
-import { cn } from '@/lib/utils';
 import { useTranslation } from '@/i18n';
 import { itemDisplayName } from '@/pages/market/lib/listing';
 import { bumpReadyAt } from './my-listings';
@@ -63,7 +60,7 @@ export function ListingName({
   );
 }
 
-const flag = 'inline-flex h-4 shrink-0 items-center rounded-sm border px-1 text-[10px] leading-none font-semibold';
+const flag = 'inline-flex h-4 shrink-0 items-center rounded-sm border px-1 text-2xs leading-none font-semibold';
 
 /** At-a-glance item flags: corrupted, ethereal, sockets. Nothing for a plain item. */
 export function ItemFlags({ listing }: { listing: MarketListingEntry }) {
@@ -185,7 +182,7 @@ export function ListingActions({
       {ready ? (
         <Button
           size="sm"
-          className={cn('w-[72px] gap-1 text-xs', compact ? 'h-6 px-2' : 'h-7 px-2.5')}
+          className={cn('w-18 gap-1 text-xs', compact ? 'h-6 px-2' : 'h-7 px-2.5')}
           onClick={() => handlers.onBump(listing)}
           disabled={bumping}
           aria-label={t('listing.bumpToTop')}
@@ -199,7 +196,7 @@ export function ListingActions({
             <span
               tabIndex={0}
               className={cn(
-                'inline-flex w-[72px] items-center justify-center gap-1 rounded-md border border-border/70 text-xs tabular-nums text-muted-foreground',
+                'inline-flex w-18 items-center justify-center gap-1 rounded-md border border-border/70 text-xs tabular-nums text-muted-foreground',
                 compact ? 'h-6 px-1.5' : 'h-7 px-2',
               )}
             >

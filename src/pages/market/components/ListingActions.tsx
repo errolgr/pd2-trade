@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { ChevronDown, Copy, HandCoins } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
+  cn,
+  Button,
+  Input,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@pd2-trader/ui';
 import { showToast } from '@/overlay';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { ListingActions } from '../hooks/useListingActions';
@@ -115,9 +117,7 @@ export function OfferButton({
         >
           <div className="text-xs font-semibold">{t('offer.formTitle', { item: listing.item.name })}</div>
           {listing.price && (
-            <div className="truncate text-[11px] text-muted-foreground">
-              {t('offer.asking', { price: listing.price })}
-            </div>
+            <div className="truncate text-2xs text-muted-foreground">{t('offer.asking', { price: listing.price })}</div>
           )}
           <Input
             autoFocus
@@ -128,7 +128,7 @@ export function OfferButton({
             onChange={(e) => setPrice(e.target.value)}
             className={fieldInputClass}
           />
-          <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+          <label className="flex items-center gap-2 text-2xs text-muted-foreground">
             <span className="shrink-0">{t('offer.worth')}</span>
             <NumberInput
               ariaLabel={t('offer.valueLabel')}
@@ -182,7 +182,7 @@ export function WhisperButton({ actions, dense = false }: { actions: ListingActi
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end"
           className="w-60">
-          <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          <DropdownMenuLabel className="text-3xs uppercase tracking-wider text-muted-foreground">
             {t('whisper.withChatTemplate')}
           </DropdownMenuLabel>
           {whisperTemplates.length === 0 && (

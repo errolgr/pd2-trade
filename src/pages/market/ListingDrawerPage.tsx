@@ -1,8 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { MotionConfig } from 'framer-motion';
 import { ExternalLink, Loader2, SearchX } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import { Button, TooltipProvider } from '@pd2-trader/ui';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 import { usePanel, useOverlay } from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';

@@ -12,9 +12,7 @@ import {
   UserRound,
   type LucideIcon,
 } from 'lucide-react';
-import { FormDescription, FormItem, FormLabel } from '@/components/ui/form';
-import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
+import { FormDescription, FormItem, FormLabel, Skeleton, cn } from '@pd2-trader/ui';
 
 /**
  * Building blocks shared by every settings section: a section header, grouped cards of rows
@@ -70,7 +68,7 @@ export function SettingsSection({ title, description, children, as = 'h3', class
   return (
     <section className={cn('flex flex-col gap-y-4', className)}>
       <header className="space-y-1">
-        <Heading className={cn('font-semibold tracking-tight text-foreground', as === 'h3' ? 'text-xl' : 'text-base')}>
+        <Heading className={cn('font-semibold tracking-tight text-foreground', as === 'h3' ? 'text-base' : 'text-sm')}>
           {title}
         </Heading>
         <p className="text-sm text-muted-foreground">{description}</p>
@@ -97,7 +95,7 @@ export function SettingsGroup({ title, aside, children, className, dimmed }: Set
       {(title || aside) && (
         <div className="flex items-center justify-between gap-3 px-1">
           {title && (
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{title}</span>
+            <span className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</span>
           )}
           {aside}
         </div>
@@ -149,7 +147,7 @@ export function SettingsRow({
 }: SettingsRowProps) {
   const stacked = layout === 'stacked';
   const labelBase = 'text-sm font-medium leading-snug text-foreground group-data-[disabled]/row:text-muted-foreground';
-  const descriptionBase = 'text-[13px] leading-relaxed';
+  const descriptionBase = 'text-sm leading-relaxed';
   return (
     <FormItem
       data-disabled={disabled || undefined}

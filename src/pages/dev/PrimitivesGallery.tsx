@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Coins, Info, Loader2, Settings, TriangleAlert } from 'lucide-react';
-
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -12,20 +13,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
-import {
+  Badge,
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Checkbox,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -33,30 +34,51 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Progress } from '@/components/ui/progress';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+  Input,
+  Label,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Progress,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Separator,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  Skeleton,
+  Slider,
+  Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Textarea,
+  ToggleGroup,
+  ToggleGroupItem,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@pd2-trader/ui';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 
 const VARIANTS = ['default', 'secondary', 'outline', 'ghost', 'destructive', 'link'] as const;
@@ -77,7 +99,7 @@ const QUALITY_CLASS: Record<(typeof QUALITIES)[number], string> = {
 function Section({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
   return (
     <section className={className}>
-      <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{title}</h3>
+      <h3 className="mb-2 text-2xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</h3>
       {children}
     </section>
   );
@@ -90,7 +112,7 @@ export default function PrimitivesGallery() {
   return (
     <TooltipProvider>
       <div className="min-h-screen w-full bg-background p-4 text-foreground">
-        <div className="mx-auto grid max-w-[1100px] grid-cols-3 gap-4 text-sm">
+        <div className="mx-auto grid max-w-275 grid-cols-3 gap-4 text-sm">
           <Section title="Buttons"
             className="col-span-2">
             <div className="space-y-2">
@@ -132,7 +154,7 @@ export default function PrimitivesGallery() {
               <Badge variant="outline">outline</Badge>
               <Badge variant="destructive">destructive</Badge>
             </div>
-            <h3 className="mb-2 mt-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <h3 className="mb-2 mt-4 text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
               Semantic
             </h3>
             <div className="flex flex-wrap gap-2 text-xs">
@@ -216,7 +238,7 @@ export default function PrimitivesGallery() {
               <ToggleGroupItem value="gold">Gold</ToggleGroupItem>
               <ToggleGroupItem value="ist">Ist</ToggleGroupItem>
             </ToggleGroup>
-            <h3 className="mb-2 mt-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <h3 className="mb-2 mt-4 text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
               Skeleton
             </h3>
             <div className="space-y-2">
@@ -287,7 +309,8 @@ export default function PrimitivesGallery() {
 
           <Section title="Window chrome">
             <WindowPanel className="h-40">
-              <WindowChrome title="Net Worth"
+              <WindowChrome
+                title="Net Worth"
                 icon={<Coins />}
                 diabloFont
                 titleClassName="text-q-unique"
@@ -298,7 +321,8 @@ export default function PrimitivesGallery() {
                     Refresh
                   </Button>
                 }
-                onClose={() => undefined} />
+                onClose={() => undefined}
+              />
               <div className="p-3 text-muted-foreground">Panel body on bg-surface</div>
             </WindowPanel>
           </Section>

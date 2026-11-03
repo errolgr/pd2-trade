@@ -1,8 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { cn } from '@pd2-trader/ui';
 import { fadeInUp } from '@/lib/motion';
-import { cn } from '@/lib/utils';
-
 type Tone = 'info' | 'warning' | 'destructive';
 
 const TONE_CLASSES: Record<Tone, { box: string; icon: string }> = {
@@ -35,10 +34,16 @@ export function Banner({
       animate="visible"
       exit="exit"
       role={role}
-      className={cn('flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm', classes.box, className)}
+      className={cn(
+        'flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm',
+        classes.box,
+        className,
+      )}
     >
       <span className="flex min-w-0 items-center gap-2.5">
-        <span className={cn('flex size-7 shrink-0 items-center justify-center rounded-md [&_svg]:size-4', classes.icon)}>
+        <span
+          className={cn('flex size-7 shrink-0 items-center justify-center rounded-md [&_svg]:size-4', classes.icon)}
+        >
           {icon}
         </span>
         <span className="min-w-0">{children}</span>

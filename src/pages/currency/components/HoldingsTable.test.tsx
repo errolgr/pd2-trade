@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 import React from 'react';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { TooltipProvider } from '@pd2-trader/ui';
 import { afterEach, describe, expect, it } from 'vitest';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import type { ValuationLine } from '@/lib/networth-api';
 import { HoldingsTable } from './HoldingsTable';
 

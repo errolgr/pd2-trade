@@ -2,20 +2,31 @@ import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Form, FormField, FormControl, FormMessage } from '@/components/ui/form';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useOptions } from '@/hooks/useOptions';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { cancelOAuthFlow, useOAuthFlowActive, useOAuthFlowLink } from '@/hooks/useOAuth';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Copy, ExternalLink, LogOut, LogIn, AlertCircle, Loader2 } from 'lucide-react';
 import { writeText } from '@/lib/browser-clipboard';
 import { isTauri } from '@tauri-apps/api/core';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import {
+  Form,
+  FormField,
+  FormControl,
+  FormMessage,
+  Button,
+  Input,
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+  Alert,
+  AlertTitle,
+  AlertDescription,
+  cn,
+} from '@pd2-trader/ui';
 import { fadeInUp } from '@/lib/motion';
-import { cn } from '@/lib/utils';
 import { SettingsGroup, SettingsRow } from '../settings-ui';
 import { Trans, useTranslation } from '@/i18n';
 
@@ -218,7 +229,7 @@ export function AccountForm() {
                       disabled={accounts.length === 0}
                     >
                       <FormControl>
-                        <SelectTrigger className="w-[220px]">
+                        <SelectTrigger className="w-control">
                           <SelectValue
                             placeholder={
                               accounts.length === 0
@@ -275,7 +286,7 @@ export function AccountForm() {
                   <div className="flex items-center justify-between gap-3">
                     <p
                       className={cn(
-                        'text-[13px] leading-relaxed',
+                        'text-sm leading-relaxed',
                         link.openFailed ? 'text-destructive' : 'text-muted-foreground',
                       )}
                     >

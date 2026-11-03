@@ -3,13 +3,9 @@ import { encodeItemForQuickList, isStashItem, itemCorruptions } from '@/lib/item
 import { useInView } from 'react-intersection-observer';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, MotionConfig, animate, motion } from 'framer-motion';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Button } from '@/components/ui/button';
 import { useAvailableUpdate } from '@/hooks/useAvailableUpdate';
 import { installUpdateAndRelaunch } from '@/lib/updater';
 import { RELEASE_PAGE_URL, isManualUpdateRequired } from '@/lib/manual-update';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
   AlertCircle,
   ArrowUpCircle,
@@ -37,9 +33,7 @@ import {
   TrendingUp,
   UserIcon,
 } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
-import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT, fadeInUp, scaleIn, useReducedMotionSafe } from '@/lib/motion';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { qualityColor } from '../lib/qualityColor';
@@ -69,22 +63,33 @@ import { rememberListingPresence, useListingPresence } from '@/hooks/useListingP
 import { RunePricePopover } from './RunePricePopover';
 import { getStatKey, PSEUDO_KEY_PREFIX, RANGE_FIELDS } from '../lib/utils';
 import moment from 'moment';
+import {
+  Badge,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  Button,
+  Skeleton,
+  ScrollArea,
+  cn,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  ButtonGroup,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@pd2-trader/ui';
 import { HoverPopover } from '@/components/custom/hover-popover';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { useItems } from '@/hooks/useItems';
 import type { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { imageToast, showToast, useOverlay } from '@/overlay';
 import { getSeasonById, getSeasonDateConfig } from '@/lib/seasons';
 import { basisLabel, DEFAULT_PRICE_WINDOW_HOURS, priceWindowNote, windowLabel } from '@/lib/price-window';
-import { ButtonGroup } from '@/components/ui/button-group';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { itemTypes } from '@/common/item-types';
 import { ItemQuality } from '@/common/types/Item';
 import { trackEvent, trackMeasurement } from '@/lib/telemetry';
@@ -1104,7 +1109,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         <span
           title={windowNote.title}
           aria-label={windowNote.title}
-          className="cursor-help rounded-sm border border-border px-1 text-[9px] font-medium leading-[13px] tracking-wider text-muted-foreground"
+          className="cursor-help rounded-sm border border-border px-1 text-3xs font-medium leading-[13px] tracking-wider text-muted-foreground"
         >
           {windowNote.label}
         </span>
@@ -1282,7 +1287,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             className="flex-none bg-muted/30">
             <WindowChrome
               title={t('overlay.title')}
-              titleClassName="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground"
+              titleClassName="text-xs font-medium uppercase tracking-caps text-muted-foreground"
               showGrip={false}
               icon={
                 // Rune Information Popover + Net Worth
@@ -1329,16 +1334,16 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             <div className="flex min-w-0 flex-col">
               <h1
                 className={cn(
-                  'flex items-center gap-2 text-xl leading-tight font-bold tracking-wide drop-shadow-[0_1px_0_rgb(0_0_0/0.25)]',
+                  'flex items-center gap-2 text-base leading-tight font-bold tracking-wide drop-shadow-[0_1px_0_rgb(0_0_0/0.25)]',
                   qualityColor(item.quality),
                 )}
                 style={{ fontFamily: 'DiabloFont' }}
               >
                 <span className="min-w-0 truncate">{displayTitle}</span>
-                {item.isRuneword && <Badge className="font-sans text-[10px] uppercase tracking-wider">Runeword</Badge>}
+                {item.isRuneword && <Badge className="font-sans text-3xs uppercase tracking-wider">Runeword</Badge>}
               </h1>
               {item.type && (
-                <div className="-ml-1.5 flex flex-wrap items-center gap-0.5 text-lg leading-tight">
+                <div className="-ml-1.5 flex flex-wrap items-center gap-0.5 text-base leading-tight">
                   {shouldUseToggle ? (
                     <HeaderToggle
                       onClick={toggleSearchMode}
@@ -1406,7 +1411,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               </div>
             )}
             {appraisalNoteText && (
-              <span className="text-[11px] text-muted-foreground/70"
+              <span className="text-2xs text-muted-foreground/70"
                 title={appraisalNoteText.title}>
                 {t('overlay.header.appraisalNote', { note: appraisalNoteText.text })}
               </span>
@@ -1445,7 +1450,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                     animate="visible">
                     <HoverPopover
                       content={
-                        <div className="w-[400px] max-w-[calc(100vw-16px)] space-y-3 rounded-lg border border-border bg-popover p-3 text-sm text-popover-foreground shadow-panel">
+                        <div className="w-popover max-w-viewport space-y-3 rounded-lg border border-border bg-popover p-3 text-sm text-popover-foreground shadow-panel">
                           <div className="truncate font-semibold">{displayTitle}</div>
                           <div className="grid grid-cols-2 gap-1.5">
                             <PopoverTile label={priceBasis}
@@ -1509,7 +1514,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                               {showAllCorruptions ? (
                                 <ScrollArea
                                   className="w-full overflow-x-hidden [&_[data-radix-scroll-area-viewport]>div]:!block"
-                                  viewportClassName="max-h-[200px]"
+                                  viewportClassName="max-h-50"
                                 >
                                   <div className="w-full space-y-0.5 overflow-x-hidden px-1.5 pr-3">
                                     {visibleCorruptions.map((corruption, idx) =>
@@ -1570,9 +1575,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                           <span className="text-sm font-semibold tabular-nums text-foreground">
                             <AnimatedNumber value={headlinePrice ?? 0} /> HR
                           </span>
-                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                            {priceBasis}
-                          </span>
+                          <span className="text-3xs uppercase tracking-wider text-muted-foreground">{priceBasis}</span>
                         </div>
                         {averagePriceData.priceChange7Days && (
                           <ChangeLabel
@@ -1600,7 +1603,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             {sortedStats.length > 0 && (
               <section className="flex flex-none flex-col gap-1">
                 <div className="flex h-5 items-center justify-between px-2">
-                  <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                  <span className="text-2xs font-medium uppercase tracking-caps text-muted-foreground">
                     {t('overlay.stats.title')}
                   </span>
                   <AnimatePresence initial={false}>
@@ -1610,7 +1613,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 6 }}
                         transition={{ duration: DUR.fast, ease: EASE_OUT }}
-                        className="inline-flex items-center gap-1 text-[11px] text-muted-foreground"
+                        className="inline-flex items-center gap-1 text-2xs text-muted-foreground"
                       >
                         <span className="tabular-nums">{t('overlay.stats.selected', { count: selected.size })}</span>
                         {/* Empties every selected stat's min / max (stats stay selected); only while one is set */}
@@ -1885,7 +1888,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                       <tr>
                         <th
                           aria-sort={sort.by === 'price' ? (sort.dir === 'desc' ? 'descending' : 'ascending') : 'none'}
-                          className="sticky top-0 z-10 w-full border-b border-border bg-surface-elevated px-2 py-1 text-[11px] font-medium text-muted-foreground"
+                          className="sticky top-0 z-10 w-full border-b border-border bg-surface-elevated px-2 py-1 text-2xs font-medium text-muted-foreground"
                         >
                           <div className="flex items-center justify-between gap-2">
                             <SortHeader
@@ -1901,7 +1904,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                         </th>
                         <th
                           aria-sort={sort.by === 'bumped' ? (sort.dir === 'desc' ? 'descending' : 'ascending') : 'none'}
-                          className="sticky top-0 z-10 w-[1%] whitespace-nowrap border-b border-border bg-surface-elevated px-2 py-1 text-right text-[11px] font-medium text-muted-foreground"
+                          className="sticky top-0 z-10 w-[1%] whitespace-nowrap border-b border-border bg-surface-elevated px-2 py-1 text-right text-2xs font-medium text-muted-foreground"
                         >
                           <SortHeader
                             label={t('overlay.results.age')}
@@ -1994,7 +1997,7 @@ function UpdatePill() {
           onClick={install}
           // Subtle tint (like the toolbar icons), not a filled button: noticeable without shouting over the price
           className={cn(
-            'h-6 shrink-0 gap-1 rounded-full border px-2 text-[11px] font-medium',
+            'h-6 shrink-0 gap-1 rounded-full border px-2 text-2xs font-medium',
             state === 'failed'
               ? 'border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/15 hover:text-destructive'
               : 'border-primary/30 bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary',
@@ -2097,7 +2100,7 @@ function WebLink({
     <button
       type="button"
       tabIndex={inPopover ? -1 : undefined}
-      className="inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-sm text-[11px] font-medium text-info underline-offset-4 outline-none transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
+      className="inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-sm text-2xs font-medium text-info underline-offset-4 outline-none transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
       onClick={(e) => {
         e.stopPropagation();
         onClick();
@@ -2117,7 +2120,7 @@ function ChangeLabel({ change, percent, pill }: { change: number; percent: numbe
       className={cn(
         'inline-flex items-center gap-1 tabular-nums',
         up ? 'text-success' : 'text-destructive',
-        pill && cn('rounded-full px-1.5 py-0.5 text-[11px] font-semibold', up ? 'bg-success/12' : 'bg-destructive/12'),
+        pill && cn('rounded-full px-1.5 py-0.5 text-2xs font-semibold', up ? 'bg-success/12' : 'bg-destructive/12'),
       )}
     >
       <Icon className="size-3" />
@@ -2175,7 +2178,7 @@ function EmptyState({
         {icon}
       </div>
       <div className="text-sm font-medium text-foreground">{title}</div>
-      <p className="max-w-[260px] text-xs leading-relaxed text-muted-foreground">{children}</p>
+      <p className="max-w-65 text-xs leading-relaxed text-muted-foreground">{children}</p>
       {action && <div className="mt-2">{action}</div>}
     </motion.div>
   );
@@ -2247,13 +2250,13 @@ function CorruptionRow({
       </div>
       {price ? (
         <div className="flex shrink-0 items-center gap-2">
-          <span className="text-[10px] tabular-nums text-muted-foreground">({price.sampleCount})</span>
+          <span className="text-3xs tabular-nums text-muted-foreground">({price.sampleCount})</span>
           <span className="font-semibold tabular-nums text-foreground">{price.medianPrice.toFixed(2)} HR</span>
           {hasSocketPrices && <ChevronRight aria-hidden
             className="-mr-0.5 size-3 text-muted-foreground" />}
         </div>
       ) : (
-        <span className="shrink-0 text-[10px] text-muted-foreground">{t('overlay.corruptions.noPriceData')}</span>
+        <span className="shrink-0 text-2xs text-muted-foreground">{t('overlay.corruptions.noPriceData')}</span>
       )}
     </div>
   );
@@ -2264,8 +2267,8 @@ function CorruptionRow({
     <HoverPopover
       side="bottom"
       content={
-        <div className="min-w-[220px] rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-panel">
-          <div className="mb-1 flex items-center justify-between gap-3 text-[10px] text-muted-foreground">
+        <div className="min-w-55 rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-panel">
+          <div className="mb-1 flex items-center justify-between gap-3 text-2xs text-muted-foreground">
             <span className="truncate">{itemTitle}</span>
             <WebLink onClick={onOpenWeb}
               inPopover>
@@ -2290,7 +2293,7 @@ function CorruptionRow({
                   {t('overlay.sockets', { count: socketPrice.socketCount })}
                 </span>
                 <div className="flex shrink-0 items-center gap-2">
-                  <span className="text-[10px] tabular-nums text-muted-foreground">({socketPrice.sampleCount})</span>
+                  <span className="text-3xs tabular-nums text-muted-foreground">({socketPrice.sampleCount})</span>
                   <span className="font-semibold tabular-nums">{socketPrice.medianPrice.toFixed(2)} HR</span>
                 </div>
               </div>
@@ -2312,7 +2315,7 @@ function ListingBadge({ label, tooltip, className }: { label: React.ReactNode; t
       <TooltipTrigger asChild>
         <div
           className={cn(
-            'flex size-4 items-center justify-center rounded-[4px] border text-[10px] font-bold leading-none tabular-nums shadow-xs',
+            'flex size-4 items-center justify-center rounded-sm border text-3xs font-bold leading-none tabular-nums shadow-xs',
             className,
           )}
         >
@@ -2353,7 +2356,7 @@ function SortHeader({
       onClick={onClick}
       title={title}
       className={cn(
-        'cursor-pointer inline-flex items-center gap-0.5 rounded-sm py-0.5 uppercase tracking-[0.12em] outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
+        'cursor-pointer inline-flex items-center gap-0.5 rounded-sm py-0.5 uppercase tracking-caps outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
         active && 'font-semibold text-foreground',
       )}
     >
@@ -2419,7 +2422,7 @@ function SellerFilterMenu({ filter, onChange }: { filter: SellerFilter; onChange
         className="w-52 p-1">
         <div role="menu"
           aria-label={t('overlay.results.sellerFilter')}>
-          <div className="px-2 pb-1 pt-1.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+          <div className="px-2 pb-1 pt-1.5 text-3xs font-medium uppercase tracking-caps text-muted-foreground">
             {t('overlay.results.seller')}
           </div>
           {SELLER_OPTIONS.map((option) => {

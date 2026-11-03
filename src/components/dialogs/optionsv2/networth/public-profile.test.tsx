@@ -17,7 +17,10 @@ vi.mock('@/lib/networth-api', async (importOriginal) => ({
   updateProfileSettings: vi.fn(),
 }));
 // vi.mock factories are hoisted above static imports, so the shim must be loaded inside the factory.
-vi.mock('@/components/ui/select', async () => (await import('../test-utils')).selectShim);
+vi.mock('@pd2-trader/ui', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  ...(await import('../test-utils')).selectShim,
+}));
 
 const PROFILE: ProfileSettings = {
   optedIn: false,

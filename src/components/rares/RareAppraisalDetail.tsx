@@ -1,7 +1,7 @@
 import React from 'react';
 import { CircleHelp } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@pd2-trader/ui';
 import { PopoverKeyValue, PopoverTile } from '@/components/custom/popover-parts';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useOptions } from '@/hooks/useOptions';
 import { openUrl } from '@/lib/browser-opener';
 import { DEFAULT_VERDICT_RULE, type RareAppraisal, type RareHistory, type VerdictRule } from '@/lib/rare-appraisal-api';

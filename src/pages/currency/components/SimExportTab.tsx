@@ -10,11 +10,8 @@ import {
   Send,
   UserRound,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
+import { Button, Checkbox, Input, Skeleton, cn } from '@pd2-trader/ui';
 import { SimCharacterPicker } from '@/components/custom/SimCharacterPicker';
-import { Skeleton } from '@/components/ui/skeleton';
 import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useSimLadderCharacters } from '@/hooks/useSimLadderCharacters';
@@ -29,7 +26,6 @@ import {
   SimExportApiError,
 } from '@/lib/sim-export-api';
 import { trackMeasurement } from '@/lib/telemetry';
-import { cn } from '@/lib/utils';
 import { useOverlay } from '@/overlay';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import { Banner, EmptyState } from './StatePanel';
@@ -41,7 +37,7 @@ type SendState =
   | { status: 'sent'; url: string }
   | { status: 'error'; error: unknown };
 
-const sectionLabel = 'text-[11px] font-semibold uppercase tracking-wider text-muted-foreground';
+const sectionLabel = 'text-2xs font-semibold uppercase tracking-wider text-muted-foreground';
 
 /**
  * "Send to Simulator": the signed-in user's character plus checked stash items go to Horadric Sim
@@ -160,10 +156,12 @@ export function SimExportTab({ token, account }: { token: string; account: strin
         )}
         {characters.status === 'ok' &&
           (character ? (
-            <SimCharacterPicker characters={characters.data}
+            <SimCharacterPicker
+              characters={characters.data}
               value={character}
               onChange={setPickedCharacter}
-              className="w-64" />
+              className="w-64"
+            />
           ) : (
             <EmptyState compact
               icon={<UserRound />}

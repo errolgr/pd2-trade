@@ -1,8 +1,7 @@
 import React from 'react';
 import { Column } from '@tanstack/react-table';
 import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react';
-
-import { cn } from '@/lib/utils';
+import { cn } from '@pd2-trader/ui';
 import { useTranslation } from '@/i18n';
 
 interface DataTableColumnHeaderProps<TData, TValue> extends React.HTMLAttributes<HTMLDivElement> {

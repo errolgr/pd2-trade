@@ -25,7 +25,7 @@ export function PriceHistoryMini({ listing }: { listing: MarketListingEntry }) {
     return (
       <section aria-label={t('history.priceHistory')}
         className="space-y-1">
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="text-3xs font-semibold uppercase tracking-wider text-muted-foreground">
           {t('history.market30d')}
         </div>
         <PriceSparkline query={state.query} />
@@ -46,7 +46,7 @@ export function PriceHistoryMini({ listing }: { listing: MarketListingEntry }) {
   return (
     <section aria-label={t('history.itemHistory')}
       className="space-y-1">
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <div className="text-3xs font-semibold uppercase tracking-wider text-muted-foreground">
         {t('history.seenBefore')}
       </div>
       <div className="text-xs text-muted-foreground">
@@ -66,7 +66,7 @@ export function PriceHistoryMini({ listing }: { listing: MarketListingEntry }) {
             <span className="min-w-0 truncate tabular-nums">
               {l.hrPrice !== null && l.hrPrice > 0 ? `${fmtBandHr(l.hrPrice)} HR` : (l.priceText ?? '—')}
             </span>
-            {l.sellerChanged && <span className="shrink-0 text-[10px] text-info">{t('history.newSeller')}</span>}
+            {l.sellerChanged && <span className="shrink-0 text-2xs text-info">{t('history.newSeller')}</span>}
           </li>
         ))}
       </ul>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowDownLeft, CheckCheck, CircleCheck, Gamepad2, type LucideIcon, MessageSquare } from 'lucide-react';
+import { cn } from '@pd2-trader/ui';
 import { t, useTranslation } from '@/i18n';
-import { cn } from '@/lib/utils';
 import type { FeedItem, FeedKind } from '../chat-feed';
 
 /** Items the peek lists, newest first. */
@@ -90,7 +90,7 @@ export function ChatPeek({
                   <span className="min-w-0 flex-1">
                     <span className="flex items-baseline gap-2">
                       <span className="min-w-0 flex-1 truncate font-medium">{item.name ?? label}</span>
-                      <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                      <span className="shrink-0 text-2xs tabular-nums text-muted-foreground">
                         {timeAgo(item.at, now)}
                       </span>
                     </span>

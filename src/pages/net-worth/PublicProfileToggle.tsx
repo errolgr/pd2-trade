@@ -1,10 +1,9 @@
 import React from 'react';
 import { ExternalLink, Globe, Lock } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
+import { Switch, cn } from '@pd2-trader/ui';
 import { getProfileSettings, ProfileSettings, updateProfileSettings } from '@/lib/networth-api';
 import { BACKEND_URL } from '@/lib/pkce';
 import { openUrl } from '@/lib/browser-opener';
-import { cn } from '@/lib/utils';
 import { useTranslation } from '@/i18n';
 
 /**

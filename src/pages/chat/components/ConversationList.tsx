@@ -16,15 +16,10 @@ import {
   SearchX,
   X,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Button, Input, ScrollArea, Skeleton, ToggleGroup, ToggleGroupItem, cn } from '@pd2-trader/ui';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
 import { t as tGlobal, useTranslation } from '@/i18n';
 import { listItem, listStagger, popIn } from '@/lib/motion';
-import { cn } from '@/lib/utils';
 import { useChatListings } from '../hooks/useChatListings';
 import { useKnownPresence } from '../hooks/useTraderProfile';
 import type { InboxFilter, InboxThread } from '../lib/inbox';
@@ -281,7 +276,7 @@ export function ConversationList({
                     {latest && (
                       <span
                         className={cn(
-                          'shrink-0 text-[11px] tabular-nums',
+                          'shrink-0 text-2xs tabular-nums',
                           unread && !thread.muted ? 'font-semibold text-primary' : 'text-muted-foreground',
                         )}
                       >
@@ -306,7 +301,7 @@ export function ConversationList({
                       {linked && (
                         <ListingThumb
                           listing={linked}
-                          className="size-4 rounded-[4px]"
+                          className="size-4 rounded-sm"
                           artClassName="max-h-3.5 max-w-3.5"
                         />
                       )}
@@ -323,7 +318,7 @@ export function ConversationList({
                         <span
                           title={offer.isIncoming ? t('list.theirOpenOffer') : t('list.yourOpenOffer')}
                           className={cn(
-                            'flex max-w-20 shrink-0 items-center gap-0.5 rounded-full px-1.5 text-[10px] font-semibold leading-4 tabular-nums',
+                            'flex max-w-20 shrink-0 items-center gap-0.5 rounded-full px-1.5 text-3xs font-semibold leading-4 tabular-nums',
                             offer.isIncoming ? 'bg-success/15 text-success' : 'bg-info/15 text-info',
                           )}
                         >
@@ -357,13 +352,13 @@ export function ConversationList({
   return (
     <aside
       className={cn(
-        'flex min-h-0 w-[300px] shrink-0 flex-col overflow-hidden border-r border-border bg-linear-to-b from-card/60 to-card/30',
+        'flex min-h-0 w-sidebar shrink-0 flex-col overflow-hidden border-r border-border bg-linear-to-b from-card/60 to-card/30',
         className,
       )}
     >
       <div className="shrink-0 space-y-2.5 px-3 pb-3 pt-3">
         <div className="flex items-center gap-2 px-1">
-          <h2 className="text-lg font-semibold tracking-tight text-foreground">{t('list.title')}</h2>
+          <h2 className="text-base font-semibold tracking-tight text-foreground">{t('list.title')}</h2>
           <AnimatePresence>
             {unreadTotal > 0 && (
               <motion.span key="unread"
@@ -377,7 +372,7 @@ export function ConversationList({
             )}
           </AnimatePresence>
           {total > 0 && (
-            <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
+            <span className="ml-auto text-2xs tabular-nums text-muted-foreground">
               {t('list.chats', { count: total })}
             </span>
           )}

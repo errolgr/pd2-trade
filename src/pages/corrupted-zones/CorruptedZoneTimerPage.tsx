@@ -1,9 +1,9 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, Lock, LockOpen } from 'lucide-react';
+import { cn } from '@pd2-trader/ui';
 import { useOptions } from '@/hooks/useOptions';
 import { usePanel, useOverlay } from '@/overlay';
 import { overlayViewport, useDragToMove } from '@/overlay/useDragToMove';
-import { cn } from '@/lib/utils';
 import {
   corruptedZoneAt,
   corruptedZoneSchedule,
@@ -180,7 +180,7 @@ const CorruptedZoneTimer: React.FC = () => {
       className={cn(
         'size-2 shrink-0 rounded-full',
         vertical && 'mt-1',
-        live ? 'bg-q-corrupted-zone ring-[3px] ring-q-corrupted-zone/25' : 'border border-q-corrupted-zone',
+        live ? 'bg-q-corrupted-zone ring-3 ring-q-corrupted-zone/25' : 'border border-q-corrupted-zone',
       )}
     />
   );

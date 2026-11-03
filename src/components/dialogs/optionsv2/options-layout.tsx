@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { motion, MotionConfig } from 'framer-motion';
 import { Check, type LucideIcon } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea, cn } from '@pd2-trader/ui';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 import { usePanel } from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
 import { fadeInUp, springSnappy } from '@/lib/motion';
-import { cn } from '@/lib/utils';
 import SettingGenereal from './appearance/layout';
 import SettingsHotkeys from './hotkeys/layout';
 import SettingsAbout from './about/layout';
@@ -184,7 +183,7 @@ export default function SettingsLayout() {
         <WindowChrome
           title={
             <span className="flex items-baseline gap-2">
-              <span className="text-[15px]">{t('layout.title')}</span>
+              <span className="text-base">{t('layout.title')}</span>
               <span className="hidden truncate text-xs font-normal text-muted-foreground md:inline">
                 {t('layout.subtitle')}
               </span>

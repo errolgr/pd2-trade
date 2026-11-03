@@ -14,10 +14,19 @@ import {
   Tag,
   UserRound,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Button,
+  Skeleton,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  cn,
+} from '@pd2-trader/ui';
 import { WindowChrome } from '@/components/custom/window-chrome';
 import { usePanel, useOverlay } from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
@@ -33,7 +42,6 @@ import {
   type Valuation,
 } from '@/lib/networth-api';
 import { DEFAULT_VERDICT_RULE } from '@/lib/rare-appraisal-api';
-import { cn } from '@/lib/utils';
 import { useEconomyData } from '../price-check/hooks/useEconomyData';
 import { RunePricePopover } from '../price-check/components/RunePricePopover';
 import { HoldingsTable } from './components/HoldingsTable';
@@ -391,7 +399,7 @@ function Header({
       />
       <div className="relative flex items-start justify-between gap-4">
         <div className="min-w-0 space-y-1.5">
-          <p className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+          <p className="flex items-center gap-2 text-2xs font-medium uppercase tracking-caps text-muted-foreground">
             {t('header.netWorth')}
             {wealthRank && (
               <span className="rounded-full border border-glow/40 bg-glow/10 px-2 py-px font-semibold normal-case tracking-normal text-foreground tabular-nums">
@@ -400,7 +408,7 @@ function Header({
             )}
           </p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <span className="text-4xl font-semibold leading-none tracking-tight">
+            <span className="text-display font-semibold leading-none tracking-tight">
               <AnimatedNumber value={valuation.totalHr}
                 format={(v) => v.toFixed(2)} />{' '}
               <span className="text-2xl font-medium text-muted-foreground">HR</span>

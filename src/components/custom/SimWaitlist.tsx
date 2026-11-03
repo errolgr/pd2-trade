@@ -1,11 +1,9 @@
 import { ExternalLink, Hourglass } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button, cn } from '@pd2-trader/ui';
 import { openUrl } from '@/lib/browser-opener';
 import type { SimAccess } from '@/lib/sim-export-api';
-import { cn } from '@/lib/utils';
-
 /** Popover wrapper for {@link SimWaitlist}: the banner is the whole popover. */
-export const SIM_WAITLIST_POPOVER_CLASS = 'w-[420px] border-0 p-0';
+export const SIM_WAITLIST_POPOVER_CLASS = 'w-105 border-0 p-0';
 
 /**
  * What every sim entry point (price check, market cards, Net Worth) shows a user outside Horadric Sim's closed beta:
@@ -28,7 +26,7 @@ export function SimWaitlist({
         <Hourglass />
       </span>
       <div className="min-w-0 space-y-1.5">
-        <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground">
           Horadric Sim · Closed beta
         </div>
         <p>

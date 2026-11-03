@@ -1,14 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, animate, motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { Checkbox } from '@/components/ui/checkbox';
 import type { Item, Stat, StatFilterInput } from '@/pages/price-check/lib/interfaces';
 import { DAMAGE_PAIRS, damagePairText, statIdToProperty, StatId } from '@/pages/price-check/lib/stat-mappings';
 import { statText } from '@/pages/price-check/lib/tooltip-lines';
 import { HoverPopover } from '@/components/custom/hover-popover';
-import { Badge } from '@/components/ui/badge';
 import { fuzzyClassSkillByName, fuzzyClassSubSkillByName } from '@/assets/class-skills';
 import { X, Check, Info, Eraser } from 'lucide-react';
+import { cn, Checkbox, Badge } from '@pd2-trader/ui';
 import { DUR, EASE_OUT, listItem, listStagger } from '@/lib/motion';
 import type { PseudoOption } from '@/pages/price-check/lib/pseudo-fold';
 import { PseudoChip } from './PseudoChip';
@@ -246,7 +244,7 @@ export const StatRow: React.FC<StatRowProps> = ({
           {isCorrupted ? (
             <div
               className={cn(
-                'peer flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-[4px] border border-input shadow-xs outline-none transition-[background-color,border-color,box-shadow] duration-(--dur-fast) focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/60',
+                'peer flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-sm border border-input shadow-xs outline-none transition-[background-color,border-color,box-shadow] duration-(--dur-fast) focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/60',
                 corruptedChecked && 'border-primary bg-primary text-primary-foreground',
                 corruptedIndeterminate && 'border-destructive bg-destructive text-destructive-foreground',
                 !corruptedChecked && !corruptedIndeterminate && 'hover:border-ring/60 dark:bg-input/30',
@@ -280,7 +278,7 @@ export const StatRow: React.FC<StatRowProps> = ({
                   {valueParts(true)}
                 </span>
                 <Badge variant="destructive"
-                  className="h-4.5 px-1.5 text-[10px] uppercase tracking-wide">
+                  className="h-4.5 px-1.5 text-3xs uppercase tracking-wide">
                   {t('statRow.unknown')}
                 </Badge>
               </div>
@@ -311,7 +309,7 @@ export const StatRow: React.FC<StatRowProps> = ({
                   )}
                   {rare && rare.stars === null && rare.keyFrom !== null && (
                     <span
-                      className="ml-1.5 whitespace-nowrap text-[11px] text-muted-foreground/70"
+                      className="ml-1.5 whitespace-nowrap text-2xs text-muted-foreground/70"
                       title={t('statRow.keyFromTitle', { value: rare.keyFrom })}
                     >
                       {t('statRow.valuableFrom', { value: rare.keyFrom })}
@@ -327,7 +325,7 @@ export const StatRow: React.FC<StatRowProps> = ({
                       exit={{ opacity: 0, scale: 0.9 }}
                       transition={{ duration: DUR.fast, ease: EASE_OUT }}
                       className={cn(
-                        'rounded-full border px-1.5 py-px text-[10px] font-medium uppercase leading-none tracking-wide',
+                        'rounded-full border px-1.5 py-px text-3xs font-medium uppercase leading-none tracking-wide',
                         corruptedState === 1
                           ? 'border-q-corrupted/40 text-q-corrupted'
                           : 'border-border text-muted-foreground line-through decoration-q-corrupted/70',
@@ -388,7 +386,7 @@ export const StatRow: React.FC<StatRowProps> = ({
                   <div key={lo}
                     className="flex items-center gap-1.5">
                     {label && (
-                      <span className="whitespace-nowrap text-right text-[10px] uppercase tracking-wide text-muted-foreground">
+                      <span className="whitespace-nowrap text-right text-3xs uppercase tracking-wide text-muted-foreground">
                         {label}
                       </span>
                     )}
@@ -499,7 +497,7 @@ export const StatRow: React.FC<StatRowProps> = ({
             <motion.span
               key={getStatKey(row)}
               variants={listItem}
-              className="inline-flex h-5 items-center rounded-sm bg-muted/60 px-1.5 text-[11px] tabular-nums text-muted-foreground"
+              className="inline-flex h-5 items-center rounded-sm bg-muted/60 px-1.5 text-2xs tabular-nums text-muted-foreground"
             >
               {itemLine(row, item) ?? `${row.name} ${row.value}`}
             </motion.span>
@@ -508,7 +506,7 @@ export const StatRow: React.FC<StatRowProps> = ({
             type="button"
             variants={listItem}
             onClick={() => onPseudo?.(stat.pseudo!)}
-            className="ml-1 inline-flex h-5 items-center gap-0.5 rounded-sm px-1 text-[11px] text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+            className="ml-1 inline-flex h-5 items-center gap-0.5 rounded-sm px-1 text-2xs text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
           >
             <X className="size-3" />
             {t('statRow.unfold')}

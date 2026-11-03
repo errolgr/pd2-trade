@@ -3,8 +3,8 @@ import React from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { showToast } from '@/overlay';
+import { TooltipProvider } from '@pd2-trader/ui';
 import { useInView } from 'react-intersection-observer';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import {
   AccountMismatchError,
   AuthenticationError,

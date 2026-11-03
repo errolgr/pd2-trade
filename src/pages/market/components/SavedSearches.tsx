@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import moment from 'moment';
 import { Bell, BellOff, Bookmark, Check, LogIn, Pencil, Play, Plus, RotateCw, Trash2, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn, Button, Input, Switch, ScrollArea } from '@pd2-trader/ui';
 import { showToast, undoToast } from '@/overlay';
 import { useSignIn } from '@/hooks/useSignIn';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
@@ -119,7 +115,7 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
           {t('common:actions.save')}
         </Button>
       </form>
-      <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-1.5 text-[11px] text-muted-foreground">
+      <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-1.5 text-2xs text-muted-foreground">
         <span>{t('saved.alertingSummary', { alerting, max: store.limits.maxAlerting })}</span>
         <label className="flex items-center gap-1.5">
           {t('saved.alerts')}
@@ -287,7 +283,7 @@ function SavedRow({
             className="block w-full min-w-0 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
           >
             <div className="truncate text-sm font-medium">{search.name}</div>
-            <div className="truncate text-[11px] text-muted-foreground">
+            <div className="truncate text-2xs text-muted-foreground">
               {t('saved.rowDescription', {
                 description: describeFilters(search.filters),
                 saved: moment(search.createdAt).fromNow(),

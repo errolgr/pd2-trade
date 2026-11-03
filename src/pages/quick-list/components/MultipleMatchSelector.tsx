@@ -1,12 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import ItemStatsDisplay from './ItemStatsDisplay';
-import { Button } from '@/components/ui/button';
 import { AlertCircle, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ScrollArea, Button, cn } from '@pd2-trader/ui';
 import { useTranslation } from '@/i18n';
 import { fadeInUp, listItem, listStagger } from '@/lib/motion';
 import { countChip, itemCard, sectionLabel } from './styles';
