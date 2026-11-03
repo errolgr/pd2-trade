@@ -70,14 +70,14 @@
       "clearTitle": "Untick every stat"
     },
     "actions": {
-      "openTradeAria": "Open search on projectdiablo2.com",
-      "openTradeTooltip": "Open this search on projectdiablo2.com",
+      "openTrade": "Open search on projectdiablo2.com",
+      "more": "More",
       "openInMarket": "Open in market",
       "list": "List",
-      "listDisabled": "Item must be in your stash (shared or personal) to list.",
-      "showExpired": "Show Expired"
+      "listDisabled": "Item must be in your stash (shared or personal) to list."
     },
     "results": {
+      "source": { "label": "Listings to search", "live": "Live", "expired": "Expired" },
       "matches": "Matches: <value>{{total}}</value>",
       "showing": "· showing {{shown}}",
       "loading": "Loading market listings...",

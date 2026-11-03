@@ -24,6 +24,7 @@ import {
   ListPlus,
   Loader2,
   LuggageIcon,
+  MoreHorizontal,
   Repeat2,
   RotateCw,
   SearchIcon,
@@ -37,7 +38,6 @@ import {
   UserIcon,
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Switch } from '@/components/ui/switch';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT, fadeInUp, scaleIn, useReducedMotionSafe } from '@/lib/motion';
@@ -58,7 +58,7 @@ import {
 } from '@/pages/market/store/priceCheckFilters';
 import { useRelaxationCounts } from '@/pages/market/hooks/useRelaxations';
 import { RelaxationChips, relaxationChips } from '@/pages/market/components/RelaxationChips';
-import { FILTER_HIGHLIGHT_CLASS } from '@/pages/market/components/controls';
+import { FILTER_HIGHLIGHT_CLASS, Segmented } from '@/pages/market/components/controls';
 import { type PriceCheckRelaxation, priceCheckRelaxations } from '../lib/relaxations';
 import { statText } from '../lib/tooltip-lines';
 import type { MarketFilters, ScoredListing } from '@/pages/market/lib/types';
@@ -77,8 +77,14 @@ import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { imageToast, showToast, useOverlay } from '@/overlay';
 import { getSeasonById, getSeasonDateConfig } from '@/lib/seasons';
 import { basisLabel, DEFAULT_PRICE_WINDOW_HOURS, priceWindowNote, windowLabel } from '@/lib/price-window';
-import { Label } from '@/components/ui/label';
 import { ButtonGroup } from '@/components/ui/button-group';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { itemTypes } from '@/common/item-types';
 import { ItemQuality } from '@/common/types/Item';
 import { trackEvent, trackMeasurement } from '@/lib/telemetry';
@@ -762,10 +768,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
   const openCurrencyValuation = useCallback(() => openPanel('currency'), [openPanel]);
 
-  const openListWindow = useCallback(
-    () => openPanel('quickList', { item: encodeItemForQuickList(JSON.stringify(item)) }, { placement: 'cursor' }),
-    [item, openPanel],
-  );
+  const openListWindow = useCallback(() => {
+    trackEvent('item_overlay_list_opened');
+    openPanel('quickList', { item: encodeItemForQuickList(JSON.stringify(item)) }, { placement: 'cursor' });
+  }, [item, openPanel]);
 
   /**
    * Fetches the next page of `search`, its first page when nothing is fetched yet: from the market service, or
@@ -1670,23 +1676,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
             {/* Search actions */}
             <div className="flex flex-none flex-wrap items-center gap-2 pt-2">
               <ButtonGroup>
-                <Button className="min-w-24 cursor-pointer"
+                <Button className="min-w-24 cursor-pointer has-[>svg]:pr-4"
                   onClick={handleSearch}>
                   {marketLoading ? <Loader2 className="animate-spin" /> : <SearchIcon />}
                   {t('common:actions.search')}
                 </Button>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      aria-label={t('overlay.actions.openTradeAria')}
-                      className="cursor-pointer border-l border-primary-foreground/15 px-3"
-                      onClick={openTradeUrl}
-                    >
-                      <SquareArrowOutUpRight />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">{t('overlay.actions.openTradeTooltip')}</TooltipContent>
-                </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -1699,56 +1693,66 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                   </TooltipTrigger>
                   <TooltipContent side="top">{t('overlay.actions.openInMarket')}</TooltipContent>
                 </Tooltip>
-              </ButtonGroup>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <Button variant="secondary"
-                      className="cursor-pointer"
-                      onClick={openListWindow}
-                      disabled={!canList}>
+                {/* Less used actions: listing the item, the same search on projectdiablo2.com */}
+                <DropdownMenu>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          aria-label={t('overlay.actions.more')}
+                          className="cursor-pointer border-l border-primary-foreground/15 px-3 data-[state=open]:bg-primary/80"
+                        >
+                          <MoreHorizontal />
+                        </Button>
+                      </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">{t('overlay.actions.more')}</TooltipContent>
+                  </Tooltip>
+                  <DropdownMenuContent align="start"
+                    side="bottom"
+                    className="min-w-60">
+                    <DropdownMenuItem className="cursor-pointer"
+                      disabled={!canList}
+                      onSelect={openListWindow}>
                       <ListPlus />
                       {t('overlay.actions.list')}
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                {!canList && (
-                  <TooltipContent side="top">
-                    <p>{t('overlay.actions.listDisabled')}</p>
-                  </TooltipContent>
-                )}
-              </Tooltip>
+                    </DropdownMenuItem>
+                    {!canList && (
+                      <p className="max-w-60 px-2 pb-1.5 pl-8 text-xs text-muted-foreground">
+                        {t('overlay.actions.listDisabled')}
+                      </p>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="cursor-pointer"
+                      onSelect={openTradeUrl}>
+                      <SquareArrowOutUpRight />
+                      {t('overlay.actions.openTrade')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </ButtonGroup>
 
               <SimulatorButton item={item} />
-
-              <div className="ml-auto flex items-center gap-2">
-                <Switch
-                  id="archived-toggle"
-                  checked={searchArchived}
-                  onCheckedChange={(checked) => {
-                    setSearchArchived(checked);
-                  }}
-                />
-                <Label
-                  htmlFor="archived-toggle"
-                  className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  {t('overlay.actions.showExpired')}
-                </Label>
-              </div>
             </div>
 
-            {/* Results */}
-            <AnimatePresence initial={false}>
+            {/* Results bar: which listings the search covers (picking one searches again), then what it found */}
+            <div className="-mb-1 flex flex-none items-center gap-2 pr-2 text-xs text-muted-foreground">
+              <Segmented
+                label={t('overlay.results.source.label')}
+                value={searchArchived ? 'expired' : 'live'}
+                onChange={(source) => {
+                  setSearchArchived(source === 'expired');
+                  if (searched || marketLoading) setSearchPending(true);
+                }}
+                options={[
+                  { value: 'live', label: t('overlay.results.source.live') },
+                  { value: 'expired', label: t('overlay.results.source.expired') },
+                ]}
+                className="w-36 flex-none rounded-lg border-0 bg-muted"
+                selectedClassName="bg-primary/15 text-primary shadow-none ring-1 ring-inset ring-primary/70 hover:text-primary"
+              />
               {marketListings.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: DUR.med, ease: EASE_OUT }}
-                  className="-mb-1 flex flex-none items-center gap-2 px-2 text-xs text-muted-foreground"
-                >
+                <>
                   <span>
                     <Trans
                       t={t}
@@ -1774,10 +1778,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                       )}
                     </span>
                   )}
-                  {marketLoading && <Loader2 className="size-3 animate-spin" />}
-                </motion.div>
+                </>
               )}
-            </AnimatePresence>
+              {marketLoading && <Loader2 className="size-3 animate-spin" />}
+            </div>
 
             <ScrollArea className="min-h-0 flex-1">
               {marketLoading && marketListings.length === 0 && (
