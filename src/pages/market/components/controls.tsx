@@ -22,6 +22,19 @@ export const ANY = '__any';
 export const fieldInputClass = 'h-7 rounded-md px-2 text-xs shadow-none';
 
 /**
+ * What a hovered empty-search suggestion would drop, marked in the sidebar: a Section by its title, a Field by its
+ * label, a stat row by its id. Null: nothing hovered.
+ */
+export interface FilterHighlight {
+  section?: string;
+  field?: string;
+  statId?: string;
+}
+export const FilterHighlightContext = React.createContext<FilterHighlight | null>(null);
+/** A marked filter: an inset ring and tint, so nothing moves or gets clipped. */
+export const FILTER_HIGHLIGHT_CLASS = 'rounded-md bg-primary/10 ring-1 ring-inset ring-primary/60';
+
+/**
  * Collapsible sidebar section with a count badge of its active filters. Uncontrolled (`defaultOpen`) unless
  * `open` is given; `onOpenChange` hears every toggle either way.
  */
@@ -45,9 +58,15 @@ export function Section({
   const [openState, setOpenState] = useState(defaultOpen);
   const open = openProp ?? openState;
   const id = useId();
+  const highlighted = React.useContext(FilterHighlightContext)?.section === title;
   return (
     <section className="border-b border-border/60 last:border-b-0">
-      <div className="flex items-center gap-1 px-2.5 py-1.5">
+      <div
+        className={cn(
+          'flex items-center gap-1 px-2.5 py-1.5 transition-colors duration-(--dur-fast)',
+          highlighted && FILTER_HIGHLIGHT_CLASS,
+        )}
+      >
         <button
           type="button"
           aria-expanded={open}
@@ -91,8 +110,14 @@ export function Section({
 
 /** Label on the left, control on the right — one line per filter. */
 export function Field({ label, htmlFor, children }: { label: string; htmlFor?: string; children: React.ReactNode }) {
+  const highlight = React.useContext(FilterHighlightContext);
   return (
-    <div className="grid grid-cols-[88px_minmax(0,1fr)] items-center gap-2">
+    <div
+      className={cn(
+        'grid grid-cols-[88px_minmax(0,1fr)] items-center gap-2 transition-colors duration-(--dur-fast)',
+        !!label && highlight?.field === label && FILTER_HIGHLIGHT_CLASS,
+      )}
+    >
       <label htmlFor={htmlFor}
         className="truncate text-xs text-muted-foreground">
         {label}

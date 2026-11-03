@@ -23,7 +23,7 @@ import { newStatFilter } from '../lib/defaults';
 import { MAX_OR_BLOCKS, compactBlocks, groupOf, moveToGroup, orBlockNumbers, type StatGroup } from '../lib/stat-groups';
 import { isCorruption, isPseudo, searchStats, type StatChoice } from '../lib/stats';
 import type { StatFilter, StatPreset } from '../lib/types';
-import { Autocomplete, NumberInput, fieldInputClass } from './controls';
+import { Autocomplete, FILTER_HIGHLIGHT_CLASS, FilterHighlightContext, NumberInput, fieldInputClass } from './controls';
 import { choiceText, filterName } from './stat-text';
 import { Trans, useTranslation } from '@/i18n';
 
@@ -152,6 +152,8 @@ export function StatFilters({
   const [pickedTab, setPickedTab] = useState<StatTab | null>(null);
   const [shownTab, setShownTab] = useState<StatTab | null>(null);
   const [drag, setDrag] = useState<RowDrag | null>(null);
+  // The row an empty search's hovered suggestion would drop
+  const markedStatId = React.useContext(FilterHighlightContext)?.statId;
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   useImperativeHandle(searchRef, () => inputRef.current as HTMLInputElement);
@@ -268,7 +270,7 @@ export function StatFilters({
         animate={{ opacity: activeDrag?.id === s.id ? 0.35 : s.enabled ? 1 : 0.55, height: 'auto' }}
         exit={{ opacity: 0, height: 0 }}
         transition={{ duration: DUR.med, ease: EASE_OUT }}
-        className="relative overflow-hidden"
+        className={cn('relative overflow-hidden', s.id === markedStatId && FILTER_HIGHLIGHT_CLASS)}
       >
         {/* A row just added/updated from a mod menu pulses once */}
         {highlight?.id === s.id && (

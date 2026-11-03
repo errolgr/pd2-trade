@@ -92,6 +92,15 @@
       "noListings": "Nie znaleziono ogłoszeń",
       "loosenFilters": "Spróbuj poluzować filtry statystyk.",
       "loosenFiltersOrExpired": "Spróbuj poluzować filtry statystyk lub włącz Pokaż wygasłe.",
+      "relax": {
+        "title": "Żadne ogłoszenie nie pasuje do wszystkich filtrów",
+        "hint": "Usuń jeden: każdy pokazuje, co zostanie.",
+        "ranges": "Zakresy statystyk",
+        "corrupted": "Skażony",
+        "notCorrupted": "Nieskażony",
+        "corruptions": "Filtr skażenia",
+        "showExpired": "Pokaż wygasłe"
+      },
       "readyTitle": "Gotowe do wyszukiwania",
       "readyHint": "Wybierz ważne statystyki, a potem kliknij Szukaj lub naciśnij Enter w polu min/maks.",
       "price": "Cena",

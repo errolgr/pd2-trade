@@ -34,7 +34,12 @@
     "loadMoreFailed": "Couldn't load more",
     "rateLimitedUntil": "Rate limited until {{time}}",
     "listings": "Listings",
-    "favorite": "Favorite"
+    "favorite": "Favorite",
+    "noMatchAll": "No listings match all these filters",
+    "relaxHint": "Drop one: each shows what's left.",
+    "relaxDrop": "Without {{filter}}",
+    "relaxLabel": "Filters to drop",
+    "relaxDropCount": "Without {{filter}}: {{count}} listings"
   },
   "search": {
     "rateLimited": "Too many market searches. Try again in a moment.",
@@ -156,7 +161,10 @@
     "sellerPlaceholder": "Account or username",
     "sellerPicked": "This seller (picked from a listing)",
     "clearSeller": "Clear seller",
-    "modeLabel": "Softcore or hardcore"
+    "modeLabel": "Softcore or hardcore",
+    "applied": {
+      "not": "Not {{name}}"
+    }
   },
   "controls": {
     "min": "min",

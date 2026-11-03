@@ -86,6 +86,15 @@
       "noListings": "No listings found",
       "loosenFilters": "Try loosening your stat filters.",
       "loosenFiltersOrExpired": "Try loosening your stat filters or turn on Show Expired.",
+      "relax": {
+        "title": "No listings match all these filters",
+        "hint": "Drop one: each shows what's left.",
+        "ranges": "Stat ranges",
+        "corrupted": "Corrupted",
+        "notCorrupted": "Not corrupted",
+        "corruptions": "Corruption filter",
+        "showExpired": "Show expired"
+      },
       "readyTitle": "Ready to search",
       "readyHint": "Pick the stats that matter, then hit Search or press Enter in a min/max field.",
       "price": "Price",

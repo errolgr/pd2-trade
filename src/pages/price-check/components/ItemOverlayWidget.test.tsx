@@ -248,9 +248,11 @@ const statCheckbox = (name: string) =>
   screen.getByText(name).closest('label')!.querySelector('[role="checkbox"]') as HTMLElement;
 const searchButton = () => screen.getByRole('button', { name: /^Search$/ });
 const lastQuery = (fn = getMarketListings) => fn.mock.calls[fn.mock.calls.length - 1][0];
-/** The filters and page of the last market service search. */
-const lastFilters = (): MarketFilters => searchListings.mock.calls[searchListings.mock.calls.length - 1][0];
-const lastPage = () => searchListings.mock.calls[searchListings.mock.calls.length - 1][1].page;
+/** The listed searches on the market service (an empty search's relaxation counts ask for one row, aside). */
+const realSearches = () => searchListings.mock.calls.filter(([, opts]) => opts.limit !== 1);
+/** The filters and page of the last listed market service search. */
+const lastFilters = (): MarketFilters => realSearches()[realSearches().length - 1][0];
+const lastPage = () => realSearches()[realSearches().length - 1][1].page;
 
 // ---------------------------------------------------------------- tests
 
@@ -664,14 +666,50 @@ describe('ItemOverlayWidget market search', () => {
     expect(searchListings).toHaveBeenCalledTimes(1);
   });
 
-  it('shows a no-results state that suggests Show Expired only when it is off', async () => {
+  it('a search that finds nothing shows each filter with what dropping it finds; one click drops it', async () => {
+    // The real search (a page of 20) finds nothing; the counts (one row) depend on what they leave out
+    searchListings.mockImplementation(async (f, opts) => {
+      if (opts.limit !== 1) return servicePage([]);
+      const fcr = f.stats.some((s) => s.key === 'item_fastercastrate');
+      const anyQuality = f.rarity.length > 1;
+      return servicePage([], !fcr ? 7 : anyQuality ? 3 : 0);
+    });
     renderWidget(rareRing());
+    fireEvent.click(statCheckbox('+20% Faster Cast Rate'));
     fireEvent.click(searchButton());
-    expect(await screen.findByText('No listings found')).not.toBeNull();
-    expect(screen.getByText('Try loosening your stat filters or turn on Show Expired.')).not.toBeNull();
 
-    fireEvent.click(screen.getByRole('switch'));
-    expect(screen.getByText('Try loosening your stat filters.')).not.toBeNull();
+    expect(await screen.findByText('No listings match all these filters')).not.toBeNull();
+    const chips = () => within(screen.getByRole('list', { name: 'Filters to drop' })).getAllByRole('button');
+    // Every relaxation as a chip, in order (ranges, stats, base, quality), named with its count once it landed
+    await waitFor(() =>
+      expect(chips().map((b) => b.getAttribute('aria-label'))).toEqual([
+        'Without Stat ranges: 0 listings',
+        'Without +20% Faster Cast Rate: 7 listings',
+        'Without Ring: 0 listings',
+        'Without Rare: 3 listings',
+      ]),
+    );
+    const fcrChip = () => screen.getByRole('button', { name: 'Without +20% Faster Cast Rate: 7 listings' });
+    expect(screen.getByRole('button', { name: 'Show expired' })).not.toBeNull();
+    // Counting asked one row per relaxation, never re-running the listed search
+    expect(realSearches()).toHaveLength(1);
+
+    // Hovering a chip rings the row it would drop (the chip repeats the row's text: find the row by its label)
+    const fcrRow = () =>
+      screen
+        .getAllByText('+20% Faster Cast Rate')
+        .map((e) => e.closest('label'))
+        .find((l): l is HTMLLabelElement => !!l)!;
+    expect(fcrRow().className).not.toMatch(/ring-primary/);
+    fireEvent.mouseEnter(fcrChip());
+    expect(fcrRow().className).toMatch(/ring-primary/);
+    fireEvent.mouseLeave(fcrChip());
+    expect(fcrRow().className).not.toMatch(/ring-primary/);
+
+    fireEvent.click(fcrChip());
+    await waitFor(() => expect(realSearches()).toHaveLength(2));
+    expect(realSearches()[1][0].stats).toEqual([]);
+    expect(fcrRow().querySelector('[role="checkbox"]')!.getAttribute('aria-checked')).toBe('false');
   });
 
   it('Show Expired searches every ended listing (sold, removed, expired) on the market service', async () => {

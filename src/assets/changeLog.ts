@@ -3,6 +3,9 @@ export const changeLog = {
     '🆕 Command palette (Ctrl+Space in game): one search box for everything. Type to find panels, items with their price and 7-day change, characters, accounts and build meta, your chats, listings and trade offers, and every setting. Enter opens it, Tab searches only one kind, Ctrl+K shows more actions (watch, relist, delist, follow, pin). Settings switches and choices change right in the palette. Rebind or turn it off in Settings → Hotkeys',
     "🆕 List Item, queued listings, Ctrl+U and auto-delist find items in your characters' personal stashes too, not only the shared stash (characters of the mode picked in Settings). Moving an item between a personal stash and the shared stash doesn't count as taking it out",
     '🔧 Chat: a listing made from a personal stash shows "Personal" as its stash instead of "Shared 0"',
+    '🔧 Price check: searching by Enhanced Damage finds listings again (it found none since 0.10.13)',
+    '🔧 Price check: All Resistances and All Attributes find every item with that line again, not only items that roll each resistance or attribute separately',
+    '✨ Market browser and price check: a search that finds nothing shows its filters as chips, each with how many listings you would get without it (the best one marked); hover a chip to see that filter, click it to drop it and search again',
   ],
   '0.10.14': [
     '🆕 Price check: click Price or Age to sort (again to flip the order)',

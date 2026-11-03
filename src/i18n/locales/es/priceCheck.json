@@ -89,6 +89,15 @@
       "noListings": "No se encontraron anuncios",
       "loosenFilters": "Prueba a relajar los filtros de estadísticas.",
       "loosenFiltersOrExpired": "Prueba a relajar los filtros de estadísticas o activa Mostrar caducados.",
+      "relax": {
+        "title": "Ningún anuncio cumple todos estos filtros",
+        "hint": "Quita uno: cada uno muestra lo que queda.",
+        "ranges": "Rangos de estadísticas",
+        "corrupted": "Corrupto",
+        "notCorrupted": "No corrupto",
+        "corruptions": "Filtro de corrupción",
+        "showExpired": "Mostrar caducados"
+      },
       "readyTitle": "Listo para buscar",
       "readyHint": "Elige las estadísticas que importan y pulsa Buscar o Enter en un campo mín./máx.",
       "price": "Precio",

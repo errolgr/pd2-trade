@@ -83,6 +83,15 @@
       "noListings": "未找到挂单",
       "loosenFilters": "请尝试放宽属性筛选。",
       "loosenFiltersOrExpired": "请尝试放宽属性筛选或开启“显示已过期”。",
+      "relax": {
+        "title": "没有挂单符合全部筛选",
+        "hint": "去掉一个：每个都显示剩下多少。",
+        "ranges": "属性范围",
+        "corrupted": "已腐化",
+        "notCorrupted": "未腐化",
+        "corruptions": "腐化筛选",
+        "showExpired": "显示已过期"
+      },
       "readyTitle": "准备搜索",
       "readyHint": "选择需要的属性，然后点击搜索或在最小/最大值框中按 Enter。",
       "price": "价格",
