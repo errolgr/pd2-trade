@@ -571,7 +571,7 @@ const ResultCard = React.memo(function ResultCard({
           >
             <ExternalLink className="size-3.5" />
           </Button>
-          {simAccess && !archived && (
+          {simAccess?.canUse && !archived && (
             <Button
               variant="ghost"
               size="sm"

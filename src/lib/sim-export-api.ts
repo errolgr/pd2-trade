@@ -1,7 +1,7 @@
 /**
  * Client for the Horadric Sim overlay export on pd2trader.com: `GET /api/sim/import/mine` (the signed-in
  * user's characters) and `POST /api/sim/exports` (character + items → planner URL).
- * Both take the user's PD2 token as bearer. `GET /api/feature-flags` says whether the sim is open to the user.
+ * Both take the user's PD2 token as bearer. `GET /api/sim/beta/status` says whether the sim is open to the user.
  */
 import { fetch } from '@/lib/browser-http';
 import { BACKEND_URL } from '@/lib/pkce';
@@ -11,9 +11,6 @@ import type { Item as ClipboardItem } from '@/pages/price-check/lib/interfaces';
 
 /** Items per export (stash and clipboard together); mirrors the server's MAX_STASH_ITEMS (its JSON body limit is 100 KB). */
 export const MAX_SIM_EXPORT_ITEMS = 40;
-
-/** The website's Horadric Sim gate (client/src/sim/simEnabled.js SIM_FLAG): off, the sim doesn't exist for the user. */
-export const SIM_FLAG = 'sim.enabled';
 
 export interface SimCharacters {
   accounts: { account: string; characters: string[] }[];
@@ -51,10 +48,39 @@ export function getMyCharacters(token: string): Promise<SimCharacters> {
   return request('/api/sim/import/mine', token);
 }
 
-/** `sim.enabled` for the PD2 login (`token`; anonymous without one): the server evaluates beta allowlists per user. */
-export async function getSimEnabled(token: string | null): Promise<boolean> {
-  const { flags } = await request<{ flags?: Record<string, boolean> }>('/api/feature-flags', token);
-  return flags?.[SIM_FLAG] === true;
+/** What Horadric Sim's beta lets a PD2 login do; `null` from {@link getSimAccess} while the sim is off for it. */
+export interface SimAccess {
+  /** Open beta, or on the allowlist: may send items to the planner. Otherwise the overlay points at the waitlist. */
+  canUse: boolean;
+  /** The website's waitlist page. */
+  waitlistUrl: string;
+  /** The login's place on the waitlist while its sign-up awaits an invite. */
+  waitlistPosition: number | null;
+}
+
+interface BetaStatus {
+  canUseSim?: boolean;
+  waitlist?: string;
+  entry?: { position: number; status: string } | null;
+}
+
+/**
+ * The sim's closed beta for the PD2 login (`token`; anonymous without one): `GET /api/sim/beta/status`, which the
+ * server answers 404 while `sim.enabled` is off for the caller (then `null`).
+ */
+export async function getSimAccess(token: string | null): Promise<SimAccess | null> {
+  let status: BetaStatus;
+  try {
+    status = await request<BetaStatus>('/api/sim/beta/status', token);
+  } catch (error) {
+    if (error instanceof SimExportApiError && error.status === 404) return null;
+    throw error;
+  }
+  return {
+    canUse: status.canUseSim === true,
+    waitlistUrl: `${BACKEND_URL}${status.waitlist || '/sim/beta'}`,
+    waitlistPosition: status.entry?.status === 'pending' ? status.entry.position : null,
+  };
 }
 
 export interface SimExportItems {

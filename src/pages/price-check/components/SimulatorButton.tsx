@@ -1,5 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, ClipboardCheck, FlaskConical, Loader2, LogIn, PackageCheck, X } from 'lucide-react';
+import {
+  AlertTriangle,
+  ClipboardCheck,
+  ExternalLink,
+  FlaskConical,
+  Hourglass,
+  Loader2,
+  LogIn,
+  PackageCheck,
+  X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SimCharacterPicker } from '@/components/custom/SimCharacterPicker';
@@ -57,16 +67,17 @@ function calloutSeen(): boolean {
 }
 
 /**
- * "Sim" in the price check's action row (Horadric Sim beta users only): sends the checked item with one of the
- * user's characters to the planner, tried on in its slot or as a Top Gear candidate. PD2's copy of the item (stash
- * or a character) is sent when PD2 has one, else the item as copied (just picked up, not saved yet).
+ * "Sim" in the price check's action row, shown while Horadric Sim is on: for beta users (allowlisted, or open beta)
+ * it sends the checked item with one of the user's characters to the planner, tried on in its slot or as a Top Gear
+ * candidate. PD2's copy of the item (stash or a character) is sent when PD2 has one, else the item as copied (just
+ * picked up, not saved yet). Everyone else gets the closed-beta waitlist on the website.
  */
 export function SimulatorButton({ item }: { item: PriceCheckItem }) {
   const access = useSimAccess();
   const { settings } = useOptions();
   const [open, setOpen] = useState(false);
   const [callout, setCallout] = useState(() => !calloutSeen());
-  if (access !== true) return null;
+  if (!access) return null;
   const token = settings?.pd2Token || null;
 
   const dismissCallout = () => {
@@ -101,9 +112,13 @@ export function SimulatorButton({ item }: { item: PriceCheckItem }) {
           align="start"
           className="w-[420px] space-y-3 p-3">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Send to Simulator
+            {access.canUse ? 'Send to Simulator' : 'Horadric Sim · Closed beta'}
           </div>
-          {token ? (
+          {!access.canUse ? (
+            <WaitlistBanner url={access.waitlistUrl}
+              position={access.waitlistPosition}
+              onOpen={() => setOpen(false)} />
+          ) : token ? (
             <SimulatorForm token={token}
               account={settings?.account ?? ''}
               item={item}
@@ -163,6 +178,32 @@ function SignInBanner({ children, tone = 'info' }: { children: React.ReactNode; 
     >
       <span className={cn(tone === 'destructive' && 'text-destructive')}>{children}</span>
     </Banner>
+  );
+}
+
+/** Closed beta, not invited: the website's waitlist (sign-up, or the user's place once signed up). */
+function WaitlistBanner({ url, position, onOpen }: { url: string; position: number | null; onOpen: () => void }) {
+  return (
+    <>
+      <Banner tone="info"
+        role="status"
+        icon={<Hourglass />}>
+        {position === null
+          ? 'The Simulator is invite-only for now. Join the waitlist on pd2trader.com to get in.'
+          : `You're #${position} on the waitlist. You'll be able to send items here once you're invited.`}
+      </Banner>
+      <div className="flex justify-end">
+        <Button
+          onClick={() => {
+            void openUrl(url);
+            onOpen();
+          }}
+        >
+          {position === null ? 'Join the waitlist' : 'View waitlist'}
+          <ExternalLink className="size-3.5" />
+        </Button>
+      </div>
+    </>
   );
 }
 

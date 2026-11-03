@@ -203,7 +203,7 @@ export function StashValueWindow() {
                         {rares.some(isCrafted) ? t('window.tabs.raresCrafted') : t('window.tabs.rares')}
                       </TabsTrigger>
                     )}
-                    {token && owner && simAccess && (
+                    {token && owner && simAccess?.canUse && (
                       <TabsTrigger value="simulator"
                         className={cn(TRIGGER_CLASS, 'gap-1')}>
                         <FlaskConical className="size-3.5" />
@@ -252,7 +252,7 @@ export function StashValueWindow() {
                     </TabsContent>
                   )}
 
-                  {token && owner && simAccess && (
+                  {token && owner && simAccess?.canUse && (
                     <TabsContent value="simulator"
                       className="pt-1">
                       <SimExportTab token={token}

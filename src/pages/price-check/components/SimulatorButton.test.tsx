@@ -12,6 +12,7 @@ import { openUrl } from '@/lib/browser-opener';
 import { createSimExport, getMyCharacters, SimExportApiError } from '@/lib/sim-export-api';
 import { clearCharacterItemsCache } from '@/lib/sim-item-sources';
 import type * as SimExportApi from '@/lib/sim-export-api';
+import type { SimAccess } from '@/lib/sim-export-api';
 import { trackMeasurement } from '@/lib/telemetry';
 import { useOverlay, type OverlayApi } from '@/overlay';
 import type { Item } from '../lib/interfaces';
@@ -35,6 +36,13 @@ vi.mock('@/lib/sim-export-api', async (importOriginal) => ({
 }));
 
 const URL_OUT = 'https://pd2trader.com/sim/plan?export=0b7f6a1e-8a39-4f43-9a3e-5f4f2b8c0d11';
+const WAITLIST = 'https://pd2trader.com/sim/beta';
+const access = (over: Partial<SimAccess> = {}): SimAccess => ({
+  canUse: true,
+  waitlistUrl: WAITLIST,
+  waitlistPosition: null,
+  ...over,
+});
 const openPanel = vi.fn();
 const fetchAndCacheStash = vi.fn<() => Promise<GameData>>();
 let settings: { pd2Token?: string; account?: string };
@@ -91,7 +99,7 @@ beforeEach(() => {
   vi.mocked(createSimExport).mockResolvedValue({ url: URL_OUT });
   vi.mocked(openUrl).mockReset();
   vi.mocked(openUrl).mockResolvedValue();
-  vi.mocked(useSimAccess).mockReturnValue(true);
+  vi.mocked(useSimAccess).mockReturnValue(access());
   vi.mocked(useOptions).mockImplementation(() => ({ settings }) as never);
   vi.mocked(usePd2Website).mockReturnValue({ fetchAndCacheStash } as unknown as ReturnType<typeof usePd2Website>);
   vi.mocked(useOverlay).mockReturnValue({ openPanel } as unknown as OverlayApi);
@@ -127,13 +135,35 @@ afterEach(() => {
 });
 
 describe('SimulatorButton', () => {
-  it('is hidden unless Horadric Sim is open to the user', () => {
+  it('is hidden while Horadric Sim is off or unknown', () => {
     vi.mocked(useSimAccess).mockReturnValue(undefined);
     const { rerender } = render(<SimulatorButton item={checked()} />);
     expect(screen.queryByRole('button', { name: /^Sim/ })).toBeNull();
-    vi.mocked(useSimAccess).mockReturnValue(false);
+    vi.mocked(useSimAccess).mockReturnValue(null);
     rerender(<SimulatorButton item={checked()} />);
     expect(screen.queryByRole('button', { name: /^Sim/ })).toBeNull();
+  });
+
+  it('sends users outside the closed beta to the waitlist instead of the export form', async () => {
+    vi.mocked(useSimAccess).mockReturnValue(access({ canUse: false }));
+    vi.mocked(getMyCharacters).mockClear();
+    render(<SimulatorButton item={checked()} />);
+    fireEvent.click(screen.getByRole('button', { name: /^Sim/ }));
+    await screen.findByText('Horadric Sim · Closed beta');
+    expect(screen.queryByText('Send to Simulator')).toBeNull();
+    expect(getMyCharacters).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: /Join the waitlist/ }));
+    expect(openUrl).toHaveBeenCalledWith(WAITLIST);
+    await waitFor(() => expect(screen.queryByText('Horadric Sim · Closed beta')).toBeNull());
+  });
+
+  it('shows a waitlisted user their place rather than another sign-up', async () => {
+    vi.mocked(useSimAccess).mockReturnValue(access({ canUse: false, waitlistPosition: 12 }));
+    render(<SimulatorButton item={checked()} />);
+    fireEvent.click(screen.getByRole('button', { name: /^Sim/ }));
+    expect((await screen.findByRole('status')).textContent).toContain("You're #12 on the waitlist");
+    expect(screen.getByRole('button', { name: /View waitlist/ })).toBeTruthy();
   });
 
   it('points new beta users at the button once: dismissing it keeps it away for good', () => {
