@@ -1,18 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  AlertTriangle,
-  ClipboardCheck,
-  ExternalLink,
-  FlaskConical,
-  Hourglass,
-  Loader2,
-  LogIn,
-  PackageCheck,
-  X,
-} from 'lucide-react';
+import { AlertTriangle, ClipboardCheck, FlaskConical, Loader2, LogIn, PackageCheck, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SimCharacterPicker } from '@/components/custom/SimCharacterPicker';
+import { SIM_WAITLIST_POPOVER_CLASS, SimWaitlist } from '@/components/custom/SimWaitlist';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
@@ -108,25 +99,32 @@ export function SimulatorButton({ item }: { item: PriceCheckItem }) {
             <span className="rounded-full bg-primary/20 px-1.5 py-px text-[10px] font-bold tracking-wider">BETA</span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent side="top"
-          align="start"
-          className="w-[420px] space-y-3 p-3">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {access.canUse ? 'Send to Simulator' : 'Horadric Sim · Closed beta'}
-          </div>
-          {!access.canUse ? (
-            <WaitlistBanner url={access.waitlistUrl}
-              position={access.waitlistPosition}
+        {!access.canUse ? (
+          <PopoverContent side="top"
+            align="start"
+            className={SIM_WAITLIST_POPOVER_CLASS}>
+            <SimWaitlist access={access}
               onOpen={() => setOpen(false)} />
-          ) : token ? (
-            <SimulatorForm token={token}
-              account={settings?.account ?? ''}
-              item={item}
-              onSent={() => setOpen(false)} />
-          ) : (
-            <SignInBanner>Sign in to send items to the planner.</SignInBanner>
-          )}
-        </PopoverContent>
+          </PopoverContent>
+        ) : (
+          <PopoverContent side="top"
+            align="start"
+            className="w-[420px] space-y-3 p-3">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Send to Simulator
+            </div>
+            {token ? (
+              <SimulatorForm
+                token={token}
+                account={settings?.account ?? ''}
+                item={item}
+                onSent={() => setOpen(false)}
+              />
+            ) : (
+              <SignInBanner>Sign in to send items to the planner.</SignInBanner>
+            )}
+          </PopoverContent>
+        )}
       </Popover>
       {callout && !open && (
         <div
@@ -178,32 +176,6 @@ function SignInBanner({ children, tone = 'info' }: { children: React.ReactNode; 
     >
       <span className={cn(tone === 'destructive' && 'text-destructive')}>{children}</span>
     </Banner>
-  );
-}
-
-/** Closed beta, not invited: the website's waitlist (sign-up, or the user's place once signed up). */
-function WaitlistBanner({ url, position, onOpen }: { url: string; position: number | null; onOpen: () => void }) {
-  return (
-    <>
-      <Banner tone="info"
-        role="status"
-        icon={<Hourglass />}>
-        {position === null
-          ? 'The Simulator is invite-only for now. Join the waitlist on pd2trader.com to get in.'
-          : `You're #${position} on the waitlist. You'll be able to send items here once you're invited.`}
-      </Banner>
-      <div className="flex justify-end">
-        <Button
-          onClick={() => {
-            void openUrl(url);
-            onOpen();
-          }}
-        >
-          {position === null ? 'Join the waitlist' : 'View waitlist'}
-          <ExternalLink className="size-3.5" />
-        </Button>
-      </div>
-    </>
   );
 }
 
