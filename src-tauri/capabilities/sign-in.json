@@ -3,5 +3,6 @@
   "identifier": "sign-in",
   "description": "Sign-in window: a view that talks to Main over events",
   "windows": ["SignIn"],
+  "local": true,
   "permissions": ["core:default"]
 }

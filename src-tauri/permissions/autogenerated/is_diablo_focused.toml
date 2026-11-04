@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-is-diablo-focused"
+description = "Enables the is_diablo_focused command without any pre-configured scope."
+commands.allow = ["is_diablo_focused"]
+
+[[permission]]
+identifier = "deny-is-diablo-focused"
+description = "Denies the is_diablo_focused command without any pre-configured scope."
+commands.deny = ["is_diablo_focused"]

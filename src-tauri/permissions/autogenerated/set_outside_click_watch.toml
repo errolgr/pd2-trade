@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-set-outside-click-watch"
+description = "Enables the set_outside_click_watch command without any pre-configured scope."
+commands.allow = ["set_outside_click_watch"]
+
+[[permission]]
+identifier = "deny-set-outside-click-watch"
+description = "Denies the set_outside_click_watch command without any pre-configured scope."
+commands.deny = ["set_outside_click_watch"]

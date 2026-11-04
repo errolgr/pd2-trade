@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-focus-diablo"
+description = "Enables the focus_diablo command without any pre-configured scope."
+commands.allow = ["focus_diablo"]
+
+[[permission]]
+identifier = "deny-focus-diablo"
+description = "Denies the focus_diablo command without any pre-configured scope."
+commands.deny = ["focus_diablo"]
