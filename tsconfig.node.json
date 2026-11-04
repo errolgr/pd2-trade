@@ -8,6 +8,6 @@
     "allowSyntheticDefaultImports": true,
     "allowImportingTsExtensions": true
   },
-  "include": ["vite.config.ts", "packages/ui/scripts/build-css.ts", "packages/ui/src/tokens/*.ts"],
+  "include": ["vite.config.ts"],
   "exclude": ["node_modules", "**/*.test.ts"]
 }

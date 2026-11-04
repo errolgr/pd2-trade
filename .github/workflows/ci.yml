@@ -23,6 +23,10 @@ jobs:
           # Node 26 (lts/* since Nov 2026) ships a global localStorage that shadows jsdom's and breaks the suite.
           node-version: 24
 
+      # vendor/@pd2-trader/* must match vendor/MANIFEST.json (synced from pd2-trader-server; no network needed).
+      - name: Check vendored shared packages
+        run: node scripts/check-vendor.mjs
+
       - name: Install dependencies
         run: npm install
 

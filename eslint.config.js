@@ -4,28 +4,23 @@ import tseslint from "typescript-eslint";
 import pluginReact from "eslint-plugin-react";
 import pluginReactHooks from "eslint-plugin-react-hooks";
 import prettierConfig from "eslint-config-prettier";
-import designSystem, { CONSISTENCY_RULES, TOKEN_RULES, pd2dsRules } from "./packages/ui/eslint/design-system.js";
+import designSystem, { CONSISTENCY_RULES, TOKEN_RULES, pd2dsRules } from "@pd2-trader/ui/eslint";
 
-// Design-system guard rails (PRD A3.2/A4, packages/ui/DESIGN_RULES.md). Token sources and tests are exempt.
+// Design-system guard rails (PRD A3.2/A4, @pd2-trader/ui DESIGN_RULES.md). Token sources and tests are exempt.
 const designSystemIgnores = [
   "**/*.test.{ts,tsx}",
   "**/test-utils.{ts,tsx}",
   "src/lib/themes.ts",
-  "packages/ui/src/tokens/**",
-  "packages/ui/scripts/**",
 ];
-// Plugin code (first-party plugins, create-pd2-plugin template) must be clean from day one: `configs.plugin`.
-const pluginCode = [
-  "packages/plugins/*/src/**/*.{ts,tsx,js,jsx}",
-  "packages/create-pd2-plugin/template/**/*.{ts,tsx,js,jsx}",
-];
+// Plugin code (the mock marketplace's sample plugin) lints like a scaffolded plugin: `configs.plugin`.
+const pluginCode = ["scripts/fixtures/plugins/*/src/**/*.{ts,tsx,js,jsx}"];
 
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
   {
-    // Build output (Ladle catalog static build, first-party plugin bundles).
-    ignores: ["packages/ui/build/**", "packages/plugins/*/dist/**"],
+    // vendor/: shared packages synced from pd2-trader-server (linted there; edits fail scripts/check-vendor.mjs).
+    ignores: ["vendor/**", "scripts/fixtures/plugins/*/dist/**"],
   },
   {
     files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"]
@@ -35,7 +30,7 @@ export default [
   },
   {
     // Node CLIs and build scripts (plugin CLI, scaffolder, mock marketplace)
-    files: ["scripts/**/*.{js,mjs}", "packages/*/bin/**/*.{js,mjs}"],
+    files: ["scripts/**/*.{js,mjs}"],
     languageOptions: { globals: globals.node },
   },
   pluginJs.configs.recommended,
@@ -80,13 +75,6 @@ export default [
     plugins: { "pd2-ds": designSystem },
     rules: pd2dsRules([...TOKEN_RULES, ...CONSISTENCY_RULES], "error"),
   },
-  {
-    // Consistency rules do not apply here: packages/ui is where primitives, Radix and cva belong.
-    files: ["packages/ui/**/*.{ts,tsx}"],
-    ignores: designSystemIgnores,
-    plugins: { "pd2-ds": designSystem },
-    rules: pd2dsRules(TOKEN_RULES, "error"),
-  },
-  // The same preset scaffolded plugins lint with (packages/create-pd2-plugin/template/eslint.config.js).
+  // The same preset scaffolded plugins lint with (create-pd2-plugin's template/eslint.config.js).
   ...designSystem.configs.plugin.map((config) => ({ ...config, files: pluginCode })),
 ];

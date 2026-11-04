@@ -65,7 +65,7 @@ Before you begin, ensure you have the following installed:
 
 ```
 pd2-trade/
-├── packages/ui/            # @pd2-trader/ui design system: tokens, components, Ladle catalog (DESIGN_RULES.md)
+├── vendor/@pd2-trader/    # ui + plugin-sdk, synced from pd2-trader-server (never edit here; see "Shared packages")
 ├── src/                    # Frontend source code
 │   ├── components/         # App-specific composites (built from @pd2-trader/ui)
 │   │   ├── custom/        # Chat button, sim picker, chat template form
@@ -103,14 +103,19 @@ npm run tauri build
 
 ### Design system (`@pd2-trader/ui`)
 
-UI comes from `packages/ui` only; read `packages/ui/DESIGN_RULES.md` before building a surface (lint `pd2-ds/*` errors on raw colors, arbitrary values, palette classes, direct Radix/cmdk/sonner imports, styled raw controls and local primitives).
+UI comes from `@pd2-trader/ui` only; read `vendor/@pd2-trader/ui/DESIGN_RULES.md` before building a surface (lint `pd2-ds/*` errors on raw colors, arbitrary values, palette classes, direct Radix/cmdk/sonner imports, styled raw controls and local primitives). The component catalog (Ladle) and the token → `tailwind.css` generator run in pd2-trader-server (`packages/ui`).
 
-```bash
-# Component catalog (Ladle): every component, theme switcher over all 21 themes, window-opacity slider
-npm run catalog
-# Static catalog build (packages/ui/build)
-npm run catalog:build
-```
+### Shared packages (`vendor/`)
+
+`@pd2-trader/ui` and `@pd2-trader/plugin-sdk` are developed in the private pd2-trader-server monorepo (`packages/ui`, `packages/plugin-sdk`; the first-party plugins and `create-pd2-plugin` live there too). This public repo keeps a vendored copy so CI needs no access to the private repo: `vendor/@pd2-trader/{ui,plugin-sdk}` (npm workspaces), pinned by `vendor/MANIFEST.json` (`repo`, `ref` = server commit sha, sha256 of every file).
+
+To change a shared package:
+
+1. Edit, test and push it in pd2-trader-server.
+2. Here: `npm run sync:shared -- --ref <server sha or branch>` (uses your `gh auth token`; `--repo-dir ../pd2-price-crawler` reads a local checkout instead), then `npm install`. Without `--ref` it re-syncs the manifest's ref.
+3. Commit `vendor/` and `package-lock.json` together with the overlay change that needs them.
+
+The sync copies each package's npm `files` plus `package.json`, minus tests/stories, drops `devDependencies`/`scripts` and turns `workspace:` ranges into the sibling's version. `npm test` starts with `npm run check:vendor` (offline): any hand edit, added or missing file under `vendor/` fails with "edit in pd2-trader-server, then npm run sync:shared". `vendor/` is ignored by this repo's eslint and prettier.
 
 ### Pointing at a local backend
 
@@ -227,12 +232,12 @@ A broken updater can only be fixed by users re-downloading the installer, so it 
 
 ### 6. Plugins
 
-- First-party plugins live in `packages/plugins/<name>` (`pd2-plugin.json` + `src/`). `npm run plugins:build` builds them all to `<name>/dist` (git-ignored).
+- First-party plugins, the `pd2-plugin` CLI's tests and `create-pd2-plugin` live in pd2-trader-server (`packages/plugins/<name>`, `packages/plugin-sdk`, `packages/create-pd2-plugin`); build and develop them there. The overlay only vendors the SDK it hosts plugins against.
 - One plugin: `npm run dev` inside its folder (`pd2-plugin dev`) rebuilds on save and serves `dist/` at http://localhost:5199/ (`--port <n>`; `--outdir <dir>` also copies the build, e.g. to `<AppConfig>/plugins-dev/<name>` for folder loading). Load it in the overlay via Settings → Plugins → Load unpacked.
-- Build contract (mirrored by the server's release build): `entry.worker` → `dist/worker.js` (IIFE, es2020), each `entry.panels.<name>` HTML → `dist/panels/<name>.html` with local `<script src>` bundled and inlined and local stylesheets inlined as `<style>`; `dist/manifest.json` has the entry rewritten and passes `parseManifest`. Code: `packages/plugin-sdk/bin/build.mjs`.
-- New plugins: `node packages/create-pd2-plugin/bin/create-pd2-plugin.mjs <dir> --id com.you.name` (template with PLUGIN_GUIDE.md, lint via `@pd2-trader/ui/eslint`'s `configs.plugin`, an example slot + panel; `DESIGN_RULES.md` and `llms.txt` are copied from `packages/ui` at scaffold time).
+- Build contract (mirrored by the server's release build): `entry.worker` → `dist/worker.js` (IIFE, es2020), each `entry.panels.<name>` HTML → `dist/panels/<name>.html` with local `<script src>` bundled and inlined and local stylesheets inlined as `<style>`; `dist/manifest.json` has the entry rewritten and passes `parseManifest`. Code: `@pd2-trader/plugin-sdk` `bin/build.mjs`.
+- New plugins: `create-pd2-plugin <dir> --id com.you.name` from pd2-trader-server (template with PLUGIN_GUIDE.md, lint via `@pd2-trader/ui/eslint`'s `configs.plugin`, an example slot + panel).
 - Load it in the overlay: Settings → Plugins → Load unpacked with the dev server URL (browser mode) or, in the desktop app, a folder under the config dir (`pd2-plugin dev --outdir <config>/plugins-dev/<name>`). The consent sheet opens; the plugin hot-reloads on every rebuild.
-- Marketplace against a local mock: `node scripts/mock-plugin-marketplace.mjs 3999` (serves the built `packages/plugins/*` signed with the dev key, a theme plugin, a bad-signature and a blocklisted listing) and `VITE_BACKEND_URL=http://localhost:3999 npm run dev`, then open `?panel=plugins`.
+- Marketplace against a local mock: `node scripts/mock-plugin-marketplace.mjs 3999` (builds and serves the sample plugin in `scripts/fixtures/plugins/` with the vendored SDK, signed with the dev key, plus a theme plugin, a bad-signature and a blocklisted listing; `PD2_PLUGINS_DIR=../pd2-price-crawler/packages/plugins` adds the server's built first-party plugins) and `VITE_BACKEND_URL=http://localhost:3999 npm run dev`, then open `?panel=plugins`.
 - Browser dev builds can simulate Rust events for smoke tests: `__pd2Overlay.rustEvent('whisper-received', { isTrade: false, from: 'Bob', message: 'wts shako', isJoin: false, isIncoming: true })`.
 
 ## 🐛 Debugging

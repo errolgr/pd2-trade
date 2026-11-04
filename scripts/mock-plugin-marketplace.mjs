@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 /**
  * Local mock of the plugin marketplace (`/api/plugins`, pd2-price-crawler PluginsModule) for dev and smoke tests.
- * Zero dependencies. Serves the first-party plugins from packages/plugins/<name>/dist, an inline theme-only
- * plugin, a listing whose bundle signature is wrong (install must be rejected) and a blocklisted listing.
+ * Serves the sample plugin in scripts/fixtures/plugins (built at startup with the vendored @pd2-trader/plugin-sdk
+ * build), optionally the first-party plugins built in pd2-trader-server, an inline theme-only plugin, a listing
+ * whose bundle signature is wrong (install must be rejected) and a blocklisted listing.
  *
  * Usage:
  *   node scripts/mock-plugin-marketplace.mjs [port]        (or PORT=3999; default 3999)
  *   VITE_BACKEND_URL=http://localhost:3999 npm run dev
+ *   PD2_PLUGINS_DIR=../pd2-price-crawler/packages/plugins  also serve those plugins' dist/ (build them in the server
+ *                                                          repo first); several dirs separated by ':'
  *
  * Signing uses the DEV seed below (dev/test only); its public key is the one in src/plugins/trust/publicKey.ts.
  */
@@ -19,7 +22,8 @@ import { fileURLToPath } from 'node:url';
 import process from 'node:process';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const PLUGINS_DIR = join(ROOT, 'packages', 'plugins');
+const FIXTURE_PLUGINS = join(ROOT, 'scripts', 'fixtures', 'plugins');
+const PLUGIN_DIRS = [FIXTURE_PLUGINS, ...(process.env.PD2_PLUGINS_DIR ?? '').split(':').filter(Boolean)];
 const PORT = Number(process.argv[2] ?? process.env.PORT ?? 3999);
 /** The Vite dev server (http://localhost:1420) and any other local port, for parallel dev servers. */
 const ALLOWED_ORIGIN_RE = /^http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/;
@@ -207,21 +211,33 @@ function listFiles(dir) {
   return out;
 }
 
-/** First-party plugins under packages/plugins/*: metadata from dist/manifest.json, else the source pd2-plugin.json. */
+/** Builds the fixture plugins into their (git-ignored) dist/ with the vendored SDK build. */
+async function buildFixtures() {
+  const { buildPlugin, writeOutput } = await import('../vendor/@pd2-trader/plugin-sdk/bin/build.mjs');
+  for (const name of readdirSync(FIXTURE_PLUGINS)) {
+    const dir = join(FIXTURE_PLUGINS, name);
+    const { files } = await buildPlugin(dir);
+    await writeOutput(join(dir, 'dist'), files);
+  }
+}
+
+/** Plugins under PLUGIN_DIRS/*: metadata from dist/manifest.json, else the source pd2-plugin.json. */
 function firstParty() {
-  if (!existsSync(PLUGINS_DIR)) return [];
   const out = [];
-  for (const name of readdirSync(PLUGINS_DIR).sort()) {
-    const dir = join(PLUGINS_DIR, name);
-    const dist = join(dir, 'dist');
-    const built = join(dist, 'manifest.json');
-    const source = join(dir, 'pd2-plugin.json');
-    try {
-      const manifestPath = existsSync(built) ? built : existsSync(source) ? source : null;
-      if (!manifestPath) continue;
-      out.push({ dist: existsSync(built) ? dist : null, manifest: readJson(manifestPath) });
-    } catch (error) {
-      console.warn(`[mock-marketplace] skipping ${name}: ${error.message}`);
+  for (const root of PLUGIN_DIRS) {
+    if (!existsSync(root)) continue;
+    for (const name of readdirSync(root).sort()) {
+      const dir = join(root, name);
+      const dist = join(dir, 'dist');
+      const built = join(dist, 'manifest.json');
+      const source = join(dir, 'pd2-plugin.json');
+      try {
+        const manifestPath = existsSync(built) ? built : existsSync(source) ? source : null;
+        if (!manifestPath) continue;
+        out.push({ dist: existsSync(built) ? dist : null, manifest: readJson(manifestPath) });
+      } catch (error) {
+        console.warn(`[mock-marketplace] skipping ${name}: ${error.message}`);
+      }
     }
   }
   return out;
@@ -388,7 +404,7 @@ async function route(req, res) {
   const version = parts[2];
   if (!entry.versions.some((v) => v.version === version)) return send(req, res, 404, { message: 'Unknown version' });
   const built = release(entry, version);
-  if (!built) return send(req, res, 404, { message: `${entry.listing.id} is not built (npm run plugins:build)` });
+  if (!built) return send(req, res, 404, { message: `${entry.listing.id} is not built (build it in pd2-trader-server)` });
   if (parts.length === 3)
     return send(req, res, 200, {
       manifest: built.manifest,
@@ -401,6 +417,8 @@ async function route(req, res) {
   return send(req, res, 404, { message: 'Not found' });
 }
 
+await buildFixtures();
+for (const root of PLUGIN_DIRS) if (!existsSync(root)) console.warn(`[mock-marketplace] ${root} does not exist`);
 createServer((req, res) => {
   route(req, res).catch((error) => {
     console.error('[mock-marketplace]', error);

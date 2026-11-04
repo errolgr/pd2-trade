@@ -3,7 +3,7 @@ import { ErrorChip, PriceTag, SlotText } from '@pd2-trader/ui';
 import type { Valuation } from '@/lib/networth-api';
 import { toNetWorthSummary } from '@/plugins/adapters/net-worth';
 import { runPluginCommand, usePluginSlot } from '@/plugins/ui/hooks';
-import { UiTree } from '@/plugins/ui/UiTree';
+import { UiTree } from '@pd2-trader/plugin-sdk/react';
 import { useStableSlotResults } from '@/plugins/ui/useStableSlotResults';
 
 /** A plugin's tab in the net worth window: after the core tabs. */

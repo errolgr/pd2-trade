@@ -1,7 +1,7 @@
 import React from 'react';
 import { ErrorChip, SlotBadge, SkeletonRows } from '@pd2-trader/ui';
 import type { SlotInput } from '@pd2-trader/plugin-sdk';
-import { UiTree } from './UiTree';
+import { UiTree } from '@pd2-trader/plugin-sdk/react';
 import { runPluginCommand, usePluginSlot } from './hooks';
 
 /**

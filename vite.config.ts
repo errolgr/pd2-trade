@@ -1,29 +1,10 @@
-import { defineConfig, loadEnv, type Logger, type Plugin } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import * as path from 'path';
 import { readFileSync } from 'fs';
 // @ts-expect-error - @tailwindcss/vite may not have complete TypeScript definitions
 import tailwindcss from '@tailwindcss/vite';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
-import { writeTailwindCss } from './packages/ui/scripts/build-css';
-
-/**
- * Regenerates @pd2-trader/ui/tailwind.css from the token source on every dev/build start. Token files are config
- * dependencies, so editing them restarts the dev server and lands here again.
- */
-const tokensCss = (): Plugin => {
-  let logger: Logger | undefined;
-  return {
-    name: 'pd2-ui-tokens-css',
-    configResolved(config) {
-      logger = config.logger;
-    },
-    buildStart() {
-      if (writeTailwindCss()) logger?.info('regenerated @pd2-trader/ui/tailwind.css from the token source');
-    },
-  };
-};
-
 const { version } = JSON.parse(readFileSync(path.resolve(__dirname, 'package.json'), 'utf8')) as { version: string };
 
 // https://vitejs.dev/config/
@@ -45,7 +26,6 @@ export default defineConfig(({ mode }) => {
       __APP_VERSION__: JSON.stringify(version),
     },
     plugins: [
-      tokensCss(),
       tailwindcss(),
       react(),
       // Only enable Sentry plugin when auth token is available

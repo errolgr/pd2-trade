@@ -5,9 +5,10 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@pd2-trader/ui": ["./packages/ui/src/index.ts"],
-      "@pd2-trader/ui/tokens": ["./packages/ui/src/tokens/index.ts"],
-      "@pd2-trader/plugin-sdk": ["./packages/plugin-sdk/src/index.ts"]
+      "@pd2-trader/ui": ["./vendor/@pd2-trader/ui/src/index.ts"],
+      "@pd2-trader/ui/tokens": ["./vendor/@pd2-trader/ui/src/tokens/index.ts"],
+      "@pd2-trader/plugin-sdk": ["./vendor/@pd2-trader/plugin-sdk/src/index.ts"],
+      "@pd2-trader/plugin-sdk/react": ["./vendor/@pd2-trader/plugin-sdk/src/react.tsx"]
     },
     "jsx": "react-jsx",
     "module": "ESNext",

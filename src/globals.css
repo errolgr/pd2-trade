@@ -1,5 +1,5 @@
 @import "tailwindcss";
-/* Theme tokens, scales and the Tailwind @theme mapping, generated from packages/ui/src/tokens. */
+/* Theme tokens, scales and the Tailwind @theme mapping, generated in pd2-trader-server from packages/ui/src/tokens (vendored). */
 @import "@pd2-trader/ui/tailwind.css";
 
 @plugin "tailwindcss-animate";

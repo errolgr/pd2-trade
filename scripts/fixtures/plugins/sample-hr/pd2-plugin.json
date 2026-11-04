@@ -1,0 +1,23 @@
+{
+  "id": "dev.pd2trader.sample-hr",
+  "name": "Sample HR",
+  "version": "0.1.0",
+  "sdk": "^1.0.0",
+  "description": "Shows the checked item's price in high runes.",
+  "category": "pricing",
+  "entry": {
+    "worker": "src/worker.ts",
+    "panels": {
+      "main": "src/panel.html"
+    }
+  },
+  "slots": ["priceCheck.section"],
+  "commands": [
+    {
+      "id": "open",
+      "title": "Open Sample HR",
+      "defaultHotkey": null
+    }
+  ],
+  "permissions": ["prices:read", "items:read"]
+}
