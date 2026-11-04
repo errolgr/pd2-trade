@@ -80,7 +80,8 @@ Tiers (`packages/ui/src/tokens/tokens.ts`): **primitive** `PALETTE` (theme defin
 | `q-gold`                  | Gold amounts and currency                                                    |
 | `q-corrupted`             | Corrupted items (red)                                                        |
 | `q-corrupted-zone`        | Corrupted-zone timer and markers (purple)                                    |
-| `dmg-fire` … `dmg-poison` | Elemental damage text: `dmg-fire`, `dmg-cold`, `dmg-lightning`, `dmg-poison` |
+| `dmg-fire` … `dmg-magic`  | Damage type text: `dmg-fire`, `dmg-cold`, `dmg-lightning`, `dmg-poison`, `dmg-physical`, `dmg-magic` |
+| `class-amazon` … `class-sorceress` | Character class color (class names, portrait rings): `class-amazon`, `class-assassin`, `class-barbarian`, `class-druid`, `class-necromancer`, `class-paladin`, `class-sorceress` |
 
 Item names always render in their quality color (`text-q-*`); never reuse a quality color for unrelated UI
 meaning (e.g. `q-set` green is not "success").

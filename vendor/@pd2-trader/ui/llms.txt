@@ -14,7 +14,8 @@ semantic: background foreground surface surface-foreground surface-elevated card
   border input ring scrim chart-1 chart-2 chart-3 chart-4 chart-5
   sidebar sidebar-foreground sidebar-primary sidebar-primary-foreground sidebar-accent sidebar-accent-foreground sidebar-border sidebar-ring
 domain: glow q-unique q-set q-rare q-magic q-crafted q-rune q-normal q-gold q-corrupted q-corrupted-zone
-  dmg-fire dmg-cold dmg-lightning dmg-poison (elemental damage text)
+  dmg-fire dmg-cold dmg-lightning dmg-poison dmg-physical dmg-magic (damage type text)
+  class-amazon class-assassin class-barbarian class-druid class-necromancer class-paladin class-sorceress (class color)
 keywords: transparent current inherit (and currentColor in SVG)
 inline styles: var(--<token>) only, e.g. style={{ color: 'var(--q-unique)' }}; color-mix(in oklab, var(--success) 20%, transparent) ok.
 

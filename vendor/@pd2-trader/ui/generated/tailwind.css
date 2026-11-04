@@ -8,7 +8,7 @@
 :root {
     --background: oklch(0.141 0.004 285.824);
     --foreground: oklch(0.985 0 0);
-    --card: oklch(0.274 0.005 286.033);
+    --card: oklch(0.21 0.006 285.885);
     --card-foreground: oklch(0.985 0 0);
     --popover: oklch(0.141 0.004 285.824);
     --popover-foreground: oklch(0.985 0 0);
@@ -63,6 +63,15 @@
     --dmg-cold: oklch(0.727 0.143 257.059);
     --dmg-lightning: oklch(0.861 0.151 94.024);
     --dmg-poison: oklch(0.745 0.171 143.098);
+    --dmg-physical: oklch(0.87 0 0);
+    --dmg-magic: oklch(0.743 0.135 311.057);
+    --class-amazon: oklch(0.783 0.127 82.5);
+    --class-assassin: oklch(0.709 0.159 293.5);
+    --class-barbarian: oklch(0.697 0.158 47.4);
+    --class-druid: oklch(0.735 0.165 134);
+    --class-necromancer: oklch(0.785 0.133 181.9);
+    --class-paladin: oklch(0.714 0.143 254.6);
+    --class-sorceress: oklch(0.669 0.182 23.4);
     --radius: 0.5rem;
     /* Window transparency (Settings → Interface): applyWindowTransparency sets both; opaque by default. */
     --window-opacity: 100%;
@@ -189,6 +198,15 @@
     --color-dmg-cold: var(--dmg-cold);
     --color-dmg-lightning: var(--dmg-lightning);
     --color-dmg-poison: var(--dmg-poison);
+    --color-dmg-physical: var(--dmg-physical);
+    --color-dmg-magic: var(--dmg-magic);
+    --color-class-amazon: var(--class-amazon);
+    --color-class-assassin: var(--class-assassin);
+    --color-class-barbarian: var(--class-barbarian);
+    --color-class-druid: var(--class-druid);
+    --color-class-necromancer: var(--class-necromancer);
+    --color-class-paladin: var(--class-paladin);
+    --color-class-sorceress: var(--class-sorceress);
 
     --radius-sm: calc(var(--radius) - 4px);
     --radius-md: calc(var(--radius) - 2px);

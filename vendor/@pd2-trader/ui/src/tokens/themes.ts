@@ -6,7 +6,15 @@
  * overlay), and the generated `tailwind.css` ships the default theme's values in `:root` for first paint.
  */
 
-import { PALETTE, type DamageToken, type QualityToken, type Theme, type ThemeMode, type ThemeToken } from './tokens';
+import {
+  PALETTE,
+  type ClassToken,
+  type DamageToken,
+  type QualityToken,
+  type Theme,
+  type ThemeMode,
+  type ThemeToken,
+} from './tokens';
 
 /** Compact theme input for `defineTheme`; `quality`/`overrides` replace the derived defaults. */
 export interface ThemeSpec {
@@ -68,12 +76,14 @@ const LIGHT_QUALITY: Omit<Record<QualityToken, string>, 'q-normal'> = {
   'q-corrupted-zone': PALETTE.purple700,
 };
 
-/** Elemental damage colors (market result cards, stat lines). Light themes use darker inks for contrast. */
+/** Damage type colors (market result cards, stat lines, stat sheets). Light themes use darker inks for contrast. */
 const DARK_DAMAGE: Record<DamageToken, string> = {
   'dmg-fire': 'oklch(0.712 0.185 37.768)',
   'dmg-cold': 'oklch(0.727 0.143 257.059)',
   'dmg-lightning': 'oklch(0.861 0.151 94.024)',
   'dmg-poison': 'oklch(0.745 0.171 143.098)',
+  'dmg-physical': 'oklch(0.87 0 0)',
+  'dmg-magic': 'oklch(0.743 0.135 311.057)',
 };
 
 const LIGHT_DAMAGE: Record<DamageToken, string> = {
@@ -81,6 +91,29 @@ const LIGHT_DAMAGE: Record<DamageToken, string> = {
   'dmg-cold': 'oklch(0.5 0.17 257.059)',
   'dmg-lightning': 'oklch(0.56 0.12 94.024)',
   'dmg-poison': 'oklch(0.52 0.15 143.098)',
+  'dmg-physical': 'oklch(0.42 0 0)',
+  'dmg-magic': 'oklch(0.5 0.16 311.057)',
+};
+
+/** Character class colors (the pre-token CLASS_META hexes in the overlay's builds pages); light themes darker. */
+const DARK_CLASS: Record<ClassToken, string> = {
+  'class-amazon': 'oklch(0.783 0.127 82.5)',
+  'class-assassin': 'oklch(0.709 0.159 293.5)',
+  'class-barbarian': 'oklch(0.697 0.158 47.4)',
+  'class-druid': 'oklch(0.735 0.165 134)',
+  'class-necromancer': 'oklch(0.785 0.133 181.9)',
+  'class-paladin': 'oklch(0.714 0.143 254.6)',
+  'class-sorceress': 'oklch(0.669 0.182 23.4)',
+};
+
+const LIGHT_CLASS: Record<ClassToken, string> = {
+  'class-amazon': 'oklch(0.52 0.11 82.5)',
+  'class-assassin': 'oklch(0.5 0.17 293.5)',
+  'class-barbarian': 'oklch(0.54 0.15 47.4)',
+  'class-druid': 'oklch(0.5 0.14 134)',
+  'class-necromancer': 'oklch(0.52 0.1 181.9)',
+  'class-paladin': 'oklch(0.5 0.15 254.6)',
+  'class-sorceress': 'oklch(0.52 0.18 23.4)',
 };
 
 /** Expands a compact spec into the full token set; shared defaults (status colors, quality, radius) fill the rest. */
@@ -132,6 +165,7 @@ export function defineTheme(s: ThemeSpec): Theme {
     scrim: dark ? 'oklch(0 0 0 / 0.6)' : 'oklch(0.206 0.018 264.052 / 0.35)',
     ...(dark ? DARK_QUALITY : { ...LIGHT_QUALITY, 'q-normal': s.foreground }),
     ...(dark ? DARK_DAMAGE : LIGHT_DAMAGE),
+    ...(dark ? DARK_CLASS : LIGHT_CLASS),
     ...s.quality,
     radius: '0.5rem',
     ...s.overrides,
@@ -154,7 +188,7 @@ const DARK_THEMES: Theme[] = [
     description: 'The classic look: neutral zinc night with unique-gold highlights.',
     background: 'oklch(0.141 0.004 285.824)',
     foreground: 'oklch(0.985 0 0)',
-    card: 'oklch(0.274 0.005 286.033)',
+    card: 'oklch(0.21 0.006 285.885)', // one step above the background so border / muted / accent read inside cards
     popover: 'oklch(0.141 0.004 285.824)',
     primary: 'oklch(0.985 0 0)',
     primaryForeground: 'oklch(0.21 0.006 285.883)',

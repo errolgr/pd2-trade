@@ -1,6 +1,6 @@
 {
   "repo": "errolgr/pd2-trader-server",
-  "ref": "d7b2a5e680895a8f0b01ababa577e824acbc151d",
+  "ref": "1b9072cd4ef5c63e34a31d1eb57a4b70b1c9fdfe",
   "packages": {
     "packages/ui": "@pd2-trader/ui",
     "packages/plugin-sdk": "@pd2-trader/plugin-sdk"
@@ -22,11 +22,11 @@
     "@pd2-trader/plugin-sdk/src/ui.ts": "00b093355785e9a67caccbec15b432c0107a167706885541811daa793d1fa557",
     "@pd2-trader/plugin-sdk/src/version.ts": "020392c2346bfb4a85d0fa1ba98834b64c1e7d9a8ab38ccfccaa2f3a20237c0a",
     "@pd2-trader/plugin-sdk/src/worker.ts": "7adaec838a865c49f689ef9c06fa55b96f8a4222fd7b479a647d6c083a13d3a2",
-    "@pd2-trader/ui/DESIGN_RULES.md": "87e40c906223d83359377670932200d9a981e393342e92cd474b89d3fbc6e7c2",
+    "@pd2-trader/ui/DESIGN_RULES.md": "0813a22664c00657bcd8ca528ab2a1f1abfe61c098c776c4530ccef173de6a82",
     "@pd2-trader/ui/eslint/consistency.js": "15056f9d4adb0a4a9b1402f17703a2b14a9775fcd5a45c320d00601391ecd2fd",
     "@pd2-trader/ui/eslint/design-system.js": "92b595cc6f4d17af02f9836939d4e96e82b4b5ae2c2baca0132a81a372bfd4df",
-    "@pd2-trader/ui/generated/tailwind.css": "382c113a3be698f6cd8e6cf1d5d12b82b228670dbbbb7c74f65af1da6182b52c",
-    "@pd2-trader/ui/llms.txt": "02c4e9d65071f699a7aaa0ed4d42eac6f5a8368db65dd20105bdf5b16248de9b",
+    "@pd2-trader/ui/generated/tailwind.css": "d22082c3839a678f02e0c7bd459dc622c0fd423593a91bf1bd0e4f8371d52b3e",
+    "@pd2-trader/ui/llms.txt": "844513b0ec117eb0d198a0484d88f4e85680fbe608b4b16a405b13e3c52c40bd",
     "@pd2-trader/ui/package.json": "6b046c2e7fb78b5af0d86198a4f8afe0b0e5fb8454e88400815d609b77f9b12c",
     "@pd2-trader/ui/src/components/accordion.tsx": "838d44e0f8a6c68dabb4222fa96934e97a9e96f08ea0603e1b5ffe0c770a4209",
     "@pd2-trader/ui/src/components/alert-dialog.tsx": "bdd9b2a20b192419c47747ec90e943287595534f3502efed82fb51cfefd6fe0b",
@@ -101,7 +101,7 @@
     "@pd2-trader/ui/src/registry/types.ts": "8a1856f142d3f274650512aaed5cc5574a543607f4f205c0ba22a06d24f6d606",
     "@pd2-trader/ui/src/tokens/index.ts": "0c2c24a1f3e21932496901431187b33efd36b77fa1debf88f9714ca8d10c6c82",
     "@pd2-trader/ui/src/tokens/scales.ts": "b261fefc15fb1e061b9ea9572111d37aa3cd8a4af1b1033747aff9cc6fd1fde8",
-    "@pd2-trader/ui/src/tokens/themes.ts": "126ad73e22e86fa667c01c923030bf5b9c30964f830975b879454b6bf979536f",
-    "@pd2-trader/ui/src/tokens/tokens.ts": "66a4c8a904d89c786ef0e6d1245256aee80b026ee42fd86222aa4b61c3947419"
+    "@pd2-trader/ui/src/tokens/themes.ts": "f881ea13048e56dba4c1e860888f130f57fd33956909e8d8c727dda42e229b06",
+    "@pd2-trader/ui/src/tokens/tokens.ts": "c8a1882bf0ab0d81ec56e6e94253cadc877945c46020ddc04a467b5a0d71e663"
   }
 }
