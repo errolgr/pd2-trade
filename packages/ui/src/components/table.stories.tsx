@@ -1,5 +1,14 @@
 import type { Story, StoryDefault } from '@ladle/react';
-import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@pd2-trader/ui';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@pd2-trader/ui';
 
 export default { title: 'Primitives / Table' } satisfies StoryDefault;
 

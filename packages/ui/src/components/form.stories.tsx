@@ -1,6 +1,16 @@
 import type { Story, StoryDefault } from '@ladle/react';
 import { useForm } from 'react-hook-form';
-import { Button, Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage, Input } from '@pd2-trader/ui';
+import {
+  Button,
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+} from '@pd2-trader/ui';
 
 export default { title: 'Primitives / Form' } satisfies StoryDefault;
 

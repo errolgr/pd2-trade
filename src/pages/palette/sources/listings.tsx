@@ -10,6 +10,7 @@ import { reportApiError } from '@/lib/error-reporting';
 import { ListingThumb } from '@/pages/chat/components/ListingCard';
 import { offerStatus } from '@/pages/chat/components/ThreadDeals';
 import { offerThreadId } from '@/pages/chat/lib/offers-seen';
+import { useNow } from '@/pages/market/enrich/useNow';
 import { itemDisplayName } from '@/pages/market/lib/listing';
 import { canBump } from '@/pages/quick-list/listings/my-listings';
 import {
@@ -227,6 +228,9 @@ export const useListingsSource: PaletteSource = ({ query, scope, limit, refs }) 
     [updateMarketListing, updateItemByHash, deleteMarketListing],
   );
 
+  // Ticking clock read in render (react-hooks/purity), so bump eligibility and ages stay fresh.
+  const now = useNow();
+
   return useMemo(() => {
     if (!signedIn) return { items: [], loading: false, signedOut: true };
     if (limit === 0) return { items: [], loading };
@@ -236,7 +240,7 @@ export const useListingsSource: PaletteSource = ({ query, scope, limit, refs }) 
       : scope
         ? allEntries(mine, offers).slice(0, limit)
         : resolveListingsRefs(mine, offers, refs);
-    const context = { api, listings: mine, now: Date.now() };
+    const context = { api, listings: mine, now };
     return { items: entries.map((entry) => toItem(entry, context)), loading };
-  }, [signedIn, limit, loading, listings, offers, query, scope, refs, api]);
+  }, [signedIn, limit, loading, listings, offers, query, scope, refs, api, now]);
 };

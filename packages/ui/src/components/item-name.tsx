@@ -35,7 +35,10 @@ interface ItemNameProps extends Omit<React.ComponentProps<'span'>, 'children'> {
 }
 
 /** An item's name in its D2 quality colour (unique gold, set green, rune orange…). */
-function ItemName({ name, quality, runeword, className, ...props }: ItemNameProps) {
+const ItemName = React.forwardRef<React.ElementRef<'span'>, ItemNameProps>(function ItemName(
+  { name, quality, runeword, className, ...props },
+  ref,
+) {
   return (
     <span
       data-slot="item-name"
@@ -43,12 +46,13 @@ function ItemName({ name, quality, runeword, className, ...props }: ItemNameProp
         itemQualityClass(quality, { runeword, name: typeof name === 'string' ? name : undefined }),
         className,
       )}
+      ref={ref}
       {...props}
     >
       {name}
     </span>
   );
-}
+});
 
 export { ItemName };
 export type { ItemNameProps };

@@ -19,7 +19,10 @@ interface RuneIconProps extends Omit<React.ComponentProps<'img'>, 'src'> {
  * Inventory art of a rune; collapses to the rune's initial in a tile when the art is missing.
  * Size it with `size-*` (default `size-4`).
  */
-function RuneIcon({ rune, src, className, alt = '', ...props }: RuneIconProps) {
+const RuneIcon = React.forwardRef<React.ElementRef<'img'>, RuneIconProps>(function RuneIcon(
+  { rune, src, className, alt = '', ...props },
+  ref,
+) {
   const base = runeBaseName(rune);
   const url = src ?? (base ? `/runes/${base}_Rune.png` : undefined);
   const [broken, setBroken] = React.useState<string | undefined>(undefined);
@@ -48,10 +51,11 @@ function RuneIcon({ rune, src, className, alt = '', ...props }: RuneIconProps) {
       loading="lazy"
       onError={() => setBroken(url)}
       className={cn('inline-block size-4 shrink-0 object-contain', className)}
+      ref={ref}
       {...props}
     />
   );
-}
+});
 
 export { RuneIcon };
 export type { RuneIconProps };

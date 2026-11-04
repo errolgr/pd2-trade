@@ -20,7 +20,12 @@ export const Kinds: Story = () => (
     </Button>
     <Button
       variant="outline"
-      onClick={() => toast('Offer received', { description: 'HammerDin offers 1 HR + Um', action: { label: 'View', onClick: () => undefined } })}
+      onClick={() =>
+        toast('Offer received', {
+          description: 'HammerDin offers 1 HR + Um',
+          action: { label: 'View', onClick: () => undefined },
+        })
+      }
     >
       With action
     </Button>

@@ -59,16 +59,16 @@ export const Variations: Story = () => (
       <Body />
     </PanelSurface>
     <PanelSurface className="w-popover">
-      <PanelChrome
-        title="Settings — no drag region, no close"
+      <PanelChrome title="Settings — no drag region, no close"
         icon={<Settings />}
-        dragRegion={false}
-      />
+        dragRegion={false} />
       <Body />
     </PanelSurface>
     <PanelSurface className="w-popover">
-      <PanelChrome title="A very long panel title that truncates before the actions and close button"
-        onClose={() => undefined} />
+      <PanelChrome
+        title="A very long panel title that truncates before the actions and close button"
+        onClose={() => undefined}
+      />
       <Body />
     </PanelSurface>
   </div>

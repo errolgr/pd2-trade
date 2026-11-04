@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 
@@ -21,29 +22,28 @@ const buttonGroupVariants = cva(
   },
 );
 
-function ButtonGroup({
-  className,
-  orientation,
-  ...props
-}: React.ComponentProps<'div'> & VariantProps<typeof buttonGroupVariants>) {
+const ButtonGroup = React.forwardRef<
+  React.ElementRef<'div'>,
+  React.ComponentPropsWithoutRef<'div'> & VariantProps<typeof buttonGroupVariants>
+>(function ButtonGroup({ className, orientation, ...props }, ref) {
   return (
     <div
       role="group"
       data-slot="button-group"
       data-orientation={orientation}
       className={cn(buttonGroupVariants({ orientation }), className)}
+      ref={ref}
       {...props}
     />
   );
-}
+});
 
-function ButtonGroupText({
-  className,
-  asChild = false,
-  ...props
-}: React.ComponentProps<'div'> & {
-  asChild?: boolean;
-}) {
+const ButtonGroupText = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentPropsWithoutRef<'div'> & {
+    asChild?: boolean;
+  }
+>(function ButtonGroupText({ className, asChild = false, ...props }, ref) {
   const Comp = asChild ? Slot : 'div';
 
   return (
@@ -52,24 +52,25 @@ function ButtonGroupText({
         "bg-muted shadow-xs flex items-center gap-2 rounded-md border px-4 text-sm font-medium [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none",
         className,
       )}
+      ref={ref}
       {...props}
     />
   );
-}
+});
 
-function ButtonGroupSeparator({
-  className,
-  orientation = 'vertical',
-  ...props
-}: React.ComponentProps<typeof Separator>) {
+const ButtonGroupSeparator = React.forwardRef<
+  React.ElementRef<typeof Separator>,
+  React.ComponentPropsWithoutRef<typeof Separator>
+>(function ButtonGroupSeparator({ className, orientation = 'vertical', ...props }, ref) {
   return (
     <Separator
       data-slot="button-group-separator"
       orientation={orientation}
       className={cn('bg-input relative !m-0 self-stretch data-[orientation=vertical]:h-auto', className)}
+      ref={ref}
       {...props}
     />
   );
-}
+});
 
 export { ButtonGroup, ButtonGroupSeparator, ButtonGroupText, buttonGroupVariants };

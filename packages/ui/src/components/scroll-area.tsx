@@ -31,11 +31,10 @@ const ScrollArea = React.forwardRef<
   );
 });
 
-function ScrollBar({
-  className,
-  orientation = 'vertical',
-  ...props
-}: React.ComponentProps<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>) {
+const ScrollBar = React.forwardRef<
+  React.ElementRef<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>,
+  React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>
+>(function ScrollBar({ className, orientation = 'vertical', ...props }, ref) {
   return (
     <ScrollAreaPrimitive.ScrollAreaScrollbar
       data-slot="scroll-area-scrollbar"
@@ -46,6 +45,7 @@ function ScrollBar({
         orientation === 'horizontal' && 'h-2.5 flex-col border-t border-t-transparent',
         className,
       )}
+      ref={ref}
       {...props}
     >
       <ScrollAreaPrimitive.ScrollAreaThumb
@@ -54,6 +54,6 @@ function ScrollBar({
       />
     </ScrollAreaPrimitive.ScrollAreaScrollbar>
   );
-}
+});
 
 export { ScrollArea, ScrollBar };

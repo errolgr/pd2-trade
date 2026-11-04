@@ -4,14 +4,23 @@ import { CircleIcon } from 'lucide-react';
 
 import { cn } from '../lib/utils';
 
-function RadioGroup({ className, ...props }: React.ComponentProps<typeof RadioGroupPrimitive.Root>) {
-  return <RadioGroupPrimitive.Root data-slot="radio-group"
-    className={cn('grid gap-3', className)}
-    {...props} />;
-}
+const RadioGroup = React.forwardRef<
+  React.ElementRef<typeof RadioGroupPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Root>
+>(function RadioGroup({ className, ...props }, ref) {
+  return (
+    <RadioGroupPrimitive.Root data-slot="radio-group"
+      className={cn('grid gap-3', className)}
+      ref={ref}
+      {...props} />
+  );
+});
 
 /** One option; pair it with a `Label htmlFor`. Styled like `Checkbox` (same border, focus ring and disabled state). */
-function RadioGroupItem({ className, ...props }: React.ComponentProps<typeof RadioGroupPrimitive.Item>) {
+const RadioGroupItem = React.forwardRef<
+  React.ElementRef<typeof RadioGroupPrimitive.Item>,
+  React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>
+>(function RadioGroupItem({ className, ...props }, ref) {
   return (
     <RadioGroupPrimitive.Item
       data-slot="radio-group-item"
@@ -19,6 +28,7 @@ function RadioGroupItem({ className, ...props }: React.ComponentProps<typeof Rad
         'peer aspect-square size-4 shrink-0 rounded-full border border-input text-primary shadow-xs outline-none transition-[color,box-shadow] duration-(--dur-fast) focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[state=checked]:border-primary dark:bg-input/30',
         className,
       )}
+      ref={ref}
       {...props}
     >
       <RadioGroupPrimitive.Indicator
@@ -29,6 +39,6 @@ function RadioGroupItem({ className, ...props }: React.ComponentProps<typeof Rad
       </RadioGroupPrimitive.Indicator>
     </RadioGroupPrimitive.Item>
   );
-}
+});
 
 export { RadioGroup, RadioGroupItem };

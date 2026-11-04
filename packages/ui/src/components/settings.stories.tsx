@@ -32,15 +32,23 @@ interface Values {
 /** SettingsRow is a FormItem: each row sits in a react-hook-form FormField, as in the overlay settings pages. */
 export const Section: Story = () => {
   const form = useForm<Values>({
-    defaultValues: { theme: 'sanctuary', transparency: 20, runeIcons: true, autoBump: false, template: 'WTS {item} {price} HR' },
+    defaultValues: {
+      theme: 'sanctuary',
+      transparency: 20,
+      runeIcons: true,
+      autoBump: false,
+      template: 'WTS {item} {price} HR',
+    },
   });
   return (
     <Form {...form}>
       <form className="w-popover rounded-lg border bg-surface p-4">
         <SettingsSection title="Interface"
           description="Theme, transparency and overlay behaviour.">
-          <SettingsGroup title="Appearance"
-            aside={<span className="text-2xs text-muted-foreground">Applies to all windows</span>}>
+          <SettingsGroup
+            title="Appearance"
+            aside={<span className="text-2xs text-muted-foreground">Applies to all windows</span>}
+          >
             <FormField
               control={form.control}
               name="theme"
@@ -74,10 +82,12 @@ export const Section: Story = () => {
                   label="Window transparency"
                   control={
                     <FormControl>
-                      <Slider className="w-40"
+                      <Slider
+                        className="w-40"
                         max={90}
                         value={[field.value]}
-                        onValueChange={([v]) => field.onChange(v)} />
+                        onValueChange={([v]) => field.onChange(v)}
+                      />
                     </FormControl>
                   }
                 />

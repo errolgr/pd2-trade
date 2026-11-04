@@ -95,17 +95,24 @@ const CommandList = React.forwardRef<
 ));
 CommandList.displayName = 'CommandList';
 
-function CommandEmpty({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.Empty>) {
+const CommandEmpty = React.forwardRef<
+  React.ElementRef<typeof CommandPrimitive.Empty>,
+  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Empty>
+>(function CommandEmpty({ className, ...props }, ref) {
   return (
     <CommandPrimitive.Empty
       data-slot="command-empty"
       className={cn('py-6 text-center text-sm text-muted-foreground', className)}
+      ref={ref}
       {...props}
     />
   );
-}
+});
 
-function CommandGroup({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.Group>) {
+const CommandGroup = React.forwardRef<
+  React.ElementRef<typeof CommandPrimitive.Group>,
+  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Group>
+>(function CommandGroup({ className, ...props }, ref) {
   return (
     <CommandPrimitive.Group
       data-slot="command-group"
@@ -113,22 +120,30 @@ function CommandGroup({ className, ...props }: React.ComponentProps<typeof Comma
         'overflow-hidden p-1 text-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-2xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground',
         className,
       )}
+      ref={ref}
       {...props}
     />
   );
-}
+});
 
-function CommandSeparator({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.Separator>) {
+const CommandSeparator = React.forwardRef<
+  React.ElementRef<typeof CommandPrimitive.Separator>,
+  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Separator>
+>(function CommandSeparator({ className, ...props }, ref) {
   return (
     <CommandPrimitive.Separator
       data-slot="command-separator"
       className={cn('-mx-1 h-px bg-border', className)}
+      ref={ref}
       {...props}
     />
   );
-}
+});
 
-function CommandItem({ className, ...props }: React.ComponentProps<typeof CommandPrimitive.Item>) {
+const CommandItem = React.forwardRef<
+  React.ElementRef<typeof CommandPrimitive.Item>,
+  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>
+>(function CommandItem({ className, ...props }, ref) {
   return (
     <CommandPrimitive.Item
       data-slot="command-item"
@@ -136,20 +151,24 @@ function CommandItem({ className, ...props }: React.ComponentProps<typeof Comman
         "relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground",
         className,
       )}
+      ref={ref}
       {...props}
     />
   );
-}
+});
 
-function CommandShortcut({ className, ...props }: React.ComponentProps<'span'>) {
-  return (
-    <span
-      data-slot="command-shortcut"
-      className={cn('ml-auto text-2xs tracking-widest text-muted-foreground', className)}
-      {...props}
-    />
-  );
-}
+const CommandShortcut = React.forwardRef<React.ElementRef<'span'>, React.ComponentPropsWithoutRef<'span'>>(
+  function CommandShortcut({ className, ...props }, ref) {
+    return (
+      <span
+        data-slot="command-shortcut"
+        className={cn('ml-auto text-2xs tracking-widest text-muted-foreground', className)}
+        ref={ref}
+        {...props}
+      />
+    );
+  },
+);
 
 export {
   Command,

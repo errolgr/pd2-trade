@@ -4,6 +4,7 @@ import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { t } from '@/i18n';
 import { useChatThreads, type ChatThreadEntry } from '@/pages/chat/chat-threads';
 import { timeAgo } from '@/pages/chat/components/ChatPeek';
+import { useNow } from '@/pages/market/enrich/useNow';
 import { matchTier } from '../lib/match';
 import type { PaletteItem, PaletteRef, PaletteRunContext, PaletteSource } from '../lib/types';
 
@@ -108,16 +109,17 @@ export const useChatSource: PaletteSource = ({ query, scope, limit, refs }) => {
   // Like the chat panel: a PD2 token
   const signedIn = !!authData?.accessToken;
   const threads = useChatThreads();
+  // Read in render via a ticking clock, not Date.now() inside the memo (react-hooks/purity); "5m ago" stays fresh.
+  const now = useNow();
 
   return useMemo(() => {
     if (!signedIn) return { items: [], loading: false, signedOut: true };
     if (limit === 0) return { items: [], loading: false };
-    const now = Date.now();
     const picked: RankedThread[] = query
       ? rankThreads(threads, query, limit)
       : (scope ? threads.filter((thread) => !thread.archived).slice(0, limit) : resolveThreadRefs(threads, refs)).map(
           (thread) => ({ thread }),
         );
     return { items: picked.map((r) => toItem(r, now)), loading: false };
-  }, [signedIn, limit, query, scope, threads, refs]);
+  }, [signedIn, limit, query, scope, threads, refs, now]);
 };

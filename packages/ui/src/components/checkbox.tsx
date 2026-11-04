@@ -4,7 +4,10 @@ import { CheckIcon } from 'lucide-react';
 
 import { cn } from '../lib/utils';
 
-function Checkbox({ className, ...props }: React.ComponentProps<typeof CheckboxPrimitive.Root>) {
+const Checkbox = React.forwardRef<
+  React.ElementRef<typeof CheckboxPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
+>(function Checkbox({ className, ...props }, ref) {
   return (
     <CheckboxPrimitive.Root
       data-slot="checkbox"
@@ -12,6 +15,7 @@ function Checkbox({ className, ...props }: React.ComponentProps<typeof CheckboxP
         'peer border-input dark:bg-input/30 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:data-[state=checked]:bg-primary data-[state=checked]:border-primary focus-visible:border-ring focus-visible:ring-ring/60 hover:border-ring/60 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive size-4 shrink-0 rounded-sm border shadow-xs transition-[color,background-color,border-color,box-shadow,transform] duration-(--dur-fast) ease-out motion-safe:active:scale-90 outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}
+      ref={ref}
       {...props}
     >
       <CheckboxPrimitive.Indicator
@@ -22,6 +26,6 @@ function Checkbox({ className, ...props }: React.ComponentProps<typeof CheckboxP
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
   );
-}
+});
 
 export { Checkbox };

@@ -3,7 +3,41 @@ import { ScrollArea, ScrollBar, Separator } from '@pd2-trader/ui';
 
 export default { title: 'Primitives / ScrollArea' } satisfies StoryDefault;
 
-const RUNES = ['El', 'Eld', 'Tir', 'Nef', 'Eth', 'Ith', 'Tal', 'Ral', 'Ort', 'Thul', 'Amn', 'Sol', 'Shael', 'Dol', 'Hel', 'Io', 'Lum', 'Ko', 'Fal', 'Lem', 'Pul', 'Um', 'Mal', 'Ist', 'Gul', 'Vex', 'Ohm', 'Lo', 'Sur', 'Ber', 'Jah', 'Cham', 'Zod'];
+const RUNES = [
+  'El',
+  'Eld',
+  'Tir',
+  'Nef',
+  'Eth',
+  'Ith',
+  'Tal',
+  'Ral',
+  'Ort',
+  'Thul',
+  'Amn',
+  'Sol',
+  'Shael',
+  'Dol',
+  'Hel',
+  'Io',
+  'Lum',
+  'Ko',
+  'Fal',
+  'Lem',
+  'Pul',
+  'Um',
+  'Mal',
+  'Ist',
+  'Gul',
+  'Vex',
+  'Ohm',
+  'Lo',
+  'Sur',
+  'Ber',
+  'Jah',
+  'Cham',
+  'Zod',
+];
 
 export const Vertical: Story = () => (
   <ScrollArea className="h-60 w-48 rounded-md border bg-surface">

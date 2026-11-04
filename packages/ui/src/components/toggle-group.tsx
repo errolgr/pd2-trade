@@ -10,13 +10,10 @@ const ToggleGroupContext = React.createContext<VariantProps<typeof toggleVariant
   variant: 'default',
 });
 
-function ToggleGroup({
-  className,
-  variant,
-  size,
-  children,
-  ...props
-}: React.ComponentProps<typeof ToggleGroupPrimitive.Root> & VariantProps<typeof toggleVariants>) {
+const ToggleGroup = React.forwardRef<
+  React.ElementRef<typeof ToggleGroupPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof ToggleGroupPrimitive.Root> & VariantProps<typeof toggleVariants>
+>(function ToggleGroup({ className, variant, size, children, ...props }, ref) {
   return (
     <ToggleGroupPrimitive.Root
       data-slot="toggle-group"
@@ -26,20 +23,18 @@ function ToggleGroup({
         'group/toggle-group flex w-fit items-center rounded-md data-[variant=outline]:shadow-xs',
         className,
       )}
+      ref={ref}
       {...props}
     >
       <ToggleGroupContext.Provider value={{ variant, size }}>{children}</ToggleGroupContext.Provider>
     </ToggleGroupPrimitive.Root>
   );
-}
+});
 
-function ToggleGroupItem({
-  className,
-  children,
-  variant,
-  size,
-  ...props
-}: React.ComponentProps<typeof ToggleGroupPrimitive.Item> & VariantProps<typeof toggleVariants>) {
+const ToggleGroupItem = React.forwardRef<
+  React.ElementRef<typeof ToggleGroupPrimitive.Item>,
+  React.ComponentPropsWithoutRef<typeof ToggleGroupPrimitive.Item> & VariantProps<typeof toggleVariants>
+>(function ToggleGroupItem({ className, children, variant, size, ...props }, ref) {
   const context = React.useContext(ToggleGroupContext);
 
   return (
@@ -55,11 +50,12 @@ function ToggleGroupItem({
         'min-w-0 flex-1 shrink-0 rounded-none shadow-none first:rounded-l-md last:rounded-r-md focus:z-10 focus-visible:z-10 data-[variant=outline]:border-l-0 data-[variant=outline]:first:border-l',
         className,
       )}
+      ref={ref}
       {...props}
     >
       {children}
     </ToggleGroupPrimitive.Item>
   );
-}
+});
 
 export { ToggleGroup, ToggleGroupItem };

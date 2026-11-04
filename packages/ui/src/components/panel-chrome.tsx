@@ -89,7 +89,10 @@ interface PanelSurfaceProps extends React.ComponentProps<'div'> {
   animate?: boolean;
 }
 
-function PanelSurface({ className, animate = false, children, ...props }: PanelSurfaceProps) {
+const PanelSurface = React.forwardRef<React.ElementRef<'div'>, PanelSurfaceProps>(function PanelSurface(
+  { className, animate = false, children, ...props },
+  ref,
+) {
   const reduce = useReducedMotionSafe();
   const classes = cn(
     'flex flex-col overflow-hidden rounded-lg border border-border bg-surface text-surface-foreground shadow-panel backdrop-blur-md',
@@ -115,11 +118,12 @@ function PanelSurface({ className, animate = false, children, ...props }: PanelS
   return (
     <div data-slot="panel-surface"
       className={classes}
+      ref={ref}
       {...props}>
       {children}
     </div>
   );
-}
+});
 
 export { PanelChrome, PanelSurface };
 export type { PanelChromeProps, PanelSurfaceProps };
