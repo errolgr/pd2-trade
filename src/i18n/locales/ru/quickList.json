@@ -64,8 +64,6 @@
   },
   "itemStats": {
     "ethereal": "Ethereal",
-    "corrupted": "Corrupted",
-    "runeword": "Runeword",
     "sockets_one": "<num>{{count}}</num> сокет",
     "sockets_few": "<num>{{count}}</num> сокета",
     "sockets_many": "<num>{{count}}</num> сокетов",
@@ -230,9 +228,7 @@
       "less": "Показать меньше характеристик"
     },
     "flags": {
-      "corrupted": "Искажён",
-      "ethereal": "Эфир",
-      "sockets": "{{count}} гн."
+      "ethereal": "Эфир"
     }
   },
   "palette": {

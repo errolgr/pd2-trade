@@ -599,7 +599,7 @@ describe('ItemOverlayWidget market search', () => {
     fireEvent.click(searchButton());
     const row = (await screen.findByText('1.50 HR')).closest('tr')!;
     expect(within(row).getByText('E')).not.toBeNull();
-    expect(within(row).getByText('C')).not.toBeNull();
+    expect(within(row).getByRole('img', { name: 'Corrupted' })).not.toBeNull();
     expect(within(row).getByText('3')).not.toBeNull();
   });
 

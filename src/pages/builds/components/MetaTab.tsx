@@ -8,15 +8,19 @@ import {
   RotateCcw,
   Search,
   ShoppingBag,
-  Skull,
   Users,
   X,
 } from 'lucide-react';
 import {
   cn,
   Button,
+  CharacterCard,
+  ClassBadge,
+  ClassIcon,
   Input,
+  ItemArt,
   itemQualityClass,
+  PriceTag,
   Skeleton,
   Slider,
   Tooltip,
@@ -41,19 +45,9 @@ import {
 import { useBuildsActions } from '../lib/context';
 import { type BuildsQuery, useBuildsQuery } from '../lib/useBuildsQuery';
 import { CORE_SHARE, coreKitTotal } from '../lib/gear-up';
-import { classMeta, fmtHr, fmtPct, keyLabel, skillFilter, skillLabel, timeAgo } from '../lib/format';
-import {
-  ClassEmblem,
-  ItemActionsMenu,
-  ItemIcon,
-  PriceChip,
-  QueryError,
-  SearchMarketButton,
-  Section,
-  Segmented,
-  ShareBar,
-  SkillIcon,
-} from './parts';
+import { classMeta, classPortraitUrl, fmtHr, fmtPct, keyLabel, skillFilter, skillLabel, timeAgo } from '../lib/format';
+import { itemArtCandidates } from '../lib/item-art';
+import { ItemActionsMenu, QueryError, SearchMarketButton, Section, Segmented, ShareBar, SkillIcon } from './parts';
 import { currentLocale, Trans, useTranslation } from '@/i18n';
 
 export const BUDGET_STEPS = [0.5, 1, 2, 3, 5, 8, 10, 15, 20, 30, 50, 75, 100, 150, 200, 300, 500];
@@ -167,11 +161,11 @@ function ClassBar({
       role="group"
       aria-label={t('meta.classes')}>
       {classes.map(({ name, count }) => {
-        const meta = classMeta(name);
+        const color = classMeta(name).color;
         const active = selected.includes(name);
         const dim = selected.length > 0 && !active;
         const pct = total ? (count / total) * 100 : 0;
-        const tint = (percent: number) => `color-mix(in srgb, ${meta.color} ${percent}%, transparent)`;
+        const tint = (percent: number) => `color-mix(in srgb, ${color} ${percent}%, transparent)`;
         return (
           <Button
             key={name}
@@ -189,20 +183,20 @@ function ClassBar({
             style={{
               flex: `${breakdown ? pct : 1} 1 0%`,
               background: tint(active ? 30 : 14),
-              boxShadow: active ? `inset 0 0 0 1px ${meta.color}` : undefined,
+              boxShadow: active ? `inset 0 0 0 1px ${color}` : undefined,
             }}
             className={cn(
               'flex min-w-32 justify-start gap-2 rounded-none px-2.5 py-2 text-left font-normal transition-[opacity,background-color,box-shadow,flex-grow] hover:bg-transparent hover:text-current hover:brightness-125 focus-visible:ring-0 focus-visible:brightness-125',
               dim && 'opacity-45 hover:opacity-90',
             )}
           >
-            <ClassEmblem className={name}
+            <ClassIcon cls={name}
+              src={classPortraitUrl(name)}
               size={28} />
             <span className="min-w-0 flex-1 whitespace-nowrap">
-              <span className="block text-xs font-semibold"
-                style={{ color: meta.color }}>
-                {meta.name}
-              </span>
+              <ClassBadge cls={name}
+                src={false}
+                className="block font-semibold" />
               <span className="block text-xs tabular-nums">
                 {breakdown ? (
                   <>
@@ -236,7 +230,9 @@ function FilterBar({
   const chips: { key: string; label: React.ReactNode; remove: () => void }[] = [];
   const listChip = (list: ListKey, value: string, label: React.ReactNode) =>
     chips.push({ key: `${list}:${value}`, label, remove: () => onChange(toggleListFilter(filters, list, value)) });
-  for (const c of filters.classes) listChip('classes', c, <span style={{ color: classMeta(c).color }}>{c}</span>);
+  for (const c of filters.classes) listChip('classes', c, <ClassBadge cls={c}
+    src={false}
+    className="text-2xs" />);
   for (const s of filters.skills) listChip('skills', s, skillLabel(s));
   for (const i of filters.items) listChip('items', i, itemNames.get(i) ?? keyLabel(i));
   for (const m of filters.mercTypes) listChip('mercTypes', m, t('meta.mercChip', { name: m }));
@@ -422,7 +418,11 @@ function UsagePanel({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={
-              view === 'skills' ? t('meta.searchSkills') : view === 'items' ? t('meta.searchItems') : t('meta.searchMerc')
+              view === 'skills'
+                ? t('meta.searchSkills')
+                : view === 'items'
+                  ? t('meta.searchItems')
+                  : t('meta.searchMerc')
             }
             aria-label={
               view === 'skills'
@@ -590,7 +590,9 @@ function ItemUsageRow({
 }) {
   return (
     <UsageRow
-      icon={<ItemIcon item={item}
+      icon={<ItemArt name={item.name}
+        quality={item.quality ?? 'Rune'}
+        src={itemArtCandidates(item)}
         size={24} />}
       name={item.name}
       nameClassName={itemQualityClass(item.quality ?? 'Rune')}
@@ -599,7 +601,11 @@ function ItemUsageRow({
       onClick={onClick}
       trailing={
         <span className="flex w-18.5 shrink-0 items-center justify-end gap-0.5">
-          <PriceChip hr={item.priceHr} />
+          {item.priceHr != null && (
+            <PriceTag amount={item.priceHr}
+              unit="hr"
+              className="shrink-0 text-2xs font-medium text-q-gold" />
+          )}
           <ItemActionsMenu item={item}
             merc={merc} />
         </span>
@@ -651,8 +657,12 @@ function CoreKit({
           {data.items.map((item) => (
             <UsageRow
               key={item.key}
-              icon={<ItemIcon item={item}
-                size={24} />}
+              icon={
+                <ItemArt name={item.name}
+                  quality={item.quality ?? 'Rune'}
+                  src={itemArtCandidates(item)}
+                  size={24} />
+              }
               name={item.name}
               nameClassName={itemQualityClass(item.quality ?? 'Rune')}
               usage={item}
@@ -660,7 +670,11 @@ function CoreKit({
               onClick={() => onToggleItem(item.key)}
               trailing={
                 <span className="flex w-16.5 shrink-0 items-center justify-end gap-0.5">
-                  <PriceChip hr={item.priceHr} />
+                  {item.priceHr != null && (
+                    <PriceTag amount={item.priceHr}
+                      unit="hr"
+                      className="shrink-0 text-2xs font-medium text-q-gold" />
+                  )}
                   <SearchMarketButton item={item} />
                 </span>
               }
@@ -872,7 +886,6 @@ function SortHeader({
 function CharacterRow({ character: c }: { character: CharacterListEntry }) {
   const { t } = useTranslation('builds');
   const { openCharacter, mode } = useBuildsActions();
-  const meta = classMeta(c.className);
   return (
     <li>
       <Button
@@ -882,21 +895,14 @@ function CharacterRow({ character: c }: { character: CharacterListEntry }) {
         onClick={() => openCharacter(c.name, mode)}
         className="flex w-full cursor-pointer justify-start gap-2.5 rounded-none px-3 py-1.5 text-left font-normal hover:bg-accent/40 hover:text-current focus-visible:bg-accent/50 focus-visible:ring-0"
       >
-        <ClassEmblem className={c.className}
-          size={30} />
-        <div className="w-44 min-w-0 shrink-0">
-          <div className="flex items-center gap-1">
-            <span className="truncate text-xs font-medium text-foreground">{c.name}</span>
-            {c.isDead && mode === 'hardcore' && (
-              <Skull className="size-3 shrink-0 text-destructive"
-                aria-label={t('characters.dead')} />
-            )}
-          </div>
-          <div className="text-2xs text-muted-foreground">
-            <span className="tabular-nums">{t('meta.lv', { level: c.level })}</span> ·{' '}
-            <span style={{ color: meta.color }}>{meta.name}</span>
-          </div>
-        </div>
+        <CharacterCard
+          name={c.name}
+          cls={c.className}
+          level={c.level}
+          dead={c.isDead && mode === 'hardcore'}
+          portraitSrc={classPortraitUrl(c.className)}
+          className="w-54 shrink-0 p-0"
+        />
         <div className="flex w-18.5 shrink-0 gap-1">
           {c.topSkills.slice(0, 3).map((s) => (
             <Tooltip key={s.name}>
@@ -916,8 +922,16 @@ function CharacterRow({ character: c }: { character: CharacterListEntry }) {
           {c.life.toLocaleString(currentLocale())}
         </span>
         <span className="ml-auto flex w-20 shrink-0 justify-end">
-          <PriceChip hr={c.gearValueHr}
-            unpriced />
+          {c.gearValueHr != null ? (
+            <PriceTag amount={c.gearValueHr}
+              unit="hr"
+              className="text-2xs font-medium text-q-gold" />
+          ) : (
+            <span className="text-2xs text-muted-foreground"
+              title={t('price.noReliablePrice')}>
+              {t('price.na')}
+            </span>
+          )}
         </span>
         <span className="w-16 shrink-0 text-right text-2xs text-muted-foreground">{timeAgo(c.lastUpdated)}</span>
       </Button>

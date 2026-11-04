@@ -1,6 +1,24 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ExternalLink, Gem, History, Repeat, SearchX, Skull, Star, Swords, Users } from 'lucide-react';
-import { cn, Badge, Button, Skeleton, HoverCard, HoverCardContent, HoverCardTrigger, EmptyState } from '@pd2-trader/ui';
+import { ArrowLeft, ExternalLink, Gem, History, Repeat, SearchX, Star, Swords, Users } from 'lucide-react';
+import {
+  cn,
+  Button,
+  CharacterCard,
+  CorruptionBadge,
+  CurrencyAmount,
+  EmptyState,
+  EQUIP_SLOTS,
+  type EquipSlot,
+  GRID_SIZES,
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+  ItemArt,
+  QUALITY_BORDER,
+  qualityKey,
+  Skeleton,
+  toEquipSlot,
+} from '@pd2-trader/ui';
 import { openUrl } from '@/lib/browser-opener';
 import { useOptions } from '@/hooks/useOptions';
 import {
@@ -13,65 +31,43 @@ import {
 } from '@/lib/builds-api';
 import { snapshotQueryKey, useBuildCharacter, useBuildsQuery } from '../lib/useBuildsQuery';
 import { isFollowed, pushRecent, toggleFollow } from '../lib/character-refs';
-import { characterSiteUrl, classMeta, fmtDateTime, fmtHr, qualityBorder, timeAgo } from '../lib/format';
-import {
-  ClassEmblem,
-  ItemActionsMenu,
-  ItemIcon,
-  ItemTooltipCard,
-  QueryError,
-  Section,
-  Segmented,
-  SkillIcon,
-} from './parts';
+import { characterSiteUrl, classMeta, classPortraitUrl, fmtDateTime, fmtHr, timeAgo } from '../lib/format';
+import { itemArtCandidates } from '../lib/item-art';
+import { ItemActionsMenu, QueryError, Section, Segmented, SkillIcon, WornItemTooltip } from './parts';
 import { GearUp } from './GearUp';
 import { currentLocale, Trans, useTranslation } from '@/i18n';
 import { Timeline } from './Timeline';
 
 type DollItem = EquippedItem & { iconUrl: string | null; priceHr?: number | null };
 
-interface DollCellDef {
-  area: string;
-  slots: string[];
-  labelKey: string;
-}
-
-// Paper-doll cells in the in-game inventory layout.
-const DOLL: DollCellDef[] = [
-  { area: 'helm', slots: ['Helm'], labelKey: 'character.slots.helm' },
-  { area: 'amul', slots: ['Amulet'], labelKey: 'character.slots.amulet' },
-  { area: 'weap', slots: ['Right Hand', 'Right Hand Switch'], labelKey: 'character.slots.weapon' },
-  { area: 'armr', slots: ['Armor'], labelKey: 'character.slots.armor' },
-  { area: 'shld', slots: ['Left Hand', 'Left Hand Switch'], labelKey: 'character.slots.offHand' },
-  { area: 'rrng', slots: ['Right Ring'], labelKey: 'character.slots.ring' },
-  { area: 'belt', slots: ['Belt'], labelKey: 'character.slots.belt' },
-  { area: 'lrng', slots: ['Left Ring'], labelKey: 'character.slots.ring' },
-  { area: 'glov', slots: ['Gloves'], labelKey: 'character.slots.gloves' },
-  { area: 'boot', slots: ['Boots'], labelKey: 'character.slots.boots' },
-];
-const MERC_DOLL: DollCellDef[] = [
-  { area: 'helm', slots: ['Helm'], labelKey: 'character.slots.helm' },
-  { area: 'weap', slots: ['Right Hand'], labelKey: 'character.slots.weapon' },
-  { area: 'armr', slots: ['Armor'], labelKey: 'character.slots.armor' },
-  { area: 'shld', slots: ['Left Hand'], labelKey: 'character.slots.shield' },
-  { area: 'glov', slots: ['Gloves'], labelKey: 'character.slots.gloves' },
-  { area: 'belt', slots: ['Belt'], labelKey: 'character.slots.belt' },
-  { area: 'boot', slots: ['Boots'], labelKey: 'character.slots.boots' },
-];
-const DOLL_AREAS = `". helm amul" "weap armr shld" "rrng belt lrng" "glov . boot"`;
-const MERC_AREAS = `". helm ." "weap armr shld" "glov belt boot"`;
-/** Cell heights per area (px): weapons/armor tall, rings/amulet small. */
-const AREA_HEIGHT: Record<string, number> = {
+// Paper-doll layout of PaperDoll (in-game inventory); slots from toEquipSlot.
+const MERC_SLOTS: readonly EquipSlot[] = ['helm', 'weapon', 'armor', 'offhand', 'gloves', 'belt', 'boots'];
+const PLAYER_AREAS = `". helm amulet" "weapon armor offhand" "ring-right belt ring-left" "gloves . boots"`;
+const MERC_AREAS = `". helm ." "weapon armor offhand" "gloves belt boots"`;
+/** Cell heights per slot (px): weapons/armor tall, rings/amulet/belt small. */
+const SLOT_HEIGHT: Record<EquipSlot, number> = {
   helm: 60,
-  amul: 44,
-  weap: 104,
-  armr: 104,
-  shld: 104,
-  rrng: 44,
-  lrng: 44,
+  amulet: 44,
+  weapon: 104,
+  armor: 104,
+  offhand: 104,
+  'ring-right': 44,
   belt: 44,
-  glov: 60,
-  boot: 60,
+  'ring-left': 44,
+  gloves: 60,
+  boots: 60,
+};
+const SLOT_LABEL_KEY: Record<EquipSlot, string> = {
+  helm: 'character.slots.helm',
+  amulet: 'character.slots.amulet',
+  weapon: 'character.slots.weapon',
+  armor: 'character.slots.armor',
+  offhand: 'character.slots.offHand',
+  'ring-right': 'character.slots.ring',
+  belt: 'character.slots.belt',
+  'ring-left': 'character.slots.ring',
+  gloves: 'character.slots.gloves',
+  boots: 'character.slots.boots',
 };
 
 const ATTRS: [keyof CharacterDetail['attributes'], string][] = [
@@ -157,7 +153,7 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
 
   const ref = { name: detail.name, mode: detail.mode };
   const followed = isFollowed(settings?.followedBuildCharacters ?? [], ref);
-  const meta = classMeta(detail.className);
+  const classColor = classMeta(detail.className).color;
   const hasSwitch = shown.equipped.some((it) => it.slot.endsWith('Switch'));
 
   return (
@@ -165,7 +161,9 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
       {/* Header */}
       <div
         className="relative flex shrink-0 items-center gap-3 border-b border-border/60 px-3 py-2.5"
-        style={{ backgroundImage: `linear-gradient(90deg, ${meta.color}1f, transparent 45%)` }}
+        style={{
+          backgroundImage: `linear-gradient(90deg, color-mix(in srgb, ${classColor} 12%, transparent), transparent 45%)`,
+        }}
       >
         <Button
           variant="ghost"
@@ -177,79 +175,69 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
         >
           <ArrowLeft className="size-4" />
         </Button>
-        <ClassEmblem className={detail.className}
-          size={44} />
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h2
-              className="truncate text-base leading-tight font-semibold text-foreground"
-              style={{ fontFamily: 'DiabloFont' }}
-            >
-              {detail.name}
-            </h2>
-            <Badge variant="outline"
-              className="px-1.5 py-0 text-2xs">
-              {detail.mode === 'hardcore' ? 'Hardcore' : 'Softcore'}
-            </Badge>
-            {shown.isDead && detail.mode === 'hardcore' && (
-              <Badge variant="outline"
-                className="gap-1 border-destructive/40 px-1.5 py-0 text-2xs text-destructive">
-                <Skull /> {t('characters.dead')}
-              </Badge>
-            )}
-          </div>
-          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-            <span>
-              <span className="text-foreground tabular-nums">{t('characters.level', { level: shown.level })}</span>{' '}
-              <span style={{ color: meta.color }}>{detail.className}</span>
+        {/* CharacterCard draws the name as text; the page keeps its heading */}
+        <h2 className="sr-only">{detail.name}</h2>
+        <CharacterCard
+          variant="full"
+          name={detail.name}
+          cls={detail.className}
+          level={shown.level}
+          hardcore={detail.mode === 'hardcore'}
+          dead={shown.isDead && detail.mode === 'hardcore'}
+          portraitSrc={classPortraitUrl(detail.className)}
+          className="min-w-0 flex-1 rounded-none border-0 bg-transparent p-0 shadow-none"
+          stats={
+            <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+              <span>
+                <span className="text-destructive/90">Life {shown.life.toLocaleString(currentLocale())}</span> ·{' '}
+                <span className="text-q-magic">Mana {shown.mana.toLocaleString(currentLocale())}</span>
+              </span>
+              <span>{ATTRS.map(([key, label]) => `${label} ${shown.attributes[key]}`).join(' · ')}</span>
             </span>
-            <span className="tabular-nums">
-              <span className="text-destructive/90">Life {shown.life.toLocaleString(currentLocale())}</span> ·{' '}
-              <span className="text-q-magic">Mana {shown.mana.toLocaleString(currentLocale())}</span>
-            </span>
-            <span className="tabular-nums">
-              {ATTRS.map(([key, label]) => `${label} ${shown.attributes[key]}`).join(' · ')}
-            </span>
-          </div>
-        </div>
-        <div className="ml-auto flex items-center gap-3">
-          <div className="text-right">
-            <div className="text-3xs tracking-wide text-muted-foreground uppercase">{t('character.gearValue')}</div>
-            <div className="text-base font-semibold text-q-gold tabular-nums">
-              {shown.gearValueHr != null ? t('character.hr', { value: fmtHr(shown.gearValueHr) }) : '—'}
+          }
+          actions={
+            <div className="flex items-center gap-3">
+              <CurrencyAmount
+                amount={shown.gearValueHr ?? Number.NaN}
+                unit="hr"
+                label={t('character.gearValue')}
+                className="items-end"
+              />
+              <div className="text-right text-2xs text-muted-foreground">
+                <div title={fmtDateTime(detail.lastUpdated)}>
+                  {t('character.updated', { time: timeAgo(detail.lastUpdated) })}
+                </div>
+                <div title={fmtDateTime(detail.firstSeenAt)}>
+                  {t('character.firstSeen', { time: timeAgo(detail.firstSeenAt) })}
+                </div>
+              </div>
+              <Button
+                variant={followed ? 'secondary' : 'outline'}
+                size="sm"
+                className="h-8 gap-1.5 text-xs"
+                aria-pressed={followed}
+                onClick={() =>
+                  updateSettings({
+                    followedBuildCharacters: toggleFollow(settings?.followedBuildCharacters ?? [], ref),
+                  })
+                }
+              >
+                <Star className={cn('size-3.5', followed && 'fill-q-gold text-q-gold')} />
+                {followed ? t('characters.following') : t('character.follow')}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="size-8 p-0"
+                aria-label={t('character.openSite')}
+                title={t('character.openSite')}
+                onClick={() => void openUrl(characterSiteUrl(detail.name))}
+              >
+                <ExternalLink className="size-4" />
+              </Button>
             </div>
-          </div>
-          <div className="text-right text-2xs text-muted-foreground">
-            <div title={fmtDateTime(detail.lastUpdated)}>
-              {t('character.updated', { time: timeAgo(detail.lastUpdated) })}
-            </div>
-            <div title={fmtDateTime(detail.firstSeenAt)}>
-              {t('character.firstSeen', { time: timeAgo(detail.firstSeenAt) })}
-            </div>
-          </div>
-          <Button
-            variant={followed ? 'secondary' : 'outline'}
-            size="sm"
-            className="h-8 gap-1.5 text-xs"
-            aria-pressed={followed}
-            onClick={() =>
-              updateSettings({ followedBuildCharacters: toggleFollow(settings?.followedBuildCharacters ?? [], ref) })
-            }
-          >
-            <Star className={cn('size-3.5', followed && 'fill-q-gold text-q-gold')} />
-            {followed ? t('characters.following') : t('character.follow')}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="size-8 p-0"
-            aria-label={t('character.openSite')}
-            title={t('character.openSite')}
-            onClick={() => void openUrl(characterSiteUrl(detail.name))}
-          >
-            <ExternalLink className="size-4" />
-          </Button>
-        </div>
+          }
+        />
       </div>
 
       {viewing && (
@@ -297,9 +285,7 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
               )
             }
           >
-            <Doll cells={DOLL}
-              areas={DOLL_AREAS}
-              items={shown.equipped}
+            <Doll items={shown.equipped}
               weaponSet={weaponSet} />
           </Section>
           {shown.charms && shown.charms.length > 0 && (
@@ -324,9 +310,7 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
               icon={<Users />}
               bodyClassName="py-3"
             >
-              <Doll cells={MERC_DOLL}
-                areas={MERC_AREAS}
-                items={shown.merc.equipped}
+              <Doll items={shown.merc.equipped}
                 weaponSet={0}
                 merc />
             </Section>
@@ -408,50 +392,49 @@ function CharacterSkeleton({ onBack }: { onBack: () => void }) {
   );
 }
 
-function Doll({
-  cells,
-  areas,
-  items,
-  weaponSet,
-  merc = false,
-}: {
-  cells: DollCellDef[];
-  areas: string;
-  items: DollItem[];
-  weaponSet: number;
-  merc?: boolean;
-}) {
-  const bySlot = new Map(items.map((it) => [it.slot, it]));
+/**
+ * Worn items in PaperDoll's layout. Local because every worn slot opens the item's actions menu: PaperDoll has no
+ * per-slot wrapper and EquipmentSlot doesn't forward its ref, so neither can be a DropdownMenu trigger.
+ */
+function Doll({ items, weaponSet, merc = false }: { items: DollItem[]; weaponSet: number; merc?: boolean }) {
+  const bySlot = new Map<EquipSlot, DollItem>();
+  for (const item of items) {
+    const at = toEquipSlot(item.slot);
+    // Weapon and off-hand follow the shown weapon set; the rest is worn in both
+    if (at && ((at.slot !== 'weapon' && at.slot !== 'offhand') || at.weaponSet === weaponSet))
+      bySlot.set(at.slot, item);
+  }
   return (
-    <div className="mx-auto grid w-fit grid-cols-[76px_76px_76px] gap-1.5"
-      style={{ gridTemplateAreas: areas }}>
-      {cells.map((cell) => {
-        const slot = cell.slots[cell.slots.length > 1 ? weaponSet : 0];
-        return <DollCell key={cell.area}
-          cell={cell}
+    <div
+      className="mx-auto grid w-fit grid-cols-[76px_76px_76px] gap-1.5"
+      style={{ gridTemplateAreas: merc ? MERC_AREAS : PLAYER_AREAS }}
+    >
+      {(merc ? MERC_SLOTS : EQUIP_SLOTS).map((slot) => (
+        <DollCell key={slot}
+          slot={slot}
           item={bySlot.get(slot)}
-          merc={merc} />;
-      })}
+          merc={merc} />
+      ))}
     </div>
   );
 }
 
-function DollCell({ cell, item, merc }: { cell: DollCellDef; item: DollItem | undefined; merc: boolean }) {
+function DollCell({ slot, item, merc }: { slot: EquipSlot; item: DollItem | undefined; merc: boolean }) {
   const { t } = useTranslation('builds');
-  const height = AREA_HEIGHT[cell.area];
+  const height = SLOT_HEIGHT[slot];
   if (!item) {
     return (
       <div
         className="flex items-center justify-center rounded-md border border-dashed border-border/60 bg-background/20 text-2xs text-muted-foreground/70"
-        style={{ gridArea: cell.area, height }}
+        style={{ gridArea: slot, height }}
       >
-        {t(cell.labelKey)}
+        {t(merc && slot === 'offhand' ? 'character.slots.shield' : SLOT_LABEL_KEY[slot])}
       </div>
     );
   }
-  const iconSize = Math.min(height - 16, 64);
+  const quality = item.quality ?? 'Rune';
   return (
-    <div style={{ gridArea: cell.area }}>
+    <div style={{ gridArea: slot }}>
       <HoverCard>
         <HoverCardTrigger asChild>
           <div>
@@ -464,13 +447,18 @@ function DollCell({ cell, item, merc }: { cell: DollCellDef; item: DollItem | un
                 aria-label={`${item.name} (${item.slot})`}
                 className={cn(
                   'relative flex w-full flex-col gap-0 rounded-md border bg-background/40 hover:bg-accent/40 hover:text-current focus-visible:ring-ring/50',
-                  qualityBorder(item.quality, item.runeword),
+                  QUALITY_BORDER[qualityKey(quality, { runeword: item.runeword, name: item.name })],
                 )}
                 style={{ height }}
               >
-                <ItemIcon item={item}
-                  size={iconSize}
-                  className="border-0 bg-transparent" />
+                <ItemArt
+                  name={item.name}
+                  quality={quality}
+                  runeword={item.runeword}
+                  src={itemArtCandidates(item)}
+                  size={Math.min(height - 16, 64)}
+                  frameless
+                />
                 {item.ethereal && (
                   <span
                     className="absolute top-0.5 left-1 text-3xs font-semibold text-muted-foreground"
@@ -479,12 +467,8 @@ function DollCell({ cell, item, merc }: { cell: DollCellDef; item: DollItem | un
                     E
                   </span>
                 )}
-                {item.corrupted && (
-                  <span
-                    className="absolute top-1 right-1 size-1.5 rounded-full bg-q-corrupted"
-                    title={t('character.corrupted')}
-                  />
-                )}
+                {item.corrupted && <CorruptionBadge variant="dot"
+                  className="absolute top-1 right-1" />}
                 {item.priceHr != null && (
                   <span className="absolute right-0.5 bottom-0.5 rounded-sm bg-background/80 px-1 text-3xs leading-tight font-medium text-q-gold tabular-nums">
                     {fmtHr(item.priceHr)}
@@ -496,7 +480,7 @@ function DollCell({ cell, item, merc }: { cell: DollCellDef; item: DollItem | un
         </HoverCardTrigger>
         <HoverCardContent variant="bare"
           side="right">
-          <ItemTooltipCard item={item} />
+          <WornItemTooltip item={item} />
         </HoverCardContent>
       </HoverCard>
     </div>
@@ -504,27 +488,30 @@ function DollCell({ cell, item, merc }: { cell: DollCellDef; item: DollItem | un
 }
 
 /** The inventory's charm area (bottom 4 of its 8 rows), cells to scale. */
-const CHARM_COLS = 10;
-const CHARM_ROWS = 4;
 const CHARM_CELL = 25;
 const CHARM_GAP = 2;
 
+/**
+ * Charms in InventoryGrid's cell layout. Local for the same reason as Doll: each charm opens its actions menu, and
+ * InventoryGrid has no per-item wrapper to host a DropdownMenu trigger.
+ */
 function CharmGrid({ charms }: { charms: CharmItem[] }) {
+  const { cols, rows } = GRID_SIZES.inventory;
   return (
     <div
       className="mx-auto grid w-fit"
       style={{
-        gridTemplateColumns: `repeat(${CHARM_COLS}, ${CHARM_CELL}px)`,
-        gridTemplateRows: `repeat(${CHARM_ROWS}, ${CHARM_CELL}px)`,
+        gridTemplateColumns: `repeat(${cols}, ${CHARM_CELL}px)`,
+        gridTemplateRows: `repeat(${rows}, ${CHARM_CELL}px)`,
         gap: CHARM_GAP,
       }}
     >
-      {Array.from({ length: CHARM_COLS * CHARM_ROWS }, (_, i) => (
+      {Array.from({ length: cols * rows }, (_, i) => (
         <div
           key={i}
           aria-hidden
           className="rounded-sm border border-border/40 bg-background/20"
-          style={{ gridColumn: (i % CHARM_COLS) + 1, gridRow: Math.floor(i / CHARM_COLS) + 1 }}
+          style={{ gridColumn: (i % cols) + 1, gridRow: Math.floor(i / cols) + 1 }}
         />
       ))}
       {charms.map((charm) => (
@@ -537,6 +524,7 @@ function CharmGrid({ charms }: { charms: CharmItem[] }) {
 
 function CharmCell({ charm }: { charm: CharmItem }) {
   const height = charm.height * CHARM_CELL + (charm.height - 1) * CHARM_GAP;
+  const quality = charm.quality ?? 'Rune';
   return (
     <div style={{ gridColumn: charm.column + 1, gridRow: `${charm.row + 1} / span ${charm.height}` }}>
       <HoverCard>
@@ -550,22 +538,28 @@ function CharmCell({ charm }: { charm: CharmItem }) {
                 aria-label={charm.name}
                 className={cn(
                   'relative flex w-full gap-0 rounded-sm border bg-background/40 hover:bg-accent/60 hover:text-current focus-visible:ring-ring',
-                  qualityBorder(charm.quality, charm.runeword),
+                  QUALITY_BORDER[qualityKey(quality, { runeword: charm.runeword, name: charm.name })],
                 )}
                 style={{ height }}
               >
-                <ItemIcon item={charm}
+                <ItemArt
+                  name={charm.name}
+                  quality={quality}
+                  runeword={charm.runeword}
+                  src={itemArtCandidates(charm)}
                   size={CHARM_CELL - 4}
                   height={height - 4}
-                  className="border-0 bg-transparent" />
-                {charm.corrupted && <span className="absolute top-0.5 right-0.5 size-1 rounded-full bg-q-corrupted" />}
+                  frameless
+                />
+                {charm.corrupted && <CorruptionBadge variant="dot"
+                  className="absolute top-0.5 right-0.5 size-1" />}
               </Button>
             </ItemActionsMenu>
           </div>
         </HoverCardTrigger>
         <HoverCardContent variant="bare"
           side="right">
-          <ItemTooltipCard item={charm} />
+          <WornItemTooltip item={charm} />
         </HoverCardContent>
       </HoverCard>
     </div>

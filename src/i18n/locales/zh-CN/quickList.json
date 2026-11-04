@@ -58,8 +58,6 @@
   },
   "itemStats": {
     "ethereal": "Ethereal",
-    "corrupted": "Corrupted",
-    "runeword": "Runeword",
     "sockets_other": "<num>{{count}}</num>孔",
     "showMore": "显示更多",
     "showLess": "收起"
@@ -215,9 +213,7 @@
       "less": "显示较少属性"
     },
     "flags": {
-      "corrupted": "腐化",
-      "ethereal": "无形",
-      "sockets": "{{count}} 孔"
+      "ethereal": "无形"
     }
   },
   "palette": {

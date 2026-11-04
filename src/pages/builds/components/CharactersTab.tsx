@@ -1,6 +1,6 @@
 import React from 'react';
-import { ChevronRight, Clock, LogIn, Skull, Star, StarOff, Trash2, UserRound, X } from 'lucide-react';
-import { cn, Badge, Button, Skeleton, EmptyState } from '@pd2-trader/ui';
+import { ChevronRight, Clock, LogIn, Star, StarOff, Trash2, UserRound, X } from 'lucide-react';
+import { cn, Button, CharacterCard, PriceTag, Skeleton, EmptyState } from '@pd2-trader/ui';
 import { useOptions, type BuildCharacterRef } from '@/hooks/useOptions';
 import { useSignIn } from '@/hooks/useSignIn';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
@@ -8,9 +8,9 @@ import { type AccountCharacter, type BuildsMode, BUILDS_MIN_LEVEL, getAccountCha
 import { useBuildsActions } from '../lib/context';
 import { useBuildCharacter, useBuildsQuery } from '../lib/useBuildsQuery';
 import { signatureSkills } from '../lib/gear-up';
-import { classMeta, timeAgo } from '../lib/format';
+import { classPortraitUrl, timeAgo } from '../lib/format';
 import { currentLocale, useTranslation } from '@/i18n';
-import { ClassEmblem, PriceChip, QueryError, Segmented, SkillIcon } from './parts';
+import { QueryError, Segmented, SkillIcon } from './parts';
 
 export type CharactersView = 'mine' | 'following' | 'recent';
 
@@ -245,29 +245,15 @@ function MyCharacterCard({ character: c, secondary = false }: { character: Accou
   const tracked = c.ladder && c.level >= BUILDS_MIN_LEVEL;
   return (
     <div className={cn('flex items-center gap-3 px-3 py-2', secondary && 'opacity-60 hover:opacity-100')}>
-      <div className="flex w-56 min-w-0 shrink-0 items-center gap-2.5">
-        <ClassEmblem className={c.className}
-          size={30} />
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-xs font-medium text-foreground">{c.name}</div>
-          <div className="flex flex-wrap items-center gap-1 text-2xs text-muted-foreground">
-            <span className="tabular-nums">{t('characters.level', { level: c.level })}</span>
-            <span style={{ color: classMeta(c.className).color }}>{c.className}</span>
-          </div>
-        </div>
-      </div>
-      <div className="flex w-36 shrink-0 items-center gap-1">
-        <Badge variant="outline"
-          className="px-1.5 py-0 text-2xs">
-          {c.ladder ? 'Ladder' : 'Non-ladder'}
-        </Badge>
-        {c.hardcore && (
-          <Badge variant="outline"
-            className="border-destructive/40 px-1.5 py-0 text-2xs text-destructive">
-            Hardcore
-          </Badge>
-        )}
-      </div>
+      <CharacterCard
+        name={c.name}
+        cls={c.className}
+        level={c.level}
+        ladder={c.ladder}
+        hardcore={c.hardcore || undefined}
+        portraitSrc={classPortraitUrl(c.className)}
+        className="w-95 shrink-0 p-0"
+      />
       <div className="min-w-0 flex-1">
         {tracked ? (
           <TrackedSummary name={c.name}
@@ -327,7 +313,11 @@ function TrackedSummary({ name, mode }: { name: string; mode: BuildsMode }) {
       <span className="min-w-0 flex-1 truncate text-2xs text-muted-foreground">
         {signatureSkills(detail.skills, 1)[0]?.name ?? t('characters.build')} · {timeAgo(detail.lastUpdated)}
       </span>
-      <PriceChip hr={detail.gearValueHr} />
+      {detail.gearValueHr != null && (
+        <PriceTag amount={detail.gearValueHr}
+          unit="hr"
+          className="shrink-0 text-2xs font-medium text-q-gold" />
+      )}
       <ChevronRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
     </Button>
   );
@@ -352,42 +342,44 @@ function TrackedCard({
   const detail = query.data && !query.stale ? query.data : null;
   return (
     <div className="group relative transition-colors hover:bg-accent/30">
-      <Button
-        type="button"
-        variant="ghost"
-        size="inline"
-        onClick={() => openCharacter(charRef.name, charRef.mode)}
-        className="flex w-full justify-start gap-2.5 rounded-none px-3 py-2 text-left font-normal whitespace-normal hover:bg-transparent hover:text-current focus-visible:bg-accent/40 focus-visible:ring-0"
-      >
-        {detail ? <ClassEmblem className={detail.className}
-          size={30} /> : <Skeleton className="h-7.5 w-8.5" />}
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1 truncate text-xs font-medium text-foreground">
-            {charRef.name}
-            {detail?.isDead && charRef.mode === 'hardcore' && (
-              <Skull className="size-3 text-destructive"
-                aria-label={t('characters.dead')} />
-            )}
+      {detail ? (
+        <CharacterCard
+          name={charRef.name}
+          cls={detail.className}
+          level={detail.level}
+          hardcore={charRef.mode === 'hardcore' || undefined}
+          dead={detail.isDead && charRef.mode === 'hardcore'}
+          portraitSrc={classPortraitUrl(detail.className)}
+          value={detail.gearValueHr != null ? { amount: detail.gearValueHr, unit: 'hr' } : undefined}
+          onClick={() => openCharacter(charRef.name, charRef.mode)}
+          className={cn(
+            'rounded-none px-3 py-2 hover:bg-transparent focus-visible:bg-accent/40 focus-visible:ring-0',
+            onRemove && 'pr-10',
+          )}
+        />
+      ) : (
+        <Button
+          type="button"
+          variant="ghost"
+          size="inline"
+          onClick={() => openCharacter(charRef.name, charRef.mode)}
+          className="flex w-full justify-start gap-2.5 rounded-none px-3 py-2 text-left font-normal whitespace-normal hover:bg-transparent hover:text-current focus-visible:bg-accent/40 focus-visible:ring-0"
+        >
+          <Skeleton className="h-7.5 w-8.5" />
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-xs font-medium text-foreground">{charRef.name}</div>
+            <div className="text-2xs text-muted-foreground">
+              {query.status === 404 ? (
+                t('characters.notInMode', { mode: charRef.mode })
+              ) : query.error ? (
+                t('characters.couldntLoad')
+              ) : (
+                <Skeleton className="mt-1 h-2.5 w-24" />
+              )}
+            </div>
           </div>
-          <div className="text-2xs text-muted-foreground">
-            {query.status === 404 ? (
-              t('characters.notInMode', { mode: charRef.mode })
-            ) : query.error ? (
-              t('characters.couldntLoad')
-            ) : detail ? (
-              <>
-                <span className="tabular-nums">{t('characters.level', { level: detail.level })}</span>{' '}
-                <span style={{ color: classMeta(detail.className).color }}>{detail.className}</span>
-                {charRef.mode === 'hardcore' && ' · HC'}
-              </>
-            ) : (
-              <Skeleton className="mt-1 h-2.5 w-24" />
-            )}
-          </div>
-        </div>
-        {detail && <PriceChip hr={detail.gearValueHr}
-          className={onRemove ? 'mr-6' : undefined} />}
-      </Button>
+        </Button>
+      )}
       {onRemove && (
         <Button
           type="button"

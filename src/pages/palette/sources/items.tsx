@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Copy, Eye, EyeOff, Shield, Store } from 'lucide-react';
-import { cn, itemQualityClass } from '@pd2-trader/ui';
+import { cn, ItemArt, itemQualityClass } from '@pd2-trader/ui';
 import { useOptions, type ISettings } from '@/hooks/useOptions';
 import { writeText } from '@/lib/browser-clipboard';
 import type { BuildsFilters } from '@/lib/builds-api';
 import { showToast } from '@/overlay';
-import { ItemIcon } from '@/pages/builds/components/parts';
+import { itemArtCandidates } from '@/pages/builds/lib/item-art';
 import {
   type ListingMarketPrice,
   type MarketPriceItem,
@@ -162,13 +162,16 @@ function toItem(
     // Typo and space-insensitive server matches ("theme" → The Meat Scraper) are guesses
     weak: !!query && !option.alias && matchTier(name, query) === 0,
     icon: (
-      <ItemIcon
-        item={{
+      <ItemArt
+        name={name}
+        quality={quality === 'Base' ? 'Normal' : quality}
+        runeword={quality === 'Runeword'}
+        src={itemArtCandidates({
           name,
           quality: quality === 'Base' ? 'Normal' : quality,
           runeword: quality === 'Runeword',
           base: quality === 'Base' ? name : undefined,
-        }}
+        })}
         size={20}
       />
     ),

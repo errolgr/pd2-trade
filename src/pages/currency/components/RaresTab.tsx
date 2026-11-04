@@ -11,6 +11,7 @@ import {
   EASE_OUT,
   PopoverSectionTitle,
   EmptyState,
+  ItemName,
 } from '@pd2-trader/ui';
 import type { RaresSummary } from '@/lib/networth-api';
 import { fetchRareHistory, type RareAppraisal, type RareHistory, type VerdictRule } from '@/lib/rare-appraisal-api';
@@ -19,7 +20,6 @@ import { RareAppraisalDetail } from '@/components/rares/RareAppraisalDetail';
 import { rareArtUrl } from '@/components/rares/rare-art';
 import { statChipText } from '@/components/rares/stat-chip';
 import {
-  appraisalNameClass,
   compareStash,
   fmtBandHr,
   isCrafted,
@@ -379,7 +379,11 @@ function RareRow({
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="flex min-w-0 items-center gap-2">
-            <span className={cn('truncate text-sm font-medium', appraisalNameClass(rare))}>{rare.name}</span>
+            <ItemName
+              name={rare.name}
+              quality={isCrafted(rare) ? 'Crafted' : 'Rare'}
+              className="truncate text-sm font-medium"
+            />
             <VerdictBadge rare={rare}
               hardcore={hardcore} />
             <CraftedBadges rare={rare} />

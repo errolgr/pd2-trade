@@ -64,8 +64,6 @@
   },
   "itemStats": {
     "ethereal": "Ethereal",
-    "corrupted": "Corrupted",
-    "runeword": "Runeword",
     "sockets_one": "<num>{{count}}</num>gniazdo",
     "sockets_few": "<num>{{count}}</num>gniazda",
     "sockets_many": "<num>{{count}}</num>gniazd",
@@ -230,9 +228,7 @@
       "less": "Pokaż mniej statystyk"
     },
     "flags": {
-      "corrupted": "Spaczony",
-      "ethereal": "Eter",
-      "sockets": "{{count}} gn."
+      "ethereal": "Eter"
     }
   },
   "palette": {

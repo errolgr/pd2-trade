@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import moment from 'moment';
 import { Bell, BellOff, Bookmark, Check, LogIn, Pencil, Play, Plus, RotateCw, Trash2, X } from 'lucide-react';
-import { cn, Button, Input, Switch, ScrollArea, EmptyState } from '@pd2-trader/ui';
+import { cn, Button, Input, Switch, ScrollArea, EmptyState, ModeBadge } from '@pd2-trader/ui';
 import { showToast, undoToast } from '@/overlay';
 import { useSignIn } from '@/hooks/useSignIn';
 import { type MarketStore, retrySavedSearchSync } from '@/pages/market/store/useMarketStore';
@@ -14,8 +14,11 @@ import { t, useTranslation } from '@/i18n';
 
 const UNDO_MS = 6000;
 
-/** One-line description of a search: item, type, rarity, stats, mode. */
-export function describeFilters(f: MarketFilters): string {
+/**
+ * One-line description of a search: item, type, rarity, stats, mode. `mode: false` leaves the realm out (hosts that
+ * draw it as a `ModeBadge`); the sold-archive marker stays.
+ */
+export function describeFilters(f: MarketFilters, { mode = true }: { mode?: boolean } = {}): string {
   const parts: string[] = [];
   if (f.itemName) parts.push(f.itemName);
   if (f.typeCode) parts.push(ITEM_TYPES.find((t) => t.code === f.typeCode)?.label ?? t('market:filters.type'));
@@ -37,10 +40,9 @@ export function describeFilters(f: MarketFilters): string {
   if (excluded.length) required.push(t('market:describe.noneOf', { rows: excluded.join(' / ') }));
   if (required.length) parts.push(required.join(', '));
   if (f.sellerName) parts.push(t('market:describe.seller', { name: f.sellerName }));
-  parts.push(
-    `${f.hardcore ? 'HC' : 'SC'} ${f.ladder ? 'L' : 'NL'}${f.source === 'archive' ? t('market:describe.sold') : ''}`,
-  );
-  return parts.join(' · ');
+  const sold = f.source === 'archive' ? t('market:describe.sold') : '';
+  if (mode) parts.push(`${f.hardcore ? 'HC' : 'SC'} ${f.ladder ? 'L' : 'NL'}${sold}`);
+  return parts.join(' · ') + (mode ? '' : sold);
 }
 
 export interface SavedSearchesProps {
@@ -285,8 +287,14 @@ function SavedRow({
           >
             <div className="truncate text-sm font-medium">{search.name}</div>
             <div className="truncate text-2xs text-muted-foreground">
+              <ModeBadge
+                ladder={search.filters.ladder}
+                hardcore={search.filters.hardcore}
+                size="short"
+                className="mr-1 align-middle"
+              />
               {t('saved.rowDescription', {
-                description: describeFilters(search.filters),
+                description: describeFilters(search.filters, { mode: false }),
                 saved: moment(search.createdAt).fromNow(),
               })}
             </div>

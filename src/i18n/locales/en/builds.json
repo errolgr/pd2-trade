@@ -13,7 +13,6 @@
   "price": {
     "na": "n/a",
     "noReliablePrice": "No reliable market price",
-    "hrTitle": "{{hr}} HR at current market prices",
     "marketValue": "Market value <num>{{value}} HR</num>"
   },
   "itemActions": {
@@ -76,14 +75,12 @@
     "noCharacters": "No characters on this account.",
     "noLadderCharacters": "No ladder {{mode}} characters on this account.",
     "otherModes": "Other modes",
-    "level": "Level {{level}}",
     "onlyLadder": "Only ladder characters are tracked.",
     "trackedFrom": "Builds are tracked from level {{level}}",
     "seeClassBuilds": "See level {{level}}+ {{className}} builds",
     "notCrawled": "Not crawled yet; characters refresh about once a day.",
     "loadBuildError": "Couldn't load the build",
     "build": "Build",
-    "dead": "Dead",
     "notInMode": "Not in {{mode}} builds",
     "couldntLoad": "Couldn't load",
     "removeLabel": "{{action}} {{name}}"
@@ -121,7 +118,6 @@
     "gearUp": "Gear up",
     "timeline": "Timeline",
     "ethereal": "Ethereal",
-    "corrupted": "Corrupted",
     "skills": "Skills",
     "hardTotal": "hard / total",
     "noSkills": "No skills recorded."

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import moment from 'moment';
-import { Package, User as UserIcon } from 'lucide-react';
+import { User as UserIcon } from 'lucide-react';
 import {
   cn,
+  ItemArt,
   ItemName,
   type ItemNameProps,
+  ModeBadge,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -45,21 +47,27 @@ export function ListingCardSkeleton() {
 }
 
 /**
- * The item's picture (its type's icon as a fallback, a package when none loads); size it with `className`.
- * A URL that fails to load moves on to the next candidate (pd2trader.com, then projectdiablo2.com).
+ * The item's picture (its type's icon as a fallback, quality-coloured initials when none loads), filling its tile;
+ * cap it with `className`. A URL that fails to load moves on to the next candidate (pd2trader.com, then
+ * projectdiablo2.com).
  */
-function ItemArt({ listing, className = 'max-h-5 max-w-5' }: { listing: MarketListingEntry; className?: string }) {
+function ListingItemArt({
+  listing,
+  className = 'max-h-5 max-w-5',
+}: {
+  listing: MarketListingEntry;
+  className?: string;
+}) {
   const { itemsMapByKey } = useItems();
-  const candidates = listingArtCandidates(listing.item, itemsMapByKey);
-  const [failed, setFailed] = useState<string[]>([]);
-  const src = candidates.find((url) => !failed.includes(url));
-  if (!src) return <Package className="size-3.5 text-muted-foreground" />;
   return (
-    <img
-      src={src}
-      alt=""
-      className={cn('object-contain', className)}
-      onError={() => setFailed((list) => [...list, src])}
+    <ItemArt
+      name={listing.item.name}
+      quality={listing.item.quality?.name}
+      runeword={listing.item.is_runeword}
+      src={listingArtCandidates(listing.item, itemsMapByKey)}
+      frameless
+      className={className}
+      style={{ width: '100%', height: '100%' }}
     />
   );
 }
@@ -81,7 +89,7 @@ export function ListingThumb({
         className,
       )}
     >
-      <ItemArt listing={listing}
+      <ListingItemArt listing={listing}
         className={artClassName} />
     </span>
   );
@@ -179,7 +187,8 @@ export function ListingDetails({
             : t('listing.soldOrDelisted')}
         </PopoverKeyValue>
         <PopoverKeyValue label={t('listing.mode')}>
-          {`${listing.is_ladder ? 'Ladder' : 'Non-ladder'} · ${listing.is_hardcore ? 'Hardcore' : 'Softcore'}`}
+          <ModeBadge ladder={listing.is_ladder}
+            hardcore={listing.is_hardcore} />
         </PopoverKeyValue>
         {stashLabel(listing) && (
           <PopoverKeyValue label={t('listing.stash')}>
@@ -245,7 +254,7 @@ export function ListingCard({ listing, listed, url }: { listing: MarketListingEn
           className={listingPillClass}
         >
           <span className={cn(listingIconBoxClass, !listed && 'opacity-50 grayscale')}>
-            <ItemArt listing={listing} />
+            <ListingItemArt listing={listing} />
           </span>
           <ItemName {...listingItemName(listing)}
             className="truncate font-semibold" />

@@ -27,10 +27,6 @@ export const RECIPE_LABELS: Record<CraftRecipe, string> = {
 
 export const isCrafted = (rare: Pick<RareAppraisal, 'quality'>): boolean => rare.quality === 'Crafted';
 
-/** Item-name colour class by quality (older servers send no quality: rare). */
-export const appraisalNameClass = (rare: Pick<RareAppraisal, 'quality'>): string =>
-  isCrafted(rare) ? 'text-q-crafted' : 'text-q-rare';
-
 /**
  * Text for a null appraisal's `reason`. Crafted gate-off reasons ("crafted slot unreliable: <backtest detail>")
  * become a plain sentence (detail stays in the hover title); every other reason is shown verbatim, as before.

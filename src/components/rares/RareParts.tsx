@@ -1,11 +1,6 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import moment from 'moment';
-import type {
-  CheckPriority,
-  RareAppraisal,
-  RareHistory,
-  VerdictRule,
-} from '@/lib/rare-appraisal-api';
+import type { CheckPriority, RareAppraisal, RareHistory, VerdictRule } from '@/lib/rare-appraisal-api';
 import { ChevronDown, TriangleAlert } from 'lucide-react';
 import {
   hardcoreNote,
@@ -23,7 +18,16 @@ import {
   verdictLabel,
 } from './rares-format';
 import { Trans, useTranslation } from '@/i18n';
-import { Button, PriceTag, Tooltip, TooltipContent, TooltipTrigger, cn, PopoverSectionTitle } from '@pd2-trader/ui';
+import {
+  Button,
+  PriceTag,
+  QualityBadge,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  cn,
+  PopoverSectionTitle,
+} from '@pd2-trader/ui';
 
 /*
  * Building blocks shared by the price-check rare card and the Net Worth "Rares" tab.
@@ -91,9 +95,7 @@ export function CraftedBadges({ rare, className }: { rare: RareAppraisal; classN
   const recipe = rare.recipe ? RECIPE_LABELS[rare.recipe] : 'Crafted';
   return (
     <span className={cn('inline-flex shrink-0 items-center gap-1', className)}>
-      <span className="inline-flex shrink-0 items-center rounded-full border border-q-crafted/40 bg-q-crafted/10 px-2 py-0.5 text-2xs font-medium leading-none text-q-crafted">
-        {recipe}
-      </span>
+      <QualityBadge quality="Crafted">{recipe}</QualityBadge>
       {rare.confidence === 'low' && (
         <Hint text={t('crafted.lowConfidenceTitle')}>
           <span className="inline-flex shrink-0 cursor-help items-center gap-1 rounded-full border border-warning/50 bg-warning/10 px-2 py-0.5 text-2xs font-semibold leading-none text-warning">

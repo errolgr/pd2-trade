@@ -1,7 +1,7 @@
 import React from 'react';
 import moment from 'moment';
 import { ExternalLink, Heart, MessageSquare, X } from 'lucide-react';
-import { cn, Button, ScrollArea } from '@pd2-trader/ui';
+import { cn, Button, ModeBadge, ScrollArea } from '@pd2-trader/ui';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { DealBadge } from '@/pages/market/enrich/DealBadge';
 import { PriceHistoryMini } from '@/pages/market/enrich/PriceHistoryMini';
@@ -65,9 +65,12 @@ export function ListingDetail({
     <aside aria-label={t('detail.label')}
       className="flex h-full min-h-0 flex-col border-l border-border bg-card/40">
       <div className="flex items-center gap-1.5 border-b border-border px-2.5 py-1.5">
-        <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+        <span className="flex min-w-0 flex-1 items-center gap-1.5 truncate text-xs text-muted-foreground">
           {archived ? t('detail.sold') : t('detail.listed')}
-          {` · ${listing.is_ladder ? 'Ladder' : 'Non-ladder'} ${listing.is_hardcore ? 'HC' : 'SC'} · ${listingAge(listing)}`}
+          <ModeBadge ladder={listing.is_ladder}
+            hardcore={listing.is_hardcore}
+            size="short" />
+          <span className="tabular-nums">{listingAge(listing)}</span>
         </span>
         <AddAllModsButton
           item={listing.item}
@@ -95,7 +98,8 @@ export function ListingDetail({
 
       <ScrollArea className="min-h-0 flex-1 [&_[data-radix-scroll-area-viewport]>div]:!block">
         <div className="space-y-2.5 p-2.5">
-          <ItemTooltip item={listing.item} />
+          <ItemTooltip item={listing.item}
+            className="w-full" />
 
           {pseudoKeys.length > 0 && (
             <div className="grid grid-cols-2 gap-1">

@@ -13,7 +13,6 @@
   "price": {
     "na": "无",
     "noReliablePrice": "无可靠市场价",
-    "hrTitle": "按当前市场价 {{hr}} HR",
     "marketValue": "市场价值 <num>{{value}} HR</num>"
   },
   "itemActions": {
@@ -72,14 +71,12 @@
     "noCharacters": "此账号没有角色。",
     "noLadderCharacters": "此账号没有 Ladder {{mode}} 角色。",
     "otherModes": "其他模式",
-    "level": "{{level}} 级",
     "onlyLadder": "仅追踪 Ladder 角色。",
     "trackedFrom": "从 {{level}} 级开始追踪配装",
     "seeClassBuilds": "查看 {{level}}+ 级 {{className}} 配装",
     "notCrawled": "尚未抓取；角色约每天刷新一次。",
     "loadBuildError": "无法加载配装",
     "build": "配装",
-    "dead": "已死亡",
     "notInMode": "不在 {{mode}} 配装中",
     "couldntLoad": "无法加载",
     "removeLabel": "{{action}} {{name}}"
@@ -117,7 +114,6 @@
     "gearUp": "配装对比",
     "timeline": "时间线",
     "ethereal": "Ethereal",
-    "corrupted": "Corrupted",
     "skills": "技能",
     "hardTotal": "基础 / 总计",
     "noSkills": "无技能记录。"

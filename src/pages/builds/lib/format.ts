@@ -1,4 +1,4 @@
-import { formatHrAmount } from '@pd2-trader/ui';
+import { classPortraitUrl as dsClassPortraitUrl, D2_CLASSES, formatHrAmount, toD2Class } from '@pd2-trader/ui';
 import { t, currentLocale } from '@/i18n';
 
 /** Class metadata, asset URLs and number/time formatting for the builds panel (ported from pd2trader.com /builds). */
@@ -7,29 +7,28 @@ const SITE = 'https://pd2trader.com';
 
 export interface ClassMeta {
   name: string;
-  short: string;
-  /** Class accent (same on every theme, like the website). */
+  /** Class accent: the `class-*` token (same on every theme, like the website). */
   color: string;
 }
 
-export const CLASS_META: ClassMeta[] = [
-  { name: 'Amazon', short: 'Ama', color: '#e0b04f' },
-  { name: 'Assassin', short: 'Sin', color: '#a78bfa' },
-  { name: 'Barbarian', short: 'Barb', color: '#ea7a3b' },
-  { name: 'Druid', short: 'Druid', color: '#7cbf4a' },
-  { name: 'Necromancer', short: 'Necro', color: '#2dd4bf' },
-  { name: 'Paladin', short: 'Pala', color: '#60a5fa' },
-  { name: 'Sorceress', short: 'Sorc', color: '#f05d5d' },
-];
-
-const CLASS_BY_NAME = new Map(CLASS_META.map((c) => [c.name.toLowerCase(), c]));
+export const CLASS_META: ClassMeta[] = D2_CLASSES.map((id) => ({
+  name: id.charAt(0).toUpperCase() + id.slice(1),
+  color: `var(--color-class-${id})`,
+}));
 
 export function classMeta(name: string | null | undefined): ClassMeta & { known: boolean } {
-  const meta = CLASS_BY_NAME.get(String(name ?? '').toLowerCase());
-  return meta ? { ...meta, known: true } : { name: name || 'Unknown', short: '?', color: '#808080', known: false };
+  const id = toD2Class(name);
+  const meta = id && CLASS_META[D2_CLASSES.indexOf(id)];
+  return meta
+    ? { ...meta, known: true }
+    : { name: name || 'Unknown', color: 'var(--color-muted-foreground)', known: false };
 }
 
-export const classPortraitUrl = (className: string) => `${SITE}/assets/classes/${className.toLowerCase()}.webp`;
+/** Portrait art on pd2trader.com for ClassIcon / CharacterCard; null (lettered tile) for unknown classes. */
+export function classPortraitUrl(className: string | null | undefined): string | null {
+  const id = toD2Class(className);
+  return id ? dsClassPortraitUrl(id, SITE) : null;
+}
 
 // Skill names whose icon file is named differently (pd2trader.com buildsShared.jsx).
 const SKILL_ICON_ALIASES: Record<string, string> = {
@@ -95,23 +94,4 @@ export const skillFilter = (name: string) => `${name}:${SKILL_MAX_POINTS}`;
 export function skillLabel(value: string): string {
   const m = value.match(/^(.*):(\d+)$/);
   return m ? `${m[1]} ${m[2]}+` : value;
-}
-
-/** Border colour class matching the item's quality colour (itemQualityClass). */
-export function qualityBorder(quality: string | null | undefined, runeword = false): string {
-  if (runeword || quality === 'Runeword') return 'border-q-rune/50';
-  switch (quality) {
-    case 'Unique':
-      return 'border-q-unique/50';
-    case 'Set':
-      return 'border-q-set/50';
-    case 'Rare':
-      return 'border-q-rare/45';
-    case 'Crafted':
-      return 'border-q-crafted/45';
-    case 'Magic':
-      return 'border-q-magic/45';
-    default:
-      return 'border-border';
-  }
 }

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
 import {
   Button,
+  ClassIcon,
   Command,
   CommandInput,
   CommandItem,
@@ -12,7 +13,7 @@ import {
   cn,
 } from '@pd2-trader/ui';
 import type { SimCharacter } from '@/lib/sim-characters';
-import { ClassEmblem } from '@/pages/builds/components/parts';
+import { classPortraitUrl } from '@/pages/builds/lib/format';
 
 /** class · level · Hardcore (· account when the user has several). */
 function details(c: SimCharacter, withAccount: boolean) {
@@ -64,7 +65,8 @@ export function SimCharacterPicker({
           data-keep-keyboard
           className={cn('w-full justify-start px-2 has-[>svg]:px-2', className)}
         >
-          {chosen?.className && <ClassEmblem className={chosen.className}
+          {chosen?.className && <ClassIcon cls={chosen.className}
+            src={classPortraitUrl(chosen.className)}
             size={18} />}
           <span className="truncate">{value}</span>
           {chosen && (
@@ -100,7 +102,8 @@ export function SimCharacterPicker({
                 className="cursor-pointer py-1"
               >
                 {c.className ? (
-                  <ClassEmblem className={c.className}
+                  <ClassIcon cls={c.className}
+                    src={classPortraitUrl(c.className)}
                     size={20} />
                 ) : (
                   <span aria-hidden

@@ -1,6 +1,19 @@
 import React, { useMemo, useState } from 'react';
 import { AlertCircle, Check, CircleDashed, Info, Users } from 'lucide-react';
-import { cn, ItemName, Skeleton, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@pd2-trader/ui';
+import {
+  cn,
+  CLASS_TEXT,
+  ItemArt,
+  ItemName,
+  PriceTag,
+  Skeleton,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  toD2Class,
+} from '@pd2-trader/ui';
 import {
   type CharacterDetail,
   filterParams,
@@ -19,9 +32,10 @@ import {
   signatureSkills,
   wornKeys,
 } from '../lib/gear-up';
-import { classMeta, fmtHr, fmtPct } from '../lib/format';
+import { fmtHr, fmtPct } from '../lib/format';
+import { itemArtCandidates } from '../lib/item-art';
 import { currentLocale, Trans, useTranslation } from '@/i18n';
-import { ItemIcon, PriceChip, QueryError, SearchMarketButton, Section, ShareBar, SkillIcon } from './parts';
+import { QueryError, SearchMarketButton, Section, ShareBar, SkillIcon } from './parts';
 
 /**
  * How this character's gear compares with characters like it (same class, same skill maxed): the items they
@@ -51,7 +65,7 @@ export function GearUp({ detail }: { detail: CharacterDetail }) {
   const u = fallback ? classUsage : usage;
   const s = fallback ? classShopping : shopping;
   const worn = useMemo(() => wornKeys(detail), [detail]);
-  const meta = classMeta(detail.className);
+  const cls = toD2Class(detail.className);
   const plural = /ss$/.test(detail.className) ? `${detail.className}es` : `${detail.className}s`;
 
   return (
@@ -79,10 +93,7 @@ export function GearUp({ detail }: { detail: CharacterDetail }) {
             </SelectContent>
           </Select>
         ) : null}
-        <span className="text-xs"
-          style={{ color: meta.color }}>
-          {plural}
-        </span>
+        <span className={cn('text-xs', cls ? CLASS_TEXT[cls] : 'text-muted-foreground')}>{plural}</span>
         {u.data && !u.stale && (
           <span className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
             <Users className="size-3.5" />
@@ -149,7 +160,9 @@ function TopItems({ query, worn }: { query: BuildsQuery<ShoppingListResponse>; w
               return (
                 <li key={item.key}
                   className="flex items-center gap-2 px-3 py-1 hover:bg-accent/30">
-                  <ItemIcon item={item}
+                  <ItemArt name={item.name}
+                    quality={item.quality ?? 'Rune'}
+                    src={itemArtCandidates(item)}
                     size={28} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-1.5">
@@ -164,8 +177,13 @@ function TopItems({ query, worn }: { query: BuildsQuery<ShoppingListResponse>; w
                       className="mt-1"
                       barClassName={has ? 'bg-success/70' : undefined} />
                   </div>
-                  <PriceChip hr={item.priceHr}
-                    className="w-14 text-right" />
+                  {item.priceHr != null && (
+                    <PriceTag
+                      amount={item.priceHr}
+                      unit="hr"
+                      className="w-14 shrink-0 justify-end text-2xs font-medium text-q-gold"
+                    />
+                  )}
                   {has ? (
                     <span className="flex w-18 items-center gap-1 text-2xs font-medium text-success">
                       <Check className="size-3.5" /> {t('gearUp.worn')}

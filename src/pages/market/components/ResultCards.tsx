@@ -2,7 +2,17 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { motion } from 'framer-motion';
 import { Bell, Clock, ExternalLink, Gamepad2, Heart, MessageSquare, Shield, Sigma, Swords, X } from 'lucide-react';
-import { cn, Button, ScrollArea, Tooltip, TooltipContent, TooltipTrigger, DUR, EASE_OUT } from '@pd2-trader/ui';
+import {
+  cn,
+  Button,
+  ModeBadge,
+  ScrollArea,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  DUR,
+  EASE_OUT,
+} from '@pd2-trader/ui';
 import { useSimAccess } from '@/hooks/useSimAccess';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
 import { ListingThumb } from '@/pages/chat/components/ListingCard';
@@ -527,9 +537,9 @@ const ResultCard = React.memo(function ResultCard({
               <Clock className="size-3" />
               {listingAge(listing)}
             </span>
-            <span className="rounded border border-border/60 px-1.5 py-px text-3xs font-medium uppercase tracking-wide">
-              {`${listing.is_hardcore ? 'HC' : 'SC'} · ${listing.is_ladder ? 'Ladder' : 'Non-ladder'}`}
-            </span>
+            <ModeBadge ladder={listing.is_ladder}
+              hardcore={listing.is_hardcore}
+              size="short" />
           </span>
           <PluginCellBadges cells={pluginCells} />
         </span>

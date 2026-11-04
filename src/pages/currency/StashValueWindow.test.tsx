@@ -248,7 +248,8 @@ describe('StashValueWindow header', () => {
     expect(screen.getByText(`${(1500).toLocaleString()} gold`)).not.toBeNull();
     expect(screen.getByText('prices 2026-10-18')).not.toBeNull();
     expect(screen.getByText('Hammerdin')).not.toBeNull();
-    expect(screen.getByText('Ladder SC')).not.toBeNull();
+    expect(screen.getByText('Ladder')).not.toBeNull();
+    expect(screen.getByText('Softcore')).not.toBeNull();
     expect(screen.getByText('Season 12')).not.toBeNull();
     expect(screen.queryByText(/ladder prices/)).toBeNull();
     await act(async () => {});
@@ -260,7 +261,8 @@ describe('StashValueWindow header', () => {
       latest: snapshot({ valuation: valuation({ priceSource: 'ladder-fallback', seasonId: 's11' }) }),
     });
     renderWindow();
-    expect(screen.getByText('Non-ladder HC')).not.toBeNull();
+    expect(screen.getByText('Non-ladder')).not.toBeNull();
+    expect(screen.getByText('Hardcore')).not.toBeNull();
     expect(screen.getByText('Season 11')).not.toBeNull();
     expect(screen.getByText('valued with ladder prices (no non-ladder market data)')).not.toBeNull();
     await act(async () => {});

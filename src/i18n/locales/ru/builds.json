@@ -13,7 +13,6 @@
   "price": {
     "na": "н/д",
     "noReliablePrice": "Нет надёжной рыночной цены",
-    "hrTitle": "{{hr}} HR по текущим рыночным ценам",
     "marketValue": "Рыночная стоимость <num>{{value}} HR</num>"
   },
   "itemActions": {
@@ -84,14 +83,12 @@
     "noCharacters": "На этом аккаунте нет персонажей.",
     "noLadderCharacters": "На этом аккаунте нет ladder-персонажей {{mode}}.",
     "otherModes": "Другие режимы",
-    "level": "Уровень {{level}}",
     "onlyLadder": "Отслеживаются только ladder-персонажи.",
     "trackedFrom": "Билды отслеживаются с уровня {{level}}",
     "seeClassBuilds": "Билды {{className}} уровня {{level}}+",
     "notCrawled": "Ещё не собрано; персонажи обновляются примерно раз в день.",
     "loadBuildError": "Не удалось загрузить билд",
     "build": "Билд",
-    "dead": "Мёртв",
     "notInMode": "Нет в билдах {{mode}}",
     "couldntLoad": "Не удалось загрузить",
     "removeLabel": "{{action}} {{name}}"
@@ -129,7 +126,6 @@
     "gearUp": "Экипировка",
     "timeline": "Хронология",
     "ethereal": "Ethereal",
-    "corrupted": "Corrupted",
     "skills": "Навыки",
     "hardTotal": "вложено / всего",
     "noSkills": "Навыки не записаны."

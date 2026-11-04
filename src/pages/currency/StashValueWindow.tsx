@@ -29,6 +29,7 @@ import {
   PanelChrome,
   Banner,
   EmptyState,
+  ModeBadge,
 } from '@pd2-trader/ui';
 import { usePanel, useOverlay } from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
@@ -349,9 +350,9 @@ function WindowTitle({
                 <UserRound className="size-3 shrink-0" />
                 <span className="truncate font-medium text-foreground/90">{owner.account}</span>
               </span>
-              <span className="shrink-0 rounded-full border border-border bg-muted/50 px-2 py-px text-muted-foreground">
-                {owner.isLadder ? 'Ladder' : 'Non-ladder'} {owner.isHardcore ? 'HC' : 'SC'}
-              </span>
+              <ModeBadge ladder={owner.isLadder}
+                hardcore={owner.isHardcore}
+                className="shrink-0" />
               {seasonLabel && (
                 <span className="truncate rounded-full border border-border bg-muted/50 px-2 py-px text-muted-foreground">
                   {seasonLabel}

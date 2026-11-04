@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, Filter, MoreHorizontal, RefreshCw, Store } from 'lucide-react';
 import {
@@ -8,49 +8,15 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  ItemName,
-  itemQualityClass,
+  ItemTooltip,
   springSnappy,
-  StatLine,
 } from '@pd2-trader/ui';
 import type { EquippedItem, SocketedItem } from '@/lib/builds-api';
 import type { BuildsQuery } from '../lib/useBuildsQuery';
 import { useBuildsActions } from '../lib/context';
 import { type MarketItemRef, marketFiltersFor } from '../lib/market-link';
-import { classMeta, classPortraitUrl, fmtHr, initials, qualityBorder, skillIconUrl } from '../lib/format';
-import { itemArtCandidates } from '../lib/item-art';
+import { fmtHr, initials, skillIconUrl } from '../lib/format';
 import { Trans, useTranslation } from '@/i18n';
-
-/** In-game class portrait (46×41 art); `size` is the height. Unknown classes get a lettered tile. */
-export function ClassEmblem({ className, size = 32 }: { className: string; size?: number }) {
-  const meta = classMeta(className);
-  const [broken, setBroken] = useState(false);
-  const width = Math.round((size * 46) / 41);
-  if (!meta.known || broken) {
-    return (
-      <span
-        aria-hidden
-        className="inline-flex shrink-0 items-center justify-center rounded-md border font-semibold"
-        style={{ width, height: size, color: meta.color, borderColor: meta.color, fontSize: Math.round(size * 0.5) }}
-      >
-        {meta.name.charAt(0)}
-      </span>
-    );
-  }
-  return (
-    <img
-      src={classPortraitUrl(meta.name)}
-      width={width}
-      height={size}
-      alt=""
-      aria-hidden
-      loading="lazy"
-      onError={() => setBroken(true)}
-      className="shrink-0 rounded-sm ring-1"
-      style={{ width, height: size, ['--tw-ring-color' as string]: `${meta.color}80` }}
-    />
-  );
-}
 
 /** Skill art; a lettered tile when the icon is missing. */
 export function SkillIcon({ name, size = 24, className }: { name: string; size?: number; className?: string }) {
@@ -82,93 +48,6 @@ export function SkillIcon({ name, size = 24, className }: { name: string; size?:
   );
 }
 
-export interface IconItem {
-  name: string;
-  quality: string | null;
-  runeword?: boolean;
-  iconUrl?: string | null;
-  /** Base item name when known (worn items): its art stands in for rares, magic items and runewords. */
-  base?: string;
-}
-
-/** Item art: the API's icon, else the base's inventory art (see itemArtCandidates); a URL that fails to load moves
- * on to the next; quality-coloured initials when none loads. `height` defaults to `size` (square). */
-export function ItemIcon({
-  item,
-  size = 28,
-  height = size,
-  className,
-}: {
-  item: IconItem;
-  size?: number;
-  height?: number;
-  className?: string;
-}) {
-  const candidates = useMemo(
-    () => itemArtCandidates(item),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [item.name, item.quality, item.runeword, item.base, item.iconUrl],
-  );
-  const [failed, setFailed] = useState<string[]>([]);
-  const src = candidates.find((url) => !failed.includes(url)) ?? null;
-  return (
-    <span
-      className={cn(
-        'inline-flex shrink-0 items-center justify-center overflow-hidden rounded-sm border bg-background/50',
-        qualityBorder(item.quality, item.runeword),
-        className,
-      )}
-      style={{ width: size, height }}
-    >
-      {src ? (
-        <img
-          src={src}
-          alt=""
-          loading="lazy"
-          onError={() => setFailed((f) => [...f, src])}
-          className="max-h-full max-w-full object-contain [image-rendering:pixelated]"
-        />
-      ) : (
-        <span
-          className={cn('font-semibold', itemQualityClass(item.quality ?? 'Rune', { runeword: item.runeword }))}
-          style={{ fontSize: Math.min(15, Math.round(size * 0.36)) }}
-        >
-          {initials(item.name) || '?'}
-        </span>
-      )}
-    </span>
-  );
-}
-
-/** "1.30 HR"; nothing when unpriced (unless `unpriced`). */
-export function PriceChip({
-  hr,
-  unpriced = false,
-  className,
-}: {
-  hr: number | null | undefined;
-  unpriced?: boolean;
-  className?: string;
-}) {
-  const { t } = useTranslation('builds');
-  if (hr == null) {
-    return unpriced ? (
-      <span className={cn('text-2xs text-muted-foreground', className)}
-        title={t('price.noReliablePrice')}>
-        {t('price.na')}
-      </span>
-    ) : null;
-  }
-  return (
-    <span
-      className={cn('shrink-0 text-2xs font-medium whitespace-nowrap text-q-gold tabular-nums', className)}
-      title={t('price.hrTitle', { hr })}
-    >
-      {fmtHr(hr)} <span className="text-2xs opacity-75">HR</span>
-    </span>
-  );
-}
-
 /** Share bar (0–100). */
 export function ShareBar({ pct, className, barClassName }: { pct: number; className?: string; barClassName?: string }) {
   return (
@@ -184,74 +63,49 @@ export function ShareBar({ pct, className, barClassName }: { pct: number; classN
   );
 }
 
-type TooltipItem = Pick<
+type WornItem = Pick<
   EquippedItem,
   'slot' | 'name' | 'quality' | 'base' | 'runeword' | 'ethereal' | 'corrupted' | 'sockets' | 'mods'
 > & { socketed: Pick<SocketedItem, 'name' | 'quality'>[]; priceHr?: number | null };
 
-/** In-game style item card: name in its quality colour, base, mods in magic blue, sockets, price. */
-export function ItemTooltipCard({ item }: { item: TooltipItem }) {
+/** A worn item's ItemTooltip: its PD2 display lines as mods; slot and market value in the footer. */
+export function WornItemTooltip({ item }: { item: WornItem }) {
   const { t } = useTranslation('builds');
-  const nameClass = itemQualityClass(item.quality ?? 'Rune', { runeword: item.runeword });
-  const flagCorrupted = item.corrupted && !item.mods.some((m) => /^corrupted$/i.test(m));
   return (
-    <div className="w-72 rounded-md border border-border bg-background/95 px-3 py-2.5 text-center text-xs leading-normal shadow-panel">
-      <div className={cn('text-sm font-semibold', nameClass)}
-        style={{ fontFamily: 'DiabloFont' }}>
-        {item.name}
-      </div>
-      {item.base && item.base !== item.name && (
-        <div className={cn(item.runeword ? 'text-muted-foreground' : nameClass, 'opacity-90')}>{item.base}</div>
-      )}
-      <div className="text-2xs text-muted-foreground">
-        {item.slot}
-        {item.runeword ? ' · Runeword' : item.quality ? ` · ${item.quality}` : ''}
-      </div>
-      {item.mods.length > 0 && (
-        <ul className="mt-1.5 space-y-px">
-          {item.mods.map((mod, i) => (
-            <li key={i}>
-              <StatLine corrupted={/^corrupted$/i.test(mod)}>{mod}</StatLine>
-            </li>
-          ))}
-        </ul>
-      )}
-      {(item.ethereal || item.sockets > 0 || flagCorrupted) && (
-        <div className="mt-1 space-y-px">
-          {item.ethereal && <div className="text-muted-foreground">Ethereal (Cannot be Repaired)</div>}
-          {item.sockets > 0 && <div className="text-muted-foreground">Socketed ({item.sockets})</div>}
-          {flagCorrupted && <div className="text-q-corrupted">Corrupted</div>}
+    <ItemTooltip
+      item={{
+        name: item.name,
+        base: item.base,
+        quality: item.quality ?? 'Rune',
+        runeword: item.runeword,
+        mods: item.mods.map((text) => ({ text })),
+        sockets: item.sockets,
+        socketed: item.socketed,
+        ethereal: item.ethereal,
+        corrupted: item.corrupted || item.mods.some((m) => /^corrupted$/i.test(m)),
+      }}
+      footer={
+        <div className="flex items-center justify-between gap-2 text-muted-foreground">
+          <span>
+            {item.slot}
+            {item.runeword ? ' · Runeword' : item.quality ? ` · ${item.quality}` : ''}
+          </span>
+          {item.priceHr !== undefined &&
+            (item.priceHr != null ? (
+              <span>
+                <Trans
+                  t={t}
+                  i18nKey="price.marketValue"
+                  values={{ value: fmtHr(item.priceHr) }}
+                  components={{ num: <span className="font-semibold text-q-gold tabular-nums" /> }}
+                />
+              </span>
+            ) : (
+              <span>{t('price.noReliablePrice')}</span>
+            ))}
         </div>
-      )}
-      {item.socketed.length > 0 && (
-        <div className="mt-1.5 flex flex-wrap justify-center gap-1">
-          {item.socketed.map((s, i) => (
-            <ItemName
-              key={i}
-              name={s.name}
-              quality={s.quality ?? 'Rune'}
-              className="rounded-sm border border-border/70 px-1.5 py-px text-2xs"
-            />
-          ))}
-        </div>
-      )}
-      {item.priceHr !== undefined && (
-        <div className="mt-2 border-t border-border/60 pt-1.5 text-2xs">
-          {item.priceHr != null ? (
-            <span className="text-muted-foreground">
-              <Trans
-                t={t}
-                i18nKey="price.marketValue"
-                values={{ value: fmtHr(item.priceHr) }}
-                components={{ num: <span className="font-semibold text-q-gold tabular-nums" /> }}
-              />
-            </span>
-          ) : (
-            <span className="text-muted-foreground">{t('price.noReliablePrice')}</span>
-          )}
-        </div>
-      )}
-    </div>
+      }
+    />
   );
 }
 

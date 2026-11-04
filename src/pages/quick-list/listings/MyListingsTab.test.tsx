@@ -174,7 +174,7 @@ describe('MyListingsTab', () => {
     });
     expect(api.updateMarketListing).toHaveBeenCalledWith('L1', { hr_price: 2.5, price: 'obo' });
     expect(api.updateItemByHash).toHaveBeenCalledWith('hL1', { hr_price: 2.5, price: 'obo' });
-    expect(within(card('Shako')).queryByText('2.5 HR')).not.toBeNull();
+    expect(within(card('Shako')).queryByText('2.50 HR')).not.toBeNull();
   });
 
   it('stores the picked sort with its default direction', async () => {

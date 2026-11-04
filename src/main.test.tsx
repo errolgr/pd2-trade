@@ -88,7 +88,9 @@ afterEach(() => {
   localStorage.clear();
 });
 
-describe('main routing', () => {
+// Each boot re-imports main.tsx after vi.resetModules(), so the whole @pd2-trader/ui graph is evaluated per test;
+// the first one also transforms it. That outruns the 5 s default under the full parallel suite.
+describe('main routing', { timeout: 30_000 }, () => {
   it('mounts every provider once around the app controller, handlers and overlay root', async () => {
     const { root } = await boot('/');
     // Overlay sits above the domain providers: Tray, Pd2Website and NetWorth open panels through it.

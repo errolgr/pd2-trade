@@ -96,6 +96,7 @@ import {
   ItemName,
   itemQualityClass,
   PriceTag,
+  CorruptionBadge,
 } from '@pd2-trader/ui';
 import { useItems } from '@/hooks/useItems';
 import type { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
@@ -2379,7 +2380,7 @@ function CorruptionRow({
   );
 }
 
-/** Small rounded-square tag in a listing row (ethereal / corrupted / sockets): square = the item, round = the seller. */
+/** Small rounded-square tag in a listing row (ethereal / sockets): square = the item, round = the seller. */
 function ListingBadge({ label, tooltip, className }: { label: React.ReactNode; tooltip: string; className: string }) {
   return (
     <Tooltip disableHoverableContent={true}
@@ -2647,11 +2648,10 @@ const ListingRow = ({ row, idx }: { row: ScoredListing; idx: number }) => {
                 <BadgeSlot />
               )}
               {isCorrupted ? (
-                <ListingBadge
-                  label="C"
-                  tooltip="Corrupted"
-                  className="border-destructive/60 bg-destructive text-destructive-foreground"
-                />
+                <span className="flex size-4 items-center justify-center">
+                  <CorruptionBadge variant="dot"
+                    className="size-2" />
+                </span>
               ) : (
                 <BadgeSlot />
               )}

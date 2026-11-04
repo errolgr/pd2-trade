@@ -1,7 +1,7 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
-import { Button, cn, DUR, EASE_OUT } from '@pd2-trader/ui';
+import { Button, CorruptionBadge, QualityBadge, StatLine, cn, DUR, EASE_OUT } from '@pd2-trader/ui';
 import { Trans, useTranslation } from '@/i18n';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { itemCorruptions } from '@/lib/item-utils';
@@ -43,13 +43,14 @@ const ItemStatsDisplay: React.FC<ItemStatsDisplayProps> = ({ stashItem, isExpand
   };
 
   const renderModifier = (mod: GameStashItem['modifiers'][number], idx: number) => (
-    <div
+    <StatLine
       key={idx}
-      className={cn('truncate leading-5 text-foreground/85', isCorruptedMod(mod.name) && 'text-q-corrupted')}
+      corrupted={isCorruptedMod(mod.name)}
+      range={mod.min && mod.max ? [mod.min, mod.max] : undefined}
+      className="truncate leading-5"
     >
       {mod.label}
-      {mod?.min && mod?.max && <span className="text-muted-foreground">{`: [${mod.min} - ${mod.max}]`}</span>}
-    </div>
+    </StatLine>
   );
 
   return (
@@ -59,14 +60,9 @@ const ItemStatsDisplay: React.FC<ItemStatsDisplayProps> = ({ stashItem, isExpand
           {stashItem.is_ethereal && (
             <span className={cn(chip, 'border-info/30 bg-info/10 text-info')}>{t('itemStats.ethereal')}</span>
           )}
-          {stashItem.corrupted && (
-            <span className={cn(chip, 'border-destructive/35 bg-destructive/12 text-q-corrupted')}>
-              {t('itemStats.corrupted')}
-            </span>
-          )}
-          {stashItem.is_runeword && (
-            <span className={cn(chip, 'border-q-rune/30 bg-q-rune/10 text-q-rune')}>{t('itemStats.runeword')}</span>
-          )}
+          {stashItem.corrupted && <CorruptionBadge />}
+          {stashItem.is_runeword && <QualityBadge quality="Runeword"
+            runeword />}
           {stashItem.socket_count > 0 && (
             <span className={cn(chip, 'border-border bg-secondary/70 pl-0.5 text-secondary-foreground')}>
               <Trans

@@ -13,7 +13,6 @@
   "price": {
     "na": "n/d",
     "noReliablePrice": "Aucun prix de marché fiable",
-    "hrTitle": "{{hr}} HR aux prix actuels du marché",
     "marketValue": "Valeur marché <num>{{value}} HR</num>"
   },
   "itemActions": {
@@ -80,14 +79,12 @@
     "noCharacters": "Aucun personnage sur ce compte.",
     "noLadderCharacters": "Aucun personnage ladder {{mode}} sur ce compte.",
     "otherModes": "Autres modes",
-    "level": "Niveau {{level}}",
     "onlyLadder": "Seuls les personnages ladder sont suivis.",
     "trackedFrom": "Les builds sont suivis à partir du niveau {{level}}",
     "seeClassBuilds": "Voir les builds {{className}} niveau {{level}}+",
     "notCrawled": "Pas encore analysé ; les personnages sont actualisés environ une fois par jour.",
     "loadBuildError": "Impossible de charger le build",
     "build": "Build",
-    "dead": "Mort",
     "notInMode": "Absent des builds {{mode}}",
     "couldntLoad": "Chargement impossible",
     "removeLabel": "{{action}} {{name}}"
@@ -125,7 +122,6 @@
     "gearUp": "S'équiper",
     "timeline": "Chronologie",
     "ethereal": "Ethereal",
-    "corrupted": "Corrupted",
     "skills": "Compétences",
     "hardTotal": "base / total",
     "noSkills": "Aucune compétence enregistrée."

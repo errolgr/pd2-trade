@@ -1,7 +1,18 @@
 import React, { useState } from 'react';
 import moment from 'moment';
 import { ArrowUp, Check, Clock, Loader2, Pencil, SquareArrowOutUpRight, Trash2, X as XIcon } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger, Input, Button, cn, itemQualityClass } from '@pd2-trader/ui';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  Input,
+  Button,
+  cn,
+  CorruptionBadge,
+  ItemName,
+  PriceTag,
+  SocketRow,
+} from '@pd2-trader/ui';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { ListingThumb, listingItemName } from '@/pages/chat/components/ListingCard';
 import { ItemTooltip } from '@/pages/market/components/ItemTooltip';
@@ -48,47 +59,42 @@ export function ListingName({
   className?: string;
   diablo?: boolean;
 }) {
-  const { name, quality, runeword } = listingItemName(listing);
+  const { quality, runeword } = listingItemName(listing);
   return (
     <ItemHover listing={listing}>
-      {/* A plain span (not ItemName): the tooltip trigger needs a ref-forwarding child */}
-      <span
-        className={cn(
-          'min-w-0 cursor-help truncate font-medium',
-          itemQualityClass(quality, { runeword, name: typeof name === 'string' ? name : undefined }),
-          className,
-        )}
+      <ItemName
+        name={itemDisplayName(listing.item)}
+        quality={quality}
+        runeword={runeword}
+        className={cn('min-w-0 cursor-help truncate font-medium', className)}
         style={diablo ? { fontFamily: 'DiabloFont' } : undefined}
-      >
-        {itemDisplayName(listing.item)}
-      </span>
+      />
     </ItemHover>
   );
 }
 
 const flag = 'inline-flex h-4 shrink-0 items-center rounded-sm border px-1 text-2xs leading-none font-semibold';
 
-/** At-a-glance item flags: corrupted, ethereal, sockets. Nothing for a plain item. */
+/** At-a-glance item flags: corrupted, ethereal, sockets (with what fills them). Nothing for a plain item. */
 export function ItemFlags({ listing }: { listing: MarketListingEntry }) {
   const { t } = useTranslation('quickList');
-  const { corrupted, is_ethereal: ethereal, socket_count: sockets } = listing.item;
+  const { corrupted, is_ethereal: ethereal, socket_count: sockets, socketed = [] } = listing.item;
   if (!corrupted && !ethereal && !(sockets > 0)) return null;
   return (
     <span className="flex shrink-0 items-center gap-1">
-      {corrupted && (
-        <span className={cn(flag, 'border-q-corrupted/50 bg-q-corrupted/10 text-q-corrupted')}>
-          {t('myListings.flags.corrupted')}
-        </span>
-      )}
+      {corrupted && <CorruptionBadge className="shrink-0" />}
       {ethereal && (
         <span className={cn(flag, 'border-border bg-muted/60 text-muted-foreground')}>
           {t('myListings.flags.ethereal')}
         </span>
       )}
       {sockets > 0 && (
-        <span className={cn(flag, 'border-border bg-muted/60 text-foreground/80 tabular-nums')}>
-          {t('myListings.flags.sockets', { count: sockets })}
-        </span>
+        <SocketRow
+          sockets={sockets}
+          filled={socketed.map((s) => ({ name: s.name, quality: s.quality?.name }))}
+          size={12}
+          className="shrink-0 gap-0.5"
+        />
       )}
     </span>
   );
@@ -100,10 +106,12 @@ export function baseName(listing: MarketListingEntry): string | null {
   return base && !itemDisplayName(listing.item).includes(base) ? base : null;
 }
 
-/** The asking price: "2.5 HR", or the note itself for a note-only listing ("10 wss"). */
+/** The asking price: "2.50 HR", or the note itself for a note-only listing ("10 wss"). */
 export function PriceText({ listing, className }: { listing: MarketListingEntry; className?: string }) {
   return listing.hr_price > 0 ? (
-    <span className={cn('font-semibold tabular-nums text-foreground', className)}>{`${listing.hr_price} HR`}</span>
+    <PriceTag amount={listing.hr_price}
+      unit="hr"
+      className={cn('font-semibold text-foreground', className)} />
   ) : (
     <span className={cn('truncate font-semibold text-foreground', className)}>{listing.price || '—'}</span>
   );

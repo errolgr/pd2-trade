@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn, itemQualityClass, StatLine } from '@pd2-trader/ui';
+import { cn, itemQualityClass, ItemTooltip as D2ItemTooltip, type TooltipItem } from '@pd2-trader/ui';
 import type { ItemDetail, Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { itemCorruptions } from '@/lib/item-utils';
 import { ModMenu } from './ModMenu';
@@ -16,24 +16,40 @@ export function displayMods(item: Pick<ItemDetail, 'modifiers'>): Modifier[] {
 const isCorruptedMod = (item: ItemDetail, mod: Modifier) =>
   mod.corrupted === true || itemCorruptions(item).includes(mod.name);
 
-/** A mod line; on the market page it opens the filter/sort menu (ModMenu). */
-function ModLine({ item, mod }: { item: ItemDetail; mod: Modifier }) {
-  return (
-    <ModMenu mod={mod}
-      item={item}
-      className="rounded-sm">
-      <StatLine
-        range={mod.min != null && mod.max != null ? [mod.min, mod.max] : undefined}
-        corrupted={isCorruptedMod(item, mod)}
-      >
-        {mod.label}
-      </StatLine>
-    </ModMenu>
-  );
+/** The tooltip's mod lines: `displayMods` minus lines the DS tooltip drops (a bare "Corrupted" label). */
+const tooltipMods = (item: ItemDetail) => displayMods(item).filter((m) => !/^corrupted$/i.test(m.label));
+
+/** A listed item in the DS tooltip's shape (mods in `displayMods` order, sockets as their fills). */
+export function toTooltipItem(item: ItemDetail): TooltipItem {
+  const req = item.requirements;
+  return {
+    name: item.name,
+    base: item.base?.name,
+    quality: item.quality?.name ?? null,
+    runeword: item.is_runeword,
+    unidentified: !item.is_identified,
+    defense:
+      item.defense?.total != null && item.defense.total > 0
+        ? { value: item.defense.total, enhanced: item.defense.total > item.defense.base }
+        : null,
+    durability: item.durability ? [item.durability.current, item.durability.maximum] : null,
+    requirements: { level: req?.level, strength: req?.strength, dexterity: req?.dexterity },
+    itemLevel: item.item_level,
+    mods: tooltipMods(item).map((mod) => ({
+      text: mod.label,
+      range: mod.min != null && mod.max != null ? [mod.min, mod.max] : null,
+      corrupted: isCorruptedMod(item, mod),
+    })),
+    sockets: item.socket_count,
+    socketed: (item.socketed ?? []).map((s) => ({ name: s.name, quality: s.quality?.name })),
+    ethereal: item.is_ethereal,
+    corrupted: item.corrupted,
+  };
 }
 
 /**
- * In-game style item tooltip: name, base, defense, requirements, every mod with its roll range, sockets.
+ * In-game style item tooltip (DS `ItemTooltip`) for a listed item: every mod line opens the filter/sort menu
+ * (ModMenu); the footer adds Desecrated and each socketed item with its own mods.
  * `compact` (result cards, whose header already names the item): no name/base, tighter and smaller.
  */
 export function ItemTooltip({
@@ -45,90 +61,47 @@ export function ItemTooltip({
   className?: string;
   compact?: boolean;
 }) {
-  const mods = displayMods(item);
-  const req = item.requirements;
+  const mods = tooltipMods(item);
   const socketed = item.socketed ?? [];
-  const showBase = item.base?.name && item.base.name !== item.name;
+  const footer =
+    item.desecrated || socketed.length > 0 ? (
+      <>
+        {item.desecrated && <div className="text-xs font-semibold text-q-corrupted">Desecrated</div>}
+        {socketed.length > 0 && (
+          <div className="space-y-1.5 text-left">
+            {socketed.map((s, i) => (
+              <div key={`${s.name}-${i}`}>
+                <div className={cn('font-medium', itemNameColor(s))}>{s.name}</div>
+                {displayMods(s).map((mod, j) => (
+                  <ModMenu
+                    key={`${mod.name}-${j}`}
+                    mod={mod}
+                    item={item}
+                    socketLine
+                    className="rounded-sm pl-2 text-2xs text-muted-foreground"
+                  >
+                    {mod.label}
+                  </ModMenu>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+      </>
+    ) : undefined;
   return (
-    <div
-      className={cn(
-        'rounded-md border border-border/70 bg-background/90 text-center shadow-inner',
-        compact ? 'px-2 py-1.5 text-2xs leading-snug' : 'px-3 py-2.5 text-xs leading-normal',
-        className,
+    <D2ItemTooltip
+      item={toTooltipItem(item)}
+      compact={compact}
+      footer={footer}
+      renderMod={(line, _mod, i) => (
+        <ModMenu mod={mods[i]}
+          item={item}
+          className="rounded-sm">
+          {line}
+        </ModMenu>
       )}
-    >
-      {!compact && (
-        <>
-          <div className={cn('text-sm font-semibold', itemNameColor(item))}
-            style={{ fontFamily: 'DiabloFont' }}>
-            {item.name}
-          </div>
-          {showBase && <div className={cn(itemNameColor(item), 'opacity-90')}>{item.base.name}</div>}
-        </>
-      )}
-      {!item.is_identified && <div className="text-destructive">Unidentified</div>}
-
-      <div className={cn('text-foreground/90', !compact && 'mt-1')}>
-        {item.defense?.total != null && item.defense.total > 0 && (
-          <div>
-            Defense:{' '}
-            <span className={cn(item.defense.total > item.defense.base ? 'text-q-magic' : 'text-foreground')}>
-              {item.defense.total}
-            </span>
-          </div>
-        )}
-        {item.durability && item.durability.maximum > 0 && (
-          <div>{`Durability: ${item.durability.current} of ${item.durability.maximum}`}</div>
-        )}
-        {req?.dexterity > 0 && <div>{`Required Dexterity: ${req.dexterity}`}</div>}
-        {req?.strength > 0 && <div>{`Required Strength: ${req.strength}`}</div>}
-        {req?.level > 0 && <div>{`Required Level: ${req.level}`}</div>}
-        {item.item_level > 0 && <div className="text-muted-foreground">{`Item Level: ${item.item_level}`}</div>}
-      </div>
-
-      {mods.length > 0 && (
-        <div className="mt-1.5">
-          {mods.map((mod, i) => (
-            <ModLine key={`${mod.name}-${i}`}
-              item={item}
-              mod={mod} />
-          ))}
-        </div>
-      )}
-
-      {(item.is_ethereal || item.socket_count > 0) && (
-        <div className="mt-1 text-q-magic">
-          {[
-            item.is_ethereal && 'Ethereal (Cannot be Repaired)',
-            item.socket_count > 0 && `Socketed (${item.socket_count})`,
-          ]
-            .filter(Boolean)
-            .join(', ')}
-        </div>
-      )}
-      {item.corrupted && <div className="mt-0.5 font-semibold text-q-corrupted">Corrupted</div>}
-      {item.desecrated && <div className="mt-0.5 font-semibold text-q-corrupted">Desecrated</div>}
-
-      {socketed.length > 0 && (
-        <div className="mt-2 space-y-1.5 border-t border-border/60 pt-2 text-left">
-          {socketed.map((s, i) => (
-            <div key={`${s.name}-${i}`}>
-              <div className={cn('font-medium', itemNameColor(s))}>{s.name}</div>
-              {displayMods(s).map((mod, j) => (
-                <ModMenu
-                  key={`${mod.name}-${j}`}
-                  mod={mod}
-                  item={item}
-                  socketLine
-                  className="rounded-sm pl-2 text-2xs text-muted-foreground"
-                >
-                  {mod.label}
-                </ModMenu>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+      className={className}
+    />
   );
 }

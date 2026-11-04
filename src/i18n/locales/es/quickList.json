@@ -62,8 +62,6 @@
   },
   "itemStats": {
     "ethereal": "Ethereal",
-    "corrupted": "Corrupted",
-    "runeword": "Runeword",
     "sockets_one": "<num>{{count}}</num>engarce",
     "sockets_many": "<num>{{count}}</num>de engarces",
     "sockets_other": "<num>{{count}}</num>engarces",
@@ -225,9 +223,7 @@
       "less": "Ver menos estadísticas"
     },
     "flags": {
-      "corrupted": "Corrupto",
-      "ethereal": "Eté",
-      "sockets": "{{count}} ranuras"
+      "ethereal": "Eté"
     }
   },
   "palette": {

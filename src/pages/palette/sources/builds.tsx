@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronRight, ExternalLink, Star, StarOff, User, UserRound } from 'lucide-react';
+import { ClassIcon } from '@pd2-trader/ui';
 import { characterSkillMap } from '@/assets/character-skills';
 import {
   type AccountCharacter,
@@ -14,9 +15,9 @@ import { openUrl } from '@/lib/browser-opener';
 import { type BuildCharacterRef, type ISettings, useOptions } from '@/hooks/useOptions';
 import type { TFunction } from 'i18next';
 import { currentLocale, useTranslation } from '@/i18n';
-import { CLASS_META, characterSiteUrl, classMeta, skillFilter } from '@/pages/builds/lib/format';
+import { CLASS_META, characterSiteUrl, classMeta, classPortraitUrl, skillFilter } from '@/pages/builds/lib/format';
 import { isFollowed, toggleFollow } from '@/pages/builds/lib/character-refs';
-import { ClassEmblem, SkillIcon } from '@/pages/builds/components/parts';
+import { SkillIcon } from '@/pages/builds/components/parts';
 import {
   PALETTE_DEBOUNCE_MS,
   PALETTE_REMOTE_MIN_CHARS,
@@ -321,8 +322,13 @@ function characterItem(c: CharacterRow, { t, followed, updateSettings }: RowDeps
       data: { name: c.name, mode: c.mode, level: c.level ?? null, className: c.className ?? null },
     },
     subtitle: t('palette.character'),
-    icon: c.className ? <ClassEmblem className={c.className}
-      size={ICON_SIZE} /> : <User className="size-4" />,
+    icon: c.className ? (
+      <ClassIcon cls={c.className}
+        src={classPortraitUrl(c.className)}
+        size={ICON_SIZE} />
+    ) : (
+      <User className="size-4" />
+    ),
     trailing: hasTrailing ? (
       <CharacterTrailing t={t}
         level={c.level}
@@ -392,7 +398,8 @@ function localItem(entry: LocalEntry, t: TFunction, badge?: string): PaletteItem
     subtitle: isClass ? t('palette.class') : t('palette.skillOf', { className: entry.className }),
     badge,
     icon: isClass ? (
-      <ClassEmblem className={entry.value}
+      <ClassIcon cls={entry.value}
+        src={classPortraitUrl(entry.value)}
         size={ICON_SIZE} />
     ) : (
       <SkillIcon name={entry.value}

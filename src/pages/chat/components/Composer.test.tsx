@@ -610,14 +610,15 @@ describe('Composer listing picker', () => {
     expect(getMarketListings).toHaveBeenCalledWith(
       expect.objectContaining({ user_id: 'me', is_hardcore: true, is_ladder: true, $limit: 50, $skip: 0 }),
     );
+    // Text of each row; the art (aria-hidden) reads as quality-coloured initials when an item has none
     const items = () =>
       within(picker)
         .queryAllByRole('button')
         .map((b) => b.textContent);
-    expect(items()).toEqual(['Harlequin CrestShako2.50 HR', "Tal Rasha's Guardianshipoffers"]);
+    expect(items()).toEqual(['Harlequin CrestShako2.50 HR', "TRTal Rasha's Guardianshipoffers"]);
 
     fireEvent.change(within(picker).getByPlaceholderText('Search my listings...'), { target: { value: 'tal' } });
-    expect(items()).toEqual(["Tal Rasha's Guardianshipoffers"]);
+    expect(items()).toEqual(["TRTal Rasha's Guardianshipoffers"]);
   });
 
   const URL = 'https://www.projectdiablo2.com/market/listing/aa11?display="Harlequin Crest"';

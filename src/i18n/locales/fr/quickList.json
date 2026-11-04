@@ -62,8 +62,6 @@
   },
   "itemStats": {
     "ethereal": "Ethereal",
-    "corrupted": "Corrupted",
-    "runeword": "Runeword",
     "sockets_one": "<num>{{count}}</num>socket",
     "sockets_many": "<num>{{count}}</num>de sockets",
     "sockets_other": "<num>{{count}}</num>sockets",
@@ -225,9 +223,7 @@
       "less": "Afficher moins de stats"
     },
     "flags": {
-      "corrupted": "Corrompu",
-      "ethereal": "Éth",
-      "sockets": "{{count}} ch."
+      "ethereal": "Éth"
     }
   },
   "palette": {
