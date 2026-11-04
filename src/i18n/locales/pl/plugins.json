@@ -85,8 +85,8 @@
       "trading": "Handel",
       "chat": "Czat",
       "stash": "Skrytka",
-      "ui": "Interfejs",
-      "theme": "Motywy",
+      "builds": "Buildy",
+      "ui": "Interfejs i motywy",
       "utility": "Narzędzia"
     },
     "by": "autor: {{author}}",
@@ -121,7 +121,15 @@
       "latest": "Najnowsza",
       "current": "Zainstalowana",
       "noVersions": "Brak opublikowanych wersji",
-      "loadFailed": "Nie udało się wczytać tej wtyczki"
+      "loadFailed": "Nie udało się wczytać tej wtyczki",
+      "tabs": {
+        "overview": "Przegląd",
+        "reviews": "Recenzje",
+        "versions": "Wersje"
+      },
+      "about": "Opis",
+      "noChangelog": "Brak listy zmian dla tej wersji",
+      "source": "Kod źródłowy"
     },
     "manage": {
       "status": {
@@ -147,6 +155,160 @@
       "uninstallConfirm": "Odinstaluj",
       "reviewUpdate": "Przejrzyj aktualizację do v{{version}}",
       "updateFailed": "Nie udało się zastosować aktualizacji"
+    },
+    "verifiedHint": "Marketplace zweryfikował tego twórcę",
+    "incompatible": "Wymaga nowszego PD2 Trader (SDK wtyczek {{sdk}})",
+    "sortLabel": "Sortuj wtyczki",
+    "sort": {
+      "relevance": "Najtrafniejsze",
+      "popular": "Najczęściej instalowane",
+      "trending": "Popularne w tym tygodniu",
+      "rating": "Najwyżej oceniane",
+      "new": "Najnowsze",
+      "updated": "Ostatnio zaktualizowane",
+      "name": "Nazwa"
+    },
+    "clearTag": "Usuń filtr tagu {{tag}}",
+    "rating": {
+      "label": "Ocena {{value}} na 5",
+      "none": "Brak ocen",
+      "count_few": "{{count}} oceny",
+      "count_many": "{{count}} ocen",
+      "count_one": "{{count}} ocena",
+      "count_other": "{{count}} oceny"
+    },
+    "discover": {
+      "trending": "Popularne w tym tygodniu",
+      "new": "Nowe",
+      "updated": "Ostatnio zaktualizowane",
+      "seeAll": "Zobacz wszystkie",
+      "showAll": "Pokaż wszystkie ({{total}})",
+      "showLess": "Pokaż mniej",
+      "back": "Wróć do odkrywania"
+    },
+    "gallery": {
+      "label": "Zrzuty ekranu {{name}}",
+      "slide": "Zrzut {{index}} z {{total}}",
+      "alt": "{{name}}, zrzut {{index}}",
+      "previous": "Poprzedni zrzut",
+      "next": "Następny zrzut",
+      "goTo": "Pokaż zrzut {{index}}"
+    },
+    "changes": {
+      "label": "Zmiany dostępu",
+      "added": "Nowe: {{name}}",
+      "removed": "Usunięte: {{name}}"
+    },
+    "report": {
+      "plugin": "Zgłoś",
+      "review": "Zgłoś recenzję",
+      "pluginTitle": "Zgłoś {{name}}",
+      "reviewTitle": "Zgłoś recenzję użytkownika {{author}}",
+      "intro": "Moderatorzy sprawdzają każde zgłoszenie. Wybierz najlepiej pasujący powód.",
+      "reason": "Powód",
+      "details": "Szczegóły (opcjonalnie)",
+      "detailsPlaceholder": "Co się stało? Kroki lub linki pomagają moderatorom.",
+      "submit": "Wyślij zgłoszenie",
+      "sending": "Wysyłanie…",
+      "sent": "Zgłoszenie wysłane",
+      "sentHint": "Dzięki. Moderator to sprawdzi.",
+      "already": "To już zostało przez Ciebie zgłoszone",
+      "failed": "Nie udało się wysłać zgłoszenia",
+      "signIn": "Zaloguj się do PD2 w Ustawienia → Konto, aby zgłosić",
+      "reasons": {
+        "malware": {
+          "label": "Malware lub szkodliwy kod",
+          "hint": "Kradnie dane lub szkodzi grze albo komputerowi."
+        },
+        "privacy": {
+          "label": "Problem z prywatnością",
+          "hint": "Zbiera lub wysyła dane, których nie powinien."
+        },
+        "broken": {
+          "label": "Nie działa",
+          "hint": "Zawiesza się, pokazuje błędy lub nic nie robi."
+        },
+        "misleading": {
+          "label": "Wprowadza w błąd",
+          "hint": "Nie robi tego, co obiecuje opis."
+        },
+        "spam": {
+          "label": "Spam",
+          "hint": "Reklamy, duplikaty lub śmieci."
+        },
+        "offensive": {
+          "label": "Obraźliwe",
+          "hint": "Treści nienawistne, obraźliwe lub dla dorosłych."
+        },
+        "tos": {
+          "label": "Łamie zasady PD2",
+          "hint": "Automatyzacja, boty lub inne naruszenia zasad."
+        },
+        "other": {
+          "label": "Inne",
+          "hint": "Coś innego: opisz w szczegółach."
+        }
+      }
+    },
+    "reviews": {
+      "all": "Recenzje",
+      "sortLabel": "Sortuj recenzje",
+      "sort": {
+        "recent": "Najnowsze",
+        "highest": "Najwyżej oceniane",
+        "lowest": "Najniżej oceniane"
+      },
+      "empty": "Brak recenzji",
+      "emptyHint": "Masz ją zainstalowaną? Napisz pierwszą recenzję.",
+      "loadFailed": "Nie udało się wczytać recenzji",
+      "mineFailed": "Nie udało się wczytać Twojej recenzji",
+      "signIn": "Zaloguj się do PD2 w Ustawienia → Konto, aby ocenić tę wtyczkę.",
+      "installFirst": "Zainstaluj tę wtyczkę, aby ją ocenić.",
+      "unlisted": "Masz v{{version}}, której już nie ma w katalogu. Zaktualizuj, aby ocenić.",
+      "writeTitle": "Napisz recenzję",
+      "editTitle": "Twoja recenzja",
+      "forVersion": "Dla v{{version}}",
+      "olderVersion": "Oceniono v{{version}}. Zapisanie przeniesie recenzję na v{{installed}}.",
+      "ratingLabel": "Twoja ocena",
+      "stars_few": "{{count}} gwiazdki",
+      "stars_many": "{{count}} gwiazdek",
+      "stars_one": "{{count}} gwiazdka",
+      "stars_other": "{{count}} gwiazdki",
+      "ratingRequired": "Wybierz ocenę od 1 do 5 gwiazdek.",
+      "bodyLabel": "Recenzja",
+      "bodyPlaceholder": "Co działa dobrze, co mogłoby być lepsze? (opcjonalnie)",
+      "length": "{{length}} / {{max}}",
+      "tooLong": "Maksymalnie {{max}} znaków.",
+      "post": "Opublikuj recenzję",
+      "update": "Zaktualizuj recenzję",
+      "delete": "Usuń",
+      "deleteTitle": "Usunąć Twoją recenzję?",
+      "deleteFailed": "Nie udało się usunąć Twojej recenzji",
+      "saved": "Recenzja zapisana",
+      "saveFailed": "Nie udało się zapisać Twojej recenzji",
+      "histogram": "Rozkład ocen",
+      "histogramRow": "{{stars}} gwiazdki: {{total}}",
+      "meta": "v{{version}} · {{date}}",
+      "reply": "Odpowiedź twórcy · {{date}}"
+    },
+    "update": {
+      "badge": "Dostępna aktualizacja",
+      "view": "Zaktualizuj do v{{version}}",
+      "count_few": "{{count}} aktualizacje dostępne",
+      "count_many": "{{count}} aktualizacji dostępnych",
+      "count_one": "{{count}} aktualizacja dostępna",
+      "count_other": "{{count}} aktualizacji dostępnych",
+      "title": "Aktualizuj {{name}}",
+      "reconsent": "Ta aktualizacja prosi o większy dostęp. Zezwalasz na niego przed instalacją.",
+      "noNewAccess": "Ta aktualizacja nie prosi o nowy dostęp.",
+      "access": "Zmiany dostępu",
+      "sameAccess": "Taki sam dostęp jak zainstalowana wersja.",
+      "whatsNew": "Co nowego",
+      "now": "Zaktualizuj do v{{version}}",
+      "reviewAndUpdate": "Sprawdź dostęp i zaktualizuj",
+      "updating": "Aktualizowanie…",
+      "doneToast": "Zaktualizowano {{name}}",
+      "failed": "Nie udało się zaktualizować {{name}}"
     }
   },
   "settings": {

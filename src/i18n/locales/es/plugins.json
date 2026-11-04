@@ -85,8 +85,8 @@
       "trading": "Comercio",
       "chat": "Chat",
       "stash": "Alijo",
-      "ui": "Interfaz",
-      "theme": "Temas",
+      "builds": "Builds",
+      "ui": "Interfaz y temas",
       "utility": "Utilidades"
     },
     "by": "por {{author}}",
@@ -120,7 +120,15 @@
       "latest": "Más reciente",
       "current": "Instalada",
       "noVersions": "No hay versiones publicadas",
-      "loadFailed": "No se pudo cargar este plugin"
+      "loadFailed": "No se pudo cargar este plugin",
+      "tabs": {
+        "overview": "Resumen",
+        "reviews": "Reseñas",
+        "versions": "Versiones"
+      },
+      "about": "Acerca de",
+      "noChangelog": "Sin registro de cambios para esta versión",
+      "source": "Código fuente"
     },
     "manage": {
       "status": {
@@ -146,6 +154,157 @@
       "uninstallConfirm": "Desinstalar",
       "reviewUpdate": "Revisar la actualización a v{{version}}",
       "updateFailed": "No se pudo aplicar la actualización"
+    },
+    "verifiedHint": "El marketplace verificó a este desarrollador",
+    "incompatible": "Necesita un PD2 Trader más reciente (SDK de plugins {{sdk}})",
+    "sortLabel": "Ordenar plugins",
+    "sort": {
+      "relevance": "Más relevantes",
+      "popular": "Más instalados",
+      "trending": "Populares esta semana",
+      "rating": "Mejor valorados",
+      "new": "Más nuevos",
+      "updated": "Actualizados recientemente",
+      "name": "Nombre"
+    },
+    "clearTag": "Quitar el filtro de etiqueta {{tag}}",
+    "rating": {
+      "label": "Valorado con {{value}} de 5",
+      "none": "Sin valoraciones",
+      "count_many": "{{count}} valoraciones",
+      "count_one": "{{count}} valoración",
+      "count_other": "{{count}} valoraciones"
+    },
+    "discover": {
+      "trending": "Populares esta semana",
+      "new": "Nuevos",
+      "updated": "Actualizados recientemente",
+      "seeAll": "Ver todos",
+      "showAll": "Mostrar los {{total}}",
+      "showLess": "Mostrar menos",
+      "back": "Volver a descubrir"
+    },
+    "gallery": {
+      "label": "Capturas de {{name}}",
+      "slide": "Captura {{index}} de {{total}}",
+      "alt": "Captura {{index}} de {{name}}",
+      "previous": "Captura anterior",
+      "next": "Captura siguiente",
+      "goTo": "Mostrar la captura {{index}}"
+    },
+    "changes": {
+      "label": "Cambios de acceso",
+      "added": "Nuevo: {{name}}",
+      "removed": "Eliminado: {{name}}"
+    },
+    "report": {
+      "plugin": "Denunciar",
+      "review": "Denunciar reseña",
+      "pluginTitle": "Denunciar {{name}}",
+      "reviewTitle": "Denunciar la reseña de {{author}}",
+      "intro": "Los moderadores revisan cada denuncia. Elige el motivo que mejor encaje.",
+      "reason": "Motivo",
+      "details": "Detalles (opcional)",
+      "detailsPlaceholder": "¿Qué pasó? Pasos o enlaces ayudan a los moderadores.",
+      "submit": "Enviar denuncia",
+      "sending": "Enviando…",
+      "sent": "Denuncia enviada",
+      "sentHint": "Gracias. Un moderador lo revisará.",
+      "already": "Ya denunciaste esto",
+      "failed": "No se pudo enviar la denuncia",
+      "signIn": "Inicia sesión en PD2 en Ajustes → Cuenta para denunciar",
+      "reasons": {
+        "malware": {
+          "label": "Malware o código dañino",
+          "hint": "Roba datos o daña tu juego o tu equipo."
+        },
+        "privacy": {
+          "label": "Problema de privacidad",
+          "hint": "Recoge o envía datos que no debería."
+        },
+        "broken": {
+          "label": "No funciona",
+          "hint": "Se cierra, muestra errores o no hace nada."
+        },
+        "misleading": {
+          "label": "Engañoso",
+          "hint": "No hace lo que dice la ficha."
+        },
+        "spam": {
+          "label": "Spam",
+          "hint": "Anuncios, duplicados o basura."
+        },
+        "offensive": {
+          "label": "Ofensivo",
+          "hint": "Contenido de odio, abusivo o para adultos."
+        },
+        "tos": {
+          "label": "Infringe las reglas de PD2",
+          "hint": "Automatización, bots u otras infracciones."
+        },
+        "other": {
+          "label": "Otro",
+          "hint": "Otra cosa: explícalo en los detalles."
+        }
+      }
+    },
+    "reviews": {
+      "all": "Reseñas",
+      "sortLabel": "Ordenar reseñas",
+      "sort": {
+        "recent": "Más recientes",
+        "highest": "Mejor valoradas",
+        "lowest": "Peor valoradas"
+      },
+      "empty": "Aún no hay reseñas",
+      "emptyHint": "¿Lo instalaste? Sé el primero en reseñarlo.",
+      "loadFailed": "No se pudieron cargar las reseñas",
+      "mineFailed": "No se pudo cargar tu reseña",
+      "signIn": "Inicia sesión en PD2 en Ajustes → Cuenta para reseñar este plugin.",
+      "installFirst": "Instala este plugin para reseñarlo.",
+      "unlisted": "Tienes la v{{version}}, que ya no está publicada. Actualiza para reseñar.",
+      "writeTitle": "Escribir una reseña",
+      "editTitle": "Tu reseña",
+      "forVersion": "Para la v{{version}}",
+      "olderVersion": "Reseñaste la v{{version}}. Al guardar, tu reseña pasa a la v{{installed}}.",
+      "ratingLabel": "Tu valoración",
+      "stars_many": "{{count}} estrellas",
+      "stars_one": "{{count}} estrella",
+      "stars_other": "{{count}} estrellas",
+      "ratingRequired": "Elige una valoración de 1 a 5 estrellas.",
+      "bodyLabel": "Reseña",
+      "bodyPlaceholder": "¿Qué funciona bien y qué podría mejorar? (opcional)",
+      "length": "{{length}} / {{max}}",
+      "tooLong": "Como máximo {{max}} caracteres.",
+      "post": "Publicar reseña",
+      "update": "Actualizar reseña",
+      "delete": "Eliminar",
+      "deleteTitle": "¿Eliminar tu reseña?",
+      "deleteFailed": "No se pudo eliminar tu reseña",
+      "saved": "Reseña guardada",
+      "saveFailed": "No se pudo guardar tu reseña",
+      "histogram": "Desglose de valoraciones",
+      "histogramRow": "{{stars}} estrellas: {{total}}",
+      "meta": "v{{version}} · {{date}}",
+      "reply": "Respuesta del desarrollador · {{date}}"
+    },
+    "update": {
+      "badge": "Actualización disponible",
+      "view": "Actualizar a v{{version}}",
+      "count_many": "{{count}} actualizaciones disponibles",
+      "count_one": "{{count}} actualización disponible",
+      "count_other": "{{count}} actualizaciones disponibles",
+      "title": "Actualizar {{name}}",
+      "reconsent": "Esta actualización pide más acceso. Lo permites antes de que se instale.",
+      "noNewAccess": "Esta actualización no pide acceso nuevo.",
+      "access": "Cambios de acceso",
+      "sameAccess": "El mismo acceso que la versión instalada.",
+      "whatsNew": "Novedades",
+      "now": "Actualizar a v{{version}}",
+      "reviewAndUpdate": "Revisar acceso y actualizar",
+      "updating": "Actualizando…",
+      "doneToast": "{{name}} actualizado",
+      "failed": "No se pudo actualizar {{name}}"
     }
   },
   "settings": {

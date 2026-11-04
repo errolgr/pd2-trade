@@ -1,8 +1,8 @@
-import { compareVersions } from '@pd2-trader/plugin-sdk';
 import { parseBundle, type PluginManager } from '../host/manager';
 import type { PluginBundle } from '../host/types';
 import { canonicalJson, verifyBundle, verifyEd25519 } from '../trust/verify';
 import type { BlocklistEntry, MarketplaceApi, Release, SignedBlocklist } from './api';
+import { hasUpdate } from './updates';
 
 /**
  * Marketplace install, auto-update and the remote kill switch (PRD §7.1, §7.3). Nothing is loaded unless its
@@ -84,6 +84,7 @@ export class MarketplaceClient {
   async install(id: string, version?: string): Promise<boolean> {
     const { api, manager, publicKey } = this.opts;
     const target = version ?? (await api.get(id)).latestVersion;
+    if (!target) throw new BundleVerificationError('This plugin has no published version');
     const blocked = isBlocked(this.entries, id, target);
     if (blocked) throw new BundleVerificationError(`This version is blocked: ${blocked.reason}`);
     const release = await api.release(id, target);
@@ -95,6 +96,32 @@ export class MarketplaceClient {
     });
     if (ok) void api.reportInstall(id, target);
     return ok;
+  }
+
+  /**
+   * User-started update to the latest version (the Plugins panel's update sheet). An update that asks for new
+   * permissions or hosts goes through the consent sheet first (held until re-consent, PRD §7.3); a held update
+   * already downloaded for that version is reused. Resolves false when there is nothing to do or the user cancels.
+   */
+  async update(id: string): Promise<boolean> {
+    const { api, manager, publicKey } = this.opts;
+    const installed = manager.getSnapshot().plugins.find((p) => p.installed.id === id)?.installed;
+    if (!installed || installed.source.kind !== 'marketplace') return false;
+    const latest = (await api.get(id)).latestVersion;
+    if (!hasUpdate(installed.version, latest)) return false;
+    const blocked = isBlocked(this.entries, id, latest);
+    if (blocked) throw new BundleVerificationError(`This version is blocked: ${blocked.reason}`);
+    if (installed.pendingUpdate?.version !== latest) {
+      const release = await api.release(id, latest);
+      const bundle = await fetchVerifiedBundle(api, id, release, latest, publicKey);
+      const result = await manager.applyUpdate(bundle, {
+        kind: 'marketplace',
+        sha256: release.sha256,
+        signature: release.signature,
+      });
+      if (result === 'updated') return true;
+    }
+    return manager.approveUpdate(id);
   }
 
   /**
@@ -132,7 +159,7 @@ export class MarketplaceClient {
       try {
         const detail = await api.get(installed.id);
         const latest = detail.latestVersion;
-        if (compareVersions(latest, installed.version) <= 0 || installed.pendingUpdate?.version === latest) continue;
+        if (!hasUpdate(installed.version, latest) || installed.pendingUpdate?.version === latest) continue;
         if (isBlocked(this.entries, installed.id, latest)) continue;
         const release = await api.release(installed.id, latest);
         const bundle = await fetchVerifiedBundle(api, installed.id, release, latest, publicKey);

@@ -85,8 +85,8 @@
       "trading": "Échanges",
       "chat": "Chat",
       "stash": "Coffre",
-      "ui": "Interface",
-      "theme": "Thèmes",
+      "builds": "Builds",
+      "ui": "Interface et thèmes",
       "utility": "Utilitaires"
     },
     "by": "par {{author}}",
@@ -120,7 +120,15 @@
       "latest": "Dernière",
       "current": "Installée",
       "noVersions": "Aucune version publiée",
-      "loadFailed": "Impossible de charger ce plugin"
+      "loadFailed": "Impossible de charger ce plugin",
+      "tabs": {
+        "overview": "Aperçu",
+        "reviews": "Avis",
+        "versions": "Versions"
+      },
+      "about": "À propos",
+      "noChangelog": "Pas de journal des modifications pour cette version",
+      "source": "Code source"
     },
     "manage": {
       "status": {
@@ -146,6 +154,157 @@
       "uninstallConfirm": "Désinstaller",
       "reviewUpdate": "Examiner la mise à jour vers v{{version}}",
       "updateFailed": "Impossible d'appliquer la mise à jour"
+    },
+    "verifiedHint": "La marketplace a vérifié ce développeur",
+    "incompatible": "Nécessite un PD2 Trader plus récent (SDK de plugins {{sdk}})",
+    "sortLabel": "Trier les plugins",
+    "sort": {
+      "relevance": "Pertinence",
+      "popular": "Les plus installés",
+      "trending": "Populaires cette semaine",
+      "rating": "Les mieux notés",
+      "new": "Les plus récents",
+      "updated": "Mis à jour récemment",
+      "name": "Nom"
+    },
+    "clearTag": "Retirer le filtre de tag {{tag}}",
+    "rating": {
+      "label": "Noté {{value}} sur 5",
+      "none": "Pas encore de note",
+      "count_many": "{{count}} notes",
+      "count_one": "{{count}} note",
+      "count_other": "{{count}} notes"
+    },
+    "discover": {
+      "trending": "Populaires cette semaine",
+      "new": "Nouveautés",
+      "updated": "Mis à jour récemment",
+      "seeAll": "Tout voir",
+      "showAll": "Afficher les {{total}}",
+      "showLess": "Afficher moins",
+      "back": "Retour à la découverte"
+    },
+    "gallery": {
+      "label": "Captures d'écran de {{name}}",
+      "slide": "Capture {{index}} sur {{total}}",
+      "alt": "Capture {{index}} de {{name}}",
+      "previous": "Capture précédente",
+      "next": "Capture suivante",
+      "goTo": "Afficher la capture {{index}}"
+    },
+    "changes": {
+      "label": "Changements d'accès",
+      "added": "Nouveau : {{name}}",
+      "removed": "Retiré : {{name}}"
+    },
+    "report": {
+      "plugin": "Signaler",
+      "review": "Signaler l'avis",
+      "pluginTitle": "Signaler {{name}}",
+      "reviewTitle": "Signaler l'avis de {{author}}",
+      "intro": "Les modérateurs examinent chaque signalement. Choisis le motif le plus adapté.",
+      "reason": "Motif",
+      "details": "Détails (facultatif)",
+      "detailsPlaceholder": "Que s'est-il passé ? Des étapes ou des liens aident les modérateurs.",
+      "submit": "Envoyer le signalement",
+      "sending": "Envoi…",
+      "sent": "Signalement envoyé",
+      "sentHint": "Merci. Un modérateur va regarder.",
+      "already": "Tu as déjà signalé ceci",
+      "failed": "Impossible d'envoyer le signalement",
+      "signIn": "Connecte-toi à PD2 dans Paramètres → Compte pour signaler",
+      "reasons": {
+        "malware": {
+          "label": "Malware ou code nuisible",
+          "hint": "Vole des données ou nuit à ton jeu ou ton ordinateur."
+        },
+        "privacy": {
+          "label": "Problème de confidentialité",
+          "hint": "Collecte ou envoie des données qu'il ne devrait pas."
+        },
+        "broken": {
+          "label": "Ne fonctionne pas",
+          "hint": "Plante, affiche des erreurs ou ne fait rien."
+        },
+        "misleading": {
+          "label": "Trompeur",
+          "hint": "Ne fait pas ce que la fiche annonce."
+        },
+        "spam": {
+          "label": "Spam",
+          "hint": "Publicités, doublons ou contenu inutile."
+        },
+        "offensive": {
+          "label": "Offensant",
+          "hint": "Contenu haineux, injurieux ou pour adultes."
+        },
+        "tos": {
+          "label": "Enfreint les règles de PD2",
+          "hint": "Automatisation, bots ou autres infractions."
+        },
+        "other": {
+          "label": "Autre",
+          "hint": "Autre chose : explique-le dans les détails."
+        }
+      }
+    },
+    "reviews": {
+      "all": "Avis",
+      "sortLabel": "Trier les avis",
+      "sort": {
+        "recent": "Les plus récents",
+        "highest": "Les mieux notés",
+        "lowest": "Les moins bien notés"
+      },
+      "empty": "Pas encore d'avis",
+      "emptyHint": "Tu l’as installé ? Sois le premier à donner ton avis.",
+      "loadFailed": "Impossible de charger les avis",
+      "mineFailed": "Impossible de charger ton avis",
+      "signIn": "Connecte-toi à PD2 dans Paramètres → Compte pour donner ton avis sur ce plugin.",
+      "installFirst": "Installe ce plugin pour donner ton avis.",
+      "unlisted": "Tu as la v{{version}}, qui n'est plus publiée. Mets à jour pour donner ton avis.",
+      "writeTitle": "Écrire un avis",
+      "editTitle": "Ton avis",
+      "forVersion": "Pour la v{{version}}",
+      "olderVersion": "Tu as noté la v{{version}}. En enregistrant, ton avis passe à la v{{installed}}.",
+      "ratingLabel": "Ta note",
+      "stars_many": "{{count}} étoiles",
+      "stars_one": "{{count}} étoile",
+      "stars_other": "{{count}} étoiles",
+      "ratingRequired": "Choisis une note de 1 à 5 étoiles.",
+      "bodyLabel": "Avis",
+      "bodyPlaceholder": "Ce qui marche bien, ce qui pourrait être mieux ? (facultatif)",
+      "length": "{{length}} / {{max}}",
+      "tooLong": "{{max}} caractères maximum.",
+      "post": "Publier l'avis",
+      "update": "Mettre à jour l'avis",
+      "delete": "Supprimer",
+      "deleteTitle": "Supprimer ton avis ?",
+      "deleteFailed": "Impossible de supprimer ton avis",
+      "saved": "Avis enregistré",
+      "saveFailed": "Impossible d'enregistrer ton avis",
+      "histogram": "Répartition des notes",
+      "histogramRow": "{{stars}} étoiles : {{total}}",
+      "meta": "v{{version}} · {{date}}",
+      "reply": "Réponse du développeur · {{date}}"
+    },
+    "update": {
+      "badge": "Mise à jour disponible",
+      "view": "Mettre à jour vers v{{version}}",
+      "count_many": "{{count}} mises à jour disponibles",
+      "count_one": "{{count}} mise à jour disponible",
+      "count_other": "{{count}} mises à jour disponibles",
+      "title": "Mettre à jour {{name}}",
+      "reconsent": "Cette mise à jour demande plus d'accès. Tu l'autorises avant l'installation.",
+      "noNewAccess": "Cette mise à jour ne demande aucun nouvel accès.",
+      "access": "Changements d'accès",
+      "sameAccess": "Même accès que la version installée.",
+      "whatsNew": "Nouveautés",
+      "now": "Mettre à jour vers v{{version}}",
+      "reviewAndUpdate": "Vérifier l'accès et mettre à jour",
+      "updating": "Mise à jour…",
+      "doneToast": "{{name}} mis à jour",
+      "failed": "Impossible de mettre à jour {{name}}"
     }
   },
   "settings": {

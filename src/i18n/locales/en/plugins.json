@@ -85,9 +85,9 @@
       "trading": "Trading",
       "chat": "Chat",
       "stash": "Stash",
-      "ui": "Interface",
-      "theme": "Themes",
-      "utility": "Utility"
+      "builds": "Builds",
+      "ui": "UI & themes",
+      "utility": "Utilities"
     },
     "by": "by {{author}}",
     "verified": "Verified",
@@ -119,7 +119,15 @@
       "latest": "Latest",
       "current": "Installed",
       "noVersions": "No published versions",
-      "loadFailed": "Could not load this plugin"
+      "loadFailed": "Could not load this plugin",
+      "tabs": {
+        "overview": "Overview",
+        "reviews": "Reviews",
+        "versions": "Versions"
+      },
+      "about": "About",
+      "noChangelog": "No changelog for this version",
+      "source": "Source code"
     },
     "manage": {
       "status": {
@@ -145,6 +153,154 @@
       "uninstallConfirm": "Uninstall",
       "reviewUpdate": "Review update to v{{version}}",
       "updateFailed": "Could not apply the update"
+    },
+    "verifiedHint": "The marketplace verified this developer",
+    "incompatible": "Needs a newer PD2 Trader (plugin SDK {{sdk}})",
+    "sortLabel": "Sort plugins",
+    "sort": {
+      "relevance": "Best match",
+      "popular": "Most installed",
+      "trending": "Popular this week",
+      "rating": "Top rated",
+      "new": "Newest",
+      "updated": "Recently updated",
+      "name": "Name"
+    },
+    "clearTag": "Remove the {{tag}} tag filter",
+    "rating": {
+      "label": "Rated {{value}} out of 5",
+      "none": "No ratings yet",
+      "count_one": "{{count}} rating",
+      "count_other": "{{count}} ratings"
+    },
+    "discover": {
+      "trending": "Popular this week",
+      "new": "New",
+      "updated": "Recently updated",
+      "seeAll": "See all",
+      "showAll": "Show all {{total}}",
+      "showLess": "Show less",
+      "back": "Back to discover"
+    },
+    "gallery": {
+      "label": "{{name}} screenshots",
+      "slide": "Screenshot {{index}} of {{total}}",
+      "alt": "{{name}} screenshot {{index}}",
+      "previous": "Previous screenshot",
+      "next": "Next screenshot",
+      "goTo": "Show screenshot {{index}}"
+    },
+    "changes": {
+      "label": "Access changes",
+      "added": "New: {{name}}",
+      "removed": "Removed: {{name}}"
+    },
+    "report": {
+      "plugin": "Report",
+      "review": "Report review",
+      "pluginTitle": "Report {{name}}",
+      "reviewTitle": "Report the review by {{author}}",
+      "intro": "Moderators check every report. Pick the reason that fits best.",
+      "reason": "Reason",
+      "details": "Details (optional)",
+      "detailsPlaceholder": "What happened? Steps or links help the moderators.",
+      "submit": "Send report",
+      "sending": "Sending…",
+      "sent": "Report sent",
+      "sentHint": "Thanks. A moderator will look at it.",
+      "already": "You already reported this",
+      "failed": "Could not send the report",
+      "signIn": "Sign in to PD2 in Settings → Account to report",
+      "reasons": {
+        "malware": {
+          "label": "Malware or harmful code",
+          "hint": "Steals data or harms your game or computer."
+        },
+        "privacy": {
+          "label": "Privacy problem",
+          "hint": "Collects or sends data it should not."
+        },
+        "broken": {
+          "label": "Does not work",
+          "hint": "Crashes, shows errors or does nothing."
+        },
+        "misleading": {
+          "label": "Misleading",
+          "hint": "Does not do what the listing says."
+        },
+        "spam": {
+          "label": "Spam",
+          "hint": "Ads, duplicates or junk."
+        },
+        "offensive": {
+          "label": "Offensive",
+          "hint": "Hateful, abusive or adult content."
+        },
+        "tos": {
+          "label": "Breaks PD2 rules",
+          "hint": "Automation, botting or other rule breaks."
+        },
+        "other": {
+          "label": "Other",
+          "hint": "Something else: explain in the details."
+        }
+      }
+    },
+    "reviews": {
+      "all": "Reviews",
+      "sortLabel": "Sort reviews",
+      "sort": {
+        "recent": "Newest",
+        "highest": "Highest rated",
+        "lowest": "Lowest rated"
+      },
+      "empty": "No reviews yet",
+      "emptyHint": "Installed it? Be the first to review it.",
+      "loadFailed": "Could not load reviews",
+      "mineFailed": "Could not load your review",
+      "signIn": "Sign in to PD2 in Settings → Account to review this plugin.",
+      "installFirst": "Install this plugin to review it.",
+      "unlisted": "You have v{{version}}, which is no longer listed. Update to review.",
+      "writeTitle": "Write a review",
+      "editTitle": "Your review",
+      "forVersion": "For v{{version}}",
+      "olderVersion": "You reviewed v{{version}}. Saving moves your review to v{{installed}}.",
+      "ratingLabel": "Your rating",
+      "stars_one": "{{count}} star",
+      "stars_other": "{{count}} stars",
+      "ratingRequired": "Pick a rating from 1 to 5 stars.",
+      "bodyLabel": "Review",
+      "bodyPlaceholder": "What works well, what could be better? (optional)",
+      "length": "{{length}} / {{max}}",
+      "tooLong": "At most {{max}} characters.",
+      "post": "Post review",
+      "update": "Update review",
+      "delete": "Delete",
+      "deleteTitle": "Delete your review?",
+      "deleteFailed": "Could not delete your review",
+      "saved": "Review saved",
+      "saveFailed": "Could not save your review",
+      "histogram": "Rating breakdown",
+      "histogramRow": "{{stars}} stars: {{total}}",
+      "meta": "v{{version}} · {{date}}",
+      "reply": "Developer reply · {{date}}"
+    },
+    "update": {
+      "badge": "Update available",
+      "view": "Update to v{{version}}",
+      "count_one": "{{count}} update available",
+      "count_other": "{{count}} updates available",
+      "title": "Update {{name}}",
+      "reconsent": "This update asks for more access. You allow it before it installs.",
+      "noNewAccess": "This update asks for no new access.",
+      "access": "Access changes",
+      "sameAccess": "Same access as the installed version.",
+      "whatsNew": "What's new",
+      "now": "Update to v{{version}}",
+      "reviewAndUpdate": "Review access and update",
+      "updating": "Updating…",
+      "doneToast": "{{name}} updated",
+      "failed": "Could not update {{name}}"
     }
   },
   "settings": {

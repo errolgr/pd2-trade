@@ -10,6 +10,12 @@ describe('listingState', () => {
     expect(listingState(listing, undefined, block(['1.2.0']))).toEqual({ kind: 'blocked', reason: 'malware' });
   });
 
+  it('is unavailable without an approved version, installed when one is already installed', () => {
+    const unpublished = { id: listing.id, latestVersion: null };
+    expect(listingState(unpublished, undefined, [])).toEqual({ kind: 'unavailable' });
+    expect(listingState(unpublished, { version: '1.0.0' }, [])).toEqual({ kind: 'installed' });
+  });
+
   it('shows installed for the latest version and an update for an older one', () => {
     expect(listingState(listing, { version: '1.2.0' }, [])).toEqual({ kind: 'installed' });
     expect(listingState(listing, { version: '1.1.0' }, [])).toEqual({ kind: 'update', version: '1.2.0' });

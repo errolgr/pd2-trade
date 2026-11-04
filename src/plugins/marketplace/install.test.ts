@@ -73,6 +73,14 @@ class FakeApi implements MarketplaceApi {
     return { items: [], nextCursor: null };
   }
 
+  discover = vi.fn();
+  reviews = vi.fn();
+  myReview = vi.fn();
+  saveReview = vi.fn();
+  deleteReview = vi.fn();
+  reportPlugin = vi.fn();
+  reportReview = vi.fn();
+
   async get(id: string): Promise<ListingDetail> {
     const latestVersion = this.latest.get(id);
     if (!latestVersion) throw new Error('unknown');
@@ -82,11 +90,24 @@ class FakeApi implements MarketplaceApi {
       summary: '',
       author: '',
       category: 'utility',
+      tags: [],
+      iconUrl: null,
+      screenshots: [],
       latestVersion,
       permissions: [],
       network: [],
+      sdk: '^1.0.0',
+      compatible: true,
       installs: 0,
+      weeklyInstalls: 0,
+      rating: { average: null, count: 0 },
       verified: true,
+      repo: null,
+      approvedAt: null,
+      publishedAt: null,
+      updatedAt: '',
+      description: null,
+      descriptionHtml: null,
       versions: [],
     };
   }
@@ -264,5 +285,41 @@ describe('MarketplaceClient.checkUpdates', () => {
     api.publish(bundle('1.1.0'));
     await client.checkUpdates();
     expect(installed().version).toBe('1.0.0');
+  });
+});
+
+describe('MarketplaceClient.update', () => {
+  beforeEach(async () => {
+    api.publish(bundle('1.0.0'));
+    await client.install(ID);
+    consents = 0;
+  });
+
+  it('updates without consent when the latest asks for nothing new', async () => {
+    api.publish(bundle('1.1.0'));
+    await expect(client.update(ID)).resolves.toBe(true);
+    expect(consents).toBe(0);
+    expect(installed().version).toBe('1.1.0');
+  });
+
+  it('asks for consent again when the latest adds a permission, and grants it once allowed', async () => {
+    api.publish(bundle('1.1.0', ['prices:read', 'chat:read']));
+    await expect(client.update(ID)).resolves.toBe(true);
+    expect(consents).toBe(1);
+    expect(installed()).toMatchObject({ version: '1.1.0', pendingUpdate: undefined });
+    expect(installed().granted.permissions).toEqual(['prices:read', 'chat:read']);
+  });
+
+  it('reuses an update already held for re-consent', async () => {
+    api.publish(bundle('1.1.0', ['prices:read', 'chat:read']));
+    await client.checkUpdates();
+    const release = vi.spyOn(api, 'release');
+    await expect(client.update(ID)).resolves.toBe(true);
+    expect(release).not.toHaveBeenCalled();
+    expect(installed().version).toBe('1.1.0');
+  });
+
+  it('does nothing when already on the latest version', async () => {
+    await expect(client.update(ID)).resolves.toBe(false);
   });
 });

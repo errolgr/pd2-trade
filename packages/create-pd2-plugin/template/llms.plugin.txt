@@ -9,7 +9,7 @@
 - Dev: `npm run dev` → http://localhost:5199/ (CORS, rebuild on save). Overlay: Settings → Plugins → Load unpacked → http://localhost:5199/. `--port <n>`, `--outdir <AppConfig>/plugins-dev/<name>` for folder loading in the desktop app.
 
 ## Manifest (pd2-plugin.json; unknown keys rejected)
-id reverse-DNS (com.you.name) · name ≤48 · version x.y.z · sdk "^1.0.0" · description ≤200 · category pricing|trading|chat|stash|ui|theme|utility
+id reverse-DNS (com.you.name) · name ≤48 · version x.y.z · sdk "^1.0.0" · description ≤200 · category pricing|trading|chat|stash|builds|ui|utility (ui = UI & themes)
 entry { worker: "src/worker.ts", panels: { <panelId>: "src/panel.html" } } (≤4 panels; paths point at SOURCE files, the build rewrites them)
 slots [ids below] · commands [{ id: /^[a-z][a-z0-9-]{0,31}$/, title ≤48, defaultHotkey: null }] (≤10)
 permissions [see below] · network ["api.example.com"] (≤10, hostname only) · settings { type: "object", properties: { key: { type: string|number|integer|boolean, title, description?, default?, enum?, minimum?, maximum?, maxLength? } } } (≤30)
