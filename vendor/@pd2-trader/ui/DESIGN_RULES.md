@@ -177,15 +177,18 @@ default 8px radius. Panels `rounded-lg`, controls and tiles `rounded-md`, chips 
 ## 11. Components
 
 Every interface composes from `@pd2-trader/ui` only (PRD A4 "Consistency rule"): one component per job, no local
-re-implementations. A pattern that is missing goes into the package first (with a story), then into the feature.
+re-implementations. A pattern that is missing goes into the package first (with a registry entry and examples),
+then into the feature.
 
 ```tsx
 import { Button, PanelChrome, PanelSurface, PriceTag, ItemName, cn } from '@pd2-trader/ui';
 ```
 
 The barrel is side-effect free, so bundles keep only what they import. Tokens: `@pd2-trader/ui/tokens`; Tailwind
-theme CSS: `@pd2-trader/ui/tailwind.css`; lint plugin: `@pd2-trader/ui/eslint`. Sources:
-`packages/ui/src/components/<file>.tsx`, each with a `*.stories.tsx`.
+theme CSS: `@pd2-trader/ui/tailwind.css`; lint plugin: `@pd2-trader/ui/eslint`; docs registry (props, examples,
+a11y notes per component; source of the Ladle catalog and the website's component docs): `@pd2-trader/ui/registry`.
+Sources: `packages/ui/src/components/<file>.tsx`; examples `packages/ui/src/examples/<slug>/<id>.tsx` (stories are
+generated from them, `pnpm build:registry`). Coverage vs shadcn/ui: `COMPONENTS.md`.
 
 Consumers outside this repo (website, plugins) ship the package as TypeScript source, so their bundler compiles
 it, and their Tailwind entry CSS needs:
@@ -199,9 +202,11 @@ it, and their Tailwind entry CSS needs:
 
 | Group            | Exports (file)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Primitives       | `Button` (`button`), `ButtonGroup`, `Kbd` / `KbdGroup`, `Badge` (incl. `count`), `Card` + `ItemCard`, `Input`, `Textarea`, `Label`, `Checkbox`, `Switch`, `Slider`, `Select*`, `Tabs*`, `RadioGroup` / `RadioGroupItem`, `Accordion*`, `Collapsible*`, `Pagination*` (links on `buttonVariants`), `Toggle` (incl. `chip`), `ToggleGroup*`, `Tooltip*`, `Popover*`, `DropdownMenu*`, `Dialog*`, `AlertDialog*`, `Sheet*`, `Command*` (cmdk), `Form*` (react-hook-form), `Table*`, `ScrollArea`, `Separator`, `Progress`, `Skeleton`, `Alert`, `Breadcrumb*`, `Chart*` (recharts), `Toaster` + `toast` (sonner) |
-| Overlay patterns | `PanelChrome`, `PanelSurface` (`panel-chrome`), `HoverPopover`, `PopoverTile` / `PopoverKeyValue` / `PopoverSectionTitle` (`popover-parts`), `SettingsSection` / `SettingsGroup` / `SettingsRow` / `SettingsHint` / `SettingsSkeleton` (`settings`), `Banner`, `EmptyState` (`state`), `ErrorChip`, `SkeletonRows` (`feedback`)                                                                                                                                                                                                                                                                               |
+| Primitives       | `Button` (`button`), `ButtonGroup`, `Kbd` / `KbdGroup` / `KbdCombo`, `Badge` (incl. `count` and status tints), `Card` (`asChild` link tiles) + `ItemCard`, `Avatar*`, `Heading` / `Text` / `Muted` / `Code` / `Prose` (`typography`), `CodeBlock`, `Label`, `Separator`, `AspectRatio`, `Accordion*`, `Collapsible*`, `ResizablePanelGroup` / `ResizablePanel` / `ResizableHandle`, `Tooltip*`, `Popover*`, `HoverCard*` (`variant="bare"` for item tooltips), `DropdownMenu*`, `ContextMenu*`, `Dialog*`, `AlertDialog*`, `Sheet*`, `Command*` (cmdk), `Tabs*`, `Breadcrumb*`, `Pagination*`, `NavigationMenu*`, `Sidebar*` + `useSidebar`, `Table*`, `DataTable` + `DataTableColumnHeader` / `Toolbar` / `ViewOptions` / `Pagination`, `Item*`, `Chart*` (recharts), `ScrollArea`, `Progress`, `Skeleton`, `Spinner`, `Alert`, `Toaster` + `toast` (sonner) |
+| Forms            | `Field*` (label / hint / error wiring), `Form*` (react-hook-form, composes `Field`), `Input`, `InputGroup*`, `SearchInput`, `Textarea`, `Checkbox`, `Switch`, `Slider`, `RadioGroup` / `RadioGroupItem`, `Select*` (rich rows: `icon`, `description`), `NativeSelect*`, `Combobox` (+ `searchOptions`…), `NumberInput`, `Toggle` (incl. `chip`), `ToggleGroup*` |
+| Overlay patterns | `PanelChrome`, `PanelSurface` (`panel-chrome`), `PopoverTile` / `PopoverKeyValue` / `PopoverSectionTitle` (`popover-parts`), `SettingsSection` / `SettingsGroup` / `SettingsRow` / `SettingsHint` / `SettingsSkeleton` (`settings`), `Banner`, `EmptyState` (`state`), `ErrorChip`, `SkeletonRows` (`feedback`)                                                                                                                                                                                                                                                                               |
 | Domain           | `ItemName` + `itemQualityClass` (`item-name`), `RuneIcon` (`rune-icon`), `PriceTag`, `CurrencyAmount`, `formatHrAmount`, `formatAmount`, `usePriceText` (`price`), `DataRow`, `StatLine`, `MarketRow` (`rows`), `SparkChart` (`spark-chart`)                                                                                                                                                                                                                                                                                                                                                                  |
+| Diablo II        | `components/d2/`: `QualityBadge` + `qualityKey`, `ClassIcon` / `ClassBadge`, `ModeBadge`, `CorruptionBadge`, `AreaBadge`, `AffixLine`, `ItemArt`, `SocketRow`, `ItemTooltip` (`TooltipItem`), `RunewordCard`, `RuneLadder`, `ResistanceBar`, `BreakpointTable`, `StatSheet`, `EquipmentSlot`, `PaperDoll`, `InventoryGrid`, `CharacterCard`, `MercenaryCard`, `ListingCard`, `TradeOfferCard`, `PriceHistoryChart`, `UberProgress`; data (`D2_CLASSES`, `RUNES`, `toD2Class`, `toEquipSlot`, `runeTier`, `UBER_ENCOUNTERS`); `D2LabelsProvider` |
 | Slots (plugins)  | `SlotSection`, `SlotRow`, `SlotBadge`, `SlotText`, `SlotColumn`, `SlotList`, `SlotDivider`, `SlotAction`, `SlotTone` / `SLOT_TONES` / `isSlotTone` / `slotToneClass` (`slots`)                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | Runtime          | `cn`, framer-motion presets (`fadeIn`, `fadeInUp`, `scaleIn`, `listStagger`, `springSnappy`, `useReducedMotionSafe`…), `PanelPortalContext` (the overlay's `Panel` provides it), `UiLabelsProvider` / `useUiLabels` (translated built-in strings)                                                                                                                                                                                                                                                                                                                                                             |
 
@@ -220,9 +225,26 @@ it, and their Tailwind entry CSS needs:
 | Item name                                 | `ItemName quality=…` (never hand-pick a `text-q-*`)                                                                     |
 | Label/value line                          | `DataRow`; item mod line `StatLine`                                                                                     |
 | Sparkline                                 | `SparkChart`                                                                                                            |
+| Form field (label, hint, error)           | `Field label hint error` around one control; `FieldSet` / `FieldGroup` for sections                                     |
+| Search box / input with addons            | `SearchInput` / `InputGroup` (`InputGroupAddon`, `InputGroupButton`, `InputGroupText`)                                  |
+| Pick one of many                          | Searchable: `Combobox`; short list: `Select`; native picker on touch (website): `NativeSelect`; 2-5 visible: `RadioGroup` |
+| Integer with steppers                     | `NumberInput`                                                                                                           |
+| Sortable / filterable / long list         | `DataTable` (`virtualized` for 1000+ rows); static markup `Table`                                                       |
+| Generic content row (media, title, actions) | `Item`; D2 data rows `MarketRow` / `DataRow`                                                                          |
+| Hover details / right-click actions       | `HoverCard` / `ContextMenu` (same parts and look as `DropdownMenu`)                                                     |
+| User-sized split                          | `ResizablePanelGroup` (fixed side column: `w-sidebar`); app navigation column `Sidebar`                                 |
+| Text styles                               | `Heading` / `Text` / `Muted` / `Code`; long-form copy `Prose`; multi-line code `CodeBlock`; hotkeys `KbdCombo`           |
+| Busy inside a button / inline             | `Spinner` (content areas: `Skeleton` / `SkeletonRows`)                                                                  |
+| Price history with axes                   | `PriceHistoryChart` (inline: `SparkChart`)                                                                              |
+| In-game item stat block                   | `ItemTooltip` in a `HoverCard`; mod with its affix source `AffixLine`                                                   |
+| Character row / header card               | `CharacterCard variant="compact"` / `"full"`; class name alone `ClassBadge`; mode chips `ModeBadge`                    |
+| Market listing                            | `MarketRow` in dense lists, `ListingCard` in grids; offers `TradeOfferCard`                                             |
+| Equipment, stash, charms                  | `PaperDoll` (slots: `EquipmentSlot`), `InventoryGrid` (`GRID_SIZES`)                                                    |
+| Resists, breakpoints, full stat sheet     | `ResistanceBar`, `BreakpointTable`, `StatSheet`                                                                         |
 
-Built-in strings (close, more, retry, loading, gold) come from `UiLabelsProvider`; the app wires it to i18n in
-`src/main.tsx`, so components never hard-code copy.
+Built-in strings (close, more, retry, loading, gold) come from `UiLabelsProvider`, game strings of the D2 components
+(tooltip lines, slot and mode names) from `D2LabelsProvider`; the app wires both to i18n in `src/main.tsx`, so
+components never hard-code copy.
 
 ## 12. Enforcement
 

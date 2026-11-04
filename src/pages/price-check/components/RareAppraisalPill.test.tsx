@@ -94,11 +94,11 @@ describe('RareAppraisalPill', () => {
     expect(pill?.getAttribute('title')).toContain('price model and stars from softcore data');
   });
 
-  it('hovering opens the detail popover with the item title and slot', () => {
+  it('hovering opens the detail popover with the item title and slot', async () => {
     renderPill({ title: 'Doom Coil' });
     expect(screen.queryByText('Doom Coil')).toBeNull();
-    fireEvent.mouseEnter(screen.getByText('top 8%').closest('.group')!.parentElement!);
-    expect(screen.getByText('Doom Coil')).not.toBeNull();
+    fireEvent.pointerEnter(screen.getByText('top 8%').closest('.group')!.parentElement!);
+    expect(await screen.findByText('Doom Coil')).not.toBeNull();
     expect(screen.getByText(/Ring · est\. from S14 listings/)).not.toBeNull();
   });
 });

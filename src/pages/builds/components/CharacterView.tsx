@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ExternalLink, Gem, History, Repeat, SearchX, Skull, Star, Swords, Users } from 'lucide-react';
-import { cn, Badge, Button, Skeleton, HoverPopover, EmptyState } from '@pd2-trader/ui';
+import { cn, Badge, Button, Skeleton, HoverCard, HoverCardContent, HoverCardTrigger, EmptyState } from '@pd2-trader/ui';
 import { openUrl } from '@/lib/browser-opener';
 import { useOptions } from '@/hooks/useOptions';
 import {
@@ -452,46 +452,53 @@ function DollCell({ cell, item, merc }: { cell: DollCellDef; item: DollItem | un
   const iconSize = Math.min(height - 16, 64);
   return (
     <div style={{ gridArea: cell.area }}>
-      <HoverPopover side="right"
-        content={<ItemTooltipCard item={item} />}>
-        <ItemActionsMenu item={item}
-          merc={merc}>
-          <Button
-            type="button"
-            variant="ghost"
-            size="inline"
-            aria-label={`${item.name} (${item.slot})`}
-            className={cn(
-              'relative flex w-full flex-col gap-0 rounded-md border bg-background/40 hover:bg-accent/40 hover:text-current focus-visible:ring-ring/50',
-              qualityBorder(item.quality, item.runeword),
-            )}
-            style={{ height }}
-          >
-            <ItemIcon item={item}
-              size={iconSize}
-              className="border-0 bg-transparent" />
-            {item.ethereal && (
-              <span
-                className="absolute top-0.5 left-1 text-3xs font-semibold text-muted-foreground"
-                title={t('character.ethereal')}
+      <HoverCard>
+        <HoverCardTrigger asChild>
+          <div>
+            <ItemActionsMenu item={item}
+              merc={merc}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="inline"
+                aria-label={`${item.name} (${item.slot})`}
+                className={cn(
+                  'relative flex w-full flex-col gap-0 rounded-md border bg-background/40 hover:bg-accent/40 hover:text-current focus-visible:ring-ring/50',
+                  qualityBorder(item.quality, item.runeword),
+                )}
+                style={{ height }}
               >
-                E
-              </span>
-            )}
-            {item.corrupted && (
-              <span
-                className="absolute top-1 right-1 size-1.5 rounded-full bg-q-corrupted"
-                title={t('character.corrupted')}
-              />
-            )}
-            {item.priceHr != null && (
-              <span className="absolute right-0.5 bottom-0.5 rounded-sm bg-background/80 px-1 text-3xs leading-tight font-medium text-q-gold tabular-nums">
-                {fmtHr(item.priceHr)}
-              </span>
-            )}
-          </Button>
-        </ItemActionsMenu>
-      </HoverPopover>
+                <ItemIcon item={item}
+                  size={iconSize}
+                  className="border-0 bg-transparent" />
+                {item.ethereal && (
+                  <span
+                    className="absolute top-0.5 left-1 text-3xs font-semibold text-muted-foreground"
+                    title={t('character.ethereal')}
+                  >
+                    E
+                  </span>
+                )}
+                {item.corrupted && (
+                  <span
+                    className="absolute top-1 right-1 size-1.5 rounded-full bg-q-corrupted"
+                    title={t('character.corrupted')}
+                  />
+                )}
+                {item.priceHr != null && (
+                  <span className="absolute right-0.5 bottom-0.5 rounded-sm bg-background/80 px-1 text-3xs leading-tight font-medium text-q-gold tabular-nums">
+                    {fmtHr(item.priceHr)}
+                  </span>
+                )}
+              </Button>
+            </ItemActionsMenu>
+          </div>
+        </HoverCardTrigger>
+        <HoverCardContent variant="bare"
+          side="right">
+          <ItemTooltipCard item={item} />
+        </HoverCardContent>
+      </HoverCard>
     </div>
   );
 }
@@ -532,28 +539,35 @@ function CharmCell({ charm }: { charm: CharmItem }) {
   const height = charm.height * CHARM_CELL + (charm.height - 1) * CHARM_GAP;
   return (
     <div style={{ gridColumn: charm.column + 1, gridRow: `${charm.row + 1} / span ${charm.height}` }}>
-      <HoverPopover side="right"
-        content={<ItemTooltipCard item={charm} />}>
-        <ItemActionsMenu item={charm}>
-          <Button
-            type="button"
-            variant="ghost"
-            size="inline"
-            aria-label={charm.name}
-            className={cn(
-              'relative flex w-full gap-0 rounded-sm border bg-background/40 hover:bg-accent/60 hover:text-current focus-visible:ring-ring',
-              qualityBorder(charm.quality, charm.runeword),
-            )}
-            style={{ height }}
-          >
-            <ItemIcon item={charm}
-              size={CHARM_CELL - 4}
-              height={height - 4}
-              className="border-0 bg-transparent" />
-            {charm.corrupted && <span className="absolute top-0.5 right-0.5 size-1 rounded-full bg-q-corrupted" />}
-          </Button>
-        </ItemActionsMenu>
-      </HoverPopover>
+      <HoverCard>
+        <HoverCardTrigger asChild>
+          <div>
+            <ItemActionsMenu item={charm}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="inline"
+                aria-label={charm.name}
+                className={cn(
+                  'relative flex w-full gap-0 rounded-sm border bg-background/40 hover:bg-accent/60 hover:text-current focus-visible:ring-ring',
+                  qualityBorder(charm.quality, charm.runeword),
+                )}
+                style={{ height }}
+              >
+                <ItemIcon item={charm}
+                  size={CHARM_CELL - 4}
+                  height={height - 4}
+                  className="border-0 bg-transparent" />
+                {charm.corrupted && <span className="absolute top-0.5 right-0.5 size-1 rounded-full bg-q-corrupted" />}
+              </Button>
+            </ItemActionsMenu>
+          </div>
+        </HoverCardTrigger>
+        <HoverCardContent variant="bare"
+          side="right">
+          <ItemTooltipCard item={charm} />
+        </HoverCardContent>
+      </HoverCard>
     </div>
   );
 }

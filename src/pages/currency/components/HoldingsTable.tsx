@@ -2,12 +2,10 @@ import React, { useMemo, useState } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { PackageOpen, Search, SearchX, X } from 'lucide-react';
 import type { ValuationLine } from '@/lib/networth-api';
-import { DataTable } from './DataTable';
-import { DataTableColumnHeader } from './DataTableColumnHeader';
 import { ConfidenceBadge, HoldingName, PriceChange } from './HoldingCells';
 import { formatUnitPrice } from '../lib/networth-format';
 import type { TFunction } from 'i18next';
-import { Button, Input, PriceTag, Switch, Label } from '@pd2-trader/ui';
+import { Button, DataTable, EmptyState, Input, PriceTag, Switch, Label } from '@pd2-trader/ui';
 import { useTranslation } from '@/i18n';
 
 interface HoldingsTableProps {
@@ -21,24 +19,21 @@ function createColumns(totalHr: number, showTab: boolean, t: TFunction): ColumnD
   return [
     {
       accessorKey: 'name',
-      header: ({ column }) => <DataTableColumnHeader column={column}
-        title={t('columns.item')} />,
+      header: t('columns.item'),
       cell: ({ row }) => <HoldingName line={row.original}
         showTab={showTab} />,
     },
     {
       accessorKey: 'qty',
-      meta: { align: 'right' },
-      header: ({ column }) => <DataTableColumnHeader column={column}
-        title={t('columns.qty')} />,
+      meta: { align: 'end' },
+      header: t('columns.qty'),
       cell: ({ row }) => <span className="tabular-nums">{row.original.qty}</span>,
     },
     {
       id: 'unitPrice',
       accessorFn: (line) => line.unitPrice ?? undefined,
-      meta: { align: 'right' },
-      header: ({ column }) => <DataTableColumnHeader column={column}
-        title={t('columns.unit')} />,
+      meta: { align: 'end' },
+      header: t('columns.unit'),
       sortUndefined: 'last',
       cell: ({ row }) => (
         <span className="tabular-nums text-muted-foreground">{formatUnitPrice(row.original.unitPrice)}</span>
@@ -46,9 +41,8 @@ function createColumns(totalHr: number, showTab: boolean, t: TFunction): ColumnD
     },
     {
       accessorKey: 'value',
-      meta: { align: 'right' },
-      header: ({ column }) => <DataTableColumnHeader column={column}
-        title={t('columns.value')} />,
+      meta: { align: 'end' },
+      header: t('columns.value'),
       cell: ({ row }) => <PriceTag amount={row.original.value}
         unit="hr"
         className="font-medium" />,
@@ -56,18 +50,16 @@ function createColumns(totalHr: number, showTab: boolean, t: TFunction): ColumnD
     {
       id: 'share',
       accessorFn: (line) => (totalHr > 0 ? line.value / totalHr : 0),
-      meta: { align: 'right' },
-      header: ({ column }) => <DataTableColumnHeader column={column}
-        title={t('columns.share')} />,
+      meta: { align: 'end' },
+      header: t('columns.share'),
       cell: ({ getValue }) => <ShareCell share={getValue() as number} />,
     },
     {
       id: 'change7d',
       accessorFn: (line) => line.priceChange7dPercent ?? undefined,
       sortUndefined: 'last',
-      meta: { align: 'right' },
-      header: ({ column }) => <DataTableColumnHeader column={column}
-        title={t('columns.change7d')} />,
+      meta: { align: 'end' },
+      header: t('columns.change7d'),
       cell: ({ row }) => <PriceChange percent={row.original.priceChange7dPercent} />,
     },
     {
@@ -114,6 +106,7 @@ export function HoldingsTable({ lines, totalHr, showTab = false, toolbar }: Hold
           <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={query}
+            aria-label={t('holdings.searchLabel')}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Escape' && query) {
@@ -122,7 +115,6 @@ export function HoldingsTable({ lines, totalHr, showTab = false, toolbar }: Hold
               }
             }}
             placeholder={t('holdings.searchPlaceholder')}
-            aria-label={t('holdings.searchLabel')}
             className="h-9 pl-8 pr-8"
           />
           {query && (
@@ -152,9 +144,15 @@ export function HoldingsTable({ lines, totalHr, showTab = false, toolbar }: Hold
       <DataTable
         columns={columns}
         data={visible}
-        initialSorting={[{ id: 'value', desc: true }]}
-        emptyMessage={lines.length ? t('holdings.nothingMatches') : t('holdings.noneInStash')}
-        emptyIcon={lines.length ? <SearchX /> : <PackageOpen />}
+        defaultSorting={[{ id: 'value', desc: true }]}
+        dense
+        empty={
+          <EmptyState
+            compact
+            icon={lines.length ? <SearchX /> : <PackageOpen />}
+            title={lines.length ? t('holdings.nothingMatches') : t('holdings.noneInStash')}
+          />
+        }
       />
       <div className="flex items-start justify-between gap-4 text-xs text-muted-foreground">
         <p>{hiddenZero > 0 && t('holdings.zeroHidden', { count: hiddenZero })}</p>

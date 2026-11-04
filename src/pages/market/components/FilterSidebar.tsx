@@ -25,7 +25,16 @@ import {
   type MarketFacets,
 } from '../lib/facets';
 import type { MarketFilters, OnlineFilter, Rarity, SortBy } from '../lib/types';
-import { Field, RangeField, Section, Segmented, SelectField, TriField, fieldInputClass, ClearButton } from './controls';
+import {
+  FilterRow,
+  RangeField,
+  Section,
+  Segmented,
+  SelectField,
+  TriField,
+  fieldInputClass,
+  ClearButton,
+} from './controls';
 import { FACET_DIM, FacetRowTip, facetFill, useFacetText } from './FacetCounts';
 import { PriceControl } from './PriceControl';
 import { StatFilters, type StatFiltersProps } from './StatFilters';
@@ -64,7 +73,7 @@ function RarityField({
     );
   const peak = Math.max(0, ...counts.values());
   return (
-    <Field label={t('filters.rarity')}>
+    <FilterRow label={t('filters.rarity')}>
       <DropdownMenu>
         <DropdownMenuTrigger
           aria-label={t('filters.rarity')}
@@ -96,7 +105,7 @@ function RarityField({
           )}
         </DropdownMenuContent>
       </DropdownMenu>
-    </Field>
+    </FilterRow>
   );
 }
 
@@ -337,7 +346,7 @@ export function FilterSidebar({
             (f.sort.by !== defaults.sort.by || f.sort.dir !== defaults.sort.dir ? 1 : 0)
           }
         >
-          <Field label={t('filters.mode')}>
+          <FilterRow label={t('filters.mode')}>
             <div className="flex gap-1">
               <Segmented
                 label={t('filters.modeLabel')}
@@ -358,7 +367,7 @@ export function FilterSidebar({
                 ]}
               />
             </div>
-          </Field>
+          </FilterRow>
           <SelectField
             label={t('filters.listedWithin')}
             value={String(f.maxAgeDays)}
@@ -370,16 +379,16 @@ export function FilterSidebar({
             anyLabel={null}
             onChange={(v) => v && set({ maxAgeDays: Number(v) })}
           />
-          <Field label={t('filters.sort.label')}>
+          <FilterRow label={t('filters.sort.label')}>
             <Segmented
               label={t('filters.sort.label')}
               value={f.sort.by}
               options={sortOptions}
               onChange={(by) => set({ sort: { by, dir: f.sort.dir } })}
             />
-          </Field>
+          </FilterRow>
           {f.sort.by === 'stat' && f.sort.key && (
-            <Field label="">
+            <FilterRow label="">
               <span className="inline-flex h-6 max-w-full items-center gap-1 rounded-full border border-primary/40 bg-primary/10 pl-2 pr-0.5 text-2xs text-primary">
                 <span className="truncate">{t('filters.sort.stat', { stat: statName(f.sort.key) })}</span>
                 <Button
@@ -394,9 +403,9 @@ export function FilterSidebar({
                   <X className="size-3" />
                 </Button>
               </span>
-            </Field>
+            </FilterRow>
           )}
-          <Field label={t('filters.order.label')}>
+          <FilterRow label={t('filters.order.label')}>
             <Segmented
               label={t('filters.order.ariaLabel')}
               value={f.sort.dir}
@@ -424,14 +433,14 @@ export function FilterSidebar({
                 },
               ]}
             />
-          </Field>
+          </FilterRow>
         </Section>
 
         <Section
           {...section('Price', t('filters.sections.price'))}
           active={countDefined(f.priceText, f.hrMin, f.hrMax) + (f.hasBuyout !== defaults.hasBuyout ? 1 : 0)}
         >
-          <Field label={t('filters.priceNote')}
+          <FilterRow label={t('filters.priceNote')}
             htmlFor="market-price-text">
             <Input
               id="market-price-text"
@@ -441,15 +450,15 @@ export function FilterSidebar({
               onChange={(e) => set({ priceText: e.target.value.slice(0, MAX_FILTER_TEXT) || undefined })}
               className={fieldInputClass}
             />
-          </Field>
-          <Field label={t('filters.hrPrice')}>
+          </FilterRow>
+          <FilterRow label={t('filters.hrPrice')}>
             <PriceControl
               label={t('filters.hrPrice')}
               buckets={facets?.price}
               value={{ hrMin: f.hrMin, hrMax: f.hrMax, hrMaxExclusive: f.hrMaxExclusive }}
               onChange={set}
             />
-          </Field>
+          </FilterRow>
           <TriField label={t('filters.hasBuyout')}
             value={f.hasBuyout}
             onChange={(hasBuyout) => set({ hasBuyout })} />
@@ -463,30 +472,30 @@ export function FilterSidebar({
             (f.userOnlineGame !== defaults.userOnlineGame ? 1 : 0)
           }
         >
-          <Field label={t('filters.seller')}
+          <FilterRow label={t('filters.seller')}
             htmlFor="market-seller">
             <SellerInput
               userId={f.sellerUserId}
               name={f.sellerName}
               onChange={(sellerUserId, sellerName) => set({ sellerUserId, sellerName })}
             />
-          </Field>
-          <Field label={t('filters.onlineSite')}>
+          </FilterRow>
+          <FilterRow label={t('filters.onlineSite')}>
             <Segmented
               label={t('filters.onlineSiteLabel')}
               value={f.userOnlineSite}
               options={onlineOptions}
               onChange={(userOnlineSite) => set({ userOnlineSite })}
             />
-          </Field>
-          <Field label={t('filters.onlineGame')}>
+          </FilterRow>
+          <FilterRow label={t('filters.onlineGame')}>
             <Segmented
               label={t('filters.onlineGameLabel')}
               value={f.userOnlineGame}
               options={onlineOptions}
               onChange={(userOnlineGame) => set({ userOnlineGame })}
             />
-          </Field>
+          </FilterRow>
         </Section>
 
         <Section

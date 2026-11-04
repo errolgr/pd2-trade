@@ -1,9 +1,11 @@
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
+import { useFieldControl } from './field';
 
 const Input = React.forwardRef<HTMLInputElement, React.ComponentPropsWithoutRef<'input'>>(
-  ({ className, type, ...props }, ref) => {
+  ({ className, type, ...rest }, ref) => {
+    const props = useFieldControl(rest);
     return (
       <input
         ref={ref}

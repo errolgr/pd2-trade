@@ -60,13 +60,6 @@
     "change7d": "7 дн.",
     "price": "Цена"
   },
-  "table": {
-    "noResults": "Нет результатов.",
-    "sortLabel": "{{title}}: {{action}}",
-    "sortAscending": "по возрастанию",
-    "sortDescending": "по убыванию",
-    "clearSorting": "сбросить сортировку"
-  },
   "confidence": {
     "ok": {
       "label": "рынок",

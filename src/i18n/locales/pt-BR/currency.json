@@ -60,13 +60,6 @@
     "change7d": "7d",
     "price": "Preço"
   },
-  "table": {
-    "noResults": "Nenhum resultado.",
-    "sortLabel": "{{title}}: {{action}}",
-    "sortAscending": "ordenar crescente",
-    "sortDescending": "ordenar decrescente",
-    "clearSorting": "limpar ordenação"
-  },
   "confidence": {
     "ok": {
       "label": "mercado",

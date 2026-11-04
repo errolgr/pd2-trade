@@ -90,40 +90,40 @@ describe('HoldingsTable', () => {
 
   it('cycles a column through ascending, descending and back to unsorted', () => {
     renderTable();
-    fireEvent.click(screen.getByRole('button', { name: 'Item: sort ascending' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Item' }));
     expect(rowNames()).toEqual(['Ber Rune', 'Ist Rune', 'Mal Rune']);
     expect(screen.getByRole('columnheader', { name: /Item/ }).getAttribute('aria-sort')).toBe('ascending');
-    expect(screen.getByRole('columnheader', { name: /Value/ }).getAttribute('aria-sort')).toBeNull();
+    expect(screen.getByRole('columnheader', { name: /Value/ }).getAttribute('aria-sort')).toBe('none');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Item: sort descending' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Item' }));
     expect(rowNames()).toEqual(['Mal Rune', 'Ist Rune', 'Ber Rune']);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Item: clear sorting' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Item' }));
     expect(rowNames()).toEqual(['Ist Rune', 'Ber Rune', 'Mal Rune']);
-    expect(screen.getByRole('columnheader', { name: /Item/ }).getAttribute('aria-sort')).toBeNull();
+    expect(screen.getByRole('columnheader', { name: /Item/ }).getAttribute('aria-sort')).toBe('none');
   });
 
   it('sorts numeric columns by number, not by text', () => {
     renderTable();
-    fireEvent.click(screen.getByRole('button', { name: 'Qty: sort ascending' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Qty' }));
     expect(rowNames()).toEqual(['Ber Rune', 'Mal Rune', 'Ist Rune']);
-    fireEvent.click(screen.getByRole('button', { name: 'Qty: sort descending' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Qty' }));
     expect(rowNames()).toEqual(['Ist Rune', 'Mal Rune', 'Ber Rune']);
   });
 
   it('keeps unpriced rows last when sorting by unit price in either direction', () => {
     renderTable();
-    fireEvent.click(screen.getByRole('button', { name: 'Unit: sort ascending' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Unit' }));
     expect(rowNames()).toEqual(['Ist Rune', 'Ber Rune', 'Mal Rune']);
-    fireEvent.click(screen.getByRole('button', { name: 'Unit: sort descending' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Unit' }));
     expect(rowNames()).toEqual(['Ber Rune', 'Ist Rune', 'Mal Rune']);
   });
 
   it('keeps rows without 7d change last when sorting by change', () => {
     renderTable();
-    fireEvent.click(screen.getByRole('button', { name: '7d: sort ascending' }));
+    fireEvent.click(screen.getByRole('button', { name: '7d' }));
     expect(rowNames()).toEqual(['Ber Rune', 'Ist Rune', 'Mal Rune']);
-    fireEvent.click(screen.getByRole('button', { name: '7d: sort descending' }));
+    fireEvent.click(screen.getByRole('button', { name: '7d' }));
     expect(rowNames()).toEqual(['Ist Rune', 'Ber Rune', 'Mal Rune']);
   });
 

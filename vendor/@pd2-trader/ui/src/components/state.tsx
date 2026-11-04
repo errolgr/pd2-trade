@@ -3,10 +3,11 @@ import { motion } from 'framer-motion';
 import { cn } from '../lib/utils';
 import { fadeInUp } from '../lib/motion';
 
-export type BannerTone = 'info' | 'warning' | 'destructive';
+export type BannerTone = 'info' | 'success' | 'warning' | 'destructive';
 
 const TONE_CLASSES: Record<BannerTone, { box: string; icon: string }> = {
   info: { box: 'border-info/30 bg-info/10', icon: 'bg-info/15 text-info' },
+  success: { box: 'border-success/35 bg-success/10', icon: 'bg-success/15 text-success' },
   warning: { box: 'border-warning/35 bg-warning/10', icon: 'bg-warning/15 text-warning' },
   destructive: { box: 'border-destructive/35 bg-destructive/10', icon: 'bg-destructive/15 text-destructive' },
 };

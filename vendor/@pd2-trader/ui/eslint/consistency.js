@@ -149,8 +149,11 @@ export const DS_COMPONENT_NAMES = [
   'RadioGroup', 'Resizable', 'ScrollArea', 'ScrollBar', 'Select', 'Separator', 'Sheet', 'Sidebar', 'Skeleton', 'Slider',
   'Sonner', 'Spinner', 'Switch', 'Table', 'TableRow', 'Tabs', 'Textarea', 'Toast', 'Toaster', 'Toggle', 'ToggleGroup',
   'Tooltip', 'TooltipProvider', 'SidebarProvider', 'ToastProvider',
+  // shadcn gaps closed with the docs registry (COMPONENTS.md)
+  'AspectRatio', 'CodeBlock', 'Combobox', 'DataTable', 'Field', 'InputGroup', 'KbdCombo', 'NativeSelect', 'NumberInput',
+  'Prose', 'SearchInput',
   // overlay patterns (A2.2)
-  'PanelChrome', 'HoverPopover', 'PopoverParts', 'SettingsSection', 'SettingsRow', 'EmptyState', 'ErrorChip',
+  'PanelChrome', 'PopoverParts', 'SettingsSection', 'SettingsRow', 'EmptyState', 'ErrorChip',
   // domain components (A2.3)
   'ItemName', 'PriceTag', 'RuneIcon', 'CurrencyAmount', 'StatLine', 'MarketRow', 'SparkChart',
   // slot components (A2.4)

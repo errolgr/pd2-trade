@@ -60,13 +60,6 @@
     "change7d": "7 dni",
     "price": "Cena"
   },
-  "table": {
-    "noResults": "Brak wyników.",
-    "sortLabel": "{{title}}: {{action}}",
-    "sortAscending": "sortuj rosnąco",
-    "sortDescending": "sortuj malejąco",
-    "clearSorting": "wyczyść sortowanie"
-  },
   "confidence": {
     "ok": {
       "label": "rynek",

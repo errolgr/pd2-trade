@@ -6,25 +6,26 @@ import { cn } from '../lib/utils';
 export type ItemQuality = 'Normal' | 'Superior' | 'Magic' | 'Rare' | 'Crafted' | 'Set' | 'Unique' | 'Runeword' | 'Rune';
 
 const QUALITY_CLASS: Record<string, string> = {
-  Unique: 'text-q-unique',
-  Set: 'text-q-set',
-  Rare: 'text-q-rare',
-  Crafted: 'text-q-crafted',
-  Magic: 'text-q-magic',
-  Runeword: 'text-q-rune',
-  Rune: 'text-q-rune',
+  unique: 'text-q-unique',
+  set: 'text-q-set',
+  rare: 'text-q-rare',
+  crafted: 'text-q-crafted',
+  magic: 'text-q-magic',
+  runeword: 'text-q-rune',
+  rune: 'text-q-rune',
 };
 
 /**
  * Text colour class for an item: runes and runewords in the rune colour, else the quality colour, else normal.
- * `quality` is a free string because the APIs send quality names the app does not model (Superior, Normal…).
+ * `quality` is a free string because the APIs send quality names the app does not model (Superior, Normal…); the
+ * match ignores case ("unique" and "Unique" are the same).
  */
 export function itemQualityClass(
   quality: ItemQuality | (string & {}) | null | undefined,
   { runeword = false, name }: { runeword?: boolean; name?: string } = {},
 ): string {
   if (runeword || (name !== undefined && / Rune$/.test(name))) return 'text-q-rune';
-  return (quality && QUALITY_CLASS[quality]) || 'text-q-normal';
+  return (quality && QUALITY_CLASS[quality.toLowerCase()]) || 'text-q-normal';
 }
 
 interface ItemNameProps extends Omit<React.ComponentProps<'span'>, 'children'> {

@@ -87,7 +87,9 @@ import {
   fadeInUp,
   scaleIn,
   useReducedMotionSafe,
-  HoverPopover,
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
   EmptyState,
   Banner,
   ErrorChip,
@@ -1507,8 +1509,39 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                     variants={scaleIn}
                     initial="hidden"
                     animate="visible">
-                    <HoverPopover
-                      content={
+                    <HoverCard>
+                      <HoverCardTrigger asChild>
+                        <div>
+                          <div className="group flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2 transition-[background-color,border-color,box-shadow] duration-(--dur-med) ease-out hover:border-glow/50 hover:bg-accent/60 hover:shadow-glow">
+                            <img
+                              src={`https://pd2trader.com/assets/items/${itemIcon}.png`}
+                              alt={item.name}
+                              className="h-10 drop-shadow-md/35 transition-transform duration-(--dur-med) ease-out group-hover:scale-105"
+                              onError={(e) => {
+                                // Fallback if image fails to load
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                            <ArrowLeftRight className="size-4 text-muted-foreground transition-colors group-hover:text-foreground" />
+                            <div className="flex flex-col leading-tight">
+                              <span className="text-sm font-semibold tabular-nums text-foreground">
+                                <AnimatedNumber value={headlinePrice ?? 0} /> HR
+                              </span>
+                              <span className="text-3xs uppercase tracking-wider text-muted-foreground">
+                                {priceBasis}
+                              </span>
+                            </div>
+                            {averagePriceData.priceChange7Days && (
+                              <ChangeLabel
+                                change={averagePriceData.priceChange7Days.change}
+                                percent={averagePriceData.priceChange7Days.changePercent}
+                                pill
+                              />
+                            )}
+                          </div>
+                        </div>
+                      </HoverCardTrigger>
+                      <HoverCardContent variant="bare">
                         <div className="w-popover max-w-viewport space-y-3 rounded-lg border border-border bg-popover p-3 text-sm text-popover-foreground shadow-panel">
                           <div className="truncate font-semibold">{displayTitle}</div>
                           <div className="grid grid-cols-2 gap-1.5">
@@ -1626,34 +1659,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                             </div>
                           )}
                         </div>
-                      }
-                    >
-                      <div className="group flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2 transition-[background-color,border-color,box-shadow] duration-(--dur-med) ease-out hover:border-glow/50 hover:bg-accent/60 hover:shadow-glow">
-                        <img
-                          src={`https://pd2trader.com/assets/items/${itemIcon}.png`}
-                          alt={item.name}
-                          className="h-10 drop-shadow-md/35 transition-transform duration-(--dur-med) ease-out group-hover:scale-105"
-                          onError={(e) => {
-                            // Fallback if image fails to load
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                        />
-                        <ArrowLeftRight className="size-4 text-muted-foreground transition-colors group-hover:text-foreground" />
-                        <div className="flex flex-col leading-tight">
-                          <span className="text-sm font-semibold tabular-nums text-foreground">
-                            <AnimatedNumber value={headlinePrice ?? 0} /> HR
-                          </span>
-                          <span className="text-3xs uppercase tracking-wider text-muted-foreground">{priceBasis}</span>
-                        </div>
-                        {averagePriceData.priceChange7Days && (
-                          <ChangeLabel
-                            change={averagePriceData.priceChange7Days.change}
-                            percent={averagePriceData.priceChange7Days.changePercent}
-                            pill
-                          />
-                        )}
-                      </div>
-                    </HoverPopover>
+                      </HoverCardContent>
+                    </HoverCard>
                   </motion.div>
                 )}
                 {!averagePriceLoading && !averagePriceError && !averagePriceData && (
@@ -2324,9 +2331,12 @@ function CorruptionRow({
   if (!price || !hasSocketPrices) return row;
 
   return (
-    <HoverPopover
-      side="bottom"
-      content={
+    <HoverCard>
+      <HoverCardTrigger asChild>
+        <div>{row}</div>
+      </HoverCardTrigger>
+      <HoverCardContent variant="bare"
+        side="bottom">
         <div className="min-w-55 rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-panel">
           <div className="mb-1 flex items-center justify-between gap-3 text-2xs text-muted-foreground">
             <span className="truncate">{itemTitle}</span>
@@ -2364,10 +2374,8 @@ function CorruptionRow({
             ))}
           </div>
         </div>
-      }
-    >
-      {row}
-    </HoverPopover>
+      </HoverCardContent>
+    </HoverCard>
   );
 }
 
@@ -2603,22 +2611,25 @@ const ListingRow = ({ row, idx }: { row: ScoredListing; idx: number }) => {
                   unit="hr"
                   className="font-semibold text-foreground" />
               ) : listing.price && listing.price.length > 40 ? (
-                <HoverPopover
-                  content={
+                <HoverCard>
+                  <HoverCardTrigger asChild>
+                    <div>
+                      {/* The full-note popover replaces the row's stats popover while the note is hovered. */}
+                      <span
+                        className="cursor-pointer text-foreground/90 underline decoration-muted-foreground decoration-dotted underline-offset-2"
+                        onMouseEnter={() => setOpen(false)}
+                        onMouseLeave={() => setOpen(true)}
+                      >
+                        {listing.price.slice(0, 40)}...
+                      </span>
+                    </div>
+                  </HoverCardTrigger>
+                  <HoverCardContent variant="bare">
                     <div className="max-w-xs break-words rounded-lg border border-border bg-popover p-2.5 text-sm text-popover-foreground shadow-panel">
                       {listing.price}
                     </div>
-                  }
-                >
-                  {/* The full-note popover replaces the row's stats popover while the note is hovered. */}
-                  <span
-                    className="cursor-pointer text-foreground/90 underline decoration-muted-foreground decoration-dotted underline-offset-2"
-                    onMouseEnter={() => setOpen(false)}
-                    onMouseLeave={() => setOpen(true)}
-                  >
-                    {listing.price.slice(0, 40)}...
-                  </span>
-                </HoverPopover>
+                  </HoverCardContent>
+                </HoverCard>
               ) : (
                 <span className={listing.price ? 'text-foreground/90' : 'text-muted-foreground'}>
                   {listing.price || '-'}

@@ -60,13 +60,6 @@
     "change7d": "7 天",
     "price": "价格"
   },
-  "table": {
-    "noResults": "无结果。",
-    "sortLabel": "{{title}}：{{action}}",
-    "sortAscending": "升序排序",
-    "sortDescending": "降序排序",
-    "clearSorting": "清除排序"
-  },
   "confidence": {
     "ok": {
       "label": "市场",

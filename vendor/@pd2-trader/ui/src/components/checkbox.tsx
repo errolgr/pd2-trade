@@ -3,11 +3,13 @@ import * as CheckboxPrimitive from '@radix-ui/react-checkbox';
 import { CheckIcon } from 'lucide-react';
 
 import { cn } from '../lib/utils';
+import { useFieldControl } from './field';
 
 const Checkbox = React.forwardRef<
   React.ElementRef<typeof CheckboxPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
->(function Checkbox({ className, ...props }, ref) {
+>(function Checkbox({ className, ...rest }, ref) {
+  const props = useFieldControl(rest);
   return (
     <CheckboxPrimitive.Root
       data-slot="checkbox"

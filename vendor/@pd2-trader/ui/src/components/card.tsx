@@ -1,16 +1,24 @@
 import * as React from 'react';
+import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 
 import { cn } from '../lib/utils';
 
-const Card = React.forwardRef<React.ElementRef<'div'>, React.ComponentPropsWithoutRef<'div'>>(function Card(
-  { className, ...props },
-  ref,
-) {
+/** Bordered content block. `asChild` renders the child (a router `Link`, an `<a>`) as the card: link tiles. */
+const Card = React.forwardRef<
+  React.ElementRef<'div'>,
+  React.ComponentPropsWithoutRef<'div'> & { asChild?: boolean }
+>(function Card({ className, asChild = false, ...props }, ref) {
+  const Comp = asChild ? Slot : 'div';
   return (
-    <div
+    <Comp
       data-slot="card"
-      className={cn('bg-card text-card-foreground rounded-xl border border-border shadow-panel', className)}
+      className={cn(
+        'bg-card text-card-foreground rounded-xl border border-border shadow-panel',
+        asChild &&
+          'block outline-none transition-colors duration-(--dur-fast) ease-out hover:border-ring/50 hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring/60',
+        className,
+      )}
       ref={ref}
       {...props}
     />

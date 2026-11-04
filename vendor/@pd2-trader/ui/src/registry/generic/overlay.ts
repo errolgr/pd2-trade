@@ -1,4 +1,291 @@
 import { examplesFor } from '../examples';
 import type { ComponentDoc } from '../types';
 
-export const overlayDocs: ComponentDoc[] = [];
+const PORTAL_NOTE =
+  'Portals into the enclosing overlay panel (`PanelPortalContext`), so it hides and stacks with its panel; outside panels it portals to `document.body`.';
+
+export const overlayDocs: ComponentDoc[] = [
+  {
+    slug: 'dialog',
+    name: 'Dialog',
+    category: 'overlay',
+    description:
+      'Modal window for a focused task (edit a price, a short form). Use AlertDialog to confirm a destructive action, Sheet for a side panel, Popover for non-modal content anchored to a control.',
+    status: 'stable',
+    importName: 'Dialog',
+    props: [
+      { name: 'open', type: 'boolean', description: 'Controlled open state; pair with `onOpenChange`.' },
+      { name: 'defaultOpen', type: 'boolean', default: 'false', description: 'Initial open state when uncontrolled.' },
+      { name: 'onOpenChange', type: '(open: boolean) => void', description: 'Called on trigger, close button, Escape and click outside.' },
+      { name: 'modal', type: 'boolean', default: 'true', description: 'Modal dialogs trap focus and block the page behind the scrim.' },
+      {
+        name: 'DialogContent children',
+        type: 'ReactNode',
+        description: 'Compose `DialogHeader` (`DialogTitle`, `DialogDescription`), the body and `DialogFooter`; a close button is built in (label from UiLabels `close`).',
+      },
+      { name: 'DialogClose asChild', type: 'boolean', default: 'false', description: 'Make a footer `Button` close the dialog.' },
+    ],
+    examples: examplesFor('dialog'),
+    a11y: `Radix Dialog: focus moves into the dialog and is trapped, Escape and the close button close it, focus returns to the trigger. \`DialogTitle\` is required (announced as the dialog name); \`DialogDescription\` is announced as its description. Overlay: the window becomes focusable while a modal is open; keep dialogs for flows the user started by clicking. ${PORTAL_NOTE}`,
+    related: ['alert-dialog', 'sheet', 'popover', 'command'],
+  },
+  {
+    slug: 'alert-dialog',
+    name: 'Alert dialog',
+    category: 'overlay',
+    description:
+      'Blocking confirmation for a destructive or irreversible action ("Delist 14 items?"). Replaces `window.confirm`, which the overlay must never use. Only Cancel or the action closes it.',
+    status: 'stable',
+    importName: 'AlertDialog',
+    props: [
+      { name: 'open', type: 'boolean', description: 'Controlled open state; pair with `onOpenChange`.' },
+      { name: 'onOpenChange', type: '(open: boolean) => void', description: 'Called when the trigger, Cancel, the action or Escape changes the state.' },
+      {
+        name: 'AlertDialogAction variant',
+        type: "'default' | 'destructive' | 'outline' | …",
+        default: "'default'",
+        description: 'Button variant of the confirming action; use `destructive` for deletions.',
+      },
+      { name: 'AlertDialogCancel variant', type: "'outline' | 'ghost' | …", default: "'outline'", description: 'Button variant of the cancel action.' },
+      { name: 'AlertDialogAction / AlertDialogCancel size', type: "'default' | 'sm' | …", default: "'default'", description: 'Button size of the footer actions.' },
+    ],
+    examples: examplesFor('alert-dialog'),
+    a11y: `Radix AlertDialog (\`role="alertdialog"\`): focus starts on Cancel, is trapped, Escape cancels; clicking outside does nothing. \`AlertDialogTitle\` and \`AlertDialogDescription\` are announced. ${PORTAL_NOTE}`,
+    related: ['dialog', 'button'],
+  },
+  {
+    slug: 'sheet',
+    name: 'Sheet',
+    category: 'overlay',
+    description:
+      'Panel that slides in from an edge: details, filters, offers. `side="bottom"` is the drawer; there is no separate Drawer component (vaul\'s drag-to-dismiss only matters on mobile, and a bottom sheet covers the job). Use Dialog for a centered task.',
+    status: 'stable',
+    importName: 'Sheet',
+    props: [
+      { name: 'open', type: 'boolean', description: 'Controlled open state; pair with `onOpenChange`.' },
+      { name: 'onOpenChange', type: '(open: boolean) => void', description: 'Called on trigger, close button, Escape and scrim click.' },
+      {
+        name: 'SheetContent side',
+        type: "'top' | 'right' | 'bottom' | 'left'",
+        default: "'right'",
+        description: 'Edge it slides from. Inside an overlay panel it slides over the panel, not the monitor edge.',
+      },
+      {
+        name: 'SheetContent children',
+        type: 'ReactNode',
+        description: 'Compose `SheetHeader` (`SheetTitle`, `SheetDescription`), a body and `SheetFooter`; a close button is built in.',
+      },
+    ],
+    examples: examplesFor('sheet'),
+    a11y: `Radix Dialog under the hood: modal, focus trapped, Escape and the close button close it, focus returns to the trigger. \`SheetTitle\` names it for screen readers. ${PORTAL_NOTE}`,
+    related: ['dialog', 'popover'],
+  },
+  {
+    slug: 'popover',
+    name: 'Popover',
+    category: 'overlay',
+    description:
+      'Non-modal floating card opened by a click, for interactive content anchored to a control (a filter form, a picker). Use HoverCard for read-only previews on hover, Tooltip for a one-line hint, DropdownMenu for a list of actions.',
+    status: 'stable',
+    importName: 'Popover',
+    props: [
+      { name: 'open', type: 'boolean', description: 'Controlled open state; pair with `onOpenChange`.' },
+      { name: 'onOpenChange', type: '(open: boolean) => void', description: 'Called on trigger click, Escape and click outside.' },
+      { name: 'modal', type: 'boolean', default: 'false', description: 'Trap focus and block outside interaction while open.' },
+      {
+        name: 'PopoverContent side / align',
+        type: "'top' | 'right' | 'bottom' | 'left' / 'start' | 'center' | 'end'",
+        default: "'bottom' / 'center'",
+        description: 'Placement against the trigger or `PopoverAnchor`; flips on collision.',
+      },
+      { name: 'PopoverContent sideOffset', type: 'number', default: '4', description: 'Gap to the trigger in px.' },
+      { name: 'PopoverAnchor', type: 'component', description: 'Position against an element that is not the trigger.' },
+    ],
+    examples: examplesFor('popover'),
+    a11y: `Radix Popover: the trigger toggles it (Enter/Space), focus moves into the content, Escape closes and returns focus. Overlay: opens on click without keyboard focus; typing into its inputs makes the window focusable. ${PORTAL_NOTE}`,
+    related: ['hover-card', 'popover-parts', 'tooltip', 'dropdown-menu'],
+  },
+  {
+    slug: 'popover-parts',
+    name: 'Popover parts',
+    category: 'overlay',
+    description:
+      'Building blocks of the market popovers (price-check popovers, rare appraisals) so every one reads the same: `PopoverTile` for headline numbers, `PopoverKeyValue` rows, `PopoverSectionTitle` headings. Place them inside a Popover or HoverCard.',
+    status: 'stable',
+    importName: 'PopoverTile',
+    props: [
+      { name: 'label', type: 'ReactNode', required: true, description: 'Tile caption (uppercase, muted).' },
+      { name: 'emphasis', type: 'boolean', default: 'false', description: 'Glow-tinted headline tile; use for one tile.' },
+      { name: 'PopoverKeyValue label', type: 'ReactNode', required: true, description: 'Row label; the value (children) truncates when long.' },
+      { name: 'PopoverSectionTitle aside', type: 'ReactNode', description: 'Muted text on the right of a section title ("last 7 days").' },
+    ],
+    examples: examplesFor('popover-parts'),
+    a11y: 'Plain text blocks with no interaction; values use tabular numbers. Truncated key-value text is clipped visually, so keep the full value available elsewhere when it matters.',
+    related: ['popover', 'hover-card'],
+  },
+  {
+    slug: 'tooltip',
+    name: 'Tooltip',
+    category: 'overlay',
+    description:
+      'One-line hint on hover or focus (what an icon button does, a shortcut). Text only; for rich read-only content use HoverCard, for interactive content Popover. The host mounts `TooltipProvider` once.',
+    status: 'stable',
+    importName: 'Tooltip',
+    props: [
+      { name: 'delayDuration', type: 'number', default: '700 (from TooltipProvider)', description: 'Hover delay before opening; set app-wide on `TooltipProvider`.' },
+      {
+        name: 'open / onOpenChange',
+        type: 'boolean / (open: boolean) => void',
+        description: 'Controlled open state; touch taps go through `onOpenChange` too, so control composes with tap support.',
+      },
+      {
+        name: 'TooltipContent side',
+        type: "'top' | 'right' | 'bottom' | 'left'",
+        default: "'top'",
+        description: 'Placement against the trigger; flips on collision.',
+      },
+      { name: 'TooltipContent sideOffset', type: 'number', default: '4', description: 'Gap to the trigger in px.' },
+    ],
+    examples: examplesFor('tooltip'),
+    a11y: `Radix Tooltip: opens on pointer hover and keyboard focus, Escape closes, the content is the trigger's accessible description. Touch: a tap on the trigger toggles it (Radix alone never opens on touch); a tap outside or a scroll closes it, and the trigger's own click action still runs, so do not put a tooltip on a control whose tap does something else important. Mouse, pen and keyboard behavior is unchanged (the overlay is mouse only). Never put essential information only in a tooltip; icon-only triggers still need an \`aria-label\`. ${PORTAL_NOTE}`,
+    related: ['hover-card', 'popover', 'button'],
+  },
+  {
+    slug: 'dropdown-menu',
+    name: 'Dropdown menu',
+    category: 'overlay',
+    description:
+      'List of actions or view options opened from a button (row "…" menus, view settings). Use ContextMenu for the same menu on right-click, Select for picking a form value, Command for a searchable list.',
+    status: 'stable',
+    importName: 'DropdownMenu',
+    props: [
+      { name: 'open / onOpenChange', type: 'boolean / (open: boolean) => void', description: 'Controlled open state.' },
+      { name: 'modal', type: 'boolean', default: 'true', description: 'Block outside pointer events while open; set `false` inside scrollable overlay lists.' },
+      {
+        name: 'DropdownMenuContent align / side',
+        type: "'start' | 'center' | 'end' / 'top' | 'right' | 'bottom' | 'left'",
+        default: "'center' / 'bottom'",
+        description: 'Placement against the trigger; `sideOffset` defaults to 4.',
+      },
+      {
+        name: 'DropdownMenuItem variant',
+        type: "'default' | 'destructive'",
+        default: "'default'",
+        description: '`destructive` for delete/delist; keep it last, after a separator.',
+      },
+      {
+        name: 'DropdownMenuItem / Label / SubTrigger inset',
+        type: 'boolean',
+        default: 'false',
+        description: 'Indent to line up with items that have an icon or indicator.',
+      },
+      { name: 'DropdownMenuItem onSelect', type: '(event: Event) => void', description: 'Runs the action; `event.preventDefault()` keeps the menu open.' },
+      {
+        name: 'DropdownMenuCheckboxItem checked / onCheckedChange',
+        type: 'boolean / (checked: boolean) => void',
+        description: 'Toggle item; `DropdownMenuRadioGroup value / onValueChange` for a single choice.',
+      },
+    ],
+    examples: examplesFor('dropdown-menu'),
+    a11y: `Radix DropdownMenu (\`role="menu"\`): Enter/Space/ArrowDown open it, arrows move, typeahead jumps, ArrowRight/Left open and close submenus, Escape closes and returns focus. Icon-only triggers need an \`aria-label\`. Overlay: pointer use works without keyboard focus; arrow keys only work once the window has focus. Wrap \`DropdownMenuSubContent\` in \`DropdownMenuPortal\` so a submenu is never clipped. ${PORTAL_NOTE}`,
+    related: ['context-menu', 'popover', 'command', 'button'],
+  },
+  {
+    slug: 'context-menu',
+    name: 'Context menu',
+    category: 'overlay',
+    description:
+      'The DropdownMenu menu opened by right-click (long-press on touch) on an area, at the pointer: item actions on a stash cell or a listing row. Same parts and styles as DropdownMenu (shared module), so both look identical.',
+    status: 'beta',
+    importName: 'ContextMenu',
+    props: [
+      { name: 'onOpenChange', type: '(open: boolean) => void', description: 'Called when the menu opens on right-click or closes.' },
+      { name: 'modal', type: 'boolean', default: 'true', description: 'Block outside pointer events while open.' },
+      {
+        name: 'ContextMenuTrigger disabled',
+        type: 'boolean',
+        default: 'false',
+        description: 'Let the native context menu through (e.g. while editing text). The trigger renders a `span`; use `asChild` for a row or cell.',
+      },
+      {
+        name: 'ContextMenuItem variant',
+        type: "'default' | 'destructive'",
+        default: "'default'",
+        description: '`destructive` for delete/delist; keep it last, after a separator.',
+      },
+      { name: 'ContextMenuItem / Label / SubTrigger inset', type: 'boolean', default: 'false', description: 'Indent to line up with items that have an icon or indicator.' },
+      {
+        name: 'ContextMenuCheckboxItem checked / onCheckedChange',
+        type: 'boolean / (checked: boolean) => void',
+        description: 'Toggle item; `ContextMenuRadioGroup value / onValueChange` for a single choice.',
+      },
+    ],
+    examples: examplesFor('context-menu'),
+    a11y: `Radix ContextMenu (\`role="menu"\`): opens on right-click, long-press on touch and the keyboard context-menu key (Shift+F10) when the trigger has focus; arrows move, typeahead jumps, Escape closes. Right-click is invisible: always offer the same actions through a visible control (a "…" DropdownMenu) too. Overlay: pointer use works without keyboard focus. ${PORTAL_NOTE}`,
+    related: ['dropdown-menu', 'hover-card'],
+  },
+  {
+    slug: 'hover-card',
+    name: 'Hover card',
+    category: 'overlay',
+    description:
+      'Read-only preview that opens on pointer hover: item tooltips, price breakdowns, a player summary. The overlay\'s hover surface (works without keyboard focus). Use Popover when the content is interactive or must open on click, Tooltip for one line of text.',
+    status: 'beta',
+    importName: 'HoverCard',
+    props: [
+      { name: 'openDelay', type: 'number', default: '150', description: 'Hover time before it opens, in ms (Radix default 700, tuned short for the overlay).' },
+      { name: 'closeDelay', type: 'number', default: '100', description: 'Time after the pointer leaves trigger and content before it closes, in ms.' },
+      { name: 'open / onOpenChange', type: 'boolean / (open: boolean) => void', description: 'Controlled open state.' },
+      {
+        name: 'HoverCardContent variant',
+        type: "'default' | 'bare'",
+        default: "'default'",
+        description: '`default` = popover card (`w-64 p-3`, border, background); `bare` = no chrome for content that brings its own (item tooltips).',
+      },
+      {
+        name: 'HoverCardContent side / align',
+        type: "'top' | 'right' | 'bottom' | 'left' / 'start' | 'center' | 'end'",
+        default: "'bottom' / 'center'",
+        description: 'Placement against the trigger; flips on collision. Cap tall content with `max-h-(--radix-hover-card-content-available-height)`.',
+      },
+      {
+        name: 'HoverCardTrigger asChild',
+        type: 'boolean',
+        default: 'false',
+        description: 'Use your element (an item cell, an `ItemName`) as the trigger; it must forward its ref. Put click handlers on that element.',
+      },
+    ],
+    examples: examplesFor('hover-card'),
+    a11y: `Radix HoverCard: opens on pointer hover and on keyboard focus of the trigger, Escape closes; ignored on touch. The content is not announced and not reachable by keyboard, so it must only repeat or preview information available elsewhere. ${PORTAL_NOTE}`,
+    related: ['popover', 'tooltip', 'popover-parts'],
+  },
+  {
+    slug: 'command',
+    name: 'Command',
+    category: 'overlay',
+    description:
+      'Searchable list (cmdk): a command palette in `CommandDialog`, or an inline filterable list inside a Popover (pickers, comboboxes). Use DropdownMenu for a short fixed list of actions.',
+    status: 'stable',
+    importName: 'Command',
+    props: [
+      { name: 'value / onValueChange', type: 'string / (value: string) => void', description: 'Controlled highlighted item.' },
+      { name: 'shouldFilter', type: 'boolean', default: 'true', description: 'Set `false` to filter yourself (server search).' },
+      { name: 'filter', type: '(value: string, search: string) => number', description: 'Custom ranking; 0 hides an item.' },
+      { name: 'CommandInput value / onValueChange', type: 'string / (search: string) => void', description: 'Controlled query.' },
+      {
+        name: 'CommandInput icon / leading / wrapperClassName',
+        type: 'ReactNode / ReactNode / string',
+        description: 'Leading icon (`null` hides the search glyph), content between icon and input (a scope chip), wrapper row classes.',
+      },
+      { name: 'CommandItem onSelect', type: '(value: string) => void', description: 'Runs on click or Enter.' },
+      {
+        name: 'CommandDialog title / description',
+        type: 'string',
+        description: 'Screen-reader-only dialog name and description; plus every Dialog prop (`open`, `onOpenChange`).',
+      },
+    ],
+    examples: examplesFor('command'),
+    a11y: `cmdk: the input owns focus, ArrowUp/Down move the highlighted item (\`aria-activedescendant\`), Enter selects, \`CommandEmpty\` is announced in the list. \`CommandDialog\` is a modal Dialog (Escape closes). Overlay: typing makes the window focusable; give \`CommandDialog\` a translated \`title\`. ${PORTAL_NOTE}`,
+    related: ['dialog', 'popover', 'dropdown-menu'],
+  },
+];

@@ -48,7 +48,7 @@ function sectionOf(spec: ActiveFilterSpec): string | undefined {
   }
 }
 
-/** The sidebar Field label key of each kind of filter (stat rows are marked by their id instead). */
+/** The sidebar FilterRow label key of each kind of filter (stat rows are marked by their id instead). */
 function fieldOf(spec: ActiveFilterSpec): string | undefined {
   switch (spec.kind) {
     case 'type':

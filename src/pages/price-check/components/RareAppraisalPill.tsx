@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
-import { Skeleton, HoverPopover, scaleIn } from '@pd2-trader/ui';
+import { Skeleton, HoverCard, HoverCardContent, HoverCardTrigger, scaleIn } from '@pd2-trader/ui';
 import type { RareAppraisal, RareHistory } from '@/lib/rare-appraisal-api';
 import { CraftedBadges, VerdictBadge } from '@/components/rares/RareParts';
 import { RareAppraisalDetail } from '@/components/rares/RareAppraisalDetail';
@@ -62,9 +62,42 @@ export function RareAppraisalPill({
       variants={scaleIn}
       initial="hidden"
       animate="visible">
-      <HoverPopover
-        content={
-          <div className="max-h-(--radix-popover-content-available-height) w-popover max-w-viewport space-y-3 overflow-y-auto rounded-lg border border-border bg-popover p-3 text-sm text-popover-foreground shadow-panel">
+      <HoverCard>
+        <HoverCardTrigger asChild>
+          <div>
+            <div
+              title={hcNote ?? undefined}
+              className="group flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2 transition-[background-color,border-color,box-shadow] duration-(--dur-med) ease-out hover:border-glow/50 hover:bg-accent/60 hover:shadow-glow"
+            >
+              <VerdictBadge rare={appraisal}
+                className="px-2.5 py-1 text-xs" />
+              <CraftedBadges rare={appraisal}
+                className="flex-col items-start" />
+              <div className="flex flex-col leading-tight">
+                <span className="text-sm font-semibold tabular-nums text-foreground">{rankText(appraisal.rank)}</span>
+                <span className="text-3xs uppercase tracking-wider text-muted-foreground">
+                  {t('rareAppraisal.ofSlots', { slots })}
+                </span>
+              </div>
+              {market && (
+                <>
+                  <span aria-hidden
+                    className="h-7 w-px bg-border" />
+                  <div className="flex flex-col leading-tight">
+                    <span className="text-sm font-semibold tabular-nums text-foreground">
+                      {bandRange(market.lowHr, market.highHr)} HR
+                    </span>
+                    <span className="text-3xs uppercase tracking-wider text-muted-foreground">
+                      {t('rareAppraisal.usuallyListed')}
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </HoverCardTrigger>
+        <HoverCardContent variant="bare">
+          <div className="max-h-(--radix-hover-card-content-available-height) w-popover max-w-viewport space-y-3 overflow-y-auto rounded-lg border border-border bg-popover p-3 text-sm text-popover-foreground shadow-panel">
             <div className="flex items-center justify-between gap-3">
               <span
                 className={isCrafted(appraisal) ? 'truncate font-semibold text-q-crafted' : 'truncate font-semibold'}
@@ -80,38 +113,8 @@ export function RareAppraisalPill({
               history={history}
               hardcore={hardcore} />
           </div>
-        }
-      >
-        <div
-          title={hcNote ?? undefined}
-          className="group flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2 transition-[background-color,border-color,box-shadow] duration-(--dur-med) ease-out hover:border-glow/50 hover:bg-accent/60 hover:shadow-glow"
-        >
-          <VerdictBadge rare={appraisal}
-            className="px-2.5 py-1 text-xs" />
-          <CraftedBadges rare={appraisal}
-            className="flex-col items-start" />
-          <div className="flex flex-col leading-tight">
-            <span className="text-sm font-semibold tabular-nums text-foreground">{rankText(appraisal.rank)}</span>
-            <span className="text-3xs uppercase tracking-wider text-muted-foreground">
-              {t('rareAppraisal.ofSlots', { slots })}
-            </span>
-          </div>
-          {market && (
-            <>
-              <span aria-hidden
-                className="h-7 w-px bg-border" />
-              <div className="flex flex-col leading-tight">
-                <span className="text-sm font-semibold tabular-nums text-foreground">
-                  {bandRange(market.lowHr, market.highHr)} HR
-                </span>
-                <span className="text-3xs uppercase tracking-wider text-muted-foreground">
-                  {t('rareAppraisal.usuallyListed')}
-                </span>
-              </div>
-            </>
-          )}
-        </div>
-      </HoverPopover>
+        </HoverCardContent>
+      </HoverCard>
     </motion.div>
   );
 }

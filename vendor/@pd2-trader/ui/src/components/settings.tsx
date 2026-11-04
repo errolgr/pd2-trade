@@ -1,5 +1,7 @@
 import * as React from 'react';
 import { Info } from 'lucide-react';
+import { useFormContext } from 'react-hook-form';
+import { FieldDescription, FieldLabel } from './field';
 import { FormDescription, FormItem, FormLabel } from './form';
 import { Skeleton } from './skeleton';
 import { cn } from '../lib/utils';
@@ -79,8 +81,13 @@ export function SettingsGroup({ title, aside, children, className, dimmed }: Set
 interface SettingsRowProps {
   label: React.ReactNode;
   description?: React.ReactNode;
-  /** Control rendered on the right (inline) or under the label (stacked). Wrap the focusable part in FormControl. */
+  /**
+   * Control rendered on the right (inline) or under the label (stacked). Inside a Form/FormField wrap the focusable
+   * part in FormControl; standalone, give the control `id={controlId}`.
+   */
   control?: React.ReactNode;
+  /** Standalone rows (no react-hook-form): the control's id, so clicking the label focuses/toggles it. */
+  controlId?: string;
   /** Extra content rendered full-width under the row (chips, previews...). */
   children?: React.ReactNode;
   /** `stacked` puts the control under the label at full width (text inputs). */
@@ -94,13 +101,15 @@ interface SettingsRowProps {
 }
 
 /**
- * One setting: FormItem so FormLabel/FormControl/FormDescription keep their id + aria wiring.
- * Clicking the label focuses/toggles the control.
+ * One setting. Inside a react-hook-form Form (in a FormField) it is a FormItem, so FormLabel/FormControl/FormDescription
+ * keep their id + aria wiring. Outside a Form it renders plain Field parts: pass `controlId` (= the control's `id`)
+ * so the label points at the control. Clicking the label focuses/toggles the control.
  */
 export function SettingsRow({
   label,
   description,
   control,
+  controlId,
   children,
   layout = 'inline',
   disabled,
@@ -108,11 +117,36 @@ export function SettingsRow({
   labelClassName,
   settingKey,
 }: SettingsRowProps) {
+  const inForm = useFormContext() != null;
   const stacked = layout === 'stacked';
-  const labelBase = 'text-sm font-medium leading-snug text-foreground group-data-[disabled]/row:text-muted-foreground';
-  const descriptionBase = 'text-sm leading-relaxed';
+  const labelClasses = cn(
+    'text-sm font-medium leading-snug text-foreground group-data-[disabled]/row:text-muted-foreground',
+    labelClassName,
+  );
+  const descriptionClasses = 'text-sm leading-relaxed text-muted-foreground';
+  const descriptionId = controlId && description ? `${controlId}-description` : undefined;
+  const labelNode = inForm ? (
+    <FormLabel className={labelClasses}>{label}</FormLabel>
+  ) : (
+    <FieldLabel htmlFor={controlId}
+      className={labelClasses}>
+      {label}
+    </FieldLabel>
+  );
+  const descriptionNode =
+    description &&
+    (inForm ? (
+      <FormDescription className={descriptionClasses}>{description}</FormDescription>
+    ) : (
+      <FieldDescription id={descriptionId}
+        className={descriptionClasses}>
+        {description}
+      </FieldDescription>
+    ));
+  const Root = inForm ? FormItem : 'div';
   return (
-    <FormItem
+    <Root
+      data-slot="settings-row"
       data-disabled={disabled || undefined}
       data-setting-key={settingKey}
       className={cn(
@@ -124,21 +158,21 @@ export function SettingsRow({
     >
       {stacked ? (
         <div className="flex flex-col gap-2">
-          <FormLabel className={cn(labelBase, labelClassName)}>{label}</FormLabel>
+          {labelNode}
           {control && <div className="flex w-full items-center gap-2">{control}</div>}
-          {description && <FormDescription className={descriptionBase}>{description}</FormDescription>}
+          {descriptionNode}
         </div>
       ) : (
         <div className="flex flex-row items-center justify-between gap-x-6">
           <div className="min-w-0 flex-1 space-y-1">
-            <FormLabel className={cn(labelBase, labelClassName)}>{label}</FormLabel>
-            {description && <FormDescription className={descriptionBase}>{description}</FormDescription>}
+            {labelNode}
+            {descriptionNode}
           </div>
           {control && <div className="flex shrink-0 items-center gap-2">{control}</div>}
         </div>
       )}
       {children}
-    </FormItem>
+    </Root>
   );
 }
 

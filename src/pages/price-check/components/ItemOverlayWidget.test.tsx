@@ -255,6 +255,15 @@ const realSearches = () => searchListings.mock.calls.filter(([, opts]) => opts.l
 /** The filters and page of the last listed market service search. */
 const lastFilters = (): MarketFilters => realSearches()[realSearches().length - 1][0];
 const lastPage = () => realSearches()[realSearches().length - 1][1].page;
+/** Hovers `trigger` (Radix HoverCard opens on pointerenter after its delay) and returns the opened card. */
+async function hoverCard(trigger: HTMLElement): Promise<HTMLElement> {
+  fireEvent.pointerEnter(trigger);
+  return waitFor(() => {
+    const card = document.querySelector<HTMLElement>('[data-slot="hover-card-content"]');
+    if (!card) throw new Error('hover card did not open');
+    return card;
+  });
+}
 
 // ---------------------------------------------------------------- tests
 
@@ -378,8 +387,7 @@ describe('ItemOverlayWidget unique price pill', () => {
     );
     renderWidget(shako());
     const img = await screen.findByAltText('Harlequin Crest');
-    fireEvent.mouseEnter(img.parentElement!.parentElement!);
-    const popover = await screen.findByRole('dialog');
+    const popover = await hoverCard(img.parentElement!.parentElement!);
     expect(within(popover).getByText('Median').parentElement!.textContent).toContain('3.00 HR');
     expect(within(popover).getByText('Min').parentElement!.textContent).toContain('1.00 HR');
     expect(within(popover).getByText('Max').parentElement!.textContent).toContain('9.00 HR');
@@ -409,8 +417,7 @@ describe('ItemOverlayWidget unique price pill', () => {
     vi.mocked(fetchCorruptionPrices).mockResolvedValue(corruptions);
     renderWidget(shako());
     const img = await screen.findByAltText('Harlequin Crest');
-    fireEvent.mouseEnter(img.parentElement!.parentElement!);
-    const popover = await screen.findByRole('dialog');
+    const popover = await hoverCard(img.parentElement!.parentElement!);
     await within(popover).findByText('Top Corruptions');
 
     // first five, then Show More reveals the rest
@@ -1157,8 +1164,7 @@ describe('ItemOverlayWidget extra header behaviour', () => {
     // stat 360 carries the cube corruption key: 3 = attack rating %
     renderWidget(shako({ sockets: 1, stats: [{ stat_id: 360, name: 'Corrupted', value: 3 }] }));
     const img = await screen.findByAltText('Harlequin Crest');
-    fireEvent.mouseEnter(img.parentElement!.parentElement!);
-    const popover = await screen.findByRole('dialog');
+    const popover = await hoverCard(img.parentElement!.parentElement!);
     await within(popover).findByText('Top Corruptions');
 
     const own = within(popover).getByText("This Item's Corruption").closest('div.border-t') as HTMLElement;
@@ -1169,7 +1175,7 @@ describe('ItemOverlayWidget extra header behaviour', () => {
     expect(within(popover).getByText('Maxhp')).not.toBeNull();
 
     // socket breakdown: picking a socket count filters on exactly that many sockets
-    fireEvent.mouseEnter(within(own).getByText('Tohit Percent').closest('button')!.parentElement!);
+    fireEvent.pointerEnter(within(own).getByText('Tohit Percent').closest('button')!.parentElement!);
     fireEvent.click(await screen.findByText(/1 Socket$/));
     await waitFor(() => expect(searchListings).toHaveBeenCalled());
     const f = lastFilters();

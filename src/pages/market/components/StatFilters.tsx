@@ -26,7 +26,7 @@ import { newStatFilter } from '../lib/defaults';
 import { MAX_OR_BLOCKS, compactBlocks, groupOf, moveToGroup, orBlockNumbers, type StatGroup } from '../lib/stat-groups';
 import { isCorruption, isPseudo, searchStats, type StatChoice } from '../lib/stats';
 import type { StatFilter, StatPreset } from '../lib/types';
-import { Autocomplete, FILTER_HIGHLIGHT_CLASS, FilterHighlightContext, NumberInput, fieldInputClass } from './controls';
+import { Autocomplete, FILTER_HIGHLIGHT_CLASS, FilterHighlightContext, BoundInput, fieldInputClass } from './controls';
 import { choiceText, filterName } from './stat-text';
 import { Trans, useTranslation } from '@/i18n';
 
@@ -53,7 +53,7 @@ function StatNumber({
       <span className="shrink-0 text-3xs uppercase tracking-wider text-muted-foreground">
         {label === 'Min' ? t('stats.min') : t('stats.max')}
       </span>
-      <NumberInput
+      <BoundInput
         ariaLabel={label === 'Min' ? t('controls.minLabel', { label: name }) : t('controls.maxLabel', { label: name })}
         value={value}
         onChange={onChange}

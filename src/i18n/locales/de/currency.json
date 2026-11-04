@@ -60,13 +60,6 @@
     "change7d": "7 T.",
     "price": "Preis"
   },
-  "table": {
-    "noResults": "Keine Ergebnisse.",
-    "sortLabel": "{{title}}: {{action}}",
-    "sortAscending": "aufsteigend sortieren",
-    "sortDescending": "absteigend sortieren",
-    "clearSorting": "Sortierung aufheben"
-  },
   "confidence": {
     "ok": {
       "label": "Markt",

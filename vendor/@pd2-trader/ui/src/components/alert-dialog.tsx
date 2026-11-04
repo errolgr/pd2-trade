@@ -1,5 +1,6 @@
 import * as React from 'react';
 import * as AlertDialogPrimitive from '@radix-ui/react-alert-dialog';
+import type { VariantProps } from 'class-variance-authority';
 
 import { cn } from '../lib/utils';
 import { usePanelPortalContainer } from '../lib/portal';
@@ -117,22 +118,26 @@ const AlertDialogDescription = React.forwardRef<
   );
 });
 
+type AlertDialogButtonProps = Pick<VariantProps<typeof buttonVariants>, 'variant' | 'size'>;
+
 const AlertDialogAction = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Action>,
-  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Action>
->(function AlertDialogAction({ className, ...props }, ref) {
-  return <AlertDialogPrimitive.Action className={cn(buttonVariants(), className)}
+  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Action> & AlertDialogButtonProps
+>(function AlertDialogAction({ className, variant = 'default', size, ...props }, ref) {
+  return <AlertDialogPrimitive.Action data-slot="alert-dialog-action"
+    className={cn(buttonVariants({ variant, size }), className)}
     ref={ref}
     {...props} />;
 });
 
 const AlertDialogCancel = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Cancel>,
-  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Cancel>
->(function AlertDialogCancel({ className, ...props }, ref) {
+  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Cancel> & AlertDialogButtonProps
+>(function AlertDialogCancel({ className, variant = 'outline', size, ...props }, ref) {
   return (
     <AlertDialogPrimitive.Cancel
-      className={cn(buttonVariants({ variant: 'outline' }), className)}
+      data-slot="alert-dialog-cancel"
+      className={cn(buttonVariants({ variant, size }), className)}
       ref={ref}
       {...props}
     />
@@ -141,8 +146,6 @@ const AlertDialogCancel = React.forwardRef<
 
 export {
   AlertDialog,
-  AlertDialogPortal,
-  AlertDialogOverlay,
   AlertDialogTrigger,
   AlertDialogContent,
   AlertDialogHeader,

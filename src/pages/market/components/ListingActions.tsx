@@ -17,7 +17,7 @@ import { showToast } from '@/overlay';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { ListingActions } from '../hooks/useListingActions';
 import type { MarketApi } from '../lib/types';
-import { NumberInput, fieldInputClass } from './controls';
+import { BoundInput, fieldInputClass } from './controls';
 import { useTranslation } from '@/i18n';
 
 /** Icon-only action button (tooltip via title). */
@@ -130,7 +130,7 @@ export function OfferButton({
           />
           <label className="flex items-center gap-2 text-2xs text-muted-foreground">
             <span className="shrink-0">{t('offer.worth')}</span>
-            <NumberInput
+            <BoundInput
               ariaLabel={t('offer.valueLabel')}
               value={hr}
               step={0.1}

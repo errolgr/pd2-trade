@@ -1,0 +1,88 @@
+# @pd2-trader/ui components vs shadcn/ui
+
+Gap analysis against the full shadcn/ui component list (<https://ui.shadcn.com/docs/components>, November 2026).
+Every component here is documented in the docs registry (`@pd2-trader/ui/registry`, `src/registry/`) with props,
+runnable examples (`src/examples/<slug>/`) and keyboard/overlay notes; the Ladle catalog (`pnpm catalog`) and the
+website's component docs are generated from it.
+
+Status: **have** = shipped before this pass, **added** = new in this pass, **skipped** = deliberately not built.
+
+| shadcn/ui        | @pd2-trader/ui                                                                 | Status  | Notes                                                                                                                    |
+| ---------------- | ------------------------------------------------------------------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Accordion        | `Accordion*`                                                                   | have    | Radix; height motion keyframes generated with the tokens.                                                                |
+| Alert            | `Alert`                                                                        | have    | Panel-level issues use `Banner`; `Alert` for static callouts.                                                            |
+| Alert Dialog     | `AlertDialog*`                                                                 | have    | In the overlay prefer `confirmToast()` (no modal steals the game's focus).                                               |
+| Aspect Ratio     | `AspectRatio`                                                                  | added   | Item art, screenshots, video embeds on the website.                                                                      |
+| Attachment       | –                                                                              | skipped | AI chat element; no file attachments in the overlay or website.                                                          |
+| Avatar           | `Avatar`, `AvatarImage`, `AvatarFallback`                                      | added   | Seller / developer avatars, character portraits.                                                                         |
+| Badge            | `Badge` (incl. `count`)                                                        | have    |                                                                                                                          |
+| Breadcrumb       | `Breadcrumb*`                                                                  | have    |                                                                                                                          |
+| Bubble           | –                                                                              | skipped | AI chat element; trade chat renders its own message rows from DS primitives.                                             |
+| Button           | `Button`                                                                       | have    | Variants by job (`quiet`, `field`, `row`, `inline` sizes are DS additions).                                              |
+| Button Group     | `ButtonGroup`                                                                  | have    |                                                                                                                          |
+| Calendar         | –                                                                              | skipped | No date entry anywhere (prices and history use relative times and fixed ranges).                                         |
+| Card             | `Card*`, `ItemCard`                                                            | have    |                                                                                                                          |
+| Carousel         | –                                                                              | skipped | No carousel use; galleries scroll in `ScrollArea`.                                                                       |
+| Chart            | `Chart*` (recharts 3)                                                          | have    | `SparkChart` for inline trends.                                                                                          |
+| Checkbox         | `Checkbox`                                                                     | have    |                                                                                                                          |
+| Code Block       | `CodeBlock`                                                                    | added   | `<pre>` + copy button for the developer docs; token-colored tinting for json/bash/js/py, no highlighter dependency.     |
+| Collapsible      | `Collapsible*`                                                                 | have    |                                                                                                                          |
+| Combobox         | `Combobox`                                                                     | added   | On `Command` + `Popover`; word-match ranking, groups, limits (website sim pickers, overlay item search).                 |
+| Command          | `Command*`, `CommandDialog`                                                    | have    |                                                                                                                          |
+| Context Menu     | `ContextMenu*`                                                                 | added   | Shares the menu surface/item styles with `DropdownMenu` (one source).                                                    |
+| Data Table       | `DataTable` + `DataTableColumnHeader`/`Toolbar`/`ViewOptions`/`Pagination`     | added   | TanStack Table v8: sorting, filter, column visibility, selection, optional virtualization (TanStack Virtual).            |
+| Date Picker      | –                                                                              | skipped | Same as Calendar: no date input use.                                                                                     |
+| Dialog           | `Dialog*`                                                                      | have    |                                                                                                                          |
+| Direction        | –                                                                              | skipped | No RTL locale among the 8 shipped languages.                                                                             |
+| Drawer           | `Sheet side="bottom"`                                                          | skipped | Sheet covers it; vaul's drag-to-dismiss only matters on touch, and the overlay is desktop-only.                          |
+| Dropdown Menu    | `DropdownMenu*`                                                                | have    |                                                                                                                          |
+| Empty            | `EmptyState`                                                                   | have    | Same job as shadcn Empty; not duplicated.                                                                                |
+| Field            | `Field`, `FieldLabel`, `FieldDescription`, `FieldError`, `FieldGroup`, `FieldSet`, `FieldLegend` | added   | `Form*` (react-hook-form) composes the Field parts, so both look identical.                                              |
+| Hover Card       | `HoverCard*`                                                                   | added   | Replaces `HoverPopover` (one component per job).                                                                         |
+| Input            | `Input`                                                                        | have    |                                                                                                                          |
+| Input Group      | `InputGroup*`, `SearchInput`                                                   | added   | Addons, icons, inline buttons; `SearchInput` = search icon + clear button.                                               |
+| Input OTP        | –                                                                              | skipped | No one-time-code entry (auth is OAuth / API keys).                                                                       |
+| Item             | `Item*`                                                                        | added   | Generic media/title/description/actions row; `MarketRow`/`DataRow` stay for D2 data.                                    |
+| Kbd              | `Kbd`, `KbdGroup`, `KbdCombo`                                                  | have + added | `KbdCombo keys="Ctrl+Shift+D"` for hotkey copy.                                                                   |
+| Label            | `Label`                                                                        | have    |                                                                                                                          |
+| Marker           | –                                                                              | skipped | AI element (inline citation marker); no use.                                                                             |
+| Menubar          | –                                                                              | skipped | No application menubar in the overlay or website; `NavigationMenu` and `DropdownMenu` cover navigation and actions.      |
+| Message          | –                                                                              | skipped | AI chat element.                                                                                                         |
+| Message Scroller | –                                                                              | skipped | AI chat element.                                                                                                         |
+| Native Select    | `NativeSelect`, `NativeSelectOption`, `NativeSelectOptGroup`                   | added   | Native picker for website forms on touch devices; `Select` elsewhere.                                                    |
+| Navigation Menu  | `NavigationMenu*`                                                              | added   | Website header navigation.                                                                                               |
+| Pagination       | `Pagination*`                                                                  | have    |                                                                                                                          |
+| Popover          | `Popover*`, `PopoverTile`/`PopoverKeyValue`/`PopoverSectionTitle`              | have    |                                                                                                                          |
+| Progress         | `Progress`                                                                     | have    |                                                                                                                          |
+| Questionnaire    | –                                                                              | skipped | AI element.                                                                                                              |
+| Radio Group      | `RadioGroup`, `RadioGroupItem`                                                 | have    |                                                                                                                          |
+| Resizable        | `ResizablePanelGroup`, `ResizablePanel`, `ResizableHandle`                     | added   | react-resizable-panels; split panels (market list / detail).                                                             |
+| Scroll Area      | `ScrollArea`, `ScrollBar`                                                      | have    |                                                                                                                          |
+| Select           | `Select*`                                                                      | have    | `SelectItem` gains `icon` and `description` for rich rows.                                                               |
+| Separator        | `Separator`                                                                    | have    |                                                                                                                          |
+| Sheet            | `Sheet*`                                                                       | have    | In-panel sheets slide over the panel, not the monitor edge.                                                              |
+| Sidebar          | `Sidebar*`, `SidebarProvider`, `useSidebar`                                    | added   | Website developer/admin layouts, overlay split panels; collapses to icons or a sheet.                                    |
+| Skeleton         | `Skeleton`, `SkeletonRows`                                                     | have    |                                                                                                                          |
+| Slider           | `Slider`                                                                       | have    |                                                                                                                          |
+| Spinner          | `Spinner`                                                                      | added   | Inline / in-button busy state only; content areas use `Skeleton` (DESIGN_RULES §9).                                      |
+| Switch           | `Switch`                                                                       | have    |                                                                                                                          |
+| Table            | `Table*`                                                                       | have    |                                                                                                                          |
+| Tabs             | `Tabs*`                                                                        | have    |                                                                                                                          |
+| Textarea         | `Textarea`                                                                     | have    |                                                                                                                          |
+| Toast            | `Toaster`, `toast` (sonner)                                                    | have    | Overlay wraps it as `showToast`/`confirmToast`/`undoToast`.                                                              |
+| Toggle           | `Toggle` (incl. `chip`)                                                        | have    |                                                                                                                          |
+| Toggle Group     | `ToggleGroup*`                                                                 | have    |                                                                                                                          |
+| Tooltip          | `Tooltip*`                                                                     | have    |                                                                                                                          |
+| Trace            | –                                                                              | skipped | AI element.                                                                                                              |
+| Typography       | `Heading`, `Text`, `Muted`, `Code`, `Prose`                                    | added   | Bound to the type scale (`text-3xs` … `text-hero`); `Prose` for long-form docs/guides.                                   |
+
+## Beyond shadcn
+
+| Component                                                    | Job                                                                 |
+| ------------------------------------------------------------ | ------------------------------------------------------------------- |
+| `NumberInput`                                                | Integer stepper: draft text, clamping, Shift big steps, unit/prefix |
+| `PanelChrome`, `PanelSurface`                                | Overlay panel frame and window-opacity-aware surface                |
+| `SettingsSection` / `SettingsGroup` / `SettingsRow` / …      | Settings page layout                                                |
+| `Banner`, `EmptyState`, `ErrorChip`, `SkeletonRows`          | Panel-level notices, empty/blocked, inline failure, list loading    |
+| `Slot*`                                                      | What plugins render inside host slots                               |
+| D2 (`ItemName`, `RuneIcon`, `PriceTag`, `MarketRow`, …)      | PD2 domain; see the "Diablo II" category in the registry            |

@@ -31,4 +31,54 @@ const KbdGroup = React.forwardRef<React.ElementRef<'kbd'>, React.ComponentPropsW
     {...props} />;
 });
 
-export { Kbd, KbdGroup };
+/**
+ * Split a shortcut string into its keys: `'Ctrl+Shift+D'` → `['Ctrl', 'Shift', 'D']`. Whitespace around keys is
+ * trimmed; a `+` key is written as a trailing or doubled `+` (`'Ctrl++'` → `['Ctrl', '+']`). Keys are not translated.
+ */
+function parseKeyCombo(combo: string): string[] {
+  const keys: string[] = [];
+  let current = '';
+  for (const ch of combo) {
+    if (ch === '+' && current.trim() !== '') {
+      keys.push(current.trim());
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  if (current.trim() !== '') keys.push(current.trim());
+  return keys;
+}
+
+interface KbdComboProps extends Omit<React.ComponentPropsWithoutRef<'kbd'>, 'children'> {
+  /** `'Ctrl+Shift+D'` (split on `+`) or the keys as an array. Rendered as written (no ⌘/⇧ symbols). */
+  keys: string | string[];
+}
+
+/** A whole shortcut from a string: one Kbd per key inside a KbdGroup, with a visual `+` between keys. */
+const KbdCombo = React.forwardRef<React.ElementRef<'kbd'>, KbdComboProps>(function KbdCombo(
+  { keys, ...props },
+  ref,
+) {
+  const list = typeof keys === 'string' ? parseKeyCombo(keys) : keys;
+  return (
+    <KbdGroup data-slot="kbd-combo"
+      ref={ref}
+      {...props}>
+      {list.map((key, i) => (
+        <React.Fragment key={i}>
+          {i > 0 && (
+            <span aria-hidden
+              className="text-3xs text-muted-foreground">
+              +
+            </span>
+          )}
+          <Kbd>{key}</Kbd>
+        </React.Fragment>
+      ))}
+    </KbdGroup>
+  );
+});
+
+export { Kbd, KbdGroup, KbdCombo, parseKeyCombo };
+export type { KbdComboProps };

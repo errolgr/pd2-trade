@@ -60,13 +60,6 @@
     "change7d": "7 j",
     "price": "Prix"
   },
-  "table": {
-    "noResults": "Aucun résultat.",
-    "sortLabel": "{{title}} : {{action}}",
-    "sortAscending": "tri croissant",
-    "sortDescending": "tri décroissant",
-    "clearSorting": "annuler le tri"
-  },
   "confidence": {
     "ok": {
       "label": "marché",

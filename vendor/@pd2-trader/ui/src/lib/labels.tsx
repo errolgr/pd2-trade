@@ -20,6 +20,39 @@ export interface UiLabels {
   previousPage: string;
   nextPage: string;
   morePages: string;
+  /** CodeBlock copy button: action label, the confirmation shown after copying, the error toast when copy fails. */
+  copy: string;
+  copied: string;
+  copyFailed: string;
+  /** Sidebar: trigger/rail label and the narrow-viewport sheet's screen-reader title. */
+  toggleSidebar: string;
+  sidebar: string;
+  /** DataTable: filter field, column menu, empty state, row selection and pagination. */
+  filterRows: string;
+  columns: string;
+  toggleColumns: string;
+  noResults: string;
+  selectAll: string;
+  selectRow: string;
+  rowsSelected: (selected: number, total: number) => string;
+  rowsPerPage: string;
+  pageOf: (page: number, count: number) => string;
+  /** Field: muted tag after an optional field's label. */
+  optional: string;
+  /** SearchInput / Combobox: clear button. */
+  clear: string;
+  /** Combobox: default placeholder, empty list, heading of hint/keyword-only matches, rows past the limit. */
+  searchPlaceholder: string;
+  noMatches: string;
+  otherMatches: string;
+  moreMatches: (count: number) => string;
+  /** NumberInput: −/+ button labels (`label` names the value), the Shift step tooltip and out-of-range hints. */
+  decrease: (label: string) => string;
+  increase: (label: string) => string;
+  bigStep: (step: number) => string;
+  numberMin: (min: number) => string;
+  numberMax: (max: number) => string;
+  wholeNumber: string;
 }
 
 export const DEFAULT_UI_LABELS: UiLabels = {
@@ -35,6 +68,32 @@ export const DEFAULT_UI_LABELS: UiLabels = {
   previousPage: 'Go to previous page',
   nextPage: 'Go to next page',
   morePages: 'More pages',
+  copy: 'Copy',
+  copied: 'Copied',
+  copyFailed: "Couldn't copy. Select the text and copy it yourself.",
+  toggleSidebar: 'Toggle sidebar',
+  sidebar: 'Sidebar',
+  filterRows: 'Filter…',
+  columns: 'Columns',
+  toggleColumns: 'Toggle columns',
+  noResults: 'No results',
+  selectAll: 'Select all',
+  selectRow: 'Select row',
+  rowsSelected: (selected, total) => `${selected} of ${total} selected`,
+  rowsPerPage: 'Rows per page',
+  pageOf: (page, count) => `Page ${page} of ${count}`,
+  optional: 'optional',
+  clear: 'Clear',
+  searchPlaceholder: 'Search…',
+  noMatches: 'No matches',
+  otherMatches: 'Other matches',
+  moreMatches: (count) => `${count} more — keep typing to narrow`,
+  decrease: (label) => `Decrease ${label}`,
+  increase: (label) => `Increase ${label}`,
+  bigStep: (step) => `Shift: ±${step}`,
+  numberMin: (min) => `Min ${min}`,
+  numberMax: (max) => `Max ${max}`,
+  wholeNumber: 'Whole number',
 };
 
 const UiLabelsContext = createContext<UiLabels>(DEFAULT_UI_LABELS);

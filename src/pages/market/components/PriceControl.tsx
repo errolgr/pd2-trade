@@ -10,7 +10,7 @@ import {
   type PriceBucket,
 } from '../lib/facets';
 import { useRangePicker } from '../hooks/useRangePicker';
-import { ClearButton, NumberInput } from './controls';
+import { ClearButton, BoundInput } from './controls';
 import { FACET_DIM, FacetTip, useFacetText } from './FacetCounts';
 
 const hrText = (n: number) => n.toLocaleString(currentLocale(), { maximumFractionDigits: 2 });
@@ -132,7 +132,7 @@ export function PriceControl({
         </div>
       )}
       <div className="relative flex items-center">
-        <NumberInput
+        <BoundInput
           ariaLabel={t('controls.minLabel', { label })}
           placeholder={t('controls.min')}
           value={hrMin}
@@ -142,7 +142,7 @@ export function PriceControl({
         />
         <span aria-hidden
           className="h-3 w-px shrink-0 bg-input" />
-        <NumberInput
+        <BoundInput
           ariaLabel={t('controls.maxLabel', { label })}
           placeholder={t('controls.max')}
           value={hrMax}

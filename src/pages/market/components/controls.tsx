@@ -32,7 +32,7 @@ export const ANY = '__any';
 export const fieldInputClass = 'h-7 rounded-md px-2 text-xs shadow-none';
 
 /**
- * What a hovered empty-search suggestion would drop, marked in the sidebar: a Section by its title, a Field by its
+ * What a hovered empty-search suggestion would drop, marked in the sidebar: a Section by its title, a FilterRow by its
  * label, a stat row by its id. Null: nothing hovered.
  */
 export interface FilterHighlight {
@@ -121,7 +121,15 @@ export function Section({
 }
 
 /** Label on the left, control on the right — one line per filter. */
-export function Field({ label, htmlFor, children }: { label: string; htmlFor?: string; children: React.ReactNode }) {
+export function FilterRow({
+  label,
+  htmlFor,
+  children,
+}: {
+  label: string;
+  htmlFor?: string;
+  children: React.ReactNode;
+}) {
   const highlight = React.useContext(FilterHighlightContext);
   return (
     <div
@@ -237,17 +245,17 @@ export function TriField({
     { value: 'no' as const, label: no, facet: facet(no, counts?.no) },
   ];
   return (
-    <Field label={label}>
+    <FilterRow label={label}>
       <Segmented label={label}
         value={value}
         options={options}
         onChange={onChange} />
-    </Field>
+    </FilterRow>
   );
 }
 
 /** Integer input where empty means "no bound". */
-export function NumberInput({
+export function BoundInput({
   value,
   onChange,
   placeholder,
@@ -303,9 +311,9 @@ export function RangeField({
 }) {
   const { t } = useTranslation('market');
   return (
-    <Field label={label}>
+    <FilterRow label={label}>
       <div className="flex items-center gap-1">
-        <NumberInput
+        <BoundInput
           ariaLabel={t('controls.minLabel', { label })}
           placeholder={t('controls.min')}
           value={min}
@@ -313,7 +321,7 @@ export function RangeField({
           onChange={(v) => onChange(v, max)}
         />
         <span className="text-xs text-muted-foreground">–</span>
-        <NumberInput
+        <BoundInput
           ariaLabel={t('controls.maxLabel', { label })}
           placeholder={t('controls.max')}
           value={max}
@@ -321,7 +329,7 @@ export function RangeField({
           onChange={(v) => onChange(min, v)}
         />
       </div>
-    </Field>
+    </FilterRow>
   );
 }
 
@@ -348,7 +356,7 @@ export function SelectField({
   const anyLabel = anyLabelProp === undefined ? t('filters.any') : anyLabelProp;
   const peak = Math.max(0, ...options.map((o) => o.count ?? 0));
   return (
-    <Field label={label}>
+    <FilterRow label={label}>
       <Select value={value ?? ANY}
         disabled={disabled}
         onValueChange={(v) => onChange(v === ANY ? undefined : v)}>
@@ -375,7 +383,7 @@ export function SelectField({
           ))}
         </SelectContent>
       </Select>
-    </Field>
+    </FilterRow>
   );
 }
 

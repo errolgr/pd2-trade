@@ -5,7 +5,20 @@ import { DAMAGE_PAIRS, damagePairText, statIdToProperty, StatId } from '@/pages/
 import { statText } from '@/pages/price-check/lib/tooltip-lines';
 import { fuzzyClassSkillByName, fuzzyClassSubSkillByName } from '@/assets/class-skills';
 import { X, Check, Info, Eraser } from 'lucide-react';
-import { cn, Button, Checkbox, Badge, HoverPopover, Input, DUR, EASE_OUT, listItem, listStagger } from '@pd2-trader/ui';
+import {
+  cn,
+  Button,
+  Checkbox,
+  Badge,
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+  Input,
+  DUR,
+  EASE_OUT,
+  listItem,
+  listStagger,
+} from '@pd2-trader/ui';
 import type { PseudoOption } from '@/pages/price-check/lib/pseudo-fold';
 import { PseudoChip } from './PseudoChip';
 import type { AppraisedStat } from '@/lib/rare-appraisal-api';
@@ -334,15 +347,18 @@ export const StatRow: React.FC<StatRowProps> = ({
                   )}
                 </AnimatePresence>
                 {isInjectedCorrupted && (
-                  <HoverPopover
-                    content={
+                  <HoverCard>
+                    <HoverCardTrigger asChild>
+                      <div>
+                        <Info className="size-3.5 cursor-help text-muted-foreground transition-colors hover:text-foreground" />
+                      </div>
+                    </HoverCardTrigger>
+                    <HoverCardContent variant="bare">
                       <div className="max-w-xs rounded-lg border border-border bg-popover p-2.5 text-xs leading-relaxed text-popover-foreground shadow-panel">
                         {t('statRow.injectedCorruptedHint')}
                       </div>
-                    }
-                  >
-                    <Info className="size-3.5 cursor-help text-muted-foreground transition-colors hover:text-foreground" />
-                  </HoverPopover>
+                    </HoverCardContent>
+                  </HoverCard>
                 )}
                 {stat.corrupted && (
                   <span className="text-q-corrupted"

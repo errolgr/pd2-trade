@@ -4,6 +4,7 @@ import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 
 import { cn } from '../lib/utils';
 import { usePanelPortalContainer } from '../lib/portal';
+import { useFieldControl } from './field';
 
 function Select({ ...props }: React.ComponentProps<typeof SelectPrimitive.Root>) {
   return <SelectPrimitive.Root data-slot="select"
@@ -28,18 +29,22 @@ const SelectValue = React.forwardRef<
     {...props} />;
 });
 
+/** `size`: `default` = h-9, `sm` = h-8 (toolbars, dense rows). */
 const SelectTrigger = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
->(function SelectTrigger({ className, children, ...props }, ref) {
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger> & { size?: 'sm' | 'default' }
+>(function SelectTrigger({ className, children, size = 'default', ...rest }, ref) {
+  const props = useFieldControl(rest);
   return (
     // data-keep-keyboard: an open select takes the overlay's keyboard, so typing a letter jumps to that option
     // (and a hand-off to the game, which blurs the window, no longer closes it as it opens)
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       data-keep-keyboard
+      data-size={size}
       className={cn(
         "border-input data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/40 hover:border-ring/40 data-[state=open]:border-ring aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive flex h-9 w-fit items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,background-color,border-color,box-shadow,transform] duration-(--dur-fast) ease-out outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        'data-[size=sm]:h-8',
         className,
       )}
       ref={ref}
@@ -102,11 +107,30 @@ const SelectLabel = React.forwardRef<
   );
 });
 
-/** `aside`: rendered in the row but outside its text (which the trigger shows once the item is picked). */
+/**
+ * `icon`: leading icon (size-4), shown in the row and in the trigger once picked. `description`: muted second line,
+ * only in the list. `aside`: rendered in the row but outside its text (which the trigger shows once picked).
+ */
 const SelectItem = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item> & { aside?: React.ReactNode }
->(function SelectItem({ className, children, aside, ...props }, ref) {
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item> & {
+    aside?: React.ReactNode;
+    icon?: React.ReactNode;
+    description?: React.ReactNode;
+  }
+>(function SelectItem({ className, children, aside, icon, description, ...props }, ref) {
+  const text = (
+    <SelectPrimitive.ItemText>
+      {icon ? (
+        <span className="flex min-w-0 items-center gap-2">
+          {icon}
+          {children}
+        </span>
+      ) : (
+        children
+      )}
+    </SelectPrimitive.ItemText>
+  );
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
@@ -122,7 +146,17 @@ const SelectItem = React.forwardRef<
           <CheckIcon className="size-4" />
         </SelectPrimitive.ItemIndicator>
       </span>
-      <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+      {description ? (
+        <div className="flex min-w-0 flex-col gap-0.5">
+          {text}
+          <span data-slot="select-item-description"
+            className={cn('text-2xs text-muted-foreground', icon && 'pl-6')}>
+            {description}
+          </span>
+        </div>
+      ) : (
+        text
+      )}
       {aside}
     </SelectPrimitive.Item>
   );

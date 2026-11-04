@@ -57,15 +57,32 @@ icons: lucide-react only. size-3 (dense chip), size-3.5 (inline with text-xs), s
 Escape hatch (rare, reason required): `// ds-allow: <reason>` on the line above (JSX: {/* ds-allow: <reason> */}).
 
 ## Components (everything from ONE import: import { … } from '@pd2-trader/ui'; never deep-import files)
-primitives: Button ButtonGroup Kbd KbdGroup Badge Card ItemCard Input Textarea Label Checkbox Switch Slider Select* Tabs* RadioGroup RadioGroupItem Accordion* Collapsible* Pagination* Toggle ToggleGroup* Tooltip* TooltipProvider
-  Popover* DropdownMenu* Dialog* AlertDialog* Sheet* Command* (cmdk) Form* (react-hook-form) Table* ScrollArea Separator Progress Skeleton Alert Breadcrumb* Chart* Toaster toast
+primitives: Button ButtonGroup Kbd KbdGroup KbdCombo {keys:'Ctrl+Shift+D'|string[]} Badge (variants incl. count success warning info danger muted) Card (asChild link tile) ItemCard
+  Avatar AvatarImage AvatarFallback Heading {level?:1-4, as?} Text {size?, tone?} Muted Code Prose {as?} (long-form copy) CodeBlock {code, title?, language? (tints json/bash/js/py), size?, onCopy?} Label Separator AspectRatio
+  Accordion* Collapsible* ResizablePanelGroup ResizablePanel ResizableHandle {withHandle?} ScrollArea Progress Skeleton Spinner (in-button/inline busy only) Alert Toaster toast
+  Tooltip* TooltipProvider (tap toggles on touch) Popover* HoverCard* (HoverCardContent variant?:default|bare) DropdownMenu* ContextMenu* Dialog* AlertDialog* Sheet* (side=bottom = drawer) Command* (cmdk)
+  Tabs* Breadcrumb* Pagination* NavigationMenu* Sidebar* SidebarProvider useSidebar Table* Item* Chart* (recharts)
+  DataTable {columns: ColumnDef[], data, getRowId?, toolbar?, footer?, selectable?, pageSize?, virtualized?, dense?, onRowClick?} + DataTableColumnHeader DataTableToolbar DataTableViewOptions DataTablePagination
+forms: Field {label?, hint?, error?, optional?, orientation?} FieldLabel FieldDescription FieldError FieldGroup FieldSet FieldLegend (wires id/aria-describedby/aria-invalid into DS controls)
+  Form* (react-hook-form, renders Field parts) Input InputGroup* SearchInput {onClear?, size?} Textarea Checkbox Switch Slider RadioGroup RadioGroupItem
+  Select* (SelectItem icon? description?; SelectTrigger size?:sm|default) NativeSelect* (native picker, website touch) Toggle ToggleGroup*
+  Combobox {options:{value,label,hint?,group?,keywords?,disabled?}[], value, onChange(value, option), clearable?, flatSearch?, limit?, renderIcon?, size?}
+  NumberInput {value, onChange, min?, max?, step?, bigStep?, label, unit?, prefix?, size?}
+  pick one: searchable → Combobox, short list → Select, native on touch → NativeSelect, 2-5 visible → RadioGroup
 overlay patterns: PanelSurface (panel body, window-opacity aware) PanelChrome {title icon? actions? center? onClose? diabloFont?} (h-10 title bar, drag handle)
-  HoverPopover PopoverTile PopoverKeyValue PopoverSectionTitle SettingsSection SettingsGroup SettingsRow SettingsHint SettingsSkeleton
-  Banner {tone:info|warning|destructive, icon, children, actions?} EmptyState {icon?, title, description?, action?} ErrorChip {message, onRetry?} SkeletonRows {rows?}
+  PopoverTile PopoverKeyValue PopoverSectionTitle SettingsSection SettingsGroup SettingsRow {controlId? standalone or inside Form} SettingsHint SettingsSkeleton
+  Banner {tone:info|success|warning|destructive, icon, children, actions?} EmptyState {icon?, title, description?, action?} ErrorChip {message, onRetry?} SkeletonRows {rows?}
+docs registry: import { registry, CATEGORIES, getComponentDoc } from '@pd2-trader/ui/registry' (props, runnable examples with source, a11y notes per component).
 domain: ItemName {name, quality?, runeword?} (+ itemQualityClass(quality)) RuneIcon {rune} PriceTag {amount, unit:'hr'|'rune'|'gold', rune?, trend?:'up'|'down'|'flat'}
-  CurrencyAmount {amount, unit, rune?, label?, delta?, size?} DataRow {label, value} StatLine {children, range?, corrupted?}
+  CurrencyAmount {amount, unit, rune?, label?, delta?, size?} DataRow {label, value} StatLine {children, range?, value?, corrupted?}
   MarketRow {name, quality?, icon?, subtitle?, price?, meta?, onClick?, selected?} SparkChart {points, tone?, showChange?}
   formatHrAmount(n) formatAmount(n, unit) usePriceText(n, unit, rune?)
+d2 (game strings via D2LabelsProvider): QualityBadge {quality} ClassIcon {cls, size?, src?} ClassBadge {cls, level?} ModeBadge {ladder?, hardcore?, season?, dead?, size?}
+  CorruptionBadge {outcome?, variant?:chip|dot} AreaBadge {name, tier?, corrupted?} AffixLine {kind, affix?, children, range?, value?} ItemArt {name, quality?, src?, size?}
+  SocketRow {sockets, filled?} ItemTooltip {item: TooltipItem, footer?, compact?} RunewordCard {name, runes, bases, level?, mods?, price?} RuneLadder {runes, unit?, highlight?, onSelect?}
+  ResistanceBar {element, total, max?} BreakpointTable {kind, breakpoints, current} StatSheet {sections} EquipmentSlot {slot, item?, layout?} PaperDoll {items, variant?}
+  InventoryGrid {cols, rows, items} CharacterCard {name, cls, level, ladder?, hardcore?, variant?} MercenaryCard {type, level, items?} ListingCard {item, price?, seller}
+  TradeOfferCard {item, direction, counterparty, offer, status} PriceHistoryChart {points, unit} UberProgress {encounter, materials, variant?}
 slots (what plugins render into core surfaces): SlotSection {title, children} SlotRow {label, value, tone?} SlotBadge {text, tone?} SlotText {text, tone?, size?:'sm'|'md'}
   SlotColumn SlotList {items} SlotDivider SlotAction {label, onClick, disabled?}; SlotTone = default|muted|success|warning|danger|q-unique|q-set|q-rare|q-magic|q-crafted|q-rune
 runtime: cn (class merge that knows the DS scale) UiLabelsProvider/useUiLabels (translated built-in strings) PanelPortalContext
