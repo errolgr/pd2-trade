@@ -37,8 +37,11 @@ interface ComboboxProps<V extends ComboboxValue = string>
   options: readonly ComboboxOption<V>[];
   /** The selected option's value, or null. */
   value: V | null;
-  /** Called with the picked option (or `null, null` from the clear button). */
-  onChange: (value: V | null, option: ComboboxOption<V> | null) => void;
+  /**
+   * Called with the picked option (or `null, null` from the clear button). `NoInfer`: V comes from `options`, so
+   * passing a `useState` setter works under non-strict consumer configs too.
+   */
+  onChange: (value: NoInfer<V> | null, option: ComboboxOption<NoInfer<V>> | null) => void;
   /** Shown while nothing is selected (default: UiLabels `searchPlaceholder`). */
   placeholder?: string;
   /** Shown when nothing matches (default: UiLabels `noMatches`). */

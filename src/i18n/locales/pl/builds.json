@@ -94,18 +94,6 @@
     "removeLabel": "{{action}} {{name}}"
   },
   "character": {
-    "slots": {
-      "helm": "Hełm",
-      "amulet": "Amulet",
-      "weapon": "Broń",
-      "armor": "Zbroja",
-      "offHand": "Druga ręka",
-      "ring": "Pierścień",
-      "belt": "Pas",
-      "gloves": "Rękawice",
-      "boots": "Buty",
-      "shield": "Tarcza"
-    },
     "notFound": "Brak śledzonej postaci o nazwie {{name}}",
     "notFoundInMode": "Brak śledzonej postaci o nazwie {{name}} w {{mode}}",
     "notFoundDescription": "Śledzone są postacie ladder od poziomu 80, odświeżane mniej więcej raz dziennie. Postaci, która dopiero osiągnęła 80, lub z literówką może jeszcze tu nie być.",
@@ -121,11 +109,9 @@
     "equipment": "Ekwipunek",
     "charms": "Charmy",
     "weaponSwitch": "Zmiana broni",
-    "mercTitle": "Najemnik <muted>· {{type}}</muted>",
     "paneLabel": "Widok postaci",
     "gearUp": "Dobór ekwipunku",
     "timeline": "Oś czasu",
-    "ethereal": "Ethereal",
     "skills": "Umiejętności",
     "hardTotal": "bazowe / łącznie",
     "noSkills": "Brak zapisanych umiejętności."

@@ -42,6 +42,8 @@ export interface StatRowData {
   parts?: readonly { label: React.ReactNode; text: string; tone?: StatTone | null }[];
   /** Breakpoint chips. */
   ladder?: readonly { at: number | string; state: 'past' | 'current' | 'next' | 'future'; title?: string }[] | null;
+  /** Replaces the label/value line (a ResistanceBar, a BreakpointTable); note, state, parts, ladder and sources still render. */
+  visual?: React.ReactNode;
   /** Where the stat comes from; shown in a tooltip on hover or focus. */
   sources?: readonly { title: string; sources: readonly StatSource[] }[];
 }
@@ -71,6 +73,7 @@ function StatRow({ row }: { row: StatRowData }) {
         sources.length > 0 && 'hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring/60',
       )}
     >
+      {row.visual ?? (
       <div className="flex items-baseline gap-2">
         <span className="min-w-0 flex-1 truncate text-muted-foreground">
           {row.label}
@@ -84,6 +87,7 @@ function StatRow({ row }: { row: StatRowData }) {
           </span>
         )}
       </div>
+      )}
       {(row.note || row.state) && (
         <div className="flex items-baseline justify-between gap-2 text-2xs">
           {row.note ? <span className="text-muted-foreground">{row.note}</span> : <span />}

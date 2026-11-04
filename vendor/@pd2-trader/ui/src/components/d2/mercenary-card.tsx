@@ -12,7 +12,8 @@ interface MercenaryCardProps {
   type: React.ReactNode;
   /** Hireling name ("Fiona"). */
   name?: React.ReactNode;
-  level: number;
+  /** Omitted when the source doesn't know it (builds API mercs). */
+  level?: number;
   /** Act the hireling comes from (1, 2, 3, 5). */
   act?: 1 | 2 | 3 | 5;
   /** Aura or main skill ("Holy Freeze", "Might"). */
@@ -20,6 +21,8 @@ interface MercenaryCardProps {
   /** Worn gear; omit to show the header only. */
   items?: Partial<Record<EquipSlot, EquippedItem | null>>;
   tooltipFor?: (slot: EquipSlot) => React.ReactNode;
+  /** Passed to the PaperDoll: wraps each slot in your own trigger. */
+  wrapSlot?: (slot: EquipSlot, node: React.ReactElement) => React.ReactNode;
   badgeFor?: (slot: EquipSlot) => React.ReactNode;
   /** Header right (gear value, actions). */
   aside?: React.ReactNode;
@@ -27,7 +30,7 @@ interface MercenaryCardProps {
 }
 
 /** A character's hireling: type, act, level and aura, and its seven-slot paper doll. */
-function MercenaryCard({ type, name, level, act, skill, items, tooltipFor, badgeFor, aside, className }: MercenaryCardProps) {
+function MercenaryCard({ type, name, level, act, skill, items, tooltipFor, wrapSlot, badgeFor, aside, className }: MercenaryCardProps) {
   const l = useD2Labels();
   return (
     <ItemCard data-slot="mercenary-card"
@@ -44,9 +47,9 @@ function MercenaryCard({ type, name, level, act, skill, items, tooltipFor, badge
             {name && <span className="font-normal text-muted-foreground"> · {name}</span>}
           </span>
           <span className="flex flex-wrap items-center gap-x-1.5 text-2xs text-muted-foreground">
-            <span className="text-foreground tabular-nums">{l.level(String(level))}</span>
-            {act !== undefined && <span>· {l.act(String(act))}</span>}
-            {skill && <span className="text-q-magic">· {skill}</span>}
+            {level !== undefined && <span className="text-foreground tabular-nums">{l.level(String(level))}</span>}
+            {act !== undefined && <span>{level !== undefined && '· '}{l.act(String(act))}</span>}
+            {skill && <span className="text-q-magic">{(level !== undefined || act !== undefined) && '· '}{skill}</span>}
           </span>
         </div>
         {aside && <div className="shrink-0">{aside}</div>}
@@ -54,6 +57,7 @@ function MercenaryCard({ type, name, level, act, skill, items, tooltipFor, badge
       {items && <PaperDoll variant="merc"
         items={items}
         tooltipFor={tooltipFor}
+        wrapSlot={wrapSlot}
         badgeFor={badgeFor} />}
     </ItemCard>
   );

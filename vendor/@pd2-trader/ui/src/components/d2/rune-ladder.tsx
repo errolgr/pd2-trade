@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 import { cn } from '../../lib/utils';
-import type { PriceTrend, PriceUnit } from '../price';
+import { PriceTag, type PriceTrend, type PriceUnit } from '../price';
 import { MarketRow } from '../rows';
 import { RuneIcon } from '../rune-icon';
 import { runeNumber, runeTier, type RuneTier } from './data';
@@ -16,6 +16,10 @@ export interface RunePrice {
   change?: number;
   /** Listings behind the price. */
   listings?: number;
+  /** Runes held: the subtitle adds "×9", the row prices the stack (quantity × price) with the unit price muted. */
+  quantity?: number;
+  /** Rune art URL (forwarded to RuneIcon); default `/runes/<X>_Rune.png`. */
+  src?: string;
 }
 
 interface RuneLadderProps extends Omit<React.ComponentProps<'div'>, 'children' | 'onSelect'> {
@@ -29,12 +33,14 @@ interface RuneLadderProps extends Omit<React.ComponentProps<'div'>, 'children' |
   /** Marks one rune (the one being priced). */
   highlight?: string;
   onSelect?: (rune: RunePrice) => void;
+  /** Makes each row a link (cmd-click / new tab); `onSelect` still fires on click. */
+  getHref?: (rune: RunePrice) => string | undefined;
 }
 
 const TIERS: RuneTier[] = ['high', 'mid', 'low'];
 
 /** Rune price list from Zod down: rune art, number, price with trend and change, grouped by trade tier. */
-function RuneLadder({ runes, unit = 'hr', rune, grouped = true, highlight, onSelect, className, ...props }: RuneLadderProps) {
+function RuneLadder({ runes, unit = 'hr', rune, grouped = true, highlight, onSelect, getHref, className, ...props }: RuneLadderProps) {
   const l = useD2Labels();
   const sorted = [...runes].sort((a, b) => (runeNumber(b.name) ?? 0) - (runeNumber(a.name) ?? 0));
   const groups = grouped
@@ -63,19 +69,26 @@ function RuneLadder({ runes, unit = 'hr', rune, grouped = true, highlight, onSel
                 name={base(r.name)}
                 quality="Rune"
                 icon={<RuneIcon rune={r.name}
+                  src={r.src}
                   className="size-6" />}
-                subtitle={`#${runeNumber(r.name) ?? '?'}${r.listings !== undefined ? ` · ${l.listings(String(r.listings))}` : ''}`}
-                price={r.price === null ? undefined : { amount: r.price, unit, rune, trend }}
+                subtitle={`#${runeNumber(r.name) ?? '?'}${r.quantity !== undefined ? ` · ×${r.quantity}` : ''}${r.listings !== undefined ? ` · ${l.listings(String(r.listings))}` : ''}`}
+                price={r.price === null ? undefined : { amount: r.quantity !== undefined ? r.quantity * r.price : r.price, unit, rune, trend }}
                 meta={
                   r.price === null
                     ? '—'
-                    : r.change !== undefined && (
+                    : r.quantity !== undefined ? (
+                      <PriceTag amount={r.price}
+                        unit={unit}
+                        rune={rune}
+                        className="text-2xs" />
+                    ) : r.change !== undefined && (
                       <span className={cn('tabular-nums', trend === 'up' ? 'text-success' : trend === 'down' ? 'text-destructive' : '')}>
                         {`${r.change > 0 ? '+' : ''}${r.change.toFixed(1)}%`}
                       </span>
                     )
                 }
                 selected={highlight !== undefined && base(highlight) === base(r.name)}
+                href={getHref?.(r)}
                 onClick={onSelect ? () => onSelect(r) : undefined}
                 className={cn(!onSelect && highlight !== undefined && base(highlight) === base(r.name) && 'rounded-md bg-accent/60')}
               />

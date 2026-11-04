@@ -86,18 +86,6 @@
     "removeLabel": "{{action}} {{name}}"
   },
   "character": {
-    "slots": {
-      "helm": "Helm",
-      "amulet": "Amulet",
-      "weapon": "Weapon",
-      "armor": "Armor",
-      "offHand": "Off-hand",
-      "ring": "Ring",
-      "belt": "Belt",
-      "gloves": "Gloves",
-      "boots": "Boots",
-      "shield": "Shield"
-    },
     "notFound": "No tracked character named {{name}}",
     "notFoundInMode": "No tracked character named {{name}} in {{mode}}",
     "notFoundDescription": "Ladder characters level 80 and up are tracked, refreshed about once a day. A character that just hit 80, or a typo, may not be here yet.",
@@ -113,11 +101,9 @@
     "equipment": "Equipment",
     "charms": "Charms",
     "weaponSwitch": "Weapon switch",
-    "mercTitle": "Merc <muted>· {{type}}</muted>",
     "paneLabel": "Character view",
     "gearUp": "Gear up",
     "timeline": "Timeline",
-    "ethereal": "Ethereal",
     "skills": "Skills",
     "hardTotal": "hard / total",
     "noSkills": "No skills recorded."

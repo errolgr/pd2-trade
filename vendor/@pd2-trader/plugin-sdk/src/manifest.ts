@@ -5,8 +5,8 @@ import { isValidRange, isValidVersion } from './semver';
 import { SLOT_IDS } from './slots';
 
 /**
- * Plugin manifest (PRD §6.3). Source of truth for the overlay host and mirrored by the server's release checks
- * (pd2-price-crawler `src/plugins/manifest.schema.ts`). Unknown keys are rejected so typos fail loudly.
+ * Plugin manifest (PRD §6.3). The one schema for the overlay host and the marketplace server (which loads it from
+ * the CommonJS build of `@pd2-trader/plugin-sdk/manifest`). Unknown keys are rejected so typos fail loudly.
  */
 
 export const PLUGIN_ID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*(?:\.[a-z0-9]+(?:-[a-z0-9]+)*)+$/;
@@ -14,7 +14,8 @@ export const HOSTNAME_RE = /^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]*[a-z0-9])?)(\.[a
 export const COMMAND_ID_RE = /^[a-z][a-z0-9-]{0,31}$/;
 export const PANEL_ID_RE = /^[a-z][a-zA-Z0-9-]{0,31}$/;
 
-export const CATEGORIES = ['pricing', 'trading', 'chat', 'stash', 'ui', 'theme', 'utility'] as const;
+/** Marketplace taxonomy (fixed; the server serves the labels): `ui` = "UI & themes", `utility` = "Utilities". */
+export const CATEGORIES = ['pricing', 'trading', 'chat', 'stash', 'builds', 'ui', 'utility'] as const;
 export type Category = (typeof CATEGORIES)[number];
 
 /** Relative bundle path: no scheme, no leading slash, no `..`. */

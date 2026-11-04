@@ -90,18 +90,6 @@
     "removeLabel": "{{action}} {{name}}"
   },
   "character": {
-    "slots": {
-      "helm": "Casco",
-      "amulet": "Amuleto",
-      "weapon": "Arma",
-      "armor": "Armadura",
-      "offHand": "Mano secundaria",
-      "ring": "Anillo",
-      "belt": "Cinturón",
-      "gloves": "Guantes",
-      "boots": "Botas",
-      "shield": "Escudo"
-    },
     "notFound": "No hay ningún personaje registrado llamado {{name}}",
     "notFoundInMode": "No hay ningún personaje registrado llamado {{name}} en {{mode}}",
     "notFoundDescription": "Se registran los personajes ladder de nivel 80 o superior, actualizados aproximadamente una vez al día. Un personaje que acaba de llegar a 80, o un error tipográfico, puede hacer que aún no aparezca.",
@@ -117,11 +105,9 @@
     "equipment": "Equipo",
     "charms": "Charms",
     "weaponSwitch": "Cambio de arma",
-    "mercTitle": "Mercenario <muted>· {{type}}</muted>",
     "paneLabel": "Vista del personaje",
     "gearUp": "Equiparse",
     "timeline": "Cronología",
-    "ethereal": "Ethereal",
     "skills": "Habilidades",
     "hardTotal": "base / total",
     "noSkills": "No hay habilidades registradas."

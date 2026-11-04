@@ -85,8 +85,8 @@
       "trading": "Comercio",
       "chat": "Chat",
       "stash": "Alijo",
-      "ui": "Interfaz",
-      "theme": "Temas",
+      "builds": "Builds",
+      "ui": "Interfaz y temas",
       "utility": "Utilidades"
     },
     "by": "por {{author}}",

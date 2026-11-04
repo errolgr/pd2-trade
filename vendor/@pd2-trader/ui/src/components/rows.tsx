@@ -97,6 +97,8 @@ interface MarketRowProps extends Omit<React.HTMLAttributes<HTMLElement>, 'childr
   price?: { amount: number; unit: PriceUnit; rune?: string; trend?: PriceTrend };
   /** Muted text under the price (age, "offer"). */
   meta?: React.ReactNode;
+  /** Makes the row a ghost row link (`<a href>`, keeps cmd-click / new tab); wins over `onClick` for the element. */
+  href?: string;
   /** Makes the row a ghost row button. */
   onClick?: React.MouseEventHandler<HTMLElement>;
   /** Marks the current row (with onClick). */
@@ -105,10 +107,10 @@ interface MarketRowProps extends Omit<React.HTMLAttributes<HTMLElement>, 'childr
 
 /**
  * One market listing / offer: icon, quality-coloured name with a sub-line, price on the right. Forwards its ref (the
- * row button with `onClick`, else the div).
+ * row link with `href`, the row button with `onClick`, else the div).
  */
 const MarketRow = React.forwardRef<HTMLElement, MarketRowProps>(
-  ({ name, quality, runeword, icon, subtitle, price, meta, onClick, selected, className, ...props }, ref) => {
+  ({ name, quality, runeword, icon, subtitle, price, meta, href, onClick, selected, className, ...props }, ref) => {
     const body = (
       <>
         {icon && <span className="flex size-8 shrink-0 items-center justify-center [&_img]:max-h-full">{icon}</span>}
@@ -128,6 +130,23 @@ const MarketRow = React.forwardRef<HTMLElement, MarketRowProps>(
         )}
       </>
     );
+    if (href) {
+      return (
+        <Button asChild
+          variant="ghost"
+          size="row"
+          data-slot="market-row"
+          aria-current={selected || undefined}
+          className={className}>
+          <a ref={ref as React.Ref<HTMLAnchorElement>}
+            href={href}
+            onClick={onClick}
+            {...props}>
+            {body}
+          </a>
+        </Button>
+      );
+    }
     if (onClick) {
       return (
         <Button

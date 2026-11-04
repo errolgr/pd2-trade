@@ -47,7 +47,7 @@ const SLOT_GLYPH: Record<EquipSlot | 'charm', LucideIcon> = {
   charm: Sparkles,
 };
 
-interface EquipmentSlotProps extends Omit<React.ComponentProps<'button'>, 'children'> {
+interface EquipmentSlotProps extends Omit<React.ComponentPropsWithoutRef<'button'>, 'children'> {
   slot: EquipSlot | 'charm';
   /** The worn item; null/undefined draws the empty slot (its name and glyph). */
   item?: EquippedItem | null;
@@ -71,7 +71,7 @@ interface EquipmentSlotProps extends Omit<React.ComponentProps<'button'>, 'child
  * One equipment slot: the item's art in its quality frame (ethereal and corrupted marks, a corner badge), or the
  * empty slot with its glyph. A button when `onClick` is set; floats `tooltip` on hover.
  */
-function EquipmentSlot({
+const EquipmentSlot = React.forwardRef<HTMLElement, EquipmentSlotProps>(function EquipmentSlot({
   slot,
   item,
   layout = 'tile',
@@ -84,7 +84,7 @@ function EquipmentSlot({
   onClick,
   className,
   ...props
-}: EquipmentSlotProps) {
+}, ref) {
   const l = useD2Labels();
   const Glyph = SLOT_GLYPH[slot];
   const slotName = label ?? (slot === 'charm' ? null : l.slot(slot));
@@ -175,6 +175,7 @@ function EquipmentSlot({
   const node = interactive ? (
     <Button
       type="button"
+      ref={ref as React.Ref<HTMLButtonElement>}
       variant="ghost"
       size="inline"
       {...shared}
@@ -189,12 +190,14 @@ function EquipmentSlot({
     </Button>
   ) : (
     <div
+      ref={ref as React.Ref<HTMLDivElement>}
       {...shared}
       tabIndex={tooltip ? 0 : undefined}
       role={layout === 'tile' && item ? 'img' : undefined}
       aria-label={layout === 'tile' && item ? ariaLabel : undefined}
       className={cn(frame, tileClass, className)}
       style={layout === 'tile' ? { height } : undefined}
+      {...(props as unknown as React.HTMLAttributes<HTMLDivElement>)}
     >
       {body}
     </div>
@@ -209,7 +212,7 @@ function EquipmentSlot({
       </HoverCardContent>
     </HoverCard>
   );
-}
+});
 
 /** Grid areas of the player doll and the mercenary doll, like the in-game inventory. */
 const PLAYER_AREAS = `". helm amulet" "weapon armor offhand" "ring-right belt ring-left" "gloves . boots"`;
@@ -255,6 +258,8 @@ interface PaperDollProps extends Omit<React.ComponentProps<'div'>, 'children' | 
   onSelect?: (slot: EquipSlot) => void;
   /** The slot being edited. */
   selected?: EquipSlot;
+  /** Wraps each slot's EquipmentSlot (your own tooltip/tap-to-pin trigger); the grid-area cell stays outside. */
+  wrapSlot?: (slot: EquipSlot, node: React.ReactElement) => React.ReactNode;
 }
 
 /** The equipment screen: every slot in the in-game layout, three 76px columns. */
@@ -265,6 +270,7 @@ function PaperDoll({
   badgeFor,
   onSelect,
   selected,
+  wrapSlot,
   className,
   style,
   ...props
@@ -282,9 +288,8 @@ function PaperDoll({
       }}
       {...props}
     >
-      {slots.map((slot) => (
-        <div key={slot}
-          style={{ gridArea: slot }}>
+      {slots.map((slot) => {
+        const node = (
           <EquipmentSlot
             slot={slot}
             item={items[slot]}
@@ -294,8 +299,14 @@ function PaperDoll({
             selected={selected === slot}
             onClick={onSelect ? () => onSelect(slot) : undefined}
           />
-        </div>
-      ))}
+        );
+        return (
+          <div key={slot}
+            style={{ gridArea: slot }}>
+            {wrapSlot ? wrapSlot(slot, node) : node}
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -31,6 +31,8 @@ export interface GridItem {
   corrupted?: boolean;
   /** Floated on hover (an `ItemTooltip`). */
   tooltip?: React.ReactNode;
+  /** Bottom-right corner chip (price), like EquipmentSlot `badges`. */
+  badge?: React.ReactNode;
 }
 
 interface InventoryGridProps extends Omit<React.ComponentProps<'div'>, 'children' | 'onSelect'> {
@@ -41,6 +43,8 @@ interface InventoryGridProps extends Omit<React.ComponentProps<'div'>, 'children
   cell?: number;
   /** Makes items buttons. */
   onSelect?: (item: GridItem) => void;
+  /** Wraps each item node (your own tooltip/tap-to-pin trigger); the grid-placement cell stays outside. */
+  wrapItem?: (item: GridItem, node: React.ReactElement) => React.ReactNode;
   /** Accessible name of the grid ("Stash", "Charms"). */
   'aria-label'?: string;
 }
@@ -51,7 +55,7 @@ const GAP = 2;
  * A cell grid (inventory, stash, cube, charm area) with items drawn over their footprints in quality-colored
  * frames, corrupted ones marked, tooltips on hover.
  */
-function InventoryGrid({ cols, rows, items, cell = 25, onSelect, className, style, ...props }: InventoryGridProps) {
+function InventoryGrid({ cols, rows, items, cell = 25, onSelect, wrapItem, className, style, ...props }: InventoryGridProps) {
   return (
     <div
       data-slot="inventory-grid"
@@ -91,9 +95,14 @@ function InventoryGrid({ cols, rows, items, cell = 25, onSelect, className, styl
               height={height - 4} />
             {item.corrupted && <CorruptionBadge variant="dot"
               className="absolute top-0.5 right-0.5 size-1" />}
+            {item.badge != null && (
+              <span className="absolute right-0.5 bottom-0.5 rounded-sm bg-background/80 px-1 text-3xs leading-tight font-medium tabular-nums">
+                {item.badge}
+              </span>
+            )}
           </>
         );
-        const node = onSelect ? (
+        const inner = onSelect ? (
           <Button type="button"
             variant="ghost"
             size="inline"
@@ -110,6 +119,7 @@ function InventoryGrid({ cols, rows, items, cell = 25, onSelect, className, styl
             {art}
           </span>
         );
+        const node = wrapItem ? wrapItem(item, inner) : inner;
         return (
           <div
             key={item.id ?? `${item.x}:${item.y}`}

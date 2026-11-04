@@ -94,18 +94,6 @@
     "removeLabel": "{{action}} {{name}}"
   },
   "character": {
-    "slots": {
-      "helm": "Шлем",
-      "amulet": "Амулет",
-      "weapon": "Оружие",
-      "armor": "Доспех",
-      "offHand": "Левая рука",
-      "ring": "Кольцо",
-      "belt": "Пояс",
-      "gloves": "Перчатки",
-      "boots": "Обувь",
-      "shield": "Щит"
-    },
     "notFound": "Нет отслеживаемого персонажа {{name}}",
     "notFoundInMode": "Нет отслеживаемого персонажа {{name}} в {{mode}}",
     "notFoundDescription": "Отслеживаются ladder-персонажи уровня 80 и выше, обновление примерно раз в день. Персонажа, только что достигшего 80, или с опечаткой в имени, может здесь ещё не быть.",
@@ -121,11 +109,9 @@
     "equipment": "Экипировка",
     "charms": "Чармы",
     "weaponSwitch": "Второй комплект оружия",
-    "mercTitle": "Наёмник <muted>· {{type}}</muted>",
     "paneLabel": "Персонаж",
     "gearUp": "Экипировка",
     "timeline": "Хронология",
-    "ethereal": "Ethereal",
     "skills": "Навыки",
     "hardTotal": "вложено / всего",
     "noSkills": "Навыки не записаны."

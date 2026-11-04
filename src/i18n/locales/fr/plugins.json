@@ -85,8 +85,8 @@
       "trading": "Échanges",
       "chat": "Chat",
       "stash": "Coffre",
-      "ui": "Interface",
-      "theme": "Thèmes",
+      "builds": "Builds",
+      "ui": "Interface et thèmes",
       "utility": "Utilitaires"
     },
     "by": "par {{author}}",

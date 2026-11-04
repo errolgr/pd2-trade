@@ -158,7 +158,8 @@ interface DataTableProps<TData> {
   virtualized?: boolean;
   /** Row height in px used by `virtualized` to size the scroll area. */
   rowHeight?: number;
-  onRowClick?: (row: TData) => void;
+  // NoInfer: TData comes from `columns`/`data`, never from a passed state setter (non-strict consumers).
+  onRowClick?: (row: NoInfer<TData>) => void;
   /** Compact cells for overlay panels. */
   dense?: boolean;
   /** Frames the table; turn off when a Card or panel already frames it. */
@@ -230,7 +231,9 @@ function DataTable<TData>({
       header: ({ table }) => (
         <Checkbox
           aria-label={labels.selectAll}
-          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
+          checked={
+            table.getIsAllPageRowsSelected() ? true : table.getIsSomePageRowsSelected() ? 'indeterminate' : false
+          }
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(value === true)}
         />
       ),

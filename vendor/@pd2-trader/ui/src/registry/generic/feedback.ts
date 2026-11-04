@@ -88,6 +88,12 @@ export const feedbackDocs: ComponentDoc[] = [
     props: [
       { name: 'value', type: 'number | null', description: 'Percent complete, 0-100.' },
       { name: 'max', type: 'number', default: '100', description: 'Upper bound of `value`.' },
+      {
+        name: 'tone',
+        type: "'default' | 'success' | 'warning' | 'danger'",
+        default: "'default'",
+        description: 'Bar and track colour: `success` done/healthy, `warning` near a limit (quota), `danger` failed or over.',
+      },
     ],
     examples: examplesFor('progress'),
     a11y: 'Radix Progress: `role="progressbar"` with `aria-valuenow`. Add `aria-label` or `aria-labelledby` pointing at the visible label.',

@@ -162,7 +162,7 @@ describe('BuildsPage payloads', () => {
     const { unmount } = render(<BuildsPage />);
     expect(await screen.findByRole('heading', { name: 'Charms' })).toBeTruthy();
     const grand = screen.getByRole('button', { name: 'Shimmering Grand Charm' }).closest('[style*="grid-row"]');
-    expect((grand as HTMLElement).style.gridColumn).toBe('10');
+    expect((grand as HTMLElement).style.gridColumn).toBe('10 / span 1');
     expect((grand as HTMLElement).style.gridRow).toBe('2 / span 3');
     expect(screen.getByRole('button', { name: 'Fine Small Charm' })).toBeTruthy();
     unmount();

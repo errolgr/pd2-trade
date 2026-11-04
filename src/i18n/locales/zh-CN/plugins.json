@@ -85,8 +85,8 @@
       "trading": "交易",
       "chat": "聊天",
       "stash": "储物箱",
-      "ui": "界面",
-      "theme": "主题",
+      "builds": "构筑",
+      "ui": "界面与主题",
       "utility": "实用工具"
     },
     "by": "作者：{{author}}",

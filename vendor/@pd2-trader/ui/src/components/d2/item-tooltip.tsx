@@ -53,14 +53,19 @@ export interface TooltipItem {
   base?: string | null;
   quality: ItemQuality | (string & {}) | null;
   runeword?: boolean;
-  /** `enhanced`: higher than the base (magic color). */
-  defense?: { value: number; enhanced?: boolean } | null;
+  /**
+   * `enhanced`: higher than the base (magic color). `max`: top of the base roll when only the range is known
+   * (renders "120–150" when it differs from `value`).
+   */
+  defense?: { value: number; max?: number | null; enhanced?: boolean } | null;
   damage?: readonly TooltipDamage[];
   requirements?: { level?: number | null; strength?: number | null; dexterity?: number | null };
   /** [current, maximum]. */
   durability?: readonly [number, number] | null;
   mods?: readonly TooltipMod[];
   sockets?: number;
+  /** Sockets came from the corruption: the "Socketed (N)" part reads in the corrupted color. */
+  socketsCorrupted?: boolean;
   socketed?: readonly SocketFill[];
   /** Runeword runes in socket order ("Jah", "Ith", "Ber"). */
   runes?: readonly string[];
@@ -136,7 +141,10 @@ function ItemTooltip({
         {item.defense && (
           <div>
             {l.defense}:{' '}
-            <span className={cn('tabular-nums', item.defense.enhanced && 'text-q-magic')}>{fmt(item.defense.value)}</span>
+            <span className={cn('tabular-nums', item.defense.enhanced && 'text-q-magic')}>{item.defense.max != null && item.defense.max !== item.defense.value
+                ? `${fmt(item.defense.value)}–${fmt(item.defense.max)}`
+                : fmt(item.defense.value)}
+            </span>
           </div>
         )}
         {item.damage?.map((d) => (
@@ -174,10 +182,14 @@ function ItemTooltip({
 
       {(item.ethereal || sockets > 0) && (
         <div className="mt-1 text-q-magic">
-          {[item.ethereal && l.ethereal, sockets > 0 && l.socketed(String(sockets))].filter(Boolean).join(', ')}
+          {item.ethereal && l.ethereal}
+          {item.ethereal && sockets > 0 && ', '}
+          {sockets > 0 && (
+            <span className={cn(item.socketsCorrupted && 'text-q-corrupted')}>{l.socketed(String(sockets))}</span>
+          )}
         </div>
       )}
-      {sockets > 0 && (item.socketed?.length ?? 0) > 0 && (
+      {sockets > 0 && (
         <SocketRow sockets={sockets}
           filled={item.socketed}
           size={compact ? 16 : 20}
@@ -185,7 +197,7 @@ function ItemTooltip({
       )}
       {item.corrupted && <div className="mt-0.5 font-semibold text-q-corrupted">{l.corrupted}</div>}
 
-      {item.set && item.set.bonuses.length > 0 && (
+      {item.set && (item.set.bonuses.length > 0 || (item.set.pieces?.length ?? 0) > 0) && (
         <div data-slot="item-tooltip-set"
           className="mt-2 border-t border-border/60 pt-1.5">
           {item.set.name && <div className="font-medium text-q-set">{item.set.name}</div>}

@@ -82,18 +82,6 @@
     "removeLabel": "{{action}} {{name}}"
   },
   "character": {
-    "slots": {
-      "helm": "头盔",
-      "amulet": "项链",
-      "weapon": "武器",
-      "armor": "护甲",
-      "offHand": "副手",
-      "ring": "戒指",
-      "belt": "腰带",
-      "gloves": "手套",
-      "boots": "靴子",
-      "shield": "盾牌"
-    },
     "notFound": "没有名为 {{name}} 的追踪角色",
     "notFoundInMode": "{{mode}} 中没有名为 {{name}} 的追踪角色",
     "notFoundDescription": "追踪 80 级及以上的 Ladder 角色，约每天刷新一次。刚到 80 级的角色或名称拼写错误可能暂时无法找到。",
@@ -109,11 +97,9 @@
     "equipment": "装备",
     "charms": "护符",
     "weaponSwitch": "武器切换",
-    "mercTitle": "佣兵 <muted>· {{type}}</muted>",
     "paneLabel": "角色视图",
     "gearUp": "配装对比",
     "timeline": "时间线",
-    "ethereal": "Ethereal",
     "skills": "技能",
     "hardTotal": "基础 / 总计",
     "noSkills": "无技能记录。"

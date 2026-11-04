@@ -16,14 +16,30 @@
       "types": "./src/react.tsx",
       "default": "./src/react.tsx"
     },
+    "./manifest": {
+      "require": {
+        "types": "./dist/manifest.d.cts",
+        "default": "./dist/manifest.cjs"
+      },
+      "types": "./src/manifest-module.ts",
+      "default": "./src/manifest-module.ts"
+    },
     "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "manifest": [
+        "./dist/manifest.d.cts"
+      ]
+    }
   },
   "bin": {
     "pd2-plugin": "./bin/pd2-plugin.mjs"
   },
   "files": [
     "src",
-    "bin"
+    "bin",
+    "dist"
   ],
   "peerDependencies": {
     "react": "^18.3.1",

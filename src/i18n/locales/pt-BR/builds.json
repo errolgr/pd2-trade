@@ -90,18 +90,6 @@
     "removeLabel": "{{action}} {{name}}"
   },
   "character": {
-    "slots": {
-      "helm": "Elmo",
-      "amulet": "Amuleto",
-      "weapon": "Arma",
-      "armor": "Armadura",
-      "offHand": "Mão secundária",
-      "ring": "Anel",
-      "belt": "Cinto",
-      "gloves": "Luvas",
-      "boots": "Botas",
-      "shield": "Escudo"
-    },
     "notFound": "Nenhum personagem monitorado chamado {{name}}",
     "notFoundInMode": "Nenhum personagem monitorado chamado {{name}} em {{mode}}",
     "notFoundDescription": "Personagens Ladder de nível 80 ou mais são monitorados e atualizados cerca de uma vez por dia. Um personagem que acabou de chegar ao 80, ou um erro de digitação, pode não aparecer ainda.",
@@ -117,11 +105,9 @@
     "equipment": "Equipamento",
     "charms": "Charms",
     "weaponSwitch": "Troca de arma",
-    "mercTitle": "Merc <muted>· {{type}}</muted>",
     "paneLabel": "Visão do personagem",
     "gearUp": "Equipar",
     "timeline": "Linha do tempo",
-    "ethereal": "Ethereal",
     "skills": "Skills",
     "hardTotal": "base / total",
     "noSkills": "Nenhuma skill registrada."

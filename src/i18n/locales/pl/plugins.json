@@ -85,8 +85,8 @@
       "trading": "Handel",
       "chat": "Czat",
       "stash": "Skrytka",
-      "ui": "Interfejs",
-      "theme": "Motywy",
+      "builds": "Buildy",
+      "ui": "Interfejs i motywy",
       "utility": "Narzędzia"
     },
     "by": "autor: {{author}}",

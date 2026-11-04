@@ -1,21 +1,20 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ExternalLink, Gem, History, Repeat, SearchX, Star, Swords, Users } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Gem, History, Repeat, SearchX, Star, Swords } from 'lucide-react';
 import {
   cn,
   Button,
   CharacterCard,
-  CorruptionBadge,
   CurrencyAmount,
   EmptyState,
-  EQUIP_SLOTS,
   type EquipSlot,
   GRID_SIZES,
+  type GridItem,
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
-  ItemArt,
-  QUALITY_BORDER,
-  qualityKey,
+  InventoryGrid,
+  MercenaryCard,
+  PaperDoll,
   Skeleton,
   toEquipSlot,
 } from '@pd2-trader/ui';
@@ -39,36 +38,6 @@ import { currentLocale, Trans, useTranslation } from '@/i18n';
 import { Timeline } from './Timeline';
 
 type DollItem = EquippedItem & { iconUrl: string | null; priceHr?: number | null };
-
-// Paper-doll layout of PaperDoll (in-game inventory); slots from toEquipSlot.
-const MERC_SLOTS: readonly EquipSlot[] = ['helm', 'weapon', 'armor', 'offhand', 'gloves', 'belt', 'boots'];
-const PLAYER_AREAS = `". helm amulet" "weapon armor offhand" "ring-right belt ring-left" "gloves . boots"`;
-const MERC_AREAS = `". helm ." "weapon armor offhand" "gloves belt boots"`;
-/** Cell heights per slot (px): weapons/armor tall, rings/amulet/belt small. */
-const SLOT_HEIGHT: Record<EquipSlot, number> = {
-  helm: 60,
-  amulet: 44,
-  weapon: 104,
-  armor: 104,
-  offhand: 104,
-  'ring-right': 44,
-  belt: 44,
-  'ring-left': 44,
-  gloves: 60,
-  boots: 60,
-};
-const SLOT_LABEL_KEY: Record<EquipSlot, string> = {
-  helm: 'character.slots.helm',
-  amulet: 'character.slots.amulet',
-  weapon: 'character.slots.weapon',
-  armor: 'character.slots.armor',
-  offhand: 'character.slots.offHand',
-  'ring-right': 'character.slots.ring',
-  belt: 'character.slots.belt',
-  'ring-left': 'character.slots.ring',
-  gloves: 'character.slots.gloves',
-  boots: 'character.slots.boots',
-};
 
 const ATTRS: [keyof CharacterDetail['attributes'], string][] = [
   ['strength', 'Str'],
@@ -285,8 +254,7 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
               )
             }
           >
-            <Doll items={shown.equipped}
-              weaponSet={weaponSet} />
+            <PaperDoll {...dollProps(shown.equipped, weaponSet)} />
           </Section>
           {shown.charms && shown.charms.length > 0 && (
             <Section title={t('character.charms')}
@@ -296,24 +264,10 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
             </Section>
           )}
           {shown.merc && (
-            <Section
-              title={
-                <span>
-                  <Trans
-                    t={t}
-                    i18nKey="character.mercTitle"
-                    values={{ type: shown.merc.type }}
-                    components={{ muted: <span className="font-normal text-muted-foreground" /> }}
-                  />
-                </span>
-              }
-              icon={<Users />}
-              bodyClassName="py-3"
-            >
-              <Doll items={shown.merc.equipped}
-                weaponSet={0}
-                merc />
-            </Section>
+            <div className="p-3">
+              <MercenaryCard type={shown.merc.type}
+                {...dollProps(shown.merc.equipped, 0, true)} />
+            </div>
           )}
           <SkillsList skills={shown.skills} />
         </div>
@@ -393,176 +347,77 @@ function CharacterSkeleton({ onBack }: { onBack: () => void }) {
 }
 
 /**
- * Worn items in PaperDoll's layout. Local because every worn slot opens the item's actions menu: PaperDoll has no
- * per-slot wrapper and EquipmentSlot doesn't forward its ref, so neither can be a DropdownMenu trigger.
+ * Wraps a worn slot in the item's actions menu and its tooltip; empty slots stay as they are. `onClick` makes a
+ * doll's EquipmentSlot a button (the menu opens on pointer/key down).
  */
-function Doll({ items, weaponSet, merc = false }: { items: DollItem[]; weaponSet: number; merc?: boolean }) {
-  const bySlot = new Map<EquipSlot, DollItem>();
+function wornSlot(item: DollItem | CharmItem | undefined, node: React.ReactElement, merc = false): React.ReactNode {
+  if (!item) return node;
+  return (
+    <HoverCard>
+      <HoverCardTrigger asChild>
+        <ItemActionsMenu item={item}
+          merc={merc}>
+          {node}
+        </ItemActionsMenu>
+      </HoverCardTrigger>
+      <HoverCardContent variant="bare"
+        side="right">
+        <WornItemTooltip item={item} />
+      </HoverCardContent>
+    </HoverCard>
+  );
+}
+
+const noop = () => {};
+
+/** PaperDoll props for the player and merc dolls: art, price badge, menu + tooltip per worn slot. */
+function dollProps(items: DollItem[], weaponSet: number, merc = false) {
+  const worn: Partial<Record<EquipSlot, DollItem>> = {};
   for (const item of items) {
     const at = toEquipSlot(item.slot);
     // Weapon and off-hand follow the shown weapon set; the rest is worn in both
-    if (at && ((at.slot !== 'weapon' && at.slot !== 'offhand') || at.weaponSet === weaponSet))
-      bySlot.set(at.slot, item);
+    if (at && ((at.slot !== 'weapon' && at.slot !== 'offhand') || at.weaponSet === weaponSet)) worn[at.slot] = item;
   }
-  return (
-    <div
-      className="mx-auto grid w-fit grid-cols-[76px_76px_76px] gap-1.5"
-      style={{ gridTemplateAreas: merc ? MERC_AREAS : PLAYER_AREAS }}
-    >
-      {(merc ? MERC_SLOTS : EQUIP_SLOTS).map((slot) => (
-        <DollCell key={slot}
-          slot={slot}
-          item={bySlot.get(slot)}
-          merc={merc} />
-      ))}
-    </div>
-  );
+  const art: Partial<Record<EquipSlot, DollItem & { src: string[] }>> = {};
+  for (const [slot, it] of Object.entries(worn) as [EquipSlot, DollItem][])
+    art[slot] = { ...it, src: itemArtCandidates(it) };
+  return {
+    items: art,
+    badgeFor: (slot: EquipSlot) => {
+      const price = worn[slot]?.priceHr;
+      return price != null ? <span className="text-q-gold">{fmtHr(price)}</span> : null;
+    },
+    wrapSlot: (slot: EquipSlot, node: React.ReactElement) =>
+      wornSlot(
+        worn[slot],
+        worn[slot] ? React.cloneElement(node as React.ReactElement<{ onClick?: () => void }>, { onClick: noop }) : node,
+        merc,
+      ),
+  };
 }
 
-function DollCell({ slot, item, merc }: { slot: EquipSlot; item: DollItem | undefined; merc: boolean }) {
-  const { t } = useTranslation('builds');
-  const height = SLOT_HEIGHT[slot];
-  if (!item) {
-    return (
-      <div
-        className="flex items-center justify-center rounded-md border border-dashed border-border/60 bg-background/20 text-2xs text-muted-foreground/70"
-        style={{ gridArea: slot, height }}
-      >
-        {t(merc && slot === 'offhand' ? 'character.slots.shield' : SLOT_LABEL_KEY[slot])}
-      </div>
-    );
-  }
-  const quality = item.quality ?? 'Rune';
-  return (
-    <div style={{ gridArea: slot }}>
-      <HoverCard>
-        <HoverCardTrigger asChild>
-          <div>
-            <ItemActionsMenu item={item}
-              merc={merc}>
-              <Button
-                type="button"
-                variant="ghost"
-                size="inline"
-                aria-label={`${item.name} (${item.slot})`}
-                className={cn(
-                  'relative flex w-full flex-col gap-0 rounded-md border bg-background/40 hover:bg-accent/40 hover:text-current focus-visible:ring-ring/50',
-                  QUALITY_BORDER[qualityKey(quality, { runeword: item.runeword, name: item.name })],
-                )}
-                style={{ height }}
-              >
-                <ItemArt
-                  name={item.name}
-                  quality={quality}
-                  runeword={item.runeword}
-                  src={itemArtCandidates(item)}
-                  size={Math.min(height - 16, 64)}
-                  frameless
-                />
-                {item.ethereal && (
-                  <span
-                    className="absolute top-0.5 left-1 text-3xs font-semibold text-muted-foreground"
-                    title={t('character.ethereal')}
-                  >
-                    E
-                  </span>
-                )}
-                {item.corrupted && <CorruptionBadge variant="dot"
-                  className="absolute top-1 right-1" />}
-                {item.priceHr != null && (
-                  <span className="absolute right-0.5 bottom-0.5 rounded-sm bg-background/80 px-1 text-3xs leading-tight font-medium text-q-gold tabular-nums">
-                    {fmtHr(item.priceHr)}
-                  </span>
-                )}
-              </Button>
-            </ItemActionsMenu>
-          </div>
-        </HoverCardTrigger>
-        <HoverCardContent variant="bare"
-          side="right">
-          <WornItemTooltip item={item} />
-        </HoverCardContent>
-      </HoverCard>
-    </div>
-  );
-}
-
-/** The inventory's charm area (bottom 4 of its 8 rows), cells to scale. */
-const CHARM_CELL = 25;
-const CHARM_GAP = 2;
-
-/**
- * Charms in InventoryGrid's cell layout. Local for the same reason as Doll: each charm opens its actions menu, and
- * InventoryGrid has no per-item wrapper to host a DropdownMenu trigger.
- */
 function CharmGrid({ charms }: { charms: CharmItem[] }) {
-  const { cols, rows } = GRID_SIZES.inventory;
+  const byId = new Map(charms.map((c) => [`${c.row}:${c.column}`, c]));
+  const items: GridItem[] = charms.map((c) => ({
+    id: `${c.row}:${c.column}`,
+    name: c.name,
+    quality: c.quality ?? 'Rune',
+    runeword: c.runeword,
+    src: itemArtCandidates(c),
+    x: c.column,
+    y: c.row,
+    w: 1,
+    h: c.height,
+    corrupted: c.corrupted,
+  }));
   return (
-    <div
-      className="mx-auto grid w-fit"
-      style={{
-        gridTemplateColumns: `repeat(${cols}, ${CHARM_CELL}px)`,
-        gridTemplateRows: `repeat(${rows}, ${CHARM_CELL}px)`,
-        gap: CHARM_GAP,
-      }}
-    >
-      {Array.from({ length: cols * rows }, (_, i) => (
-        <div
-          key={i}
-          aria-hidden
-          className="rounded-sm border border-border/40 bg-background/20"
-          style={{ gridColumn: (i % cols) + 1, gridRow: Math.floor(i / cols) + 1 }}
-        />
-      ))}
-      {charms.map((charm) => (
-        <CharmCell key={`${charm.row}:${charm.column}`}
-          charm={charm} />
-      ))}
-    </div>
-  );
-}
-
-function CharmCell({ charm }: { charm: CharmItem }) {
-  const height = charm.height * CHARM_CELL + (charm.height - 1) * CHARM_GAP;
-  const quality = charm.quality ?? 'Rune';
-  return (
-    <div style={{ gridColumn: charm.column + 1, gridRow: `${charm.row + 1} / span ${charm.height}` }}>
-      <HoverCard>
-        <HoverCardTrigger asChild>
-          <div>
-            <ItemActionsMenu item={charm}>
-              <Button
-                type="button"
-                variant="ghost"
-                size="inline"
-                aria-label={charm.name}
-                className={cn(
-                  'relative flex w-full gap-0 rounded-sm border bg-background/40 hover:bg-accent/60 hover:text-current focus-visible:ring-ring',
-                  QUALITY_BORDER[qualityKey(quality, { runeword: charm.runeword, name: charm.name })],
-                )}
-                style={{ height }}
-              >
-                <ItemArt
-                  name={charm.name}
-                  quality={quality}
-                  runeword={charm.runeword}
-                  src={itemArtCandidates(charm)}
-                  size={CHARM_CELL - 4}
-                  height={height - 4}
-                  frameless
-                />
-                {charm.corrupted && <CorruptionBadge variant="dot"
-                  className="absolute top-0.5 right-0.5 size-1" />}
-              </Button>
-            </ItemActionsMenu>
-          </div>
-        </HoverCardTrigger>
-        <HoverCardContent variant="bare"
-          side="right">
-          <WornItemTooltip item={charm} />
-        </HoverCardContent>
-      </HoverCard>
-    </div>
+    <InventoryGrid
+      {...GRID_SIZES.inventory}
+      className="mx-auto"
+      items={items}
+      onSelect={noop}
+      wrapItem={(item, node) => wornSlot(byId.get(item.id ?? ''), node)}
+    />
   );
 }
 
