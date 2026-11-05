@@ -36,8 +36,9 @@ describe('useSimLadderCharacters', () => {
     expect(again.result.current).toEqual({ status: 'ok', data: OLD });
     expect(getSimLadderCharacters).toHaveBeenCalledTimes(1);
 
-    renderHook(() => useSimLadderCharacters('tok', 'Alt'));
+    const alt = renderHook(() => useSimLadderCharacters('tok', 'Alt'));
     expect(getSimLadderCharacters).toHaveBeenLastCalledWith('tok', 'Alt');
+    await waitFor(() => expect(alt.result.current).toEqual({ status: 'ok', data: OLD }));
   });
 
   it('shows a stale list at once and swaps in the reload', async () => {

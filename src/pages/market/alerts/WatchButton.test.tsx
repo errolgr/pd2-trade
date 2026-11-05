@@ -101,6 +101,8 @@ describe('WatchButton', () => {
     fireEvent.click(button());
     expect(createSavedSearch).not.toHaveBeenCalled();
     expect(updateSavedSearch).toHaveBeenCalledWith('tok', 's1', { alert: true });
+    await settle();
+    expect(button().textContent).toBe('Watching');
   });
 
   it('toasts when the server refuses the watch (cap) and goes back to Watch', async () => {

@@ -197,10 +197,10 @@ describe('ThreadDeals website offers', () => {
     await waitFor(() => expect(button(/^Accept$/)).toHaveProperty('disabled', false));
   });
 
-  it('unaccepts an accepted incoming offer by its listing', () => {
+  it('unaccepts an accepted incoming offer by its listing', async () => {
     renderDeals({ offers: [offer({ id: 'o3', listingId: 'l3', acceptedOfferId: 'o3' })], listingIds: ['l3'] });
     expect(screen.queryByRole('button', { name: /^Accept$/ })).toBeNull();
-    fireEvent.click(button(/Unaccept/));
+    await act(async () => fireEvent.click(button(/Unaccept/)));
     expect(actions.unacceptOffer).toHaveBeenCalledWith('l3');
   });
 

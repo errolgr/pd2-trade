@@ -30,7 +30,7 @@ export function AccountForm() {
   const { t } = useTranslation('settings');
   const { settings, updateSettings } = useOptions();
   const { authData, logout, startOAuthFlow } = usePd2Website();
-  const [accounts, setAccounts] = useState<string[]>([]);
+  const accounts = authData?.user?.game?.accounts ?? [];
   const [loggingOut, setLoggingOut] = useState(false);
   // The flow's own state, not this form's: it outlives the form (switching sections remounts it) and may have been
   // started from the sign-in panel
@@ -75,14 +75,6 @@ export function AccountForm() {
     });
     return () => subscription.unsubscribe();
   }, [form, updateSettings]);
-
-  useEffect(() => {
-    if (authData?.user?.game?.accounts) {
-      setAccounts(authData.user.game.accounts);
-    } else {
-      setAccounts([]);
-    }
-  }, [authData]);
 
   const handleLogout = async () => {
     setLoggingOut(true);

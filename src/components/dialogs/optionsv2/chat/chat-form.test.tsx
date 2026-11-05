@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MotionGlobalConfig } from 'framer-motion';
 import { useOptions } from '@/hooks/useOptions';
@@ -268,10 +268,13 @@ describe('ChatForm message templates', () => {
     expect(listed()).toEqual(['Still available?', 'Offer', 'Inv me']);
   });
 
-  it('deletes a template', () => {
+  it('deletes a template', async () => {
     renderForm({ chatTemplates: MINE });
     fireEvent.click(screen.getByRole('button', { name: 'Delete Price check' }));
     expect(savedTemplates()).toEqual([MINE[0], MINE[2]]);
+    // the row's exit animation runs on real frames
+    vi.useRealTimers();
+    await waitFor(() => expect(listed()).toEqual(['Still available?', 'Inv me']));
   });
 
   it('reorders templates with the up/down buttons', () => {
