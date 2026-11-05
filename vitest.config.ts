@@ -13,7 +13,7 @@ export default defineConfig({
   test: {
     include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.{ts,mjs}'],
     environment: 'node',
-    setupFiles: ['src/i18n/test-setup.ts'],
+    setupFiles: ['src/i18n/test-setup.ts', 'src/test/setup.ts'],
     restoreMocks: true,
     coverage: {
       provider: 'v8',
