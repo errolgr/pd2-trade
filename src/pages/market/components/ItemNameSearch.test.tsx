@@ -84,6 +84,11 @@ function Harness({ onFilters }: { onFilters: (f: MarketFilters) => void }) {
         setFilters(next);
         onFilters(next);
       }}
+      onPickGroup={(group) => {
+        const next = { ...filters, itemName: undefined, typeCode: group.typeCode, baseCode: group.code };
+        setFilters(next);
+        onFilters(next);
+      }}
       ladder={filters.ladder}
       hardcore={filters.hardcore}
     />
@@ -242,5 +247,21 @@ describe('ItemNameSearch suggestions', () => {
     expect(screen.getAllByRole('option')[1].getAttribute('aria-selected')).toBe('true');
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(filters()?.itemName).toBe('Bane Ash');
+  });
+
+  it('a word for a family of items ("keys") offers its base group first, picked as Type and Base', () => {
+    vi.mocked(fetch).mockImplementation(async () => reply('keys', []));
+    const { input, filters } = mount();
+    type(input, 'shako');
+    fireEvent.keyDown(input, { key: 'Enter' });
+    type(input, 'keys');
+    expect(names()[0]).toBe('Any Pandemonium KeyEvery kind · sets Type and Base');
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(filters()).toMatchObject({
+      itemName: undefined,
+      typeCode: 'ubr',
+      baseCode: '{"$in": ["pk1", "pk2", "pk3"]}',
+    });
+    expect((input as HTMLInputElement).value).toBe('');
   });
 });

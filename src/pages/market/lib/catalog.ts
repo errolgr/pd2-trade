@@ -15,9 +15,67 @@ export const ITEM_TYPES: CatalogOption[] = SITE_ITEM_TYPES.map(({ code, label })
 
 const BASES_BY_TYPE = new Map(SITE_ITEM_TYPES.map((t) => [t.code, t.bases]));
 
-/** The site's Base select for a Type (sorted by label); empty for an unknown type. */
+/** A `{"$in": [...]}` select value, written as the site writes its grouped entries. */
+const inCodes = (codes: string[]) => `{"$in": [${codes.map((c) => `"${c}"`).join(', ')}]}`;
+
+/**
+ * A Base option of ours that stands for a family of bases the site lists one by one ("any pgem", "any key"), with
+ * the words the item-name box finds it by. Picking it searches its Type with every base of the family.
+ */
+export interface BaseGroup extends CatalogOption {
+  typeCode: string;
+  aliases: string[];
+}
+
+const typeCodeOf = (label: string) => SITE_ITEM_TYPES.find((t) => t.label === label)?.code ?? '';
+const UBER = typeCodeOf('Uber Ingredient');
+
+export const BASE_GROUPS: BaseGroup[] = [
+  {
+    typeCode: typeCodeOf('Gem'),
+    label: 'Any Perfect Gem',
+    // Gem bases come plain and stacked (`gpv`, `gpvs`)
+    code: inCodes(['gpv', 'gpw', 'gpg', 'gpr', 'gpb', 'skz', 'gpy'].flatMap((c) => [c, `${c}s`])),
+    aliases: ['pgem', 'pgems', 'perfect gems', 'perfect skull'],
+  },
+  {
+    typeCode: UBER,
+    label: 'Any Pandemonium Key',
+    code: inCodes(['pk1', 'pk2', 'pk3']),
+    aliases: ['keys', 'pandemonium keys', 'uber keys', 'key of terror', 'key of hate', 'key of destruction'],
+  },
+  {
+    typeCode: UBER,
+    label: 'Any Corrupted Ear',
+    code: inCodes(['ivez', 'ivea', 'iveb', 'ived', 'iven', 'ivep', 'ives']),
+    aliases: ['ears', 'corrupted ears'],
+  },
+  {
+    typeCode: UBER,
+    label: 'Any Essence',
+    code: inCodes(['tes', 'ceh', 'bet', 'fed']),
+    aliases: ['essences', 'twisted essence', 'charged essence', 'burning essence', 'festering essence'],
+  },
+  {
+    typeCode: UBER,
+    label: 'Any Uber Organ',
+    code: inCodes(['mbr', 'dhn', 'bey']),
+    aliases: ['organs', "mephisto's brain", "diablo's horn", "baal's eye"],
+  },
+];
+
+/** The site's Base select for a Type (sorted by label), after our base groups for it; empty for an unknown type. */
 export function basesForType(typeCode: string | undefined): CatalogOption[] {
-  return typeCode ? [...(BASES_BY_TYPE.get(typeCode) ?? [])] : [];
+  if (!typeCode) return [];
+  const groups = BASE_GROUPS.filter((g) => g.typeCode === typeCode).map(({ code, label }) => ({ code, label }));
+  return [...groups, ...(BASES_BY_TYPE.get(typeCode) ?? [])];
+}
+
+/** Base groups the item-name box offers for `query` (three letters or more of its label or one of its words). */
+export function baseGroupMatches(query: string): BaseGroup[] {
+  const q = query.trim().toLowerCase();
+  if (q.length < 3) return [];
+  return BASE_GROUPS.filter((g) => [g.label, ...g.aliases].some((term) => term.toLowerCase().includes(q)));
 }
 
 /** Codes a type/base option stands for: its own code, or every member of a `{"$in": [...]}` group. */

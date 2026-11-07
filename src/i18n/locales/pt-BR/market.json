@@ -392,7 +392,8 @@
     "label": "Nome do item",
     "placeholder": "Buscar itens…  ( / )",
     "clear": "Limpar nome do item",
-    "closeMatch": "nome parecido"
+    "closeMatch": "nome parecido",
+    "groupHint": "Todos os tipos · define Tipo e Base"
   },
   "detail": {
     "label": "Detalhes do anúncio",

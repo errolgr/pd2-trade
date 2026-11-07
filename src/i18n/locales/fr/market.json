@@ -392,7 +392,8 @@
     "label": "Nom de l'objet",
     "placeholder": "Rechercher des objets…  ( / )",
     "clear": "Effacer le nom de l'objet",
-    "closeMatch": "nom proche"
+    "closeMatch": "nom proche",
+    "groupHint": "Toutes les sortes · règle Type et Base"
   },
   "detail": {
     "label": "Détail de l'annonce",

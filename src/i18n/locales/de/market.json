@@ -376,7 +376,8 @@
     "label": "Item-Name",
     "placeholder": "Items suchen…  ( / )",
     "clear": "Item-Name leeren",
-    "closeMatch": "ähnlicher Name"
+    "closeMatch": "ähnlicher Name",
+    "groupHint": "Alle Sorten · setzt Typ und Basis"
   },
   "detail": {
     "label": "Inseratdetails",

@@ -11,6 +11,7 @@ import {
   type MarketPriceItem,
   useMarketPrices,
 } from '@/pages/chat/hooks/useListingMarketPrices';
+import { baseGroupMatches, type BaseGroup } from '../lib/catalog';
 import { suggestionKey as optionKey, type ItemNameSuggestion } from '../lib/name-suggestions';
 import { useItemNameSuggestions } from '../hooks/useItemNameSuggestions';
 import { Autocomplete, ClearButton } from './controls';
@@ -57,17 +58,20 @@ function PriceDetail({ price, priced }: { price: ListingMarketPrice | null | und
  * The market's item-name search (window top bar): suggestions from the site's name list — found despite typos
  * and by nicknames once the server's catalog search answers — each with its market price in the search's realm,
  * the change this week and how many listings it is based on. The filter applies once a suggestion is picked;
- * clearing the text clears it.
+ * clearing the text clears it. Words for a family of items ("keys", "pgem", "ears") first offer its base group,
+ * which `onPickGroup` applies as the Type and Base filters instead of a name.
  */
 export function ItemNameSearch({
   value,
   onChange,
+  onPickGroup,
   ladder,
   hardcore,
   inputRef,
 }: {
   value: string | undefined;
   onChange: (v: string | undefined) => void;
+  onPickGroup: (group: BaseGroup) => void;
   ladder: boolean;
   hardcore: boolean;
   inputRef?: React.Ref<HTMLInputElement>;
@@ -80,7 +84,14 @@ export function ItemNameSearch({
     setShownValue(value);
     setText(value ?? '');
   }
-  const { suggestions: options } = useItemNameSuggestions(text, NAME_SUGGESTIONS);
+  const { suggestions } = useItemNameSuggestions(text, NAME_SUGGESTIONS);
+  const options = useMemo(
+    (): ItemNameSuggestion[] => [
+      ...baseGroupMatches(text).map((group) => ({ name: group.label, quality: 'Base' as const, group })),
+      ...suggestions,
+    ],
+    [text, suggestions],
+  );
 
   const [priceOptions, setPriceOptions] = useState(options);
   useEffect(() => {
@@ -90,7 +101,7 @@ export function ItemNameSearch({
   const priceItems = useMemo(() => {
     const items: MarketPriceItem[] = [];
     for (const o of priceOptions) {
-      const code = namePriceCode(o.name, o.quality);
+      const code = o.group ? null : namePriceCode(o.name, o.quality);
       if (code) items.push({ id: optionKey(o), code, isLadder: ladder, isHardcore: hardcore });
     }
     return items;
@@ -118,9 +129,20 @@ export function ItemNameSearch({
         }}
         options={options}
         optionKey={optionKey}
-        onPick={(o) => onChange(o.name)}
+        onPick={(o) => {
+          if (!o.group) return onChange(o.name);
+          setText('');
+          onPickGroup(o.group);
+        }}
         className={cn('h-7 pr-6 pl-7', value && 'text-foreground')}
         renderOption={(o) => {
+          if (o.group)
+            return (
+              <span className="flex flex-col gap-0.5 py-0.5">
+                <span className="truncate text-[13px] text-foreground">{o.name}</span>
+                <span className="truncate text-[11px] text-muted-foreground">{t('nameSearch.groupHint')}</span>
+              </span>
+            );
           const priced = !!namePriceCode(o.name, o.quality);
           const price = prices.get(optionKey(o));
           return (
