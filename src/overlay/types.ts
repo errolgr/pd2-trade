@@ -22,7 +22,8 @@ export type PanelId =
   | 'corruptedZoneTimer'
   | 'listingDetail'
   | 'builds'
-  | 'palette';
+  | 'palette'
+  | 'sim';
 
 export interface PanelPayloads {
   /** encodeItem(raw) output (what used to be ?text=). undefined only before the first search (the panel is keepMounted). */
@@ -71,6 +72,8 @@ export interface PanelPayloads {
   builds: BuildsPanelPayload | undefined;
   /** The command palette always opens fresh. */
   palette: undefined;
+  /** Read-only Horadric Sim status (running and recent sims). */
+  sim: undefined;
 }
 
 /** CSS px relative to the overlay viewport. */

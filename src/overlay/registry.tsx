@@ -16,6 +16,7 @@ import { ListingDrawerPage } from '@/pages/market/ListingDrawerPage';
 import CorruptedZoneTimerPage from '@/pages/corrupted-zones/CorruptedZoneTimerPage';
 import BuildsPage from '@/pages/builds/BuildsPage';
 import PalettePage from '@/pages/palette/PalettePage';
+import SimStatusPage from '@/pages/sim/SimStatusPage';
 import type { PanelDefs } from './types';
 
 /**
@@ -258,5 +259,19 @@ export const PANEL_DEFS: PanelDefs = {
     hideOnGameBlur: true,
     closeOnBlur: true,
     interactive: 'children',
+  },
+  // ---- sim (Group Sim): read-only status of the user's Horadric Sim runs; never starts or stops one ----
+  sim: {
+    id: 'sim',
+    component: SimStatusPage,
+    size: { width: 420, height: 520 },
+    minSize: { width: 340, height: 300 },
+    resizable: true,
+    placement: 'gameCenter',
+    persist: true,
+    keyboard: 'onPointerDown',
+    keepMounted: false, // polls only while open
+    hideOnGameBlur: true,
+    closeOnBlur: true,
   },
 };

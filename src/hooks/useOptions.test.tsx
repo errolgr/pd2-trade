@@ -158,6 +158,25 @@ describe('OptionsProvider loading', () => {
     expect(taken.result.current.settings.hotkeyKeyBuilds).toBe('space');
   });
 
+  it('starts the Horadric Sim try-on hotkey unbound, and never takes a combo the user bound elsewhere', async () => {
+    state.files.set('settings.json', JSON.stringify({ hotkeyModifierChat: 'ctrl', hotkeyKeyChat: 'j' }));
+    const { result } = await renderLoaded();
+    expect(result.current.settings).toMatchObject({
+      hotkeyModifierSimTryOn: 'ctrl',
+      hotkeyKeySimTryOn: '',
+      hotkeyKeyChat: 'j',
+      hotkeyKeyMarket: 'm',
+      hotkeyKeyPalette: 'space',
+    });
+    cleanup();
+
+    // A try-on combo counts as taken when a later-added hotkey's default is handed out
+    state.files.set('settings.json', JSON.stringify({ hotkeyModifierSimTryOn: 'ctrl', hotkeyKeySimTryOn: 'm' }));
+    const taken = await renderLoaded();
+    expect(taken.result.current.settings.hotkeyKeySimTryOn).toBe('m');
+    expect(taken.result.current.settings.hotkeyKeyMarket).toBe('');
+  });
+
   it('does not rewrite a file that already has every default key', async () => {
     state.dirExists = false;
     await renderLoaded();

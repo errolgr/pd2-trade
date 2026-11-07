@@ -253,6 +253,10 @@
       "palette": {
         "label": "Palette de commandes",
         "description": "Rechercher actions, objets, builds et réglages depuis une seule barre."
+      },
+      "simTryOn": {
+        "label": "Essayer l’objet sur le personnage (Horadric Sim)",
+        "description": "Envoie l’objet survolé au planificateur Horadric Sim, équipé sur ton personnage par défaut."
       }
     }
   },

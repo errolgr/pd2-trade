@@ -190,6 +190,7 @@ describe('ChatButtonPage', () => {
       'Chat',
       'Market browser',
       'Builds',
+      'Horadric Sim',
       'Net worth',
       'Stash value',
       'Manage listings',
@@ -198,7 +199,17 @@ describe('ChatButtonPage', () => {
 
     fireEvent.keyDown(screen.getByRole('button', { name: 'Move Chat' }), { key: 'ArrowUp' });
     expect(updateSettings).toHaveBeenCalledWith({
-      chatDockOrder: ['settings', 'chat', 'offers', 'market', 'builds', 'netWorth', 'stashValue', 'manageListings'],
+      chatDockOrder: [
+        'settings',
+        'chat',
+        'offers',
+        'market',
+        'builds',
+        'sim',
+        'netWorth',
+        'stashValue',
+        'manageListings',
+      ],
     });
   });
 });

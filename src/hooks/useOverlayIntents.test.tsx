@@ -5,7 +5,7 @@ import { ToastActionType } from '@/common/types/Events';
 import { fetch } from '@/lib/browser-http';
 import { useSimAccess } from '@/hooks/useSimAccess';
 import { showToast } from '@/overlay';
-import type { OverlayIntent } from '@/lib/overlay-intents';
+import { subscribeIntents, type OverlayIntent } from '@/lib/overlay-intents';
 import { useOverlayIntents } from './useOverlayIntents';
 
 const h = vi.hoisted(() => ({ settings: {} as Record<string, unknown> }));
@@ -123,5 +123,84 @@ describe('useOverlayIntents', () => {
     expect(fetch).toHaveBeenCalledTimes(2);
     await act(() => vi.advanceTimersByTimeAsync(600_000));
     expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  const sse = (...intents: OverlayIntent[]) =>
+    intents.map((i) => `event: intent\ndata: ${JSON.stringify(i)}\n\n`).join('');
+  const failed: OverlayIntent = {
+    ...intent,
+    id: 'f1',
+    kind: 'job_failed',
+    title: 'Top Gear failed',
+    lines: ['Out of memory'],
+  };
+  const cancelled: OverlayIntent = {
+    ...intent,
+    id: 'c1',
+    kind: 'job_cancelled',
+    title: 'Quick Sim cancelled',
+    lines: [],
+  };
+
+  it('shows a failed sim as an error toast with Details, and a cancelled one muted', async () => {
+    vi.mocked(fetch).mockResolvedValue(stream(sse(failed, cancelled)));
+    renderHook(() => useOverlayIntents());
+    await settle();
+    await settle();
+    expect(vi.mocked(showToast).mock.calls.map((c) => c[0])).toEqual([
+      expect.objectContaining({
+        title: 'Top Gear failed',
+        tone: 'error',
+        action: { label: 'Details', type: ToastActionType.OPEN_URL, data: { url: intent.url } },
+      }),
+      expect.objectContaining({ title: 'Quick Sim cancelled', tone: 'muted' }),
+    ]);
+  });
+
+  it('passes every intent to subscribers (the Sim panel refetches on them)', async () => {
+    const listener = vi.fn();
+    const unsubscribe = subscribeIntents(listener);
+    vi.mocked(fetch).mockResolvedValue(stream(INTENT));
+    renderHook(() => useOverlayIntents());
+    await settle();
+    await settle();
+    unsubscribe();
+    expect(listener).toHaveBeenCalledWith(expect.objectContaining({ id: 'i1' }));
+  });
+
+  it('shows a single sim that finished while away as its normal toast after the connect burst', async () => {
+    vi.mocked(fetch).mockResolvedValue(stream(sse({ ...intent, replay: true })));
+    renderHook(() => useOverlayIntents());
+    await settle();
+    await settle();
+    expect(showToast).not.toHaveBeenCalled();
+    await act(() => vi.advanceTimersByTimeAsync(1_500));
+    expect(showToast).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(showToast).mock.calls[0][0]).toMatchObject({ title: intent.title, action: { label: 'Open' } });
+  });
+
+  it('combines 2+ sims that finished while away into one summary toast, each id once', async () => {
+    const extra: OverlayIntent = { ...intent, id: 'i9', title: 'Upgrade Finder finished' };
+    const r = (i: OverlayIntent) => ({ ...i, replay: true });
+    vi.mocked(fetch).mockResolvedValue(stream(sse(r(intent), r(failed), r(cancelled), r(extra), r(intent))));
+    renderHook(() => useOverlayIntents());
+    await settle();
+    await settle();
+    await act(() => vi.advanceTimersByTimeAsync(1_500));
+    expect(showToast).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(showToast).mock.calls[0][0]).toEqual({
+      title: '4 sims finished while you were away',
+      description: [intent.title, failed.title, cancelled.title].join('\n'),
+      duration: 15_000,
+      action: { label: 'View status', type: ToastActionType.OPEN_SIM_STATUS },
+    });
+  });
+
+  it('shows replayed open requests right away (not part of the away summary)', async () => {
+    vi.mocked(fetch).mockResolvedValue(stream(sse({ ...intent, id: 'o1', kind: 'open_report', replay: true })));
+    renderHook(() => useOverlayIntents());
+    await settle();
+    await settle();
+    expect(showToast).toHaveBeenCalledTimes(1);
   });
 });

@@ -256,6 +256,10 @@
       "palette": {
         "label": "Paleta poleceń",
         "description": "Szukaj akcji, przedmiotów, buildów i ustawień w jednym polu."
+      },
+      "simTryOn": {
+        "label": "Przymierz przedmiot na postaci (Horadric Sim)",
+        "description": "Wysyła przedmiot pod kursorem do planera Horadric Sim, założony na domyślną postać."
       }
     }
   },

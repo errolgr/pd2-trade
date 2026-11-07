@@ -51,6 +51,7 @@ const ChatButtonPage: React.FC = () => {
         onOffersClick={() => openOffers((payload) => openPanel('chat', payload))}
         onMarketClick={() => openPanel('market')}
         onBuildsClick={() => openPanel('builds')}
+        onSimClick={() => openPanel('sim')}
         onNetWorthClick={() =>
           openPanel('netWorthPanel', undefined, {
             placement: panelBesideTicker(dock, NET_WORTH_PANEL_SIZE, gameRect, PANEL_GAP),
