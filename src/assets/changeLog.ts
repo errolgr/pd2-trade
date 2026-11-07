@@ -1,6 +1,7 @@
 export const changeLog = {
   '0.10.17': [
     '🆕 Market browser: an Anniversary filter under Properties finds items with the 5th Anniversary Edition skin (or leaves them out)',
+    '✨ Market browser: ethereal items glow white and 5th Anniversary Edition items glow gold; cards show a white Ethereal chip and a gold Anniversary chip ("anniv" in rows)',
     '✨ Market browser: a search with only one filter that finds nothing no longer offers to drop it (that would list the whole market)',
   ],
   '0.10.16': [

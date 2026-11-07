@@ -4,6 +4,11 @@ import type { StatFilter, Tri } from './types';
 /** PD2's modifier on 5th Anniversary Edition items (the alternative skin), "5th Anniversary Edition" in its tooltip. */
 export const ANNIVERSARY_KEY = 'item_shiny_appearance';
 
+/** Whether an item has the 5th Anniversary Edition skin. */
+export function isAnniversaryItem(item: { modifiers?: readonly { name: string }[] }): boolean {
+  return item.modifiers?.some((m) => m.name === ANNIVERSARY_KEY) ?? false;
+}
+
 /**
  * The Properties "Anniversary skin" choice, read off the stat rows it is stored as (so saved searches, alerts and
  * the market service need nothing new): an enabled required row = yes, an enabled `not` row = no. A row in an

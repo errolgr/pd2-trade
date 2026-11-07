@@ -10,6 +10,7 @@ import { DealBadge } from '@/pages/market/enrich/DealBadge';
 import type { Deal } from '@/pages/market/enrich/useDealIndicators';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { listingAge } from '../lib/listing';
+import { isAnniversaryItem } from '../lib/anniversary';
 import { statWithValue } from './stat-text';
 import type { ScoredListing } from '../lib/types';
 import { displayMods, itemNameColor } from './ItemTooltip';
@@ -29,6 +30,22 @@ const SUMMARY_MODS = 4;
 export function formatHrPrice(hr: number): string | null {
   if (!(hr > 0)) return null;
   return `${hr >= 10 ? Math.round(hr * 10) / 10 : Math.round(hr * 100) / 100} HR`;
+}
+
+/**
+ * A glow around the item's art: white (the normal-quality colour, dark on light themes) when ethereal, gold (unique
+ * colour) for the 5th Anniversary Edition skin, both stacked when it is both. Follows the art's outline
+ * (drop-shadow), not its tile.
+ */
+export function itemArtGlow(item: { is_ethereal?: boolean; modifiers?: readonly { name: string }[] }): string {
+  const ethereal = !!item.is_ethereal;
+  const anniversary = isAnniversaryItem(item);
+  if (ethereal && anniversary)
+    return '[filter:drop-shadow(0_0_2px_var(--q-normal))_drop-shadow(0_0_7px_var(--q-unique))]';
+  if (ethereal)
+    return '[filter:drop-shadow(0_0_2px_var(--q-normal))_drop-shadow(0_0_6px_color-mix(in_oklab,var(--q-normal)_55%,transparent))]';
+  if (anniversary) return '[filter:drop-shadow(0_0_2px_var(--q-unique))_drop-shadow(0_0_6px_var(--q-unique))]';
+  return '';
 }
 
 /** A failed next-page load (see useMarketSearch). */
@@ -253,13 +270,14 @@ const ResultRow = React.memo(function ResultRow({
     >
       <ListingThumb listing={listing}
         className="size-10"
-        artClassName="max-h-9 max-w-9" />
+        artClassName={cn('max-h-9 max-w-9', itemArtGlow(item))} />
 
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-baseline gap-1.5">
           <span className={cn('truncate text-[13px] font-semibold', itemNameColor(item))}>{item.name}</span>
           {base && <span className="truncate text-[11px] text-muted-foreground">{base}</span>}
           {item.is_ethereal && <span className="shrink-0 text-[10px] text-info">eth</span>}
+          {isAnniversaryItem(item) && <span className="shrink-0 text-[10px] text-q-unique">anniv</span>}
           {item.socket_count > 0 && (
             <span className="shrink-0 text-[10px] text-muted-foreground">{`${item.socket_count}os`}</span>
           )}
