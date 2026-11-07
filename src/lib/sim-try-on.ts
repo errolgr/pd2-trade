@@ -83,9 +83,11 @@ export function simListingPlanUrl(listingId: string, character: string, goal?: S
   return `${BACKEND_URL}/sim/plan?${params}`;
 }
 
-/** The planner opened on `character` alone (it imports the character from PD2). */
-export function simPlannerUrl(character: string): string {
-  return `${BACKEND_URL}/sim/plan?${new URLSearchParams({ import: character })}`;
+/** The planner opened on `character` alone (it imports the character from PD2), `goal` preselected unless Quick Sim. */
+export function simPlannerUrl(character: string, goal?: SimGoal): string {
+  const params = new URLSearchParams({ import: character });
+  if (goal && goal !== 'quick_sim') params.set('goal', goal);
+  return `${BACKEND_URL}/sim/plan?${params}`;
 }
 
 /** The saved default character (Settings, else the one the price check remembered); '' when none. */

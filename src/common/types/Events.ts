@@ -12,8 +12,8 @@ export enum ToastActionType {
   OPEN_RELEASE_PAGE = 'OPEN_RELEASE_PAGE',
   /** data: { url }: opens a pd2trader.com page in the browser (Horadric Sim intents). */
   OPEN_URL = 'OPEN_URL',
-  /** Opens the overlay's read-only Horadric Sim status panel. */
-  OPEN_SIM_STATUS = 'OPEN_SIM_STATUS',
+  /** data: PanelPayloads['sim'] (a report's { slug, url } to select) or none: opens the overlay's Horadric Sim panel. */
+  OPEN_SIM_PANEL = 'OPEN_SIM_PANEL',
 }
 
 export interface CustomToastPayload {
