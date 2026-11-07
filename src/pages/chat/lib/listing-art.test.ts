@@ -44,6 +44,14 @@ describe('listingArtUrl', () => {
     expect(charm('Grand Charm', 2)).toBe('https://pd2trader.com/assets/items/invch9.png');
   });
 
+  it('draws keys, uber organs, perfect gems and corrupted ears with their game art', () => {
+    const items = 'https://pd2trader.com/assets/items';
+    expect(art('Key of Hate', 'Normal', 'Key of Hate')).toBe(`${items}/invmph.png`);
+    expect(art("Diablo's Horn", 'Normal', "Diablo's Horn")).toBe(`${items}/invhorn.png`);
+    expect(art('Perfect Skull', 'Normal', 'Perfect Skull')).toBe(`${items}/invskz.png`);
+    expect(art("Corrupted Necromancer's Ear", 'Normal', "Corrupted Necromancer's Ear")).toBe(`${items}/invear.png`);
+  });
+
   it('returns null when nothing matches', () => {
     expect(art('Mystery Thing', 'Normal', 'Mystery Thing')).toBeNull();
   });
