@@ -13,6 +13,7 @@ import { isThreadMuted, loadChatPrefs } from '@/lib/chat-prefs';
 import { normalizeName as personKey } from '@/lib/whisper-history';
 import { whisperThreadId } from '@/pages/chat/lib/identity';
 import { shortenMessage } from '@/pages/chat/lib/market-links';
+import { isToastTypeOn } from '@/lib/toast-types';
 
 /** Offer toasts stay up long enough to read the offer and click through (sonner's default is 4 s; hover pauses it). */
 export const OFFER_TOAST_DURATION_MS = 20_000;
@@ -65,8 +66,7 @@ export function playNotificationSound(volume: number = 70) {
 
 export function isToastEnabled(settings: ISettings | undefined, type: string): boolean {
   if (!(settings?.toastPopupsEnabled ?? true)) return false;
-  const types = settings?.toastPopupTypes ?? ['whispers', 'trade', 'joins', 'offers', 'networth'];
-  return types.includes(type);
+  return isToastTypeOn(settings?.toastPopupTypes, type);
 }
 
 /** Exactly one instance (AppController): socket offer/chat pushes and Rust whisper events -> sound + toasts. */

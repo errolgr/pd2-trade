@@ -429,7 +429,8 @@
       "trade": "Handel",
       "joins": "Dołączenia",
       "offers": "Oferty",
-      "networth": "Majątek"
+      "networth": "Majątek",
+      "sim": "Horadric Sim"
     },
     "timing": {
       "off": "Powiadomienia są wyłączone. Wybierz inną opcję, aby edytować poniższe ustawienia.",

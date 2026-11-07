@@ -23,6 +23,7 @@ import {
   rememberLegacySimCharacter,
   SIM_CHARACTER_STORAGE_KEY,
   type SimGoal,
+  type SimLastExport,
 } from '@/lib/sim-preferences';
 import { findSimItem, type FoundSimItem, type SimItemSource } from '@/lib/sim-item-sources';
 import { trackMeasurement } from '@/lib/telemetry';
@@ -119,7 +120,10 @@ export function SimulatorButton({ item }: { item: PriceCheckItem }) {
                 savedCharacter={settings.simCharacter || legacySimCharacter()}
                 defaultGoal={settings.simGoal}
                 onCharacterChange={(name) => updateSettings({ simCharacter: name })}
-                onSent={() => setOpen(false)}
+                onSent={(simLastExport) => {
+                  setOpen(false);
+                  updateSettings({ simLastExport });
+                }}
               />
             ) : (
               <SignInBanner>Sign in to send items to the planner.</SignInBanner>
@@ -192,8 +196,8 @@ function SimulatorForm({
   token: string;
   account: string;
   item: PriceCheckItem;
-  /** The planner link is ready: the popover closes as the browser opens it. */
-  onSent: () => void;
+  /** The planner link is ready: the popover closes as the browser opens it, and the export is remembered. */
+  onSent: (sent: SimLastExport) => void;
   savedCharacter: string;
   defaultGoal?: SimGoal;
   onCharacterChange: (name: string) => void;
@@ -258,7 +262,7 @@ function SimulatorForm({
         { duration_ms: performance.now() - started, stash_items: 1 },
         { outcome: 'success', source: 'price_check', mode, item_source: itemSource },
       );
-      onSent();
+      onSent({ character, goal, items: 1, url, sentAt: new Date().toISOString() });
     } catch (error) {
       trackMeasurement(
         'sim_export',

@@ -9,6 +9,7 @@ import { usePD2Auth } from '@/hooks/usePD2Auth';
 import { useChangelog } from '@/hooks/useChangelog';
 import { useSocketNotifications } from '@/hooks/useSocketNotifications';
 import { useNetWorth } from '@/hooks/useNetWorth';
+import { useOverlayIntents } from '@/hooks/useOverlayIntents';
 import {
   clipboardContainsValidItem,
   isStashItem,
@@ -50,6 +51,9 @@ const AppController: React.FC = () => {
 
   // Saved-search alerts (15 s poll) - exactly one instance, here
   useMarketAlerts();
+
+  // Horadric Sim intents from pd2trader.com (sim finished, open report/planner) - exactly one instance, here
+  useOverlayIntents();
 
   // Launch toast (outside the game it shows in the screen corner, see ToastLayer)
   useEffect(() => {

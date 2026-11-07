@@ -36,6 +36,7 @@ import { cn } from '@/lib/utils';
 import { useOverlay } from '@/overlay';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import { Banner, EmptyState } from './StatePanel';
+import { SimLastSent } from './SimLastSent';
 
 type Load<T> = { status: 'loading' } | { status: 'ok'; data: T } | { status: 'error'; error: unknown };
 type SendState =
@@ -112,6 +113,9 @@ export function SimExportTab({ token, account }: { token: string; account: strin
         { outcome: 'success', source: 'net_worth', goal },
       );
       setSend({ status: 'sent', url });
+      updateSettings({
+        simLastExport: { character, goal, items: chosen.length, url, sentAt: new Date().toISOString() },
+      });
     } catch (error) {
       trackMeasurement(
         'sim_export',
@@ -143,6 +147,7 @@ export function SimExportTab({ token, account }: { token: string; account: strin
         character&apos;s gear, charms and merc from PD2 and adds the checked items as Top Gear candidates. The link
         works for 24 hours while you&apos;re signed in.
       </p>
+      <SimLastSent last={settings.simLastExport} />
 
       <section className="space-y-2">
         <span className={sectionLabel}>Character</span>

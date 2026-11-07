@@ -417,7 +417,8 @@
       "trade": "交易",
       "joins": "加入",
       "offers": "报价",
-      "networth": "净资产"
+      "networth": "净资产",
+      "sim": "Horadric Sim"
     },
     "timing": {
       "off": "通知已关闭。选择其他选项以编辑下方设置。",

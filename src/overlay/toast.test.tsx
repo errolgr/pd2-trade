@@ -6,6 +6,7 @@ import { openUrl } from '@/lib/browser-opener';
 import { installUpdateAndRelaunch } from '@/lib/updater';
 import { ToastActionType } from '@/common/types/Events';
 import { ToastLayer, confirmToast, setToastBridge, showToast, undoToast } from './toast';
+import { intentToast } from '@/hooks/useOverlayIntents';
 import { fetchMarketListing } from '@/pages/market/alerts/saved-search-api';
 import { listing, mod } from '@/pages/market/lib/test-utils';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
@@ -201,6 +202,25 @@ describe('showToast action toasts', () => {
     );
     await click(screen.getByText('View'));
     expect(openUrl).not.toHaveBeenCalled();
+  });
+
+  it('Open on a Horadric Sim intent toast opens its page in the browser', async () => {
+    await renderLayer();
+    await show(() =>
+      showToast(
+        intentToast({
+          id: 'i1',
+          kind: 'report_ready',
+          title: 'Top Gear finished · HammerPal',
+          lines: ['Best set +12.4% DPS'],
+          url: 'https://pd2trader.com/sim/r/abc',
+          createdAt: '2026-11-07T10:00:00Z',
+        }),
+      ),
+    );
+    expect(toastEl('Best set +12.4% DPS')?.textContent).toContain('Top Gear finished · HammerPal');
+    await click(screen.getByText('Open'));
+    expect(openUrl).toHaveBeenCalledWith('https://pd2trader.com/sim/r/abc');
   });
 
   it('Reply opens chat on the conversation or whisper thread with the composer focused', async () => {
