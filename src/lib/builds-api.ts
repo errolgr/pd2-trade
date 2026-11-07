@@ -420,20 +420,43 @@ export async function getAccountCharacters(account: string, signal?: AbortSignal
   );
 }
 
-/** What PD2 has saved of a character (public): its own items (inventory, cube, equipped) and its mercenary's. */
+/** A character's class, level and allocated Strength / Dexterity (without gear), as PD2 last saved them. */
+export interface CharacterStats {
+  className: string;
+  level: number;
+  strength: number;
+  dexterity: number;
+}
+
+/**
+ * What PD2 has saved of a character (public): its own items (inventory, cube, equipped), its mercenary's, and its
+ * stats (absent when PD2 sent none usable).
+ */
 export interface CharacterItems {
   items: GameStashItem[];
   mercenary: GameStashItem[];
+  stats?: CharacterStats;
+}
+
+function parseCharacterStats(raw: unknown): CharacterStats | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const c = raw as { class?: { name?: unknown }; level?: unknown; attributes?: Record<string, unknown> };
+  const { strength, dexterity } = c.attributes ?? {};
+  if (typeof c.class?.name !== 'string' || typeof c.level !== 'number') return undefined;
+  if (typeof strength !== 'number' || typeof dexterity !== 'number') return undefined;
+  return { className: c.class.name, level: c.level, strength, dexterity };
 }
 
 export async function getCharacterItems(name: string, signal?: AbortSignal): Promise<CharacterItems> {
-  const data = await getJson<{ items?: unknown; mercenary?: { items?: unknown } | null }>(
+  const data = await getJson<{ items?: unknown; mercenary?: { items?: unknown } | null; character?: unknown }>(
     `${PD2_GAME_URL}/character/${encodeURIComponent(name)}`,
     signal,
   );
+  const stats = parseCharacterStats(data.character);
   return {
     items: Array.isArray(data.items) ? data.items : [],
     mercenary: Array.isArray(data.mercenary?.items) ? data.mercenary.items : [],
+    ...(stats && { stats }),
   };
 }
 

@@ -14,6 +14,7 @@ import {
   Store,
   TrendingUp,
   X,
+  FlaskConical,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { popIn, scaleIn } from '@/lib/motion';
@@ -27,6 +28,7 @@ interface ChatButtonProps {
   onOffersClick: () => void;
   onMarketClick?: () => void;
   onBuildsClick?: () => void;
+  onSimClick?: () => void;
   onNetWorthClick?: () => void;
   onStashValueClick?: () => void;
   onManageListingsClick?: () => void;
@@ -208,6 +210,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
   onOffersClick,
   onMarketClick,
   onBuildsClick,
+  onSimClick,
   onNetWorthClick,
   onStashValueClick,
   onManageListingsClick,
@@ -350,6 +353,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
     },
     { id: 'market', label: t('chatButton.menu.market'), icon: Store, onClick: onMarketClick },
     { id: 'builds', label: t('chatButton.menu.builds'), icon: Shield, onClick: onBuildsClick },
+    { id: 'sim', label: t('chatButton.menu.sim'), icon: FlaskConical, onClick: onSimClick },
     { id: 'netWorth', label: t('chatButton.menu.netWorth'), icon: TrendingUp, onClick: onNetWorthClick },
     { id: 'stashValue', label: t('chatButton.menu.stashValue'), icon: Coins, onClick: onStashValueClick },
     {

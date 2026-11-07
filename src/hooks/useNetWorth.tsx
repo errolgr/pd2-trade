@@ -21,7 +21,8 @@ import {
 import { getCurrentSeason, SEASONS, startedSeasons } from '@/lib/seasons';
 
 export type NetWorthStatus = 'idle' | 'loading' | 'ok' | 'error' | 'signed-out';
-export type NetWorthTab = 'overview' | 'history';
+/** Net Worth window tabs another panel can open it on ('simulator': Send to Simulator, for beta users). */
+export type NetWorthTab = 'overview' | 'history' | 'simulator';
 
 export interface NetWorthContextValue {
   owner: NetWorthOwner | null;

@@ -25,6 +25,7 @@ vi.mock('./sources/builds', () => ({ useBuildsSource: (i: PaletteSourceInput) =>
 vi.mock('./sources/chat', () => ({ useChatSource: (i: PaletteSourceInput) => source('chat')(i) }));
 vi.mock('./sources/listings', () => ({ useListingsSource: (i: PaletteSourceInput) => source('listings')(i) }));
 vi.mock('./sources/settings', () => ({ useSettingsSource: (i: PaletteSourceInput) => source('settings')(i) }));
+vi.mock('./sources/sim', () => ({ useSimSource: (i: PaletteSourceInput) => source('sim')(i) }));
 
 let settings: Partial<ISettings>;
 let updateSettings: Mock;
@@ -70,7 +71,9 @@ beforeEach(() => {
   close = vi.fn();
   openPanel = vi.fn();
   openSignIn = vi.fn();
-  vi.mocked(useOptions).mockImplementation(() => ({ settings, updateSettings }) as unknown as ReturnType<typeof useOptions>);
+  vi.mocked(useOptions).mockImplementation(
+    () => ({ settings, updateSettings }) as unknown as ReturnType<typeof useOptions>,
+  );
   vi.mocked(usePanel).mockReturnValue({ close } as unknown as PanelContextValue);
   vi.mocked(useOverlay).mockReturnValue({ openPanel } as unknown as OverlayApi);
   vi.mocked(useSignIn).mockReturnValue({ openSignIn } as unknown as ReturnType<typeof useSignIn>);
@@ -122,7 +125,8 @@ describe('PalettePage', () => {
     });
     const view = render(<PalettePage />);
     type('sha');
-    const highlighted = () => screen.getAllByRole('option').find((o) => o.getAttribute('aria-selected') === 'true')?.textContent;
+    const highlighted = () =>
+      screen.getAllByRole('option').find((o) => o.getAttribute('aria-selected') === 'true')?.textContent;
     expect(highlighted()).toBe('sha-local');
 
     order = ['sha-server', 'sha-local'];

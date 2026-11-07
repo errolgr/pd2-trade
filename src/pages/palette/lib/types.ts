@@ -7,8 +7,8 @@ import type { OverlayApi } from '@/overlay';
  * the recents boost; a source owns matching and ranking inside its group.
  */
 
-/** The mixed list's fixed group order. */
-export const PALETTE_GROUPS = ['actions', 'items', 'builds', 'chat', 'listings', 'settings'] as const;
+/** The mixed list's fixed group order ('sim' last: typing "s" + Tab keeps scoping to Settings). */
+export const PALETTE_GROUPS = ['actions', 'items', 'builds', 'chat', 'listings', 'settings', 'sim'] as const;
 export type PaletteGroupId = (typeof PALETTE_GROUPS)[number];
 
 /** Plain JSON a source keeps on a ref to rebuild its item later (recents and pins are saved in settings). */

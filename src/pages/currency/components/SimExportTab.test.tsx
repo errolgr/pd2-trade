@@ -12,6 +12,7 @@ import { createSimExport, getMyCharacters, MAX_SIM_EXPORT_ITEMS, SimExportApiErr
 import type * as SimExportApi from '@/lib/sim-export-api';
 import { trackMeasurement } from '@/lib/telemetry';
 import { useOverlay, type OverlayApi } from '@/overlay';
+import { loadCharacterItems } from '@/lib/sim-item-sources';
 import { SimExportTab } from './SimExportTab';
 
 vi.mock('@/hooks/pd2website/usePD2Website', () => {
@@ -29,6 +30,7 @@ vi.mock('@/lib/sim-export-api', async (importOriginal) => ({
   getMyCharacters: vi.fn(),
   createSimExport: vi.fn(),
 }));
+vi.mock('@/lib/sim-item-sources', () => ({ loadCharacterItems: vi.fn() }));
 
 const URL_OUT = 'https://pd2trader.com/sim/plan?export=0b7f6a1e-8a39-4f43-9a3e-5f4f2b8c0d11';
 const openPanel = vi.fn();
@@ -205,5 +207,35 @@ describe('SimExportTab', () => {
     for (const box of boxes.slice(0, MAX_SIM_EXPORT_ITEMS)) fireEvent.click(box);
     expect((boxes[MAX_SIM_EXPORT_ITEMS] as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByText(`At most ${MAX_SIM_EXPORT_ITEMS} items per export.`)).not.toBeNull();
+  });
+
+  it('picks the stash items the character can wear and says why the others do not fit', async () => {
+    const req = (level: number, strength = 0, dexterity = 0) => ({ level, strength, dexterity });
+    const javelin = item('h-titan', "Titan's Revenge", {
+      base: { name: 'Ceremonial Javelin', stackable: false, type_code: 'ajav' } as GameStashItem['base'],
+      requirements: req(42, 25, 109),
+    });
+    const plate = item('h-plate', 'Tyrael’s Might', { requirements: req(84, 232) });
+    const shako = item('h-shako', 'Harlequin Crest', { requirements: req(62, 50) });
+    fetchAndCacheStash.mockResolvedValue(stashOf([shako, javelin, plate]));
+    vi.mocked(loadCharacterItems).mockResolvedValue({
+      items: [
+        item('h-ring', 'Bul-Kathos', {
+          location: { zone: 'Equipped', equipment: 'Left Ring' } as GameStashItem['location'],
+          modifiers: [{ name: 'strength', values: [25], label: '+25 to Strength' }],
+        }),
+      ],
+      mercenary: [],
+      stats: { className: 'Paladin', level: 92, strength: 100, dexterity: 75 },
+    });
+    await renderTab();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Pick what fits' }));
+    await screen.findByText('Amazon only');
+    expect(loadCharacterItems).toHaveBeenCalledWith('HammerPal');
+    expect(screen.getByText('needs Str 232 · has 125')).not.toBeNull();
+    expect(screen.getByText(/Picked 1 item that fit\./)).not.toBeNull();
+    const checked = screen.getAllByRole('checkbox').map((box) => box.getAttribute('aria-checked'));
+    expect(checked).toEqual(['true', 'false', 'false']);
   });
 });

@@ -2,7 +2,8 @@
  * Horadric Sim → overlay intents (`GET /api/overlay/intents/stream`): the website pushes "open this report /
  * planner" and "your sim finished" to the signed-in overlay. Server-Sent Events read with fetch (`EventSource`
  * cannot send the Bearer token), the same way as the saved-search alert stream, whose parser and backoff it reuses.
- * The server replays undelivered intents (5 min TTL) on connect, so there is no catch-up request.
+ * The server replays undelivered intents on connect (finished/failed/cancelled sims 24 h, open requests 5 min) with
+ * `replay: true`, so there is no catch-up request.
  */
 import { fetch } from '@/lib/browser-http';
 import { BACKEND_URL } from '@/lib/pkce';
@@ -18,12 +19,32 @@ import {
 /** `event: intent` on the stream. */
 export interface OverlayIntent {
   id: string;
-  kind: 'report_ready' | 'open_report' | 'open_planner';
+  kind: 'report_ready' | 'job_failed' | 'job_cancelled' | 'open_report' | 'open_planner';
   title: string;
   lines: string[];
   /** Absolute https URL on pd2trader.com. */
   url: string;
   createdAt: string;
+  /** Sent from the on-connect backlog (happened while the overlay was away); live intents omit it. */
+  replay?: boolean;
+}
+
+/** Kinds about one of the user's sims finishing: the away summary groups these, the Sim panel refetches on them. */
+export const SIM_RESULT_KINDS: readonly OverlayIntent['kind'][] = ['report_ready', 'job_failed', 'job_cancelled'];
+
+type IntentListener = (intent: OverlayIntent) => void;
+const listeners = new Set<IntentListener>();
+
+/** Every intent the one stream (useOverlayIntents) receives, for in-app listeners such as the Sim panel. */
+export function subscribeIntents(listener: IntentListener): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+export function publishIntent(intent: OverlayIntent): void {
+  for (const listener of [...listeners]) listener(intent);
 }
 
 export class OverlayIntentStreamError extends Error {
@@ -73,6 +94,8 @@ export interface IntentStreamOptions {
   token: string;
   open?: (token: string, signal: AbortSignal) => Promise<Response>;
   onIntent: (intent: OverlayIntent) => void;
+  /** Each time a connection opens (the server's backlog follows right after). */
+  onConnect?: () => void;
   /** 401/403/404: the stream stops for this token. */
   onRefused?: (status: number) => void;
   signal: AbortSignal;
@@ -107,6 +130,7 @@ export async function runIntentStream(options: IntentStreamOptions): Promise<voi
     try {
       const response = await open(token, current.signal);
       connectedAt = now();
+      options.onConnect?.();
       const reader = response.body?.getReader();
       if (!reader) throw new Error('Intent stream has no body');
       current.signal.addEventListener('abort', () => void reader.cancel().catch(() => {}), { once: true });

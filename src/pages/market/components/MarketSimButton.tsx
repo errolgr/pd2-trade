@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useOptions } from '@/hooks/useOptions';
 import { useSimLadderCharacters } from '@/hooks/useSimLadderCharacters';
 import { openUrl } from '@/lib/browser-opener';
-import { BACKEND_URL } from '@/lib/pkce';
+import { simListingPlanUrl } from '@/lib/sim-try-on';
 import { preferredSimCharacter } from '@/lib/sim-characters';
 import { legacySimCharacter, rememberLegacySimCharacter } from '@/lib/sim-preferences';
 import type { SimAccess } from '@/lib/sim-export-api';
@@ -34,9 +34,7 @@ export function MarketSimButton({ access, listingId }: { access: SimAccess; list
     setError(undefined);
     const started = performance.now();
     try {
-      const params = new URLSearchParams({ listing: listingId, import: name });
-      if (settings.simGoal && settings.simGoal !== 'quick_sim') params.set('goal', settings.simGoal);
-      await openUrl(`${BACKEND_URL}/sim/plan?${params}`);
+      await openUrl(simListingPlanUrl(listingId, name, settings.simGoal));
       trackMeasurement(
         'sim_handoff',
         { duration_ms: performance.now() - started },

@@ -12,6 +12,8 @@ export enum ToastActionType {
   OPEN_RELEASE_PAGE = 'OPEN_RELEASE_PAGE',
   /** data: { url }: opens a pd2trader.com page in the browser (Horadric Sim intents). */
   OPEN_URL = 'OPEN_URL',
+  /** Opens the overlay's read-only Horadric Sim status panel. */
+  OPEN_SIM_STATUS = 'OPEN_SIM_STATUS',
 }
 
 export interface CustomToastPayload {
@@ -26,6 +28,8 @@ export interface CustomToastPayload {
   };
   /** A market listing: hovering the toast shows its in-game tooltip, and Details opens it in the listing drawer. */
   listing?: ListingPanelPayload;
+  /** 'error': error styling (a failed sim); 'muted': quiet styling (a cancelled sim). */
+  tone?: 'error' | 'muted';
 }
 
 export interface GenericToastPayload {

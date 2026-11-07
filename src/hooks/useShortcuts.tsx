@@ -154,6 +154,7 @@ export const useAppShortcuts = (
   onMarket?: ShortcutHandler,
   onBuilds?: ShortcutHandler,
   onPalette?: ShortcutHandler,
+  onSimTryOn?: ShortcutHandler,
 ) => {
   const { settings, isLoading } = useOptions();
 
@@ -252,6 +253,14 @@ export const useAppShortcuts = (
       });
     }
 
+    if (settings.hotkeyKeySimTryOn && onSimTryOn) {
+      configs.push({
+        modifier: settings.hotkeyModifierSimTryOn ?? 'ctrl',
+        key: settings.hotkeyKeySimTryOn,
+        handler: onSimTryOn,
+      });
+    }
+
     return configs;
   }, [
     isLoading,
@@ -275,6 +284,8 @@ export const useAppShortcuts = (
     settings.hotkeyKeyBuilds,
     settings.hotkeyModifierPalette,
     settings.hotkeyKeyPalette,
+    settings.hotkeyModifierSimTryOn,
+    settings.hotkeyKeySimTryOn,
     onItemSearch,
     onQuickList,
     onCurrencyValuation,
@@ -285,6 +296,7 @@ export const useAppShortcuts = (
     onMarket,
     onBuilds,
     onPalette,
+    onSimTryOn,
   ]);
 
   useShortcuts(shortcuts);

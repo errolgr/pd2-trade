@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   ExternalLink,
   FlaskConical,
+  ListChecks,
   LogIn,
   PackageOpen,
   RefreshCw,
@@ -31,6 +32,8 @@ import {
   SimExportApiError,
 } from '@/lib/sim-export-api';
 import { legacySimCharacter, rememberLegacySimCharacter, SIM_GOALS, type SimGoal } from '@/lib/sim-preferences';
+import { fitCharacter, type FitCharacter, pickFitting, unfitReason } from '@/lib/sim-fit';
+import { loadCharacterItems } from '@/lib/sim-item-sources';
 import { trackMeasurement } from '@/lib/telemetry';
 import { cn } from '@/lib/utils';
 import { useOverlay } from '@/overlay';
@@ -44,6 +47,10 @@ type SendState =
   | { status: 'sending' }
   | { status: 'sent'; url: string }
   | { status: 'error'; error: unknown };
+type FitState =
+  | { status: 'idle' | 'loading'; character: string }
+  | { status: 'ok'; character: string; fit: FitCharacter; picked: number }
+  | { status: 'error'; character: string; message: string };
 
 const sectionLabel = 'text-[11px] font-semibold uppercase tracking-wider text-muted-foreground';
 
@@ -66,6 +73,7 @@ export function SimExportTab({ token, account }: { token: string; account: strin
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
   const [query, setQuery] = useState('');
   const [send, setSend] = useState<SendState>({ status: 'idle' });
+  const [fit, setFit] = useState<FitState>({ status: 'idle', character: '' });
 
   // The provider's fetch changes identity with every settings update; only account and retries refetch.
   const fetchStashRef = useRef(fetchAndCacheStash);
@@ -100,6 +108,43 @@ export function SimExportTab({ token, account }: { token: string; account: strin
       else next.delete(hash);
       return next;
     });
+
+  // Pick what fits: the chosen character's stats from PD2, then the stash items it can wear
+  const characterRef = useRef(character);
+  useEffect(() => {
+    characterRef.current = character;
+  });
+  const pickFits = async () => {
+    const name = character;
+    setFit({ status: 'loading', character: name });
+    try {
+      const fitted = fitCharacter(await loadCharacterItems(name));
+      if (characterRef.current !== name) return;
+      if (!fitted) {
+        setFit({ status: 'error', character: name, message: `PD2 has no stats saved for ${name} yet.` });
+        return;
+      }
+      const picked = pickFitting(items, fitted, MAX_SIM_EXPORT_ITEMS);
+      setFit({ status: 'ok', character: name, fit: fitted, picked: picked.size });
+      setSelected(picked);
+    } catch (error) {
+      if (characterRef.current === name) {
+        setFit({ status: 'error', character: name, message: describeSimExportError(error) });
+      }
+    }
+  };
+  // A fit check is for the character it ran on
+  const fitted = fit.status === 'ok' && fit.character === character ? fit : null;
+  const fittedCharacter = fitted?.fit;
+  const reasons = useMemo(() => {
+    const out = new Map<string, string>();
+    if (!fittedCharacter) return out;
+    for (const item of items) {
+      const reason = unfitReason(item, fittedCharacter);
+      if (reason) out.set(item.hash, reason);
+    }
+    return out;
+  }, [items, fittedCharacter]);
 
   const sendExport = async () => {
     const started = performance.now();
@@ -225,16 +270,43 @@ export function SimExportTab({ token, account }: { token: string; account: strin
               ({chosen.length}/{MAX_SIM_EXPORT_ITEMS} checked)
             </span>
           </span>
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={stash.status === 'loading'}
-            onClick={() => setStashVersion((v) => v + 1)}
-          >
-            <RefreshCw className={cn('size-3.5', stash.status === 'loading' && 'animate-spin')} />
-            Reload stash
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={!character || items.length === 0 || fit.status === 'loading'}
+              onClick={() => void pickFits()}
+              title="Check the stash items this character can wear now (class, level, Strength and Dexterity)"
+            >
+              <ListChecks className={cn('size-3.5', fit.status === 'loading' && 'animate-pulse')} />
+              Pick what fits
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={stash.status === 'loading'}
+              onClick={() => setStashVersion((v) => v + 1)}
+            >
+              <RefreshCw className={cn('size-3.5', stash.status === 'loading' && 'animate-spin')} />
+              Reload stash
+            </Button>
+          </div>
         </div>
+        {fitted && (
+          <p role="status"
+            className="text-xs text-muted-foreground">
+            {`${fitted.character}: level ${fitted.fit.level} · Str ${fitted.fit.strength} · Dex ${fitted.fit.dexterity} ` +
+              `with worn gear and charms. Picked ${fitted.picked} item${fitted.picked === 1 ? '' : 's'} that fit` +
+              (fitted.picked >= MAX_SIM_EXPORT_ITEMS ? ` (at most ${MAX_SIM_EXPORT_ITEMS}).` : '.')}
+          </p>
+        )}
+        {fit.status === 'error' && fit.character === character && (
+          <p role="alert"
+            className="flex items-center gap-1.5 text-xs text-destructive">
+            <AlertTriangle className="size-3.5 shrink-0" />
+            {fit.message}
+          </p>
+        )}
         {stash.status === 'error' && (
           <Banner
             tone="warning"
@@ -288,7 +360,12 @@ export function SimExportTab({ token, account }: { token: string; account: strin
                         {item.base?.name && item.base.name !== item.name && (
                           <span className="min-w-0 truncate text-xs text-muted-foreground">{item.base.name}</span>
                         )}
-                        <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+                        {reasons.get(item.hash) && (
+                          <span className="ml-auto shrink-0 text-xs text-warning">{reasons.get(item.hash)}</span>
+                        )}
+                        <span
+                          className={cn('shrink-0 text-xs text-muted-foreground', !reasons.get(item.hash) && 'ml-auto')}
+                        >
                           {[item.is_ethereal && 'Eth', item.corrupted && 'Corrupted', item.location?.storage]
                             .filter(Boolean)
                             .join(' · ')}

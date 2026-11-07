@@ -409,6 +409,34 @@ describe('useAppShortcuts', () => {
     expect(handlers.builds).toHaveBeenCalledTimes(1);
   });
 
+  it('binds the Horadric Sim try-on hotkey only once a key is set', async () => {
+    const simTryOn = vi.fn();
+    const useTryOnShortcuts = () =>
+      useAppShortcuts(
+        handlers.search,
+        handlers.list,
+        handlers.currency,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        simTryOn,
+      );
+    mockOptions({ ...baseSettings, hotkeyModifierSimTryOn: 'ctrl', hotkeyKeySimTryOn: '' });
+    const { rerender } = renderHook(useTryOnShortcuts);
+    await flush();
+    expect(state.registered.has('Control+J')).toBe(false);
+
+    mockOptions({ ...baseSettings, hotkeyModifierSimTryOn: 'ctrl', hotkeyKeySimTryOn: 'j' });
+    rerender();
+    await flush();
+    press('Control+J');
+    expect(simTryOn).toHaveBeenCalledTimes(1);
+  });
+
   it('rebinds when a hotkey setting changes', async () => {
     mockOptions(baseSettings);
     const { rerender } = renderHook(() => useAppShortcuts(handlers.search, handlers.list, handlers.currency));

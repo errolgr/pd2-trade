@@ -14,6 +14,7 @@ import { useBuildsSource } from './sources/builds';
 import { useChatSource } from './sources/chat';
 import { useListingsSource } from './sources/listings';
 import { useSettingsSource } from './sources/settings';
+import { useSimSource } from './sources/sim';
 import {
   PALETTE_MIXED_LIMIT,
   PALETTE_SCOPED_LIMIT,
@@ -97,6 +98,7 @@ export default function PalettePage() {
     chat: useChatSource(inputs.chat),
     listings: useListingsSource(inputs.listings),
     settings: useSettingsSource(inputs.settings),
+    sim: useSimSource(inputs.sim),
   };
   const visibleGroups = scope ? [scope.group] : PALETTE_GROUPS;
   const loading = visibleGroups.some((g) => results[g].loading);
@@ -258,9 +260,12 @@ export default function PalettePage() {
             className="min-h-0 overflow-y-auto overscroll-contain px-1.5 py-1.5 [&_[cmdk-group-heading]]:px-2.5 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-2 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground"
           >
             {sections.map((section) => (
-              <Command.Group key={section.key} heading={section.heading}>
+              <Command.Group key={section.key}
+                heading={section.heading}>
                 {section.items.map((item) => (
-                  <PaletteRow key={item.ref.id} item={item} onSelect={() => run(item, item.primary)} />
+                  <PaletteRow key={item.ref.id}
+                    item={item}
+                    onSelect={() => run(item, item.primary)} />
                 ))}
               </Command.Group>
             ))}
@@ -277,7 +282,11 @@ export default function PalettePage() {
                 <span className="truncate">{t('signIn.title')}</span>
               </Command.Item>
             )}
-            {empty && <div className="px-3 py-6 text-center text-sm text-muted-foreground">{t('empty.noResults', { query: q })}</div>}
+            {empty && (
+              <div className="px-3 py-6 text-center text-sm text-muted-foreground">
+                {t('empty.noResults', { query: q })}
+              </div>
+            )}
           </Command.List>
         </Command>
 
@@ -288,7 +297,9 @@ export default function PalettePage() {
           {scope ? <span>{t('footer.unscope')}</span> : <span>{t('footer.scope')}</span>}
           <span>{t('footer.close')}</span>
           {paletteHotkey && (
-            <kbd className="ml-auto rounded border border-border px-1.5 py-0.5 font-sans text-[11px]">{paletteHotkey}</kbd>
+            <kbd className="ml-auto rounded border border-border px-1.5 py-0.5 font-sans text-[11px]">
+              {paletteHotkey}
+            </kbd>
           )}
         </div>
 
@@ -325,7 +336,9 @@ const ROW_CLASS =
 
 function PaletteRow({ item, onSelect }: { item: PaletteItem; onSelect: () => void }) {
   return (
-    <Command.Item value={item.ref.id} onSelect={onSelect} className={ROW_CLASS}>
+    <Command.Item value={item.ref.id}
+      onSelect={onSelect}
+      className={ROW_CLASS}>
       <span className="flex h-5 w-5 shrink-0 items-center justify-center text-muted-foreground">{item.icon}</span>
       <span className={cn('truncate', item.titleClassName)}>{item.ref.title}</span>
       {item.subtitle && <span className="shrink-0 truncate text-xs text-muted-foreground">{item.subtitle}</span>}
@@ -335,7 +348,9 @@ function PaletteRow({ item, onSelect }: { item: PaletteItem; onSelect: () => voi
         </span>
       )}
       {item.trailing && (
-        <span className="ml-auto flex shrink-0 items-center gap-2 pl-3 text-xs text-muted-foreground">{item.trailing}</span>
+        <span className="ml-auto flex shrink-0 items-center gap-2 pl-3 text-xs text-muted-foreground">
+          {item.trailing}
+        </span>
       )}
     </Command.Item>
   );
@@ -360,7 +375,8 @@ function ActionMenu({ item, pinned, onRun, onTogglePin, onClose }: ActionMenuPro
       transition={{ duration: DUR.fast, ease: EASE_OUT }}
       className="absolute bottom-11 right-2 z-10 w-64 overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-panel"
     >
-      <Command label={t('menu.label', { title: item.ref.title })} loop>
+      <Command label={t('menu.label', { title: item.ref.title })}
+        loop>
         <div className="truncate px-3 pt-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
           {item.ref.title}
         </div>
@@ -368,7 +384,11 @@ function ActionMenu({ item, pinned, onRun, onTogglePin, onClose }: ActionMenuPro
           autoFocus
           placeholder={t('menu.placeholder')}
           onKeyDown={(e) => {
-            if (e.key === 'Escape' || (e.key === 'Backspace' && e.currentTarget.value === '') || e.key === 'ArrowLeft') {
+            if (
+              e.key === 'Escape' ||
+              (e.key === 'Backspace' && e.currentTarget.value === '') ||
+              e.key === 'ArrowLeft'
+            ) {
               e.preventDefault();
               e.stopPropagation();
               onClose();
@@ -378,8 +398,15 @@ function ActionMenu({ item, pinned, onRun, onTogglePin, onClose }: ActionMenuPro
         />
         <Command.List className="max-h-56 overflow-y-auto p-1">
           {actions.map((action) => (
-            <Command.Item key={action.id} value={`${action.id} ${action.label}`} onSelect={() => onRun(action)} className={ROW_CLASS}>
-              <span className="flex h-4 w-4 shrink-0 items-center justify-center text-muted-foreground">{action.icon}</span>
+            <Command.Item
+              key={action.id}
+              value={`${action.id} ${action.label}`}
+              onSelect={() => onRun(action)}
+              className={ROW_CLASS}
+            >
+              <span className="flex h-4 w-4 shrink-0 items-center justify-center text-muted-foreground">
+                {action.icon}
+              </span>
               <span className="truncate">{action.label}</span>
               {action === item.primary && <span className="ml-auto text-xs text-muted-foreground">↵</span>}
               {action.shortcut && action !== item.primary && (
@@ -387,7 +414,11 @@ function ActionMenu({ item, pinned, onRun, onTogglePin, onClose }: ActionMenuPro
               )}
             </Command.Item>
           ))}
-          <Command.Item value={`pin ${t(pinned ? 'menu.unpin' : 'menu.pin')}`} onSelect={onTogglePin} className={ROW_CLASS}>
+          <Command.Item
+            value={`pin ${t(pinned ? 'menu.unpin' : 'menu.pin')}`}
+            onSelect={onTogglePin}
+            className={ROW_CLASS}
+          >
             <span className="flex h-4 w-4 shrink-0 items-center justify-center text-muted-foreground">
               {pinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
             </span>

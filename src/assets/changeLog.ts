@@ -5,6 +5,13 @@ export const changeLog = {
     '🔧 Simulator browser-open failures stay visible and can be retried instead of silently closing the handoff.',
     '✨ Horadric Sim tells you in game when a sim you started from the overlay finishes, and reports or plans you send to the overlay from pd2trader.com pop up here. Each toast has an Open button; turn them off under Settings → Chat → Toast popup types → Horadric Sim.',
     '✨ Net Worth → Simulator shows what you last sent to the planner, with a Reopen planner button while the link still works (24 hours).',
+    '🆕 Horadric Sim status panel (dock menu → Horadric Sim): your running sims with progress and queue position, and the last 24 hours of results with an Open button for each report. Read-only: sims are started and managed on pd2trader.com.',
+    '✨ Horadric Sim toasts also tell you when a sim you sent from the overlay failed (Details opens it) or was cancelled.',
+    '✨ Sims that finished while the overlay was closed show once when you come back; several are combined into one "sims finished while you were away" toast with View status.',
+    '✨ Net Worth → Simulator: Pick what fits checks the stash items your character can wear now (class, level, Strength and Dexterity with worn gear and charms), up to 40; items that don\'t fit say why, e.g. "needs Str 170 · has 125" or "Amazon only".',
+    '🆕 Try-on hotkey (Horadric Sim): sends the hovered item to the planner, tried on your default character. Off by default; bind it under Settings → Hotkeys → Try item on character. The price check Sim button shows the binding.',
+    '✨ Chat: market listings linked in a message get a Try on button that opens the listing on your default character in the Horadric Sim planner.',
+    '✨ Command palette: a Horadric Sim group with Sim status, Open planner on your default character, your last report (24 hours) and Send stash to Simulator.',
   ],
   '0.10.16': [
     "✨ Horadric Sim (beta): the Sim buttons in the price check, market and Net Worth now say when you're not in the closed beta yet, with a link to join the waitlist (or your place on it)",

@@ -26,7 +26,7 @@ export const CHARACTER_ITEMS_FRESH_MS = 60_000;
 const characterItems = new Map<string, { at: number; request: Promise<CharacterItems> }>();
 
 /** A character's saved items, shared by lookups for CHARACTER_ITEMS_FRESH_MS; a failed read is never kept. */
-function loadCharacterItems(name: string): Promise<CharacterItems> {
+export function loadCharacterItems(name: string): Promise<CharacterItems> {
   const key = name.toLowerCase();
   const cached = characterItems.get(key);
   if (cached && Date.now() - cached.at < CHARACTER_ITEMS_FRESH_MS) return cached.request;
@@ -62,7 +62,11 @@ function onCharacter(item: PriceCheckItem, name: string, { items, mercenary }: C
 }
 
 /** The first character (in `names` order) holding `item`; the first one is read alone, the rest together. */
-async function findOnCharacters(item: PriceCheckItem, names: string[], errors: unknown[]): Promise<FoundSimItem | null> {
+async function findOnCharacters(
+  item: PriceCheckItem,
+  names: string[],
+  errors: unknown[],
+): Promise<FoundSimItem | null> {
   const read = (name: string) =>
     loadCharacterItems(name).then(
       (items) => onCharacter(item, name, items),

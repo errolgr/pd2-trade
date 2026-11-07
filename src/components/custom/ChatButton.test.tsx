@@ -133,11 +133,12 @@ describe('ChatButton', () => {
     fireEvent.click(caret());
 
     fireEvent.keyDown(screen.getByRole('button', { name: 'Move Offers' }), { key: 'ArrowUp' });
-    // Offers swaps with Chat (the shown row above it); market…stashValue have no handler and stay put
+    // Offers swaps with Chat (the shown row above it); market…stashValue (and sim) have no handler and stay put
     expect(onOrderChange).toHaveBeenLastCalledWith([
       'offers',
       'market',
       'builds',
+      'sim',
       'netWorth',
       'stashValue',
       'chat',
