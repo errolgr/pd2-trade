@@ -18,6 +18,12 @@ import {
   SimExportApiError,
   type SimExportItems,
 } from '@/lib/sim-export-api';
+import {
+  legacySimCharacter,
+  rememberLegacySimCharacter,
+  SIM_CHARACTER_STORAGE_KEY,
+  type SimGoal,
+} from '@/lib/sim-preferences';
 import { findSimItem, type FoundSimItem, type SimItemSource } from '@/lib/sim-item-sources';
 import { trackMeasurement } from '@/lib/telemetry';
 import { cn } from '@/lib/utils';
@@ -32,7 +38,7 @@ type SendState = { status: 'idle' } | { status: 'sending' } | { status: 'error';
 type Mode = 'try' | 'pool';
 
 /** The character last sent from the price check (character names are unique on PD2 across accounts). */
-export const SIM_CHARACTER_STORAGE_KEY = 'pd2-sim-character';
+export { SIM_CHARACTER_STORAGE_KEY } from '@/lib/sim-preferences';
 /** Set once the user dismissed the "try this item on" callout or opened the Simulator: it shows only before that. */
 export const SIM_CALLOUT_STORAGE_KEY = 'pd2-sim-callout-seen';
 
@@ -40,14 +46,6 @@ const MODES: { value: Mode; title: string; description: string }[] = [
   { value: 'try', title: 'Try it on', description: 'Swaps it into its slot and compares against your current gear' },
   { value: 'pool', title: 'Add to Top Gear pool', description: 'Candidate only; the optimizer decides where it goes' },
 ];
-
-function savedCharacter(): string {
-  try {
-    return localStorage.getItem(SIM_CHARACTER_STORAGE_KEY) ?? '';
-  } catch {
-    return '';
-  }
-}
 
 function calloutSeen(): boolean {
   try {
@@ -65,7 +63,7 @@ function calloutSeen(): boolean {
  */
 export function SimulatorButton({ item }: { item: PriceCheckItem }) {
   const access = useSimAccess();
-  const { settings } = useOptions();
+  const { settings, updateSettings } = useOptions();
   const [open, setOpen] = useState(false);
   const [callout, setCallout] = useState(() => !calloutSeen());
   if (!access) return null;
@@ -118,6 +116,9 @@ export function SimulatorButton({ item }: { item: PriceCheckItem }) {
                 token={token}
                 account={settings?.account ?? ''}
                 item={item}
+                savedCharacter={settings.simCharacter || legacySimCharacter()}
+                defaultGoal={settings.simGoal}
+                onCharacterChange={(name) => updateSettings({ simCharacter: name })}
                 onSent={() => setOpen(false)}
               />
             ) : (
@@ -184,18 +185,24 @@ function SimulatorForm({
   account,
   item,
   onSent,
+  savedCharacter,
+  defaultGoal,
+  onCharacterChange,
 }: {
   token: string;
   account: string;
   item: PriceCheckItem;
   /** The planner link is ready: the popover closes as the browser opens it. */
   onSent: () => void;
+  savedCharacter: string;
+  defaultGoal?: SimGoal;
+  onCharacterChange: (name: string) => void;
 }) {
   const { fetchAndCacheStash } = usePd2Website();
   const characters = useSimLadderCharacters(token, account);
   const [chosen, setChosen] = useState(savedCharacter);
   const [match, setMatch] = useState<ItemMatch>({ status: 'loading' });
-  const [mode, setMode] = useState<Mode>('try');
+  const [mode, setMode] = useState<Mode>(defaultGoal === 'top_gear' ? 'pool' : 'try');
   const [send, setSend] = useState<SendState>({ status: 'idle' });
 
   const list = characters.status === 'ok' ? characters.data : [];
@@ -227,11 +234,8 @@ function SimulatorForm({
 
   const chooseCharacter = (name: string) => {
     setChosen(name);
-    try {
-      localStorage.setItem(SIM_CHARACTER_STORAGE_KEY, name);
-    } catch {
-      // localStorage unavailable: the choice lasts until the popover closes.
-    }
+    rememberLegacySimCharacter(name);
+    onCharacterChange(name);
   };
 
   const found = match.status === 'ok' ? match.data : null;
@@ -246,14 +250,15 @@ function SimulatorForm({
     const started = performance.now();
     setSend({ status: 'sending' });
     try {
-      const { url } = await createSimExport(token, character, items);
+      const goal: SimGoal = mode === 'try' ? 'quick_sim' : 'top_gear';
+      const { url } = await createSimExport(token, character, items, goal);
+      await openUrl(url);
       trackMeasurement(
         'sim_export',
         { duration_ms: performance.now() - started, stash_items: 1 },
         { outcome: 'success', source: 'price_check', mode, item_source: itemSource },
       );
       onSent();
-      await openUrl(url).catch((error) => console.warn('[SimExport] Could not open the browser:', error));
     } catch (error) {
       trackMeasurement(
         'sim_export',

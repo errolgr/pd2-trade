@@ -8,6 +8,7 @@ import { BACKEND_URL } from '@/lib/pkce';
 import { AccountMismatchError, AuthenticationError } from '@/hooks/pd2website/usePD2Website';
 import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import type { Item as ClipboardItem } from '@/pages/price-check/lib/interfaces';
+import type { SimGoal } from '@/lib/sim-preferences';
 
 /** Items per export (stash and clipboard together); mirrors the server's MAX_STASH_ITEMS (its JSON body limit is 100 KB). */
 export const MAX_SIM_EXPORT_ITEMS = 40;
@@ -100,6 +101,7 @@ export function createSimExport(
   token: string,
   character: string,
   { stashItems = [], clipboardItems = [], try: tried }: SimExportItems,
+  goal?: SimGoal,
 ): Promise<{ url: string }> {
   return request('/api/sim/exports', token, {
     method: 'POST',
@@ -108,6 +110,7 @@ export function createSimExport(
       stashItems,
       ...(clipboardItems.length > 0 && { clipboardItems }),
       ...(tried && ('stash' in tried ? { try: tried.stash } : { tryClipboard: tried.clipboard })),
+      ...(goal && { goal }),
     }),
   });
 }
