@@ -61,6 +61,9 @@ async function runToastAction(action: NonNullable<CustomToastPayload['action']>)
       case ToastActionType.OPEN_RELEASE_PAGE:
         await openUrl(RELEASE_PAGE_URL);
         break;
+      case ToastActionType.OPEN_URL:
+        if (typeof action.data?.url === 'string') await openUrl(action.data.url);
+        break;
       default:
         console.warn('Unknown toast action type:', action.type);
     }

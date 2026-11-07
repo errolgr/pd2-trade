@@ -421,7 +421,8 @@
       "trade": "Trade",
       "joins": "Joins",
       "offers": "Offers",
-      "networth": "Net Worth"
+      "networth": "Net Worth",
+      "sim": "Horadric Sim"
     },
     "timing": {
       "off": "Notifications are off. Pick another option to edit the settings below.",

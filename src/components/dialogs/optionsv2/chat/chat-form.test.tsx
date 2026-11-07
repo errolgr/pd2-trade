@@ -118,6 +118,7 @@ describe('ChatForm', () => {
   });
 
   it('toggles toast popup types, and hides them when toast popups are off', async () => {
+    // Saved before Horadric Sim toasts existed: they read as on without rewriting the list
     renderForm({ toastPopupTypes: ['whispers', 'trade'] });
     const group = screen.getByRole('group', { name: 'Toast popup types' });
     const pressed = () =>
@@ -125,13 +126,18 @@ describe('ChatForm', () => {
         .getAllByRole('button')
         .filter((b) => b.getAttribute('aria-pressed') === 'true')
         .map((b) => b.textContent);
-    expect(pressed()).toEqual(['Whispers', 'Trade']);
+    expect(pressed()).toEqual(['Whispers', 'Trade', 'Horadric Sim']);
 
     fireEvent.click(within(group).getByRole('button', { name: 'Whispers' }));
     fireEvent.click(within(group).getByRole('button', { name: 'Offers' }));
+    fireEvent.click(within(group).getByRole('button', { name: 'Horadric Sim' }));
     expect(pressed()).toEqual(['Trade', 'Offers']);
     await advance(500);
-    expect(lastSaved()?.toastPopupTypes).toEqual(['trade', 'offers']);
+    expect(lastSaved()?.toastPopupTypes).toEqual(['trade', 'offers', '!sim']);
+
+    fireEvent.click(within(group).getByRole('button', { name: 'Horadric Sim' }));
+    await advance(500);
+    expect(lastSaved()?.toastPopupTypes).toEqual(['trade', 'offers', 'sim']);
 
     fireEvent.click(screen.getByRole('switch', { name: 'Toast Popups' }));
     await advance(100);

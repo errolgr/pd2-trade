@@ -45,6 +45,7 @@ vi.mock('@/hooks/usePD2Auth', () => ({ usePD2Auth: vi.fn() }));
 vi.mock('@/hooks/useChangelog', () => ({ useChangelog: vi.fn() }));
 vi.mock('@/hooks/useSocketNotifications', () => ({ useSocketNotifications: vi.fn() }));
 vi.mock('@/pages/market/alerts/useMarketAlerts', () => ({ useMarketAlerts: vi.fn() }));
+vi.mock('@/hooks/useOverlayIntents', () => ({ useOverlayIntents: vi.fn() }));
 const delistItem = vi.hoisted(() => vi.fn(async () => {}));
 vi.mock('@/pages/delist/DelistHandler', () => ({ useDelist: () => ({ delistItem }) }));
 // Item parsing has its own tests; here "ITEM…" is a valid item and "…stash…" marks it as in the shared stash.
@@ -237,11 +238,7 @@ describe('AppController list and delist hotkeys', () => {
     await mount();
     await press(1);
     await advance(300);
-    expect(h.overlay.openPanel).toHaveBeenCalledWith(
-      'quickList',
-      { error: 'not_in_stash' },
-      { placement: 'cursor' },
-    );
+    expect(h.overlay.openPanel).toHaveBeenCalledWith('quickList', { error: 'not_in_stash' }, { placement: 'cursor' });
     expect(toasts()).toContainEqual(
       expect.objectContaining({
         title: 'Cannot List Item',
@@ -255,11 +252,7 @@ describe('AppController list and delist hotkeys', () => {
     await mount();
     await press(1);
     await advance(300);
-    expect(h.overlay.openPanel).toHaveBeenCalledWith(
-      'quickList',
-      { error: 'not_in_stash' },
-      { placement: 'cursor' },
-    );
+    expect(h.overlay.openPanel).toHaveBeenCalledWith('quickList', { error: 'not_in_stash' }, { placement: 'cursor' });
     expect(toasts()).toContainEqual(expect.objectContaining({ description: 'Item is not supported or invalid.' }));
   });
 

@@ -167,6 +167,13 @@ describe('isToastEnabled', () => {
     const settings = { toastPopupTypes: ['trade'] } as ISettings;
     expect([isToastEnabled(settings, 'trade'), isToastEnabled(settings, 'offers')]).toEqual([true, false]);
   });
+
+  it('keeps Horadric Sim toasts on for lists saved before they existed, off only when turned off', () => {
+    expect([
+      isToastEnabled({ toastPopupTypes: ['trade'] } as ISettings, 'sim'),
+      isToastEnabled({ toastPopupTypes: ['trade', '!sim'] } as ISettings, 'sim'),
+    ]).toEqual([true, false]);
+  });
 });
 
 describe('playNotificationSound', () => {

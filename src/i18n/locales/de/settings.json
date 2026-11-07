@@ -421,7 +421,8 @@
       "trade": "Handel",
       "joins": "Beitritte",
       "offers": "Angebote",
-      "networth": "Vermögen"
+      "networth": "Vermögen",
+      "sim": "Horadric Sim"
     },
     "timing": {
       "off": "Benachrichtigungen sind aus. Wähle eine andere Option, um die Einstellungen unten zu bearbeiten.",
