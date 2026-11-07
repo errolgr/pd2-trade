@@ -369,27 +369,27 @@ const SimPage: React.FC = () => {
               )}
             </section>
           </div>
-          <div className="space-y-2 border-t border-border/60 p-3">
-            <div className="flex flex-col gap-1.5">
+          <div className="space-y-1.5 border-t border-border/60 px-3 py-2.5">
+            <div className="-mx-1.5 flex items-center gap-0.5">
               <Button
                 size="sm"
-                variant="outline"
-                className="h-7 w-full justify-start px-2 text-xs"
+                variant="ghost"
+                className="h-7 gap-1.5 px-1.5 text-xs font-normal text-muted-foreground hover:text-foreground"
                 disabled={!plannerUrl}
                 title={plannerUrl ? undefined : 'Pick a default character first'}
                 onClick={() => plannerUrl && void openUrl(plannerUrl)}
               >
-                <FlaskConical className="size-3 shrink-0" />
-                <span className="truncate">Open planner</span>
+                <FlaskConical className="size-3.5 shrink-0" />
+                Open planner
               </Button>
               <Button
                 size="sm"
-                variant="outline"
-                className="h-7 w-full justify-start px-2 text-xs"
+                variant="ghost"
+                className="h-7 gap-1.5 px-1.5 text-xs font-normal text-muted-foreground hover:text-foreground"
                 onClick={() => openPanel('currency', { tab: 'simulator' })}
               >
-                <Send className="size-3 shrink-0" />
-                <span className="truncate">Send stash…</span>
+                <Send className="size-3.5 shrink-0" />
+                Send stash
               </Button>
             </div>
             <SimTryOnHotkeyHint />
