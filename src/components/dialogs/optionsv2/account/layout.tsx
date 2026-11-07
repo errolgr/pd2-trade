@@ -2,6 +2,7 @@ import React from 'react';
 import { SettingsSection } from '../settings-ui';
 import { useTranslation } from '@/i18n';
 import { AccountForm } from './account-form';
+import { SimulatorSettings } from './simulator-settings';
 
 export default function SettingsAccount() {
   const { t } = useTranslation('settings');
@@ -9,6 +10,7 @@ export default function SettingsAccount() {
     <SettingsSection title={t('sections.account.title')}
       description={t('sections.account.description')}>
       <AccountForm />
+      <SimulatorSettings />
     </SettingsSection>
   );
 }

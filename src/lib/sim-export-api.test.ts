@@ -79,6 +79,18 @@ describe('requests', () => {
     expect(Object.keys(body(2))).toEqual(['character', 'stashItems']);
   });
 
+  it('carries the selected planner goal without putting private data in the URL', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(201, { url: 'https://pd2trader.com/sim/plan?export=x&goal=top_gear' }),
+    );
+    await createSimExport('tok', 'Sorc', {}, 'top_gear');
+    expect(JSON.parse(fetchMock.mock.calls[0][1]?.body as string)).toEqual({
+      character: 'Sorc',
+      stashItems: [],
+      goal: 'top_gear',
+    });
+  });
+
   it('reads the closed beta for the login, anonymously without a token', async () => {
     fetchMock.mockResolvedValueOnce(
       jsonResponse(200, { canUseSim: true, waitlist: '/sim/beta', entry: { position: 3, status: 'invited' } }),

@@ -17,6 +17,7 @@ import { applyLanguage, type LanguageSetting, t } from '@/i18n';
 import { DEFAULT_LISTINGS_SORT, type ListingsSort } from '@/pages/quick-list/listings/my-listings';
 import type { ChatDockItem } from '@/pages/chat/chat-dock';
 import type { PaletteRef } from '@/pages/palette/lib/types';
+import type { SimGoal } from '@/lib/sim-preferences';
 
 /** A tracked character the builds panel remembers (followed / recently viewed). */
 export interface BuildCharacterRef {
@@ -143,6 +144,8 @@ export interface ISettings {
   hotkeyKeyPalette?: string; // command palette; '' = unbound
   palettePins?: PaletteRef[]; // command palette: pinned results shown on the empty state, in order
   paletteRecents?: PaletteRef[]; // command palette: last picked results, newest first (PALETTE_RECENTS_MAX)
+  simCharacter?: string; // default ladder character for Horadric Sim entry points
+  simGoal?: SimGoal; // default planner goal for Horadric Sim entry points
 }
 
 interface OptionsContextProps {
