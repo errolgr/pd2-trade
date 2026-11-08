@@ -147,7 +147,7 @@ const NotificationLogPage: React.FC = () => {
         {shown.length === 0 ? (
           <p className="px-4 py-10 text-center text-sm text-muted-foreground">{t('notificationLog.empty')}</p>
         ) : (
-          <div className="flex flex-col gap-2 overflow-x-hidden p-2">
+          <div className="flex flex-col gap-1.5 overflow-x-hidden p-1.5">
             {missed.length > 0 && (
               <Section label={t('notificationLog.missed', { count: missed.length })}
                 accent>
@@ -182,7 +182,7 @@ function Section({ label, accent, children }: { label?: string; accent?: boolean
       {label && (
         <h3
           className={cn(
-            'px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider',
+            'px-2 pb-0.5 text-[10px] font-semibold uppercase tracking-wider',
             accent ? 'text-primary' : 'text-muted-foreground',
           )}
         >
@@ -258,23 +258,26 @@ function Row({
           else if (e.key === 'Delete' || e.key === 'Backspace') remove();
         }}
         className={cn(
-          'grid touch-pan-y select-none grid-cols-[1rem_minmax(0,1fr)_auto] items-start gap-x-2.5 rounded-md px-2 py-1.5 outline-none hover:bg-accent/50 focus-visible:bg-accent/50',
+          'grid touch-pan-y select-none grid-cols-[0.875rem_minmax(0,1fr)_auto] items-start gap-x-2 rounded-md px-2 py-1 outline-none hover:bg-accent/50 focus-visible:bg-accent/50',
           openable ? 'cursor-pointer' : 'cursor-grab',
         )}
       >
-        <Icon className={cn('mt-0.5 size-4', entry.tone ? TONE_CLASS[entry.tone] : className)} />
+        <Icon className={cn('mt-px size-3.5', entry.tone ? TONE_CLASS[entry.tone] : className)} />
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium">
+          <p className="truncate text-[13px] leading-4 font-medium">
             {entry.title}
             {entry.count > 1 && (
               <span className="ml-1.5 text-xs font-normal tabular-nums text-muted-foreground">×{entry.count}</span>
             )}
           </p>
           {entry.description && (
-            <p className="line-clamp-2 whitespace-pre-line text-xs text-muted-foreground">{entry.description}</p>
+            <p className="truncate text-xs leading-4 text-muted-foreground"
+              title={entry.description}>
+              {entry.description}
+            </p>
           )}
         </div>
-        <span className="pt-0.5 text-[11px] tabular-nums text-muted-foreground">{timeAgo(entry.at, now)}</span>
+        <span className="text-[11px] leading-4 tabular-nums text-muted-foreground">{timeAgo(entry.at, now)}</span>
       </motion.div>
     </motion.li>
   );
