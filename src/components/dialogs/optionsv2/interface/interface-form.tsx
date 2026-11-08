@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { applyWindowTransparency, clampWindowTransparency, WINDOW_TRANSPARENCY_MAX } from '@/lib/themes';
+import { clampUiScale } from '@/lib/ui-scale';
 import { ZonePicker } from './zone-picker';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import { tickerAnchorSchema } from '../networth/networth-form';
@@ -17,6 +18,7 @@ import {
   TICKER_ANCHOR_OPTIONS,
   TIMER_LAYOUT_OPTIONS,
   TIMER_ZONES_OPTIONS,
+  uiScaleOptions,
   ZONE_ALERT_OPTIONS,
 } from '../setting-options';
 import { MAX_ALERT_LEAD_MINUTES } from '@/lib/corrupted-zones';
@@ -26,6 +28,7 @@ const interfaceFormSchema = z.object({
   language: z.enum(['system', ...SUPPORTED_LANGUAGES]),
   chatButtonOverlayEnabled: z.boolean().optional(),
   windowTransparency: z.number().min(0).max(WINDOW_TRANSPARENCY_MAX),
+  uiScale: z.number(),
   corruptedZoneTimerEnabled: z.boolean(),
   corruptedZoneTimerAnchor: tickerAnchorSchema,
   corruptedZoneTimerLocked: z.boolean(),
@@ -44,6 +47,7 @@ function toFormValues(settings: ISettings | undefined): InterfaceFormValues {
     language: settings?.language ?? 'system',
     chatButtonOverlayEnabled: settings?.chatButtonOverlayEnabled ?? true,
     windowTransparency: clampWindowTransparency(settings?.windowTransparency),
+    uiScale: clampUiScale(settings?.uiScale),
     corruptedZoneTimerEnabled: settings?.corruptedZoneTimerEnabled ?? false,
     corruptedZoneTimerAnchor: settings?.corruptedZoneTimerAnchor ?? 'top-right',
     corruptedZoneTimerLocked: settings?.corruptedZoneTimerLocked ?? false,
@@ -123,9 +127,11 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
                         </FormControl>
                         <SelectContent>
                           {LANGUAGE_OPTIONS.map((option) => (
-                            <SelectItem key={option.value}
+                            <SelectItem
+                              key={option.value}
                               value={option.value}
-                              lang={option.value === 'system' ? undefined : option.value}>
+                              lang={option.value === 'system' ? undefined : option.value}
+                            >
                               {optionLabel(t, option)}
                             </SelectItem>
                           ))}
@@ -140,6 +146,37 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
             </SettingsGroup>
 
             <SettingsGroup title={t('interface.overlays')}>
+              <FormField
+                control={form.control}
+                name="uiScale"
+                render={({ field }) => (
+                  <SettingsRow
+                    settingKey="uiScale"
+                    label={t('interface.uiScale.label')}
+                    description={t('interface.uiScale.description')}
+                    control={
+                      <Select value={String(field.value)}
+                        onValueChange={(value) => field.onChange(Number(value))}>
+                        <FormControl>
+                          <SelectTrigger className="w-[220px]">
+                            <SelectValue placeholder={t('interface.uiScale.label')} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {uiScaleOptions(field.value).map((option) => (
+                            <SelectItem key={option.value}
+                              value={option.value}>
+                              {optionLabel(t, option)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    }
+                  >
+                    <FormMessage />
+                  </SettingsRow>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="chatButtonOverlayEnabled"

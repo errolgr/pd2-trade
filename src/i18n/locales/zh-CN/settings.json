@@ -10,6 +10,10 @@
       "label": "聊天按钮悬浮窗",
       "description": "在屏幕右下角显示浮动聊天按钮。"
     },
+    "uiScale": {
+      "label": "界面缩放",
+      "description": "所有覆盖层文字和面板的大小。在高分辨率显示器上可调大。"
+    },
     "windowTransparency": {
       "label": "窗口透明度：<num>{{value}}%</num>",
       "description": "透过窗口背景看到游戏。0% 为完全不透明。"

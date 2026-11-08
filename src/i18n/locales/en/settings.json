@@ -10,6 +10,10 @@
       "label": "Chat Button Overlay",
       "description": "Show the floating chat button overlay in the bottom-right corner of the screen."
     },
+    "uiScale": {
+      "label": "UI scale",
+      "description": "Size of all overlay text and panels. Raise it on high-resolution monitors."
+    },
     "windowTransparency": {
       "label": "Window transparency: <num>{{value}}%</num>",
       "description": "See the game through window backgrounds. 0% is fully opaque."

@@ -8,6 +8,7 @@ import { applyTelemetryOptOut } from '@/lib/telemetry-opt-out';
 import SettingsLayout from '@/components/dialogs/optionsv2/options-layout';
 import { isTauri } from '@tauri-apps/api/core';
 import { applyTheme, applyWindowTransparency, DEFAULT_THEME_ID, getTheme } from '@/lib/themes';
+import { applyUiScale, UI_SCALE_DEFAULT } from '@/lib/ui-scale';
 import { DEFAULT_PRICE_WINDOW_HOURS, type PriceWindowHours } from '@/lib/price-window';
 import { DEFAULT_CHAT_TEMPLATES, type ChatTemplate } from '@/lib/message-templates';
 import { DEFAULT_TOAST_POPUP_TYPES } from '@/lib/toast-types';
@@ -140,6 +141,7 @@ export interface ISettings {
   themeId?: string; // Color theme id from src/lib/themes.ts
   autoUpdateEnabled?: boolean; // false = only notify about new versions, never download/restart automatically
   windowTransparency?: number; // 0-WINDOW_TRANSPARENCY_MAX (%) from src/lib/themes.ts; 0 = opaque
+  uiScale?: number; // overlay zoom (%), see src/lib/ui-scale.ts; 100 = unscaled
   language?: LanguageSetting; // UI language (src/i18n); 'system' follows the OS language
   hotkeyModifierPalette?: 'ctrl' | 'alt';
   hotkeyKeyPalette?: string; // command palette; '' = unbound
@@ -237,6 +239,7 @@ const DEFAULT_SETTINGS: ISettings = {
   themeId: DEFAULT_THEME_ID,
   autoUpdateEnabled: true,
   windowTransparency: 0,
+  uiScale: UI_SCALE_DEFAULT,
   language: 'system',
   hotkeyModifierPalette: 'ctrl',
   hotkeyKeyPalette: 'space',
@@ -423,9 +426,9 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [isLoading, settings?.pd2Token, updateSettings]);
 
-  // Single overlay window, single OptionsProvider: settings side effects (theme, transparency,
+  // Single overlay window, single OptionsProvider: settings side effects (theme, transparency, UI scale,
   // debug logging, telemetry opt-out) are applied here once loaded. Before that, main.tsx applied the cached
-  // theme, and initDebugLoggingFromSettings() / initTelemetryFromSettings() read the file directly.
+  // theme and UI scale, and initDebugLoggingFromSettings() / initTelemetryFromSettings() read the file directly.
   useEffect(() => {
     if (isLoading) return;
     applyTheme(getTheme(settings.themeId));
@@ -435,6 +438,11 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (isLoading) return;
     applyWindowTransparency(settings.windowTransparency);
   }, [isLoading, settings.windowTransparency]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    applyUiScale(settings.uiScale);
+  }, [isLoading, settings.uiScale]);
 
   useEffect(() => {
     if (isLoading) return;

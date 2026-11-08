@@ -10,6 +10,10 @@
       "label": "Botón de chat del overlay",
       "description": "Muestra el botón flotante de chat en la esquina inferior derecha de la pantalla."
     },
+    "uiScale": {
+      "label": "Escala de la interfaz",
+      "description": "Tamaño de todos los textos y paneles del overlay. Auméntala en monitores de alta resolución."
+    },
     "windowTransparency": {
       "label": "Transparencia de ventana: <num>{{value}}%</num>",
       "description": "Ve el juego a través del fondo de las ventanas. 0% es totalmente opaco."

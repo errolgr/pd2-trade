@@ -2,6 +2,7 @@ import type { TFunction } from 'i18next';
 import type { NetWorthTickerAnchor } from '@/hooks/useOptions';
 import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES } from '@/i18n';
 import { PRICE_WINDOW_OPTIONS } from '@/lib/price-window';
+import { clampUiScale, UI_SCALE_OPTIONS } from '@/lib/ui-scale';
 
 /**
  * The choices of the settings selects, shared by the forms and the command palette's settings source so both offer
@@ -42,6 +43,11 @@ export const LANGUAGE_OPTIONS: SettingOption[] = [
   { value: 'system', labelKey: 'common:language.system' },
   ...SUPPORTED_LANGUAGES.map((language) => ({ value: language, label: LANGUAGE_NAMES[language] })),
 ];
+
+export const uiScaleOptions = (current: number | undefined): SettingOption[] =>
+  withCurrent(UI_SCALE_OPTIONS, clampUiScale(current))
+    .sort((a, b) => a - b)
+    .map((n) => ({ value: String(n), label: `${n}%` }));
 
 /** Ticker positions (net worth ticker, corrupted zone timer). */
 export const TICKER_ANCHOR_OPTIONS: { value: NetWorthTickerAnchor; labelKey: string }[] = [
@@ -123,8 +129,14 @@ export const PAGE_SIZES = [25, 50, 100] as const;
 const AGE_DAYS = [1, 3, 7, 14, 30, 90] as const;
 const ALERT_SECONDS = [5, 8, 15, 30] as const;
 
-export const AUTO_DELIST_OPTIONS: SettingOption[] = keyed(AUTO_DELIST_VALUES, 'settings:market.listings.autoDelist.options');
-export const LISTINGS_VIEW_OPTIONS: SettingOption[] = keyed(LISTINGS_VIEW_VALUES, 'settings:market.listings.view.options');
+export const AUTO_DELIST_OPTIONS: SettingOption[] = keyed(
+  AUTO_DELIST_VALUES,
+  'settings:market.listings.autoDelist.options',
+);
+export const LISTINGS_VIEW_OPTIONS: SettingOption[] = keyed(
+  LISTINGS_VIEW_VALUES,
+  'settings:market.listings.view.options',
+);
 export const SORT_OPTIONS: SettingOption[] = keyed(SORT_VALUES, 'settings:market.browser.sort.options');
 export const SELLER_OPTIONS: SettingOption[] = keyed(SELLER_VALUES, 'settings:market.browser.seller.options');
 export const BUYOUT_OPTIONS: SettingOption[] = keyed(BUYOUT_VALUES, 'settings:market.browser.buyout.options');

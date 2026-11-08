@@ -11,6 +11,8 @@ const state = vi.hoisted(() => ({
   overlayFocus: null as ((e: { payload: boolean }) => void) | null,
   /** `get_diablo_rect`: the Diablo II window in physical screen px. */
   diabloRect: null as { x: number; y: number; width: number; height: number } | null,
+  /** UI scale (webview zoom factor). */
+  zoom: 1,
 }));
 const win = vi.hoisted(() => ({
   onFocusChanged: vi.fn(async (cb: (e: { payload: boolean }) => void) => {
@@ -38,6 +40,7 @@ vi.mock('@/lib/browser-events', () => ({
     };
   }),
 }));
+vi.mock('@/lib/ui-scale', () => ({ getUiZoom: () => state.zoom }));
 
 async function renderGameState() {
   const view = renderHook(() => useGameState());
@@ -54,6 +57,7 @@ beforeEach(() => {
   state.gameContext = null;
   state.overlayFocus = null;
   state.diabloRect = null;
+  state.zoom = 1;
 });
 
 afterEach(() => {
@@ -148,5 +152,14 @@ describe('useGameState rect', () => {
     state.diabloRect = { x: 0, y: 0, width: 1920, height: 1080 };
     const { result } = await renderGameState();
     expect(result.current.gameRect).toEqual({ x: 0, y: 0, width: 1920, height: 1080 });
+  });
+
+  it('measures in CSS px of the scaled UI and re-measures when a scale change resizes the viewport', async () => {
+    state.diabloRect = { x: 0, y: 0, width: 1920, height: 1080 };
+    const { result } = await renderGameState();
+    expect(result.current.gameRect).toEqual({ x: 0, y: 0, width: 1920, height: 1080 });
+    state.zoom = 2;
+    await act(async () => void window.dispatchEvent(new Event('resize')));
+    expect(result.current.gameRect).toEqual({ x: 0, y: 0, width: 960, height: 540 });
   });
 });

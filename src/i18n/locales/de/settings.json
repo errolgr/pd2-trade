@@ -10,6 +10,10 @@
       "label": "Chat-Button-Overlay",
       "description": "Den schwebenden Chat-Button unten rechts auf dem Bildschirm anzeigen."
     },
+    "uiScale": {
+      "label": "UI-Skalierung",
+      "description": "Größe aller Overlay-Texte und -Fenster. Auf hochauflösenden Monitoren erhöhen."
+    },
     "windowTransparency": {
       "label": "Fenstertransparenz: <num>{{value}}%</num>",
       "description": "Das Spiel durch Fensterhintergründe sehen. 0 % ist vollständig deckend."

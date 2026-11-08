@@ -72,6 +72,7 @@ describe('InterfaceForm', () => {
       language: 'system',
       chatButtonOverlayEnabled: false,
       windowTransparency: 0,
+      uiScale: 100,
       ...TIMER_DEFAULTS,
     });
   });
@@ -99,6 +100,7 @@ describe('InterfaceForm', () => {
       language: 'system',
       chatButtonOverlayEnabled: true,
       windowTransparency: 90,
+      uiScale: 100,
       ...TIMER_DEFAULTS,
     });
   });
@@ -127,6 +129,15 @@ describe('InterfaceForm', () => {
     expect(store.updateSettings).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ language: 'de' }));
   });
 
+  it('saves the picked UI scale as a number and keeps an off-preset saved scale selectable', async () => {
+    renderForm({ uiScale: 130 });
+    const scale = screen.getByLabelText('UI scale') as HTMLSelectElement;
+    expect(scale.value).toBe('130');
+    fireEvent.change(scale, { target: { value: '150' } });
+    await advance(300);
+    expect(store.updateSettings).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ uiScale: 150 }));
+  });
+
   it('starts the corrupted zone timer off, top right', () => {
     renderForm({});
     expect(timerSwitch().getAttribute('aria-checked')).toBe('false');
@@ -143,6 +154,7 @@ describe('InterfaceForm', () => {
       language: 'system',
       chatButtonOverlayEnabled: true,
       windowTransparency: 0,
+      uiScale: 100,
       ...TIMER_DEFAULTS,
       corruptedZoneTimerEnabled: true,
       corruptedZoneTimerAnchor: 'bottom-left',
