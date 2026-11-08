@@ -58,8 +58,7 @@
     "value": "Wartość",
     "share": "%",
     "change7d": "7 dni",
-    "price": "Cena",
-    "actions": "Akcje"
+    "price": "Cena"
   },
   "table": {
     "noResults": "Brak wyników.",
@@ -236,8 +235,8 @@
     }
   },
   "listAtNetWorth": {
-    "button": "Wystaw na rynku po cenie z Majątku",
-    "listedTooltip": "Wystawiony na rynku",
+    "menuItem": "Wystaw na rynku…",
+    "alreadyListed": "Już wystawiony",
     "title": "Wystaw po cenie z Majątku",
     "loading": "Szukam przedmiotu w skrzyni…",
     "gone": "Przedmiot przeniesiony lub zniknął — odśwież Majątek",

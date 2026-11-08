@@ -1,10 +1,10 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react';
-import { Check, ListPlus, Loader2, PackageX } from 'lucide-react';
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Check, ListChecks, ListPlus, Loader2, PackageX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
 import {
   AccountMismatchError,
   AuthenticationError,
@@ -40,46 +40,75 @@ export function isListable(line: ValuationLine): boolean {
 }
 
 /**
- * Row action: list one of the line's stash items on the PD2 market at its Net Worth unit price, after a confirm
- * popover. Renders nothing for lines that can't be listed or while signed out of PD2.
+ * Right-click menu on a holding row: "List on market…" opens a confirm popover, anchored at the row, that lists one
+ * of the line's stash items on the PD2 market at its Net Worth unit price. Lines that can't be listed, or while
+ * signed out of PD2, render the row as it is (no custom menu).
  */
-export function ListAtNetWorthButton({ line }: { line: ValuationLine }) {
+export function ListAtNetWorthMenu({ line, children }: { line: ValuationLine; children: React.ReactElement }) {
   const { t } = useTranslation('currency');
   const pd2 = useContext(Pd2WebsiteContext);
-  const [open, setOpen] = useState(false);
-  // The line's items known to be listed: checked when the popover opens, plus what it listed
+  const [formOpen, setFormOpen] = useState(false);
+  // Set by "List on market…": the form opens once the menu has closed, so the menu's focus handoff can't dismiss it
+  const openFormOnMenuClose = useRef(false);
+  // The line's items known to be listed: checked when the form opens, plus what it listed
   const [listed, setListed] = useState<ReadonlySet<string>>(() => new Set());
 
-  if (!isListable(line) || !pd2?.authData?.user) return null;
+  if (!isListable(line) || !pd2?.authData?.user) return children;
   const allListed = line.itemHashes!.every((hash) => listed.has(hash));
-  const label = allListed ? t('listAtNetWorth.listedTooltip') : t('listAtNetWorth.button');
 
   return (
-    <Popover open={open}
-      onOpenChange={setOpen}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <PopoverTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={label}
-              className={cn('size-7', allListed ? 'text-success' : 'text-muted-foreground hover:text-foreground')}
-            >
-              {allListed ? <Check className="size-3.5" /> : <ListPlus className="size-3.5" />}
-            </Button>
-          </PopoverTrigger>
-        </TooltipTrigger>
-        <TooltipContent>{label}</TooltipContent>
-      </Tooltip>
+    <Popover open={formOpen}
+      onOpenChange={setFormOpen}>
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <PopoverAnchor asChild>{children}</PopoverAnchor>
+        </ContextMenuTrigger>
+        <ContextMenuContent
+          className="w-52"
+          onCloseAutoFocus={(e) => {
+            if (!openFormOnMenuClose.current) return;
+            openFormOnMenuClose.current = false;
+            // The form popover takes focus instead of the row
+            e.preventDefault();
+            setFormOpen(true);
+          }}
+        >
+          {allListed ? (
+            <>
+              <ContextMenuItem disabled>
+                <Check className="text-success" />
+                {t('listAtNetWorth.alreadyListed')}
+              </ContextMenuItem>
+              <ManageListingsItem />
+            </>
+          ) : (
+            <ContextMenuItem onSelect={() => (openFormOnMenuClose.current = true)}>
+              <ListPlus />
+              {t('listAtNetWorth.menuItem')}
+            </ContextMenuItem>
+          )}
+        </ContextMenuContent>
+      </ContextMenu>
       <PopoverContent align="end"
         className="w-80 p-3">
-        {open && <ListAtNetWorthForm line={line}
+        {formOpen && <ListAtNetWorthForm line={line}
           pd2={pd2}
           listed={listed}
           setListed={setListed} />}
       </PopoverContent>
     </Popover>
+  );
+}
+
+/** Own component: useOverlay needs the overlay provider, which only the opened menu may require. */
+function ManageListingsItem() {
+  const { t } = useTranslation('currency');
+  const { openPanel } = useOverlay();
+  return (
+    <ContextMenuItem onSelect={() => openPanel('quickList', undefined, { placement: 'gameCenter' })}>
+      <ListChecks />
+      {t('listAtNetWorth.manageListings')}
+    </ContextMenuItem>
   );
 }
 

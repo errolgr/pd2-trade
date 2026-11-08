@@ -58,8 +58,7 @@
     "value": "Wert",
     "share": "%",
     "change7d": "7 T.",
-    "price": "Preis",
-    "actions": "Aktionen"
+    "price": "Preis"
   },
   "table": {
     "noResults": "Keine Ergebnisse.",
@@ -212,8 +211,8 @@
     }
   },
   "listAtNetWorth": {
-    "button": "Zum Vermögenspreis auf dem Markt anbieten",
-    "listedTooltip": "Auf dem Markt angeboten",
+    "menuItem": "Auf dem Markt anbieten…",
+    "alreadyListed": "Bereits angeboten",
     "title": "Zum Vermögenspreis anbieten",
     "loading": "Item wird in deiner Truhe gesucht…",
     "gone": "Item verschoben oder weg — Vermögen aktualisieren",

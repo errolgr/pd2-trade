@@ -58,8 +58,7 @@
     "value": "Valor",
     "share": "%",
     "change7d": "7 d",
-    "price": "Precio",
-    "actions": "Acciones"
+    "price": "Precio"
   },
   "table": {
     "noResults": "Sin resultados.",
@@ -224,8 +223,8 @@
     }
   },
   "listAtNetWorth": {
-    "button": "Publicar en el mercado al precio de Patrimonio",
-    "listedTooltip": "Publicado en el mercado",
+    "menuItem": "Publicar en el mercado…",
+    "alreadyListed": "Ya publicado",
     "title": "Publicar al precio de Patrimonio",
     "loading": "Buscando el objeto en tu alijo…",
     "gone": "Objeto movido o ya no está — actualiza Patrimonio",

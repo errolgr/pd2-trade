@@ -58,8 +58,7 @@
     "value": "Value",
     "share": "%",
     "change7d": "7d",
-    "price": "Price",
-    "actions": "Actions"
+    "price": "Price"
   },
   "table": {
     "noResults": "No results.",
@@ -212,8 +211,8 @@
     }
   },
   "listAtNetWorth": {
-    "button": "List on market at Net Worth price",
-    "listedTooltip": "Listed on the market",
+    "menuItem": "List on market…",
+    "alreadyListed": "Already listed",
     "title": "List at Net Worth price",
     "loading": "Finding the item in your stash…",
     "gone": "Item moved or gone — refresh Net Worth",

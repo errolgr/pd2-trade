@@ -58,8 +58,7 @@
     "value": "Valor",
     "share": "%",
     "change7d": "7d",
-    "price": "Preço",
-    "actions": "Ações"
+    "price": "Preço"
   },
   "table": {
     "noResults": "Nenhum resultado.",
@@ -224,8 +223,8 @@
     }
   },
   "listAtNetWorth": {
-    "button": "Anunciar no mercado pelo preço do Patrimônio",
-    "listedTooltip": "Anunciado no mercado",
+    "menuItem": "Anunciar no mercado…",
+    "alreadyListed": "Já anunciado",
     "title": "Anunciar pelo preço do Patrimônio",
     "loading": "Procurando o item no seu baú…",
     "gone": "Item movido ou sumiu — atualize o Patrimônio",

@@ -29,6 +29,8 @@ interface DataTableProps<TData, TValue> {
   initialSorting?: SortingState;
   emptyMessage?: string;
   emptyIcon?: React.ReactNode;
+  /** Wraps each body row (e.g. in a context menu); the row element must stay its outermost DOM node. */
+  wrapRow?: (data: TData, row: React.ReactElement) => React.ReactNode;
 }
 
 export function DataTable<TData, TValue>({
@@ -37,6 +39,7 @@ export function DataTable<TData, TValue>({
   initialSorting = [],
   emptyMessage,
   emptyIcon,
+  wrapRow,
 }: DataTableProps<TData, TValue>) {
   const { t } = useTranslation('currency');
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
@@ -76,27 +79,29 @@ export function DataTable<TData, TValue>({
         </TableHeader>
         <TableBody>
           {table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => (
-              <motion.tr
-                key={row.id}
-                layout="position"
-                transition={{ duration: 0.22, ease: EASE_OUT }}
-                data-slot="table-row"
-                className="border-b border-border/60 transition-colors duration-(--dur-fast) hover:bg-muted/40"
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell
-                    key={cell.id}
-                    className={cn(
-                      'py-1.5 first:pl-3 last:pr-3',
-                      cell.column.columnDef.meta?.align === 'right' && 'text-right',
-                    )}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </motion.tr>
-            ))
+            table.getRowModel().rows.map((row) => {
+              const tr = (
+                <motion.tr
+                  layout="position"
+                  transition={{ duration: 0.22, ease: EASE_OUT }}
+                  data-slot="table-row"
+                  className="border-b border-border/60 transition-colors duration-(--dur-fast) hover:bg-muted/40 data-[state=open]:bg-muted/60"
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell
+                      key={cell.id}
+                      className={cn(
+                        'py-1.5 first:pl-3 last:pr-3',
+                        cell.column.columnDef.meta?.align === 'right' && 'text-right',
+                      )}
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </motion.tr>
+              );
+              return <React.Fragment key={row.id}>{wrapRow ? wrapRow(row.original, tr) : tr}</React.Fragment>;
+            })
           ) : (
             <TableRow className="hover:bg-transparent">
               <TableCell colSpan={columns.length}

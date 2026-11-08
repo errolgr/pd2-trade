@@ -58,8 +58,7 @@
     "value": "价值",
     "share": "%",
     "change7d": "7 天",
-    "price": "价格",
-    "actions": "操作"
+    "price": "价格"
   },
   "table": {
     "noResults": "无结果。",
@@ -200,8 +199,8 @@
     }
   },
   "listAtNetWorth": {
-    "button": "按净资产价格上架到市场",
-    "listedTooltip": "已在市场上架",
+    "menuItem": "上架到市场…",
+    "alreadyListed": "已上架",
     "title": "按净资产价格上架",
     "loading": "正在储物箱中查找物品…",
     "gone": "物品已移动或不存在 — 请刷新净资产",

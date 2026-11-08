@@ -9,7 +9,7 @@ import type { ValuationLine } from '@/lib/networth-api';
 import { DataTable } from './DataTable';
 import { DataTableColumnHeader } from './DataTableColumnHeader';
 import { ConfidenceBadge, HoldingName, PriceChange } from './HoldingCells';
-import { ListAtNetWorthButton } from './ListAtNetWorth';
+import { ListAtNetWorthMenu } from './ListAtNetWorth';
 import { formatUnitPrice } from '../lib/networth-format';
 import type { TFunction } from 'i18next';
 import { useTranslation } from '@/i18n';
@@ -77,13 +77,6 @@ function createColumns(totalHr: number, showTab: boolean, t: TFunction): ColumnD
       header: t('columns.price'),
       enableSorting: false,
       cell: ({ row }) => <ConfidenceBadge line={row.original} />,
-    },
-    {
-      id: 'actions',
-      header: () => <span className="sr-only">{t('columns.actions')}</span>,
-      enableSorting: false,
-      meta: { align: 'right' },
-      cell: ({ row }) => <ListAtNetWorthButton line={row.original} />,
     },
   ];
 }
@@ -162,6 +155,7 @@ export function HoldingsTable({ lines, totalHr, showTab = false, toolbar }: Hold
         initialSorting={[{ id: 'value', desc: true }]}
         emptyMessage={lines.length ? t('holdings.nothingMatches') : t('holdings.noneInStash')}
         emptyIcon={lines.length ? <SearchX /> : <PackageOpen />}
+        wrapRow={(line, row) => <ListAtNetWorthMenu line={line}>{row}</ListAtNetWorthMenu>}
       />
       <div className="flex items-start justify-between gap-4 text-xs text-muted-foreground">
         <p>{hiddenZero > 0 && t('holdings.zeroHidden', { count: hiddenZero })}</p>

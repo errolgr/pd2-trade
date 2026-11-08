@@ -58,8 +58,7 @@
     "value": "Valeur",
     "share": "%",
     "change7d": "7 j",
-    "price": "Prix",
-    "actions": "Actions"
+    "price": "Prix"
   },
   "table": {
     "noResults": "Aucun résultat.",
@@ -224,8 +223,8 @@
     }
   },
   "listAtNetWorth": {
-    "button": "Mettre en vente au prix de la Valeur nette",
-    "listedTooltip": "En vente sur le marché",
+    "menuItem": "Mettre en vente…",
+    "alreadyListed": "Déjà en vente",
     "title": "Mettre en vente au prix de la Valeur nette",
     "loading": "Recherche de l'objet dans votre coffre…",
     "gone": "Objet déplacé ou disparu — actualisez la Valeur nette",

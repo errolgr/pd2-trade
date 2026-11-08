@@ -222,7 +222,7 @@ describe('HoldingsTable', () => {
     expect(screen.getByRole('button', { name: 'Rune exchange' })).not.toBeNull();
   });
 
-  it('offers to list only the rows backed by stash items, when signed in to PD2', () => {
+  it('offers "List on market…" on right-click only for rows backed by stash items, when signed in to PD2', () => {
     const lines = [
       line({ key: 'shako', name: 'Harlequin Crest', category: 'uniques', unitPrice: 2, value: 2, itemHashes: ['h1'] }),
       line({ key: 'ber', name: 'Ber Rune', unitPrice: 6, value: 6 }),
@@ -236,15 +236,14 @@ describe('HoldingsTable', () => {
         </TooltipProvider>
       </Pd2WebsiteContext.Provider>,
     );
-    const listButtons = (name: string) =>
-      [...document.querySelectorAll('tbody tr')]
-        .find((tr) => tr.querySelector('td p')?.textContent === name)!
-        .querySelectorAll('button[aria-label="List on market at Net Worth price"]').length;
-    expect(listButtons('Harlequin Crest')).toBe(1);
-    expect(listButtons('Ber Rune')).toBe(0);
+    const row = (name: string) =>
+      [...document.querySelectorAll('tbody tr')].find((tr) => tr.querySelector('td p')?.textContent === name)!;
+    // No action column: the table keeps its 7 columns
+    expect(row('Harlequin Crest').querySelectorAll('td')).toHaveLength(7);
 
-    cleanup();
-    renderTable({ lines });
-    expect(screen.queryByRole('button', { name: 'List on market at Net Worth price' })).toBeNull();
+    fireEvent.contextMenu(row('Ber Rune'));
+    expect(screen.queryByRole('menu')).toBeNull();
+    fireEvent.contextMenu(row('Harlequin Crest'));
+    expect(screen.getByRole('menuitem', { name: 'List on market…' })).not.toBeNull();
   });
 });

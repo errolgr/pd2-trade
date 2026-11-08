@@ -8,9 +8,9 @@ import { NET_WORTH_CATEGORIES, type Valuation } from '@/lib/networth-api';
 import { CATEGORY_COLORS, categoryLabel, formatUnitPrice } from '../lib/networth-format';
 import { currentLocale, useTranslation } from '@/i18n';
 import { ConfidenceBadge, HoldingName, PriceChange } from './HoldingCells';
-import { ListAtNetWorthButton } from './ListAtNetWorth';
+import { ListAtNetWorthMenu } from './ListAtNetWorth';
 
-const TOP_GRID = 'grid grid-cols-[1fr_3rem_4rem_5rem_3.5rem_5.5rem_1.75rem] items-center gap-2 px-3';
+const TOP_GRID = 'grid grid-cols-[1fr_3rem_4rem_5rem_3.5rem_5.5rem] items-center gap-2 px-3';
 
 function SectionTitle({ children, aside }: { children: React.ReactNode; aside?: React.ReactNode }) {
   return (
@@ -86,7 +86,6 @@ export function OverviewTab({ valuation }: { valuation: Valuation }) {
             <span className="text-right">{t('columns.value')}</span>
             <span className="text-right">{t('columns.change7d')}</span>
             <span className="text-right">{t('columns.price')}</span>
-            <span className="sr-only">{t('columns.actions')}</span>
           </div>
           {top.length > 0 ? (
             <motion.div variants={listStagger}
@@ -94,28 +93,27 @@ export function OverviewTab({ valuation }: { valuation: Valuation }) {
               animate="visible"
               className="divide-y divide-border/60">
               {top.map((line) => (
-                <motion.div
-                  key={`${line.key}|${line.tab ?? ''}`}
-                  variants={listItem}
-                  className={`${TOP_GRID} py-1.5 text-sm transition-colors duration-(--dur-fast) hover:bg-muted/40`}
-                >
-                  <HoldingName line={line}
-                    showTab={line.tab !== null} />
-                  <span className="text-right tabular-nums">{line.qty}</span>
-                  <span className="text-right tabular-nums text-muted-foreground">
-                    {formatUnitPrice(line.unitPrice)}
-                  </span>
-                  <span className="text-right font-medium tabular-nums">{line.value.toFixed(2)}</span>
-                  <span className="text-right">
-                    <PriceChange percent={line.priceChange7dPercent} />
-                  </span>
-                  <span className="flex justify-end">
-                    <ConfidenceBadge line={line} />
-                  </span>
-                  <span className="flex justify-end">
-                    <ListAtNetWorthButton line={line} />
-                  </span>
-                </motion.div>
+                <ListAtNetWorthMenu key={`${line.key}|${line.tab ?? ''}`}
+                  line={line}>
+                  <motion.div
+                    variants={listItem}
+                    className={`${TOP_GRID} py-1.5 text-sm transition-colors duration-(--dur-fast) hover:bg-muted/40 data-[state=open]:bg-muted/60`}
+                  >
+                    <HoldingName line={line}
+                      showTab={line.tab !== null} />
+                    <span className="text-right tabular-nums">{line.qty}</span>
+                    <span className="text-right tabular-nums text-muted-foreground">
+                      {formatUnitPrice(line.unitPrice)}
+                    </span>
+                    <span className="text-right font-medium tabular-nums">{line.value.toFixed(2)}</span>
+                    <span className="text-right">
+                      <PriceChange percent={line.priceChange7dPercent} />
+                    </span>
+                    <span className="flex justify-end">
+                      <ConfidenceBadge line={line} />
+                    </span>
+                  </motion.div>
+                </ListAtNetWorthMenu>
               ))}
             </motion.div>
           ) : (
