@@ -9,18 +9,18 @@ import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import { useSimAccess } from '@/hooks/useSimAccess';
 import { useSimLadderCharacters } from '@/hooks/useSimLadderCharacters';
-import { openUrl } from '@/lib/browser-opener';
 import { preferredSimCharacter } from '@/lib/sim-characters';
+import { describeSimExportError, isSessionError } from '@/lib/sim-export-api';
 import {
-  createSimExport,
-  describeSimExportError,
-  isSessionError,
-  SimExportApiError,
-  type SimExportItems,
-} from '@/lib/sim-export-api';
+  legacySimCharacter,
+  rememberLegacySimCharacter,
+  type SimGoal,
+  type SimLastExport,
+} from '@/lib/sim-preferences';
 import { findSimItem, type FoundSimItem, type SimItemSource } from '@/lib/sim-item-sources';
-import { trackMeasurement } from '@/lib/telemetry';
+import { sendItemToSim, type SimItemMode } from '@/lib/sim-try-on';
 import { cn } from '@/lib/utils';
+import { SimTryOnHotkeyHint, simTryOnHotkeyText } from '@/components/custom/SimTryOnHotkeyHint';
 import { useOverlay } from '@/overlay';
 import { Banner } from '@/pages/currency/components/StatePanel';
 import type { Item as PriceCheckItem } from '../lib/interfaces';
@@ -29,10 +29,10 @@ type Load<T> = { status: 'loading' } | { status: 'ok'; data: T } | { status: 'er
 /** PD2's copy of the price-checked item, or null when PD2 has none (the clipboard's is sent then). */
 type ItemMatch = Load<FoundSimItem | null>;
 type SendState = { status: 'idle' } | { status: 'sending' } | { status: 'error'; error: unknown };
-type Mode = 'try' | 'pool';
+type Mode = SimItemMode;
 
 /** The character last sent from the price check (character names are unique on PD2 across accounts). */
-export const SIM_CHARACTER_STORAGE_KEY = 'pd2-sim-character';
+export { SIM_CHARACTER_STORAGE_KEY } from '@/lib/sim-preferences';
 /** Set once the user dismissed the "try this item on" callout or opened the Simulator: it shows only before that. */
 export const SIM_CALLOUT_STORAGE_KEY = 'pd2-sim-callout-seen';
 
@@ -40,14 +40,6 @@ const MODES: { value: Mode; title: string; description: string }[] = [
   { value: 'try', title: 'Try it on', description: 'Swaps it into its slot and compares against your current gear' },
   { value: 'pool', title: 'Add to Top Gear pool', description: 'Candidate only; the optimizer decides where it goes' },
 ];
-
-function savedCharacter(): string {
-  try {
-    return localStorage.getItem(SIM_CHARACTER_STORAGE_KEY) ?? '';
-  } catch {
-    return '';
-  }
-}
 
 function calloutSeen(): boolean {
   try {
@@ -65,7 +57,7 @@ function calloutSeen(): boolean {
  */
 export function SimulatorButton({ item }: { item: PriceCheckItem }) {
   const access = useSimAccess();
-  const { settings } = useOptions();
+  const { settings, updateSettings } = useOptions();
   const [open, setOpen] = useState(false);
   const [callout, setCallout] = useState(() => !calloutSeen());
   if (!access) return null;
@@ -92,6 +84,7 @@ export function SimulatorButton({ item }: { item: PriceCheckItem }) {
         <PopoverTrigger asChild>
           <Button
             variant="ghost"
+            title={access.canUse ? simTryOnHotkeyText(settings) : undefined}
             className="cursor-pointer border border-primary/70 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
           >
             <FlaskConical />
@@ -110,15 +103,24 @@ export function SimulatorButton({ item }: { item: PriceCheckItem }) {
           <PopoverContent side="top"
             align="start"
             className="w-[420px] space-y-3 p-3">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Send to Simulator
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Send to Simulator
+              </span>
+              <SimTryOnHotkeyHint onOpen={() => setOpen(false)} />
             </div>
             {token ? (
               <SimulatorForm
                 token={token}
                 account={settings?.account ?? ''}
                 item={item}
-                onSent={() => setOpen(false)}
+                savedCharacter={settings.simCharacter || legacySimCharacter()}
+                defaultGoal={settings.simGoal}
+                onCharacterChange={(name) => updateSettings({ simCharacter: name })}
+                onSent={(simLastExport) => {
+                  setOpen(false);
+                  updateSettings({ simLastExport });
+                }}
               />
             ) : (
               <SignInBanner>Sign in to send items to the planner.</SignInBanner>
@@ -184,18 +186,24 @@ function SimulatorForm({
   account,
   item,
   onSent,
+  savedCharacter,
+  defaultGoal,
+  onCharacterChange,
 }: {
   token: string;
   account: string;
   item: PriceCheckItem;
-  /** The planner link is ready: the popover closes as the browser opens it. */
-  onSent: () => void;
+  /** The planner link is ready: the popover closes as the browser opens it, and the export is remembered. */
+  onSent: (sent: SimLastExport) => void;
+  savedCharacter: string;
+  defaultGoal?: SimGoal;
+  onCharacterChange: (name: string) => void;
 }) {
   const { fetchAndCacheStash } = usePd2Website();
   const characters = useSimLadderCharacters(token, account);
   const [chosen, setChosen] = useState(savedCharacter);
   const [match, setMatch] = useState<ItemMatch>({ status: 'loading' });
-  const [mode, setMode] = useState<Mode>('try');
+  const [mode, setMode] = useState<Mode>(defaultGoal === 'top_gear' ? 'pool' : 'try');
   const [send, setSend] = useState<SendState>({ status: 'idle' });
 
   const list = characters.status === 'ok' ? characters.data : [];
@@ -227,45 +235,17 @@ function SimulatorForm({
 
   const chooseCharacter = (name: string) => {
     setChosen(name);
-    try {
-      localStorage.setItem(SIM_CHARACTER_STORAGE_KEY, name);
-    } catch {
-      // localStorage unavailable: the choice lasts until the popover closes.
-    }
+    rememberLegacySimCharacter(name);
+    onCharacterChange(name);
   };
 
   const found = match.status === 'ok' ? match.data : null;
-  // PD2's copy when it has one; else the item as copied, which the server converts
-  const itemSource = found?.source ?? 'clipboard';
   const openPlanner = async () => {
     if (match.status === 'loading' || !character) return;
-    const tried = mode === 'try';
-    const items: SimExportItems = found
-      ? { stashItems: [found.item], ...(tried && { try: { stash: 0 } }) }
-      : { clipboardItems: [item], ...(tried && { try: { clipboard: 0 } }) };
-    const started = performance.now();
     setSend({ status: 'sending' });
     try {
-      const { url } = await createSimExport(token, character, items);
-      trackMeasurement(
-        'sim_export',
-        { duration_ms: performance.now() - started, stash_items: 1 },
-        { outcome: 'success', source: 'price_check', mode, item_source: itemSource },
-      );
-      onSent();
-      await openUrl(url).catch((error) => console.warn('[SimExport] Could not open the browser:', error));
+      onSent(await sendItemToSim({ token, character, item, found, mode, source: 'price_check' }));
     } catch (error) {
-      trackMeasurement(
-        'sim_export',
-        { duration_ms: performance.now() - started, stash_items: 1 },
-        {
-          outcome: 'error',
-          source: 'price_check',
-          mode,
-          item_source: itemSource,
-          status: error instanceof SimExportApiError ? error.status : undefined,
-        },
-      );
       setSend({ status: 'error', error });
     }
   };

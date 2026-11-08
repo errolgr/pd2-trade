@@ -253,6 +253,10 @@
       "palette": {
         "label": "Paleta de comandos",
         "description": "Busque ações, itens, builds e configurações em uma só caixa."
+      },
+      "simTryOn": {
+        "label": "Testar item no personagem (Horadric Sim)",
+        "description": "Envia o item sob o cursor ao planejador do Horadric Sim, equipado no seu personagem padrão."
       }
     }
   },
@@ -425,7 +429,8 @@
       "trade": "Troca",
       "joins": "Entradas",
       "offers": "Ofertas",
-      "networth": "Patrimônio"
+      "networth": "Patrimônio",
+      "sim": "Horadric Sim"
     },
     "timing": {
       "off": "As notificações estão desligadas. Escolha outra opção para editar as configurações abaixo.",

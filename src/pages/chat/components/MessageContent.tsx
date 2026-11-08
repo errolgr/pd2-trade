@@ -5,6 +5,7 @@ import { findMarketLinks, parseMessage } from '../lib/market-links';
 import { type ChatListingState, useChatListings } from '../hooks/useChatListings';
 import { cn } from '@/lib/utils';
 import { ListingCard, ListingCardSkeleton, listingIconBoxClass, listingPillClass } from './ListingCard';
+import { ChatSimTryOnButton } from './ChatSimTryOn';
 
 /** A message shown outside a thread (a toast): it looks its listing links up itself, for their item pills. */
 export function LinkedMessageContent({ content }: { content: string }) {
@@ -35,11 +36,16 @@ export function MessageContent({ content, listings }: MessageContentProps) {
         const state = listings?.get(segment.listingId);
         if (state?.status === 'loading') return <ListingCardSkeleton key={index} />;
         if (state?.status === 'listed' || state?.status === 'unlisted') {
+          const card = <ListingCard listing={state.listing}
+            listed={state.status === 'listed'}
+            url={segment.url} />;
+          // A live listing can be tried on in the sim planner (chat panel, beta users)
+          if (state.status !== 'listed') return <React.Fragment key={index}>{card}</React.Fragment>;
           return (
-            <ListingCard key={index}
-              listing={state.listing}
-              listed={state.status === 'listed'}
-              url={segment.url} />
+            <React.Fragment key={index}>
+              {card}
+              <ChatSimTryOnButton listingId={segment.listingId} />
+            </React.Fragment>
           );
         }
         return (

@@ -25,6 +25,7 @@ interface ToastBridge {
   openChat(payload: PanelPayloads['chat']): void;
   openMarket(payload: PanelPayloads['market']): void;
   openListing(payload: PanelPayloads['listingDetail']): void;
+  openSim(payload: PanelPayloads['sim']): void;
 }
 let bridge: ToastBridge | null = null;
 export function setToastBridge(next: ToastBridge | null): void {
@@ -60,6 +61,16 @@ async function runToastAction(action: NonNullable<CustomToastPayload['action']>)
         break;
       case ToastActionType.OPEN_RELEASE_PAGE:
         await openUrl(RELEASE_PAGE_URL);
+        break;
+      case ToastActionType.OPEN_URL:
+        if (typeof action.data?.url === 'string') await openUrl(action.data.url);
+        break;
+      case ToastActionType.OPEN_SIM_PANEL:
+        bridge?.openSim(
+          typeof action.data?.slug === 'string' && typeof action.data?.url === 'string'
+            ? { slug: action.data.slug, url: action.data.url }
+            : undefined,
+        );
         break;
       default:
         console.warn('Unknown toast action type:', action.type);
@@ -114,15 +125,19 @@ export function showToast(payload: ToastPayload): void {
     toast(DEFAULT_TITLE, { description: custom.description, closeButton: true });
     return;
   }
-  const { listing, description } = custom;
+  const { listing, description, tone } = custom;
   // Listing links (an offer's or a message's text) read as the chat's item pills, hover for the item
   const text =
     description && findMarketLinks(description).length > 0 ? (
       <LinkedMessageContent content={description} />
+    ) : description?.includes('\n') ? (
+      <span className="whitespace-pre-line">{description}</span>
     ) : (
       description
     );
-  toast(custom.title || DEFAULT_TITLE, {
+  const show = tone === 'error' ? toast.error : toast;
+  show(custom.title || DEFAULT_TITLE, {
+    ...(tone === 'muted' && { className: '[--toast-accent:var(--muted-foreground)] opacity-80' }),
     description: listing ? <ListingToastBody listingId={listing.listingId}>{text}</ListingToastBody> : text,
     duration: custom.duration,
     closeButton: true,

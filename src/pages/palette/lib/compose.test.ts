@@ -23,6 +23,7 @@ const LABELS: Record<PaletteGroupId, string> = {
   chat: 'Chat',
   listings: 'Listings',
   settings: 'Settings',
+  sim: 'Horadric Sim',
 };
 
 describe('recents', () => {

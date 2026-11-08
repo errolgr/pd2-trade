@@ -9,6 +9,8 @@ import { usePD2Auth } from '@/hooks/usePD2Auth';
 import { useChangelog } from '@/hooks/useChangelog';
 import { useSocketNotifications } from '@/hooks/useSocketNotifications';
 import { useNetWorth } from '@/hooks/useNetWorth';
+import { useOverlayIntents } from '@/hooks/useOverlayIntents';
+import { useSimTryOn } from '@/hooks/useSimTryOn';
 import {
   clipboardContainsValidItem,
   isStashItem,
@@ -50,6 +52,9 @@ const AppController: React.FC = () => {
 
   // Saved-search alerts (15 s poll) - exactly one instance, here
   useMarketAlerts();
+
+  // Horadric Sim intents from pd2trader.com (sim finished, open report/planner) - exactly one instance, here
+  useOverlayIntents();
 
   // Launch toast (outside the game it shows in the screen corner, see ToastLayer)
   useEffect(() => {
@@ -151,6 +156,22 @@ const AppController: React.FC = () => {
     void delistItem(raw);
   }, [checkDiabloFocus, copyItemUnderCursor, delistItem]);
 
+  // Horadric Sim: the hovered item on the default character, tried on in the planner
+  const tryOnCopiedItem = useSimTryOn();
+  const handleSimTryOn = useCallback(async () => {
+    if (!(await checkDiabloFocus())) return;
+    const { raw, copied } = await copyItemUnderCursor(true);
+    if (!raw || !clipboardContainsValidItem(raw)) {
+      showToast({
+        title: 'Horadric Sim',
+        description: t(copied ? 'app:controller.itemNotSupported' : 'app:controller.nothingCopied'),
+        variant: 'error',
+      });
+      return;
+    }
+    await tryOnCopiedItem(raw);
+  }, [checkDiabloFocus, copyItemUnderCursor, tryOnCopiedItem]);
+
   // Registered global hotkeys call through this ref: re-renders (overlay, settings, net worth) never hand
   // useAppShortcuts new handlers, so it re-registers only when a hotkey setting changes (a press during an
   // unregister/register cycle would be lost).
@@ -173,6 +194,7 @@ const AppController: React.FC = () => {
     builds: () => togglePanel('builds'),
     // Typing starts right away: the palette takes the keyboard when it opens
     palette: () => togglePanel('palette', undefined, { focus: true }),
+    simTryOn: handleSimTryOn,
   };
   const hotkeysRef = useRef(hotkeyHandlers);
   useEffect(() => {
@@ -188,6 +210,7 @@ const AppController: React.FC = () => {
   const onMarket = useCallback(() => hotkeysRef.current.market(), []);
   const onBuilds = useCallback(() => hotkeysRef.current.builds(), []);
   const onPalette = useCallback(() => hotkeysRef.current.palette(), []);
+  const onSimTryOn = useCallback(() => hotkeysRef.current.simTryOn(), []);
   useAppShortcuts(
     onItemSearch,
     onQuickList,
@@ -199,6 +222,7 @@ const AppController: React.FC = () => {
     onMarket,
     onBuilds,
     onPalette,
+    onSimTryOn,
   );
 
   useAppUpdates();

@@ -1,7 +1,9 @@
-import { ExternalLink, Hourglass } from 'lucide-react';
+import { useState } from 'react';
+import { AlertTriangle, ExternalLink, Hourglass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { openUrl } from '@/lib/browser-opener';
 import type { SimAccess } from '@/lib/sim-export-api';
+import { trackMeasurement } from '@/lib/telemetry';
 import { cn } from '@/lib/utils';
 
 /** Popover wrapper for {@link SimWaitlist}: the banner is the whole popover. */
@@ -20,6 +22,32 @@ export function SimWaitlist({
   onOpen?: () => void;
   className?: string;
 }) {
+  const [openFailed, setOpenFailed] = useState(false);
+  const openWaitlist = async () => {
+    setOpenFailed(false);
+    try {
+      await openUrl(access.waitlistUrl);
+      trackMeasurement(
+        'sim_waitlist_handoff',
+        {},
+        {
+          outcome: 'success',
+          state: access.waitlistPosition === null ? 'new' : 'pending',
+        },
+      );
+      onOpen?.();
+    } catch {
+      setOpenFailed(true);
+      trackMeasurement(
+        'sim_waitlist_handoff',
+        {},
+        {
+          outcome: 'error',
+          state: access.waitlistPosition === null ? 'new' : 'pending',
+        },
+      );
+    }
+  };
   const position = access.waitlistPosition;
   return (
     <div role="status"
@@ -40,14 +68,17 @@ export function SimWaitlist({
           size="sm"
           variant={position === null ? 'default' : 'outline'}
           className="mt-1"
-          onClick={() => {
-            void openUrl(access.waitlistUrl);
-            onOpen?.();
-          }}
+          onClick={() => void openWaitlist()}
         >
           {position === null ? 'Join the waitlist' : 'View waitlist'}
           <ExternalLink className="size-3.5" />
         </Button>
+        {openFailed && (
+          <p role="alert"
+            className="flex items-center gap-1 text-xs text-destructive">
+            <AlertTriangle className="size-3.5" /> Could not open the browser. Try again.
+          </p>
+        )}
       </div>
     </div>
   );

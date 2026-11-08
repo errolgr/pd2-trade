@@ -247,6 +247,10 @@
       "palette": {
         "label": "命令面板",
         "description": "在一个搜索框中查找操作、物品、配装和设置。"
+      },
+      "simTryOn": {
+        "label": "在角色上试穿物品（Horadric Sim）",
+        "description": "将鼠标下的物品发送到 Horadric Sim 规划器，并在默认角色身上试穿。"
       }
     }
   },
@@ -417,7 +421,8 @@
       "trade": "交易",
       "joins": "加入",
       "offers": "报价",
-      "networth": "净资产"
+      "networth": "净资产",
+      "sim": "Horadric Sim"
     },
     "timing": {
       "off": "通知已关闭。选择其他选项以编辑下方设置。",

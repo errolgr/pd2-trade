@@ -5,12 +5,14 @@ import { MotionGlobalConfig } from 'framer-motion';
 import type { GameData, Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { AccountMismatchError, usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { clearSimLadderCharactersCache } from '@/hooks/useSimLadderCharacters';
+import { useOptions } from '@/hooks/useOptions';
 import { getAccountCharacters } from '@/lib/builds-api';
 import { openUrl } from '@/lib/browser-opener';
 import { createSimExport, getMyCharacters, MAX_SIM_EXPORT_ITEMS, SimExportApiError } from '@/lib/sim-export-api';
 import type * as SimExportApi from '@/lib/sim-export-api';
 import { trackMeasurement } from '@/lib/telemetry';
 import { useOverlay, type OverlayApi } from '@/overlay';
+import { loadCharacterItems } from '@/lib/sim-item-sources';
 import { SimExportTab } from './SimExportTab';
 
 vi.mock('@/hooks/pd2website/usePD2Website', () => {
@@ -18,6 +20,7 @@ vi.mock('@/hooks/pd2website/usePD2Website', () => {
   class AccountMismatchError extends Error {}
   return { AuthenticationError, AccountMismatchError, usePd2Website: vi.fn() };
 });
+vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/overlay', () => ({ useOverlay: vi.fn() }));
 vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
 vi.mock('@/lib/telemetry', () => ({ trackMeasurement: vi.fn() }));
@@ -27,10 +30,12 @@ vi.mock('@/lib/sim-export-api', async (importOriginal) => ({
   getMyCharacters: vi.fn(),
   createSimExport: vi.fn(),
 }));
+vi.mock('@/lib/sim-item-sources', () => ({ loadCharacterItems: vi.fn() }));
 
 const URL_OUT = 'https://pd2trader.com/sim/plan?export=0b7f6a1e-8a39-4f43-9a3e-5f4f2b8c0d11';
 const openPanel = vi.fn();
 const fetchAndCacheStash = vi.fn<() => Promise<GameData>>();
+const updateSettings = vi.fn();
 
 const item = (hash: string, name: string, over: Partial<GameStashItem> = {}): GameStashItem =>
   ({
@@ -74,6 +79,11 @@ afterAll(() => {
 });
 
 beforeEach(() => {
+  updateSettings.mockReset();
+  vi.mocked(useOptions).mockReturnValue({
+    settings: { simGoal: 'top_gear' },
+    updateSettings,
+  } as never);
   openPanel.mockReset();
   clearSimLadderCharactersCache();
   fetchAndCacheStash.mockReset();
@@ -110,10 +120,16 @@ describe('SimExportTab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send to Simulator (1 item)' }));
 
     await screen.findByText('Sent. The planner opened in your browser.');
-    expect(createSimExport).toHaveBeenCalledWith('tok', 'HammerPal', { stashItems: [SHAKO] });
+    expect(createSimExport).toHaveBeenCalledWith('tok', 'HammerPal', { stashItems: [SHAKO] }, 'top_gear');
     expect(openUrl).toHaveBeenCalledWith(URL_OUT);
     expect(trackMeasurement).toHaveBeenCalledWith('sim_export', expect.objectContaining({ stash_items: 1 }), {
       outcome: 'success',
+      source: 'net_worth',
+      goal: 'top_gear',
+    });
+    // Remembered for "Last sent": what and when, never the items
+    expect(updateSettings).toHaveBeenCalledWith({
+      simLastExport: { character: 'HammerPal', goal: 'top_gear', items: 1, url: URL_OUT, sentAt: expect.any(String) },
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Open planner' }));
@@ -134,7 +150,11 @@ describe('SimExportTab', () => {
 
     await screen.findByText('Your PD2 session expired. Sign in again.');
     expect(openUrl).not.toHaveBeenCalled();
-    expect(trackMeasurement).toHaveBeenCalledWith('sim_export', expect.anything(), { outcome: 'error', status: 401 });
+    expect(trackMeasurement).toHaveBeenCalledWith(
+      'sim_export',
+      expect.anything(),
+      expect.objectContaining({ outcome: 'error', status: 401, source: 'net_worth', goal: 'top_gear' }),
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
     expect(openPanel).toHaveBeenCalledWith('signIn');
   });
@@ -160,7 +180,9 @@ describe('SimExportTab', () => {
       expect((screen.getByRole('button', { name: 'Send to Simulator' }) as HTMLButtonElement).disabled).toBe(false),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Send to Simulator' }));
-    await waitFor(() => expect(createSimExport).toHaveBeenCalledWith('tok', 'HammerPal', { stashItems: [] }));
+    await waitFor(() =>
+      expect(createSimExport).toHaveBeenCalledWith('tok', 'HammerPal', { stashItems: [] }, 'top_gear'),
+    );
   });
 
   it('retries loading characters after a failure', async () => {
@@ -185,5 +207,35 @@ describe('SimExportTab', () => {
     for (const box of boxes.slice(0, MAX_SIM_EXPORT_ITEMS)) fireEvent.click(box);
     expect((boxes[MAX_SIM_EXPORT_ITEMS] as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByText(`At most ${MAX_SIM_EXPORT_ITEMS} items per export.`)).not.toBeNull();
+  });
+
+  it('picks the stash items the character can wear and says why the others do not fit', async () => {
+    const req = (level: number, strength = 0, dexterity = 0) => ({ level, strength, dexterity });
+    const javelin = item('h-titan', "Titan's Revenge", {
+      base: { name: 'Ceremonial Javelin', stackable: false, type_code: 'ajav' } as GameStashItem['base'],
+      requirements: req(42, 25, 109),
+    });
+    const plate = item('h-plate', 'Tyrael’s Might', { requirements: req(84, 232) });
+    const shako = item('h-shako', 'Harlequin Crest', { requirements: req(62, 50) });
+    fetchAndCacheStash.mockResolvedValue(stashOf([shako, javelin, plate]));
+    vi.mocked(loadCharacterItems).mockResolvedValue({
+      items: [
+        item('h-ring', 'Bul-Kathos', {
+          location: { zone: 'Equipped', equipment: 'Left Ring' } as GameStashItem['location'],
+          modifiers: [{ name: 'strength', values: [25], label: '+25 to Strength' }],
+        }),
+      ],
+      mercenary: [],
+      stats: { className: 'Paladin', level: 92, strength: 100, dexterity: 75 },
+    });
+    await renderTab();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Pick what fits' }));
+    await screen.findByText('Amazon only');
+    expect(loadCharacterItems).toHaveBeenCalledWith('HammerPal');
+    expect(screen.getByText('needs Str 232 · has 125')).not.toBeNull();
+    expect(screen.getByText(/Picked 1 item that fit\./)).not.toBeNull();
+    const checked = screen.getAllByRole('checkbox').map((box) => box.getAttribute('aria-checked'));
+    expect(checked).toEqual(['true', 'false', 'false']);
   });
 });

@@ -10,6 +10,7 @@ import { isTauri } from '@tauri-apps/api/core';
 import { applyTheme, applyWindowTransparency, DEFAULT_THEME_ID, getTheme } from '@/lib/themes';
 import { DEFAULT_PRICE_WINDOW_HOURS, type PriceWindowHours } from '@/lib/price-window';
 import { DEFAULT_CHAT_TEMPLATES, type ChatTemplate } from '@/lib/message-templates';
+import { DEFAULT_TOAST_POPUP_TYPES } from '@/lib/toast-types';
 import { showToast } from '@/overlay';
 import * as Sentry from '@sentry/react';
 import type { BuildsMode } from '@/lib/builds-api';
@@ -17,6 +18,7 @@ import { applyLanguage, type LanguageSetting, t } from '@/i18n';
 import { DEFAULT_LISTINGS_SORT, type ListingsSort } from '@/pages/quick-list/listings/my-listings';
 import type { ChatDockItem } from '@/pages/chat/chat-dock';
 import type { PaletteRef } from '@/pages/palette/lib/types';
+import type { SimGoal, SimLastExport } from '@/lib/sim-preferences';
 
 /** A tracked character the builds panel remembers (followed / recently viewed). */
 export interface BuildCharacterRef {
@@ -90,7 +92,7 @@ export interface ISettings {
   selectedSeasonId?: string; // Selected season for price filtering
   listingNoteMacros?: { label: string; text: string }[]; // Quick-fill note presets for listing items
   toastPopupsEnabled?: boolean; // Master toggle for toast popups
-  toastPopupTypes?: string[]; // Which toast types are enabled: 'whispers' | 'trade' | 'joins' | 'offers'
+  toastPopupTypes?: string[]; // Enabled toast types ('whispers' | 'trade' | 'joins' | 'offers' | 'networth' | 'sim'); '!sim' = sim turned off (lib/toast-types)
   debugLoggingEnabled?: boolean;
   telemetryOptOut?: boolean; // stops Sentry and Faro; read directly from settings.json at startup
   netWorthTrackingEnabled?: boolean; // history snapshots on pd2trader.com; on unless explicitly turned off
@@ -143,6 +145,11 @@ export interface ISettings {
   hotkeyKeyPalette?: string; // command palette; '' = unbound
   palettePins?: PaletteRef[]; // command palette: pinned results shown on the empty state, in order
   paletteRecents?: PaletteRef[]; // command palette: last picked results, newest first (PALETTE_RECENTS_MAX)
+  simCharacter?: string; // default ladder character for Horadric Sim entry points
+  simGoal?: SimGoal; // default planner goal for Horadric Sim entry points
+  simLastExport?: SimLastExport; // the last overlay export sent to the planner (no item data)
+  hotkeyModifierSimTryOn?: 'ctrl' | 'alt';
+  hotkeyKeySimTryOn?: string; // Horadric Sim: try the hovered item on the default character; '' = unbound
 }
 
 interface OptionsContextProps {
@@ -184,7 +191,7 @@ const DEFAULT_SETTINGS: ISettings = {
   marketAlertSoundEnabled: true,
   marketAlertVolume: 70,
   toastPopupsEnabled: true,
-  toastPopupTypes: ['whispers', 'trade', 'joins', 'offers', 'networth'],
+  toastPopupTypes: [...DEFAULT_TOAST_POPUP_TYPES],
   chatButtonOverlayEnabled: true,
   acceptOfferMessageTemplate: 'Your offer has been accepted. Game: {gameInfo}',
   rejectOfferMessageTemplate: 'Your offer has been rejected.',
@@ -239,6 +246,8 @@ const DEFAULT_SETTINGS: ISettings = {
     { id: 'actions:settings', group: 'actions', title: 'Settings' },
   ],
   paletteRecents: [],
+  hotkeyModifierSimTryOn: 'ctrl',
+  hotkeyKeySimTryOn: '',
 };
 
 /** Every hotkey, as [modifier field, key field]. */
@@ -254,6 +263,7 @@ const HOTKEYS: [keyof ISettings, keyof ISettings][] = [
   ['hotkeyModifierMarket', 'hotkeyKeyMarket'],
   ['hotkeyModifierBuilds', 'hotkeyKeyBuilds'],
   ['hotkeyModifierPalette', 'hotkeyKeyPalette'],
+  ['hotkeyModifierSimTryOn', 'hotkeyKeySimTryOn'],
 ];
 
 /** Hotkeys added after release with a default key, in the order they were added. */

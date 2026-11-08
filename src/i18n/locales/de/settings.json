@@ -250,6 +250,10 @@
       "palette": {
         "label": "Befehlspalette",
         "description": "Aktionen, Items, Builds und Einstellungen in einem Feld durchsuchen."
+      },
+      "simTryOn": {
+        "label": "Item am Charakter testen (Horadric Sim)",
+        "description": "Schickt das Item unter dem Mauszeiger an den Horadric-Sim-Planer, angelegt an deinem Standardcharakter."
       }
     }
   },
@@ -421,7 +425,8 @@
       "trade": "Handel",
       "joins": "Beitritte",
       "offers": "Angebote",
-      "networth": "Vermögen"
+      "networth": "Vermögen",
+      "sim": "Horadric Sim"
     },
     "timing": {
       "off": "Benachrichtigungen sind aus. Wähle eine andere Option, um die Einstellungen unten zu bearbeiten.",

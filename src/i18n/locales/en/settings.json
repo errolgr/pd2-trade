@@ -205,7 +205,7 @@
     "group": "Shortcuts",
     "modifierLabel": "{{action}} modifier",
     "off": "Off",
-    "hint": "Click a key box and press the key to use. Press Backspace in the snapshot, market, builds or command palette box to turn that hotkey off.",
+    "hint": "Click a key box and press the key to use. Press Backspace in the snapshot, market, builds, command palette or Horadric Sim box to turn that hotkey off.",
     "rows": {
       "priceCheck": {
         "label": "Price check",
@@ -250,6 +250,10 @@
       "palette": {
         "label": "Command palette",
         "description": "Search actions, items, builds and settings from one box."
+      },
+      "simTryOn": {
+        "label": "Try item on character (Horadric Sim)",
+        "description": "Send the hovered item to the Horadric Sim planner, tried on your default character."
       }
     }
   },
@@ -421,7 +425,8 @@
       "trade": "Trade",
       "joins": "Joins",
       "offers": "Offers",
-      "networth": "Net Worth"
+      "networth": "Net Worth",
+      "sim": "Horadric Sim"
     },
     "timing": {
       "off": "Notifications are off. Pick another option to edit the settings below.",
