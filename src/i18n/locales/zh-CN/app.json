@@ -102,6 +102,12 @@
       "lockedTitle": "已锁定：拖动不会移动计时器。点击解锁。",
       "unlockedTitle": "拖动时不移动计时器。"
     },
+    "direction": {
+      "up": "列表向上展开",
+      "down": "列表向下展开",
+      "upTitle": "向上展开。点击后改为向下展开。",
+      "downTitle": "向下展开。点击后改为向上展开。"
+    },
     "toastTitle": "腐化区域",
     "toastDescription": "{{zone}}：请创建新的 Hell 游戏（{{until}} 前）",
     "toastSoonDescription": "{{zone}} 将在 {{minutes}} 分钟后开始：请从 {{from}} 起创建新的 Hell 游戏（{{until}} 前）"

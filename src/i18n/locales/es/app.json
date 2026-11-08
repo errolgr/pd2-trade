@@ -108,6 +108,12 @@
       "lockedTitle": "Bloqueado: arrastrar no mueve el temporizador. Haz clic para desbloquear.",
       "unlockedTitle": "Evita que el temporizador se mueva al arrastrarlo."
     },
+    "direction": {
+      "up": "La lista se abre hacia arriba",
+      "down": "La lista se abre hacia abajo",
+      "upTitle": "Se abre hacia arriba. Haz clic para abrirla hacia abajo a partir de ahora.",
+      "downTitle": "Se abre hacia abajo. Haz clic para abrirla hacia arriba a partir de ahora."
+    },
     "toastTitle": "Zona corrupta",
     "toastDescription": "{{zone}}: crea una nueva partida de Hell (hasta las {{until}})",
     "toastSoonDescription": "{{zone}} en {{minutes}} min: crea una nueva partida de Hell desde las {{from}} (hasta las {{until}})"

@@ -108,6 +108,12 @@
       "lockedTitle": "Travado: arrastar não move o timer. Clique para destravar.",
       "unlockedTitle": "Impede que o timer se mova ao ser arrastado."
     },
+    "direction": {
+      "up": "A lista abre para cima",
+      "down": "A lista abre para baixo",
+      "upTitle": "Abre para cima. Clique para abri-la para baixo a partir de agora.",
+      "downTitle": "Abre para baixo. Clique para abri-la para cima a partir de agora."
+    },
     "toastTitle": "Zona Corrupted",
     "toastDescription": "{{zone}}: crie um novo jogo Hell (até {{until}})",
     "toastSoonDescription": "{{zone}} em {{minutes}} min: crie um novo jogo Hell a partir de {{from}} (até {{until}})"
