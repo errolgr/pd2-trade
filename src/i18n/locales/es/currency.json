@@ -237,6 +237,7 @@
     "price": "Precio (HR)",
     "note": "Nota (opcional)",
     "list": "Publicar",
-    "listFailed": "No se pudo publicar el objeto."
+    "listFailed": "No se pudo publicar el objeto.",
+    "sessionExpired": "Tu sesión de PD2 ha caducado. Inicia sesión de nuevo para publicar este objeto."
   }
 }

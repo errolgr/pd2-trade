@@ -101,6 +101,12 @@ function logFailure(context: string, err: unknown) {
   }
 }
 
+/** handleApiResponse resolves null on a 401 (re-authentication already started): nothing was read or listed. */
+function orSessionExpired<T>(value: T | null | undefined): T {
+  if (value == null) throw new AuthenticationError('PD2 session expired');
+  return value;
+}
+
 function ListAtNetWorthForm({
   line,
   pd2,
@@ -136,7 +142,7 @@ function ListAtNetWorthForm({
     let cancelled = false;
     void (async () => {
       try {
-        const stash = await fetchStash();
+        const stash = orSessionExpired(await fetchStash());
         const byHash = new Map((stash.items ?? []).map((item) => [item.hash, item]));
         const items = (line.itemHashes ?? [])
           .map((hash) => byHash.get(hash))
@@ -148,7 +154,7 @@ function ListAtNetWorthForm({
           return;
         }
         const query = buildGetMarketListingByStashItemQuery(items, userId);
-        const listings = query ? await getMarketListings({ ...query, $limit: items.length }) : null;
+        const listings = query ? orSessionExpired(await getMarketListings({ ...query, $limit: items.length })) : null;
         if (cancelled) return;
         const nowListed = new Set((listings?.data ?? []).map((listing) => listing.item.hash));
         setListed(nowListed);
@@ -157,7 +163,15 @@ function ListAtNetWorthForm({
       } catch (err) {
         if (cancelled) return;
         logFailure('Failed to load the item to list', err);
-        setPhase({ kind: 'failed', message: err instanceof Error ? err.message : t('listAtNetWorth.loadFailed') });
+        setPhase({
+          kind: 'failed',
+          message:
+            err instanceof AuthenticationError
+              ? t('listAtNetWorth.sessionExpired')
+              : err instanceof Error
+                ? err.message
+                : t('listAtNetWorth.loadFailed'),
+        });
       }
     })();
     return () => {
@@ -206,7 +220,7 @@ function ListAtNetWorthForm({
     setSubmitting(true);
     setError(null);
     try {
-      const { total } = await getMarketListings(allListingsQuery);
+      const { total } = orSessionExpired(await getMarketListings(allListingsQuery));
       if (total >= MAX_LISTINGS) {
         const capToast: GenericToastPayload = {
           title: t('quickList:shortcut.maxListingsTitle'),
@@ -216,11 +230,8 @@ function ListAtNetWorthForm({
         showToast(capToast);
         return;
       }
-      const listing = await listSpecificItem(
-        selectedItem,
-        hasPrice ? numericPrice : 0,
-        note,
-        hasPrice ? 'exact' : 'note',
+      const listing = orSessionExpired(
+        await listSpecificItem(selectedItem, hasPrice ? numericPrice : 0, note, hasPrice ? 'exact' : 'note'),
       );
       const listedToast: CustomToastPayload = {
         title: t('quickList:shortcut.itemListedTitle'),
@@ -238,7 +249,13 @@ function ListAtNetWorthForm({
       setNote('');
     } catch (err) {
       logFailure('Failed to list the item', err);
-      setError(err instanceof Error ? err.message : t('listAtNetWorth.listFailed'));
+      setError(
+        err instanceof AuthenticationError
+          ? t('listAtNetWorth.sessionExpired')
+          : err instanceof Error
+            ? err.message
+            : t('listAtNetWorth.listFailed'),
+      );
     } finally {
       setSubmitting(false);
     }

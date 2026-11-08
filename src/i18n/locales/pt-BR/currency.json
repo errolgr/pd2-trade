@@ -237,6 +237,7 @@
     "price": "Preço (HR)",
     "note": "Nota (opcional)",
     "list": "Anunciar",
-    "listFailed": "Não foi possível anunciar o item."
+    "listFailed": "Não foi possível anunciar o item.",
+    "sessionExpired": "Sua sessão do PD2 expirou. Entre novamente para anunciar este item."
   }
 }

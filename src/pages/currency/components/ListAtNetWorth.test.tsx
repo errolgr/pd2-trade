@@ -189,4 +189,17 @@ describe('ListAtNetWorthButton', () => {
 
     expect((await screen.findByRole('alert')).textContent).toBe('Item is already listed');
   });
+
+  it('asks to sign in again when PD2 answers 401 to the listing, without marking it listed', async () => {
+    api.listSpecificItem.mockResolvedValueOnce(null as never);
+    await openPopover();
+    fireEvent.click(submit());
+
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Your PD2 session expired. Sign in again to list this item.',
+    );
+    expect(vi.mocked(showToast)).not.toHaveBeenCalled();
+    expect(screen.getByRole('radio').textContent).not.toContain('Listed');
+    expect(listButton()).not.toBeNull();
+  });
 });

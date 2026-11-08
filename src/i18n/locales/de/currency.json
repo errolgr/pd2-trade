@@ -225,6 +225,7 @@
     "price": "Preis (HR)",
     "note": "Notiz (optional)",
     "list": "Anbieten",
-    "listFailed": "Das Item konnte nicht angeboten werden."
+    "listFailed": "Das Item konnte nicht angeboten werden.",
+    "sessionExpired": "Deine PD2-Sitzung ist abgelaufen. Melde dich erneut an, um dieses Item anzubieten."
   }
 }

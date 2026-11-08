@@ -249,6 +249,7 @@
     "price": "Cena (HR)",
     "note": "Notatka (opcjonalnie)",
     "list": "Wystaw",
-    "listFailed": "Nie udało się wystawić przedmiotu."
+    "listFailed": "Nie udało się wystawić przedmiotu.",
+    "sessionExpired": "Twoja sesja PD2 wygasła. Zaloguj się ponownie, aby wystawić ten przedmiot."
   }
 }

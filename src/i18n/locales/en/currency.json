@@ -225,6 +225,7 @@
     "price": "Price (HR)",
     "note": "Note (optional)",
     "list": "List",
-    "listFailed": "Couldn't list the item."
+    "listFailed": "Couldn't list the item.",
+    "sessionExpired": "Your PD2 session expired. Sign in again to list this item."
   }
 }

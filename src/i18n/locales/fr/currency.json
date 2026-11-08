@@ -237,6 +237,7 @@
     "price": "Prix (HR)",
     "note": "Note (facultatif)",
     "list": "Mettre en vente",
-    "listFailed": "Impossible de mettre l'objet en vente."
+    "listFailed": "Impossible de mettre l'objet en vente.",
+    "sessionExpired": "Votre session PD2 a expiré. Reconnectez-vous pour mettre cet objet en vente."
   }
 }

@@ -213,6 +213,7 @@
     "price": "价格 (HR)",
     "note": "备注（可选）",
     "list": "上架",
-    "listFailed": "无法上架该物品。"
+    "listFailed": "无法上架该物品。",
+    "sessionExpired": "你的 PD2 会话已过期。请重新登录以上架此物品。"
   }
 }
