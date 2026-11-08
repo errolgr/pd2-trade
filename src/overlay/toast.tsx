@@ -25,7 +25,7 @@ interface ToastBridge {
   openChat(payload: PanelPayloads['chat']): void;
   openMarket(payload: PanelPayloads['market']): void;
   openListing(payload: PanelPayloads['listingDetail']): void;
-  openSimStatus(): void;
+  openSim(payload: PanelPayloads['sim']): void;
 }
 let bridge: ToastBridge | null = null;
 export function setToastBridge(next: ToastBridge | null): void {
@@ -65,8 +65,12 @@ async function runToastAction(action: NonNullable<CustomToastPayload['action']>)
       case ToastActionType.OPEN_URL:
         if (typeof action.data?.url === 'string') await openUrl(action.data.url);
         break;
-      case ToastActionType.OPEN_SIM_STATUS:
-        bridge?.openSimStatus();
+      case ToastActionType.OPEN_SIM_PANEL:
+        bridge?.openSim(
+          typeof action.data?.slug === 'string' && typeof action.data?.url === 'string'
+            ? { slug: action.data.slug, url: action.data.url }
+            : undefined,
+        );
         break;
       default:
         console.warn('Unknown toast action type:', action.type);

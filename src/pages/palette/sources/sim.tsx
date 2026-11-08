@@ -37,9 +37,9 @@ export const useSimSource: PaletteSource = ({ query, scope, limit, refs }) => {
     const out: SimDef[] = [
       {
         key: 'status',
-        label: 'Sim status',
+        label: 'Horadric Sim',
         icon: <Activity className={ICON} />,
-        keywords: ['horadric', 'sim', 'jobs', 'queue', 'running', 'progress'],
+        keywords: ['horadric', 'sim', 'status', 'results', 'report', 'jobs', 'queue', 'running', 'progress'],
         run: (ctx) => ctx.openPanel('sim'),
       },
     ];

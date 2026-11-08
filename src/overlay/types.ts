@@ -72,8 +72,11 @@ export interface PanelPayloads {
   builds: BuildsPanelPayload | undefined;
   /** The command palette always opens fresh. */
   palette: undefined;
-  /** Read-only Horadric Sim status (running and recent sims). */
-  sim: undefined;
+  /**
+   * The Horadric Sim panel (running sims, the last 24 hours' results and a result card). slug: the report to select
+   * (a report-ready toast); url: its link, opened in the browser when no listed sim has that report.
+   */
+  sim: { slug: string; url: string } | undefined;
 }
 
 /** CSS px relative to the overlay viewport. */

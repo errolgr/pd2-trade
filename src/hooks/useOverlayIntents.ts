@@ -11,6 +11,7 @@ import { useOptions } from '@/hooks/useOptions';
 import { useSimAccess } from '@/hooks/useSimAccess';
 import { isToastEnabled } from '@/hooks/useSocketNotifications';
 import { publishIntent, runIntentStream, SIM_RESULT_KINDS, type OverlayIntent } from '@/lib/overlay-intents';
+import { reportSlug } from '@/lib/sim-jobs-api';
 import { showToast } from '@/overlay';
 
 /** Long enough to read a sim summary and click through (hover pauses it). */
@@ -21,8 +22,18 @@ export const AWAY_BURST_MS = 1_500;
 /** Titles listed in the away summary. */
 const AWAY_LINES = 3;
 
+/** The Sim panel on this intent's report (a finished sim's report link); null when it names no report. */
+function simPanelData(intent: OverlayIntent): { slug: string; url: string } | null {
+  const slug = intent.kind === 'report_ready' ? reportSlug(intent.url) : null;
+  return slug ? { slug, url: intent.url } : null;
+}
+
 export function intentToast(intent: OverlayIntent): CustomToastPayload {
-  const open = { type: ToastActionType.OPEN_URL, data: { url: intent.url } };
+  // A finished sim opens on its result card in the Sim panel (the panel opens the link if it doesn't list that sim)
+  const panel = simPanelData(intent);
+  const open = panel
+    ? { type: ToastActionType.OPEN_SIM_PANEL, data: panel }
+    : { type: ToastActionType.OPEN_URL, data: { url: intent.url } };
   return {
     title: intent.title,
     description: intent.lines.slice(0, 3).join(' · ') || undefined,
@@ -33,7 +44,20 @@ export function intentToast(intent: OverlayIntent): CustomToastPayload {
   };
 }
 
-/** Sims that finished while the overlay was away: one as its own toast, 2+ as one summary opening the Sim panel. */
+/** The newest report among `intents`, for the away summary's Sim panel. */
+function newestReport(intents: readonly OverlayIntent[]): { slug: string; url: string } | null {
+  const reports = intents.filter((intent) => simPanelData(intent));
+  const newest = reports.reduce<OverlayIntent | null>(
+    (best, intent) => (!best || Date.parse(intent.createdAt) > Date.parse(best.createdAt) ? intent : best),
+    null,
+  );
+  return newest && simPanelData(newest);
+}
+
+/**
+ * Sims that finished while the overlay was away: one as its own toast, 2+ as one summary opening the Sim panel
+ * (on the newest finished report's card, when one of them has a report).
+ */
 export function awayToast(intents: readonly OverlayIntent[]): CustomToastPayload | null {
   if (intents.length === 0) return null;
   if (intents.length === 1) return intentToast(intents[0]);
@@ -44,7 +68,7 @@ export function awayToast(intents: readonly OverlayIntent[]): CustomToastPayload
       .map((intent) => intent.title)
       .join('\n'),
     duration: SIM_TOAST_DURATION_MS,
-    action: { label: 'View status', type: ToastActionType.OPEN_SIM_STATUS },
+    action: { label: 'View status', type: ToastActionType.OPEN_SIM_PANEL, data: newestReport(intents) ?? undefined },
   };
 }
 

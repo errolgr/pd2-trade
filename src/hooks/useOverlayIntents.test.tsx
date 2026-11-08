@@ -55,7 +55,7 @@ afterEach(() => {
 });
 
 describe('useOverlayIntents', () => {
-  it('opens the stream with the PD2 bearer token and shows each intent once as a toast with Open', async () => {
+  it('opens the stream with the PD2 bearer token and shows each intent once as a toast opening its result card', async () => {
     vi.mocked(fetch).mockResolvedValue(stream(INTENT + INTENT));
     renderHook(() => useOverlayIntents());
     await settle();
@@ -68,7 +68,11 @@ describe('useOverlayIntents', () => {
     expect(vi.mocked(showToast).mock.calls[0][0]).toMatchObject({
       title: 'Top Gear finished · HammerPal',
       description: 'Best set +12.4% DPS · 3 slots changed',
-      action: { label: 'Open', type: ToastActionType.OPEN_URL, data: { url: 'https://pd2trader.com/sim/r/abc' } },
+      action: {
+        label: 'Open',
+        type: ToastActionType.OPEN_SIM_PANEL,
+        data: { slug: 'abc', url: 'https://pd2trader.com/sim/r/abc' },
+      },
     });
   });
 
@@ -180,7 +184,13 @@ describe('useOverlayIntents', () => {
   });
 
   it('combines 2+ sims that finished while away into one summary toast, each id once', async () => {
-    const extra: OverlayIntent = { ...intent, id: 'i9', title: 'Upgrade Finder finished' };
+    const extra: OverlayIntent = {
+      ...intent,
+      id: 'i9',
+      title: 'Upgrade Finder finished',
+      url: 'https://pd2trader.com/sim/r/newer',
+      createdAt: '2026-11-07T11:00:00Z',
+    };
     const r = (i: OverlayIntent) => ({ ...i, replay: true });
     vi.mocked(fetch).mockResolvedValue(stream(sse(r(intent), r(failed), r(cancelled), r(extra), r(intent))));
     renderHook(() => useOverlayIntents());
@@ -192,7 +202,12 @@ describe('useOverlayIntents', () => {
       title: '4 sims finished while you were away',
       description: [intent.title, failed.title, cancelled.title].join('\n'),
       duration: 15_000,
-      action: { label: 'View status', type: ToastActionType.OPEN_SIM_STATUS },
+      // Opens the Sim panel on the newest finished report
+      action: {
+        label: 'View status',
+        type: ToastActionType.OPEN_SIM_PANEL,
+        data: { slug: 'newer', url: 'https://pd2trader.com/sim/r/newer' },
+      },
     });
   });
 
@@ -202,5 +217,9 @@ describe('useOverlayIntents', () => {
     await settle();
     await settle();
     expect(showToast).toHaveBeenCalledTimes(1);
+    // An open request opens its link, as asked on pd2trader.com
+    expect(vi.mocked(showToast).mock.calls[0][0]).toMatchObject({
+      action: { type: ToastActionType.OPEN_URL, data: { url: intent.url } },
+    });
   });
 });

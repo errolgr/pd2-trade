@@ -400,7 +400,7 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
       openChat: (payload) => openPanel('chat', payload, { focus: true }),
       openMarket: (payload) => openPanel('market', payload),
       openListing: (payload) => openPanel('listingDetail', payload),
-      openSimStatus: () => openPanel('sim'),
+      openSim: (payload) => openPanel('sim', payload),
     });
     return () => setToastBridge(null);
   }, [openPanel]);

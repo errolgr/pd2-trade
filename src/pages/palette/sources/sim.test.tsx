@@ -51,7 +51,7 @@ afterEach(() => {
 
 describe('useSimSource', () => {
   it('lists the Horadric Sim shortcuts for beta users', () => {
-    expect(titles()).toEqual(['Sim status', 'Open planner · HammerPal', 'Last report', 'Send stash to Simulator']);
+    expect(titles()).toEqual(['Horadric Sim', 'Open planner · HammerPal', 'Last report', 'Send stash to Simulator']);
   });
 
   it('lists nothing unless beta access is known and granted', () => {
@@ -68,11 +68,11 @@ describe('useSimSource', () => {
       pd2Token: 'tok',
       simLastExport: { ...LAST, sentAt: new Date(NOW - 25 * 60 * 60 * 1000).toISOString() },
     };
-    expect(titles()).toEqual(['Sim status', 'Send stash to Simulator']);
+    expect(titles()).toEqual(['Horadric Sim', 'Send stash to Simulator']);
   });
 
   it('runs the right actions', async () => {
-    await run('Sim status');
+    await run('Horadric Sim');
     expect(ctx.openPanel).toHaveBeenCalledWith('sim');
     await run('Open planner · HammerPal');
     expect(openUrl).toHaveBeenLastCalledWith('https://pd2trader.test/sim/plan?import=HammerPal');
@@ -86,7 +86,7 @@ describe('useSimSource', () => {
     expect(titles({ query: 'stash', scope: null, limit: 5, refs: [] })).toEqual(['Send stash to Simulator']);
     expect(titles({ query: 'horadric', scope: null, limit: 2, refs: [] })).toHaveLength(2);
     expect(
-      titles({ query: '', scope: null, limit: 5, refs: [{ id: 'sim:status', group: 'sim', title: 'Sim status' }] }),
-    ).toEqual(['Sim status']);
+      titles({ query: '', scope: null, limit: 5, refs: [{ id: 'sim:status', group: 'sim', title: 'Horadric Sim' }] }),
+    ).toEqual(['Horadric Sim']);
   });
 });
