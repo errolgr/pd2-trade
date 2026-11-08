@@ -9,6 +9,7 @@ import {
   ITEM_TYPES,
   itemNameOptions,
   optionCodes,
+  TYPE_OPTIONS,
 } from './catalog';
 import { isCorruption, isPseudo, parseStatKey, searchStats, STAT_OPTIONS, type StatChoice, statLabel } from './stats';
 
@@ -53,6 +54,49 @@ describe('catalog', () => {
     // Two letters match too much to offer anything
     expect(baseGroupMatches('ke')).toEqual([]);
     expect(findBaseOption('pk1')).toEqual({ typeCode: 'ubr', baseCode: 'pk1' });
+  });
+
+  it('nests each type group over its member types in the Type select, in its place by label', () => {
+    const labels = TYPE_OPTIONS.map((o) => `${'  '.repeat(o.depth)}${o.label}`);
+    const at = (label: string) => labels.indexOf(label);
+    expect(labels.slice(at('Bows'), at('Bows') + 3)).toEqual(['Bows', '  Amazon Bow', '  Bow']);
+    expect(labels.slice(at('Helms'), at('Helms') + 5)).toEqual([
+      'Helms',
+      '  Barbarian Helm',
+      '  Circlet',
+      '  Druid Pelt',
+      '  Helm',
+    ]);
+    expect(labels.slice(at('Shields'), at('Shields') + 4)).toEqual([
+      'Shields',
+      '  Paladin Shield',
+      '  Shield',
+      '  Shrunken Head',
+    ]);
+    expect(at('Spears')).toBeGreaterThan(-1);
+    expect(at('Javelins')).toBeGreaterThan(-1);
+    // Members only under their group; ungrouped types stay where they were
+    expect(labels).not.toContain('Bow');
+    expect(labels).toContain('Sorceress Orb');
+    expect(labels).toContain('Fist Weapon');
+    expect(labels.slice(at('Bow Quiver'), at('Bow Quiver') + 2)).toEqual(['Bow Quiver', 'Bows']);
+    expect(at('Boots')).toBeLessThan(at('Bows'));
+    // Every site type appears exactly once, plus the five groups
+    expect(TYPE_OPTIONS.filter((o) => !o.code.startsWith('group:'))).toHaveLength(ITEM_TYPES.length);
+    expect(TYPE_OPTIONS).toHaveLength(ITEM_TYPES.length + 5);
+  });
+
+  it('expands type group codes to their member types, bases and label', () => {
+    expect(optionCodes('group:bows')).toEqual(['bow', 'abow']);
+    expect(optionCodes('group:nope')).toEqual([]);
+    expect(findTypeOption('group:helms')).toEqual({ code: 'group:helms', label: 'Helms' });
+    // A raw member type is still its own type
+    expect(findTypeOption('abow')).toEqual({ code: 'abow', label: 'Amazon Bow' });
+    const bows = basesForType('group:bows');
+    expect(bows.map((b) => b.label)).toEqual([...bows.map((b) => b.label)].sort((a, b) => a.localeCompare(b)));
+    expect(bows).toContainEqual({ code: 'am7', label: 'Ceremonial Bow' });
+    expect(bows).toHaveLength(basesForType('bow').length + basesForType('abow').length);
+    expect(basesForType('group:nope')).toEqual([]);
   });
 
   it('suggests item names: prefix first, then word starts, then substrings', () => {

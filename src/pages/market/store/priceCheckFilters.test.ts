@@ -147,6 +147,13 @@ describe('marketQueryToFilters', () => {
     expect(read({ 'item.base_code': { $in: ['glw', 'glws'] } }).baseCode).toBe('{"$in": ["glw", "glws"]}');
   });
 
+  it("reads a type group's members ($in, any order) as the group code, not its first member's type", () => {
+    expect(read({ 'item.base.type_code': { $in: ['bow', 'abow'] } }).typeCode).toBe('group:bows');
+    expect(read({ 'item.base.type_code': { $in: ['circ', 'helm', 'pelt', 'phlm'] } }).typeCode).toBe('group:helms');
+    // A subset of a group isn't the group
+    expect(read({ 'item.base.type_code': { $in: ['shie', 'ashd'] } }).typeCode).toBe('shie');
+  });
+
   it('reads several qualities ($in, the price check\'s "Any") as a multi-rarity filter', () => {
     expect(read({ 'item.quality.name': { $in: ['Normal', 'Superior', 'Magic', 'Rare', 'Crafted'] } }).rarity).toEqual([
       'Normal',
@@ -258,5 +265,16 @@ describe('priceCheckToMarketFilters', () => {
       { kind: 'pseudo', key: 'pseudo_total_res', min: 80, enabled: true },
       { kind: 'pseudo', key: 'pseudo_fire_res', min: 30, max: 45, enabled: true },
     ]);
+  });
+
+  it('searches the type group of a rare in search mode 2', () => {
+    const bow: Item = { name: 'Grim Fletch', quality: 'Rare', type: 'Ceremonial Bow', iLevel: 80, stats: [] };
+    const matchedItemType = { typeLabel: 'Amazon Bow', typeValue: 'abow', bases: [] };
+    const at = (searchMode: number) =>
+      priceCheckToMarketFilters(search({ item: bow, selected: new Set(), filters: {}, searchMode, matchedItemType }));
+    expect(at(1)).toMatchObject({ typeCode: 'abow' });
+    expect(at(1).baseCode).toBeUndefined();
+    expect(at(2)).toMatchObject({ typeCode: 'group:bows' });
+    expect(at(2).baseCode).toBeUndefined();
   });
 });

@@ -9,6 +9,7 @@ import { modifierByName } from '@/assets/modifiers';
 import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import { ItemType as PD2Item } from '@/assets/itemFuzzySearch';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
+import { typeGroupOf, typeGroupSiteValue } from '@/pages/market/lib/type-groups';
 
 /** Qualities whose price check searches a base (not a name) and can be switched in the header. */
 export const BASE_QUALITIES: readonly ItemQuality[] = [
@@ -120,7 +121,7 @@ export function buildTradeUrl(
   // `base`, it doesn't JSON.parse it), so an `$in` here would match nothing.
   if (typeof quality === 'string') searchParams.set('quality', quality);
 
-  // Handle search mode: 0 = category (base), 1 = typeLabel
+  // Handle search mode: 0 = category (base), 1 = typeLabel, 2 = the type's group (every member type)
   // Note: Toggle only applies to base item qualities (Rare, Magic, Crafted, Normal, Superior)
   // Uniques, Sets, and Runewords always use name search
   if (item.type === 'Jewel') {
@@ -142,7 +143,11 @@ export function buildTradeUrl(
         item.quality === ItemQuality.Normal ||
         item.quality === ItemQuality.Superior;
 
-      if (isBaseQuality && searchMode === 1 && matchedItemType) {
+      const typeGroup = searchMode === 2 && matchedItemType ? typeGroupOf(matchedItemType.typeValue) : undefined;
+      if (isBaseQuality && typeGroup) {
+        // Mode 2: every type of the group, as the site's `$in` (the site doesn't know our group codes); no base
+        searchParams.set('type', typeGroupSiteValue(typeGroup));
+      } else if (isBaseQuality && searchMode === 1 && matchedItemType) {
         // Mode 1: Search by typeLabel (category type) - only for base qualities
         const typeValue =
           typeof matchedItemType.typeValue === 'string'
@@ -330,7 +335,7 @@ export function buildGetMarketListingQuery(
     }
   });
 
-  // Handle search mode: 0 = category (base), 1 = typeLabel
+  // Handle search mode: 0 = category (base), 1 = typeLabel, 2 = the type's group (every member type)
   // Note: Toggle only applies to base item qualities (Rare, Magic, Crafted, Normal, Superior)
   // Uniques, Sets, and Runewords always use name search
   if (item.type === 'Jewel') {
@@ -353,7 +358,11 @@ export function buildGetMarketListingQuery(
         item.quality === ItemQuality.Normal ||
         item.quality === ItemQuality.Superior;
 
-      if (isBaseQuality && searchMode === 1 && matchedItemType) {
+      const typeGroup = searchMode === 2 && matchedItemType ? typeGroupOf(matchedItemType.typeValue) : undefined;
+      if (isBaseQuality && typeGroup) {
+        // Mode 2: every type of the group, as an `$in` like grouped types (PD2 doesn't know our group codes)
+        query['item.base.type_code'] = { $in: [...typeGroup.members] };
+      } else if (isBaseQuality && searchMode === 1 && matchedItemType) {
         // Mode 1: Search by typeLabel (category type) - only for base qualities. Grouped types ("Fist Weapon":
         // `{"$in": ["h2h", "h2h2"]}`) query as their `$in` object: PD2 matches the JSON string literally.
         query['item.base.type_code'] = parseCodeValue(matchedItemType.typeValue);

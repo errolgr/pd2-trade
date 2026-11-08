@@ -10,7 +10,7 @@ import { showToast, undoToast } from '@/overlay';
 import { useSignIn } from '@/hooks/useSignIn';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
 import { type MarketStore, retrySavedSearchSync } from '@/pages/market/store/useMarketStore';
-import { ITEM_TYPES } from '../lib/catalog';
+import { findTypeOption } from '../lib/catalog';
 import { groupOf, orBlockNumbers } from '../lib/stat-groups';
 import { filterName } from './stat-text';
 import type { MarketFilters, SavedSearch, StatFilter } from '../lib/types';
@@ -23,7 +23,7 @@ const UNDO_MS = 6000;
 export function describeFilters(f: MarketFilters): string {
   const parts: string[] = [];
   if (f.itemName) parts.push(f.itemName);
-  if (f.typeCode) parts.push(ITEM_TYPES.find((t) => t.code === f.typeCode)?.label ?? t('market:filters.type'));
+  if (f.typeCode) parts.push(findTypeOption(f.typeCode)?.label ?? t('market:filters.type'));
   if (f.rarity.length) parts.push(f.rarity.join('/'));
   const stats = f.stats.filter((s) => s.enabled);
   const row = (s: StatFilter) =>

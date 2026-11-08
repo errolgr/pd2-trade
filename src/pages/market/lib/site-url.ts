@@ -1,6 +1,7 @@
 import { DEFAULT_MAX_AGE_DAYS } from './defaults';
 import { orBlockNumbers } from './stat-groups';
 import type { MarketFilters, StatFilter, Tri } from './types';
+import { typeGroupByCode, typeGroupSiteValue } from './type-groups';
 import { t } from '@/i18n';
 
 /**
@@ -34,7 +35,9 @@ export function siteSearchLink(f: MarketFilters): SiteSearchLink {
   };
 
   set('name', f.itemName);
-  set('type', f.typeCode);
+  // The site doesn't know our type groups: a group goes as the `$in` of its member types
+  const typeGroup = typeGroupByCode(f.typeCode);
+  set('type', typeGroup ? typeGroupSiteValue(typeGroup) : f.typeCode);
   set('base', f.baseCode);
   if (f.rarity.length === 1) set('quality', f.rarity[0]);
   else if (f.rarity.length > 1) dropped.push(t('market:siteUrl.rarity', { rarities: f.rarity.join(', ') }));

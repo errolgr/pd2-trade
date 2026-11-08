@@ -1111,6 +1111,33 @@ describe('ItemOverlayWidget extra header behaviour', () => {
     await waitFor(() => expect(screen.getByTitle('Click to toggle search mode').textContent).toBe('Base: Ring'));
   });
 
+  it("cycles a rare bow's base → type → type group → base, searching the group's members", async () => {
+    renderWidget(rareRing({ name: 'Grim Fletch', type: 'Ceremonial Bow' }));
+    const mode = () => screen.getByTitle('Click to toggle search mode');
+    expect(mode().textContent).toBe('Base: Ceremonial Bow');
+    fireEvent.click(mode());
+    await waitFor(() => expect(mode().textContent).toBe('Type: Amazon Bow'));
+    fireEvent.click(mode());
+    await waitFor(() => expect(mode().textContent).toBe('Group: Bows'));
+
+    fireEvent.click(searchButton());
+    await waitFor(() => expect(searchListings).toHaveBeenCalled());
+    expect(lastFilters()).toMatchObject({ typeCode: 'group:bows' });
+    expect(lastFilters().baseCode).toBeUndefined();
+
+    fireEvent.click(mode());
+    await waitFor(() => expect(mode().textContent).toBe('Base: Ceremonial Bow'));
+  });
+
+  it('toggles a rare without a type group (Sorceress Orb) between base and type only', async () => {
+    renderWidget(rareRing({ name: 'Doom Eye', type: 'Eagle Orb' }));
+    const mode = () => screen.getByTitle('Click to toggle search mode');
+    fireEvent.click(mode());
+    await waitFor(() => expect(mode().textContent).toBe('Type: Sorceress Orb'));
+    fireEvent.click(mode());
+    await waitFor(() => expect(mode().textContent).toBe('Base: Eagle Orb'));
+  });
+
   it('Net Worth opens the currency panel', () => {
     renderWidget(rareRing());
     fireEvent.click(screen.getByRole('button', { name: 'Net Worth' }));

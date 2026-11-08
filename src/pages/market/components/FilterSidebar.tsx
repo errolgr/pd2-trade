@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
-import { CLASSES, ITEM_TYPES, RARITIES, basesForType, optionCodes } from '../lib/catalog';
+import { CLASSES, RARITIES, TYPE_OPTIONS, basesForType, optionCodes } from '../lib/catalog';
 import { defaultAgeDays, MAX_FILTER_TEXT, MAX_SELLER_NAME, type SearchDefaults, withSource } from '../lib/defaults';
 import { anniversaryTri, withAnniversary } from '../lib/anniversary';
 import {
@@ -269,9 +269,10 @@ export function FilterSidebar({
           <SelectField
             label={t('filters.type')}
             value={f.typeCode}
-            options={ITEM_TYPES.map((o) => ({
+            options={TYPE_OPTIONS.map((o) => ({
               value: o.code,
               label: o.label,
+              depth: o.depth,
               count: optionCount(o.code, counts.typeCode),
             }))}
             onChange={(typeCode) => set({ typeCode, baseCode: undefined })}

@@ -10,6 +10,7 @@ export type PriceCheckRelaxation =
   | { kind: 'ranges' }
   | { kind: 'stat'; key: string }
   | { kind: 'type' }
+  | { kind: 'typeGroup' }
   | { kind: 'quality' }
   | { kind: 'corrupted' }
   | { kind: 'corruptions' };
@@ -19,13 +20,13 @@ const CORRUPTED_KEY = `id:${StatId.Corrupted}`;
 /**
  * The ways to widen a price check search that found nothing, each with the search it makes, least drastic first
  * (useRelaxationCounts tries the first few): clearing the stat ranges, dropping one selected stat, any base of the
- * type, any quality, either corruption state, dropping a corruption price's filter. A change only the PD2 query
- * could express (a gap) isn't offered: the market service couldn't count it.
+ * type, any type of its type group, any quality, either corruption state, dropping a corruption price's filter. A
+ * change only the PD2 query could express (a gap) isn't offered: the market service couldn't count it.
  */
 export function priceCheckRelaxations(
   search: PriceCheckSearch,
   sort: MarketFilters['sort'],
-  can: { searchType: boolean; anyQuality: boolean },
+  can: { searchType: boolean; searchTypeGroup: boolean; anyQuality: boolean },
 ): RelaxationCandidate<PriceCheckRelaxation>[] {
   const variants: [PriceCheckRelaxation, PriceCheckSearch][] = [];
   const { selected, filters } = search;
@@ -55,6 +56,8 @@ export function priceCheckRelaxations(
     ]);
   }
   if (can.searchType && search.searchMode === 0) variants.push([{ kind: 'type' }, { ...search, searchMode: 1 }]);
+  if (can.searchTypeGroup && search.searchMode === 1)
+    variants.push([{ kind: 'typeGroup' }, { ...search, searchMode: 2 }]);
   if (can.anyQuality && !Array.isArray(search.qualityOverride))
     variants.push([{ kind: 'quality' }, { ...search, qualityOverride: BASE_QUALITIES }]);
   if (search.corruptedState !== 0)

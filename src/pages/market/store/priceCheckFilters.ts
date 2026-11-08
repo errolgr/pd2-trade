@@ -14,6 +14,7 @@ import type { Item, Stat, StatFilterInput } from '@/pages/price-check/lib/interf
 import { StatId } from '@/pages/price-check/lib/stat-mappings';
 import { PSEUDO_KEY_PREFIX } from '@/pages/price-check/lib/utils';
 import { findBaseOption, findTypeOption } from '@/pages/market/lib/catalog';
+import { typeGroupForMembers } from '@/pages/market/lib/type-groups';
 import { defaultFilters, mergeFilters } from '@/pages/market/lib/defaults';
 import type { MarketFilters, MarketListingStatus, Rarity, StatFilter } from '@/pages/market/lib/types';
 
@@ -27,7 +28,7 @@ export interface PriceCheckSearch {
   settings: { mode?: string; ladder?: string };
   statMapper?: (statId: number, stat: Stat) => string | undefined;
   archive: boolean;
-  /** 0 = base, 1 = item type (base qualities only). */
+  /** 0 = base, 1 = item type, 2 = the item type's type group (base qualities only). */
   searchMode: number;
   matchedItemType?: { typeLabel: string; typeValue: string; bases: Array<{ label: string; value: string }> } | null;
   /** 0 = any, 1 = corrupted, 2 = not corrupted. */
@@ -166,9 +167,10 @@ export function marketQueryToFilters(query: Record<string, unknown>, archive: bo
   const typeGroup = prop(typeCode, '$in');
   if (typeof typeCode === 'string' && typeCode) out.typeCode = typeCode;
   else if (typeof baseCode === 'string' && CHARM_TYPE_BY_BASE[baseCode]) out.typeCode = CHARM_TYPE_BY_BASE[baseCode];
-  // Grouped types (`{ $in: ['h2h', 'h2h2'] }`) → their catalog option ("Fist Weapon")
-  else if (Array.isArray(typeGroup) && typeof typeGroup[0] === 'string') {
-    const option = findTypeOption(typeGroup[0]);
+  // Type groups (`{ $in: ['bow', 'abow'] }`, any order) → their group code ("Bows"); other grouped types
+  // (`{ $in: ['h2h', 'h2h2'] }`) → their catalog option ("Fist Weapon")
+  else if (Array.isArray(typeGroup) && typeGroup.length > 0 && typeGroup.every((c) => typeof c === 'string')) {
+    const option = typeGroupForMembers(typeGroup) ?? findTypeOption(typeGroup[0]);
     if (option) out.typeCode = option.code;
   }
 
