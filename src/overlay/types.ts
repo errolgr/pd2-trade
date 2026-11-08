@@ -23,7 +23,8 @@ export type PanelId =
   | 'listingDetail'
   | 'builds'
   | 'palette'
-  | 'sim';
+  | 'sim'
+  | 'notifications';
 
 export interface PanelPayloads {
   /** encodeItem(raw) output (what used to be ?text=). undefined only before the first search (the panel is keepMounted). */
@@ -77,6 +78,8 @@ export interface PanelPayloads {
    * (a report-ready toast); url: its link, opened in the browser when no listed sim has that report.
    */
   sim: { slug: string; url: string } | undefined;
+  /** The notification log always opens on everything, newest first. */
+  notifications: undefined;
 }
 
 /** CSS px relative to the overlay viewport. */

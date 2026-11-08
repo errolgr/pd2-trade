@@ -257,6 +257,10 @@
       "simTryOn": {
         "label": "Probar objeto en el personaje (Horadric Sim)",
         "description": "Envía el objeto bajo el cursor al planificador de Horadric Sim, equipado en tu personaje predeterminado."
+      },
+      "notifications": {
+        "label": "Notificaciones",
+        "description": "Abre el registro de notificaciones: susurros, ofertas, alertas y errores, incluidos los que te perdiste."
       }
     }
   },

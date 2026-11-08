@@ -4,7 +4,7 @@ import { isTauri } from '@tauri-apps/api/core';
 import { useUpdater } from './useUpdater';
 import { useOptions } from './useOptions';
 import { CustomToastPayload, ToastActionType } from '@/common/types/Events';
-import { showToast } from '@/overlay';
+import { notify } from '@/overlay';
 import {
   isManualUpdateRequired,
   manualUpdateToast,
@@ -78,7 +78,7 @@ export const useAppUpdates = () => {
             markManualUpdateRequired();
             hasNotified = true;
             notifiedVersion = update.version;
-            showToast(manualUpdateToast(update.version));
+            notify('update', manualUpdateToast(update.version), { toast: true });
           }
         }
       } catch (error) {
@@ -130,7 +130,7 @@ export const useAppUpdates = () => {
                     },
                   },
                 };
-            showToast(updateToastPayload);
+            notify('update', updateToastPayload, { toast: true });
           }
         } else {
           // No update available, reset flags for next update

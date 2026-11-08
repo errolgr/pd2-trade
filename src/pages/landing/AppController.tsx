@@ -30,6 +30,7 @@ import {
 import { openOffers } from '@/pages/chat/chat-feed';
 import { useDelist } from '@/pages/delist/DelistHandler';
 import { useMarketAlerts } from '@/pages/market/alerts/useMarketAlerts';
+import { loadNotificationLog } from '@/lib/notification-log';
 import { t } from '@/i18n';
 
 /** Prefix of the error start_chat_watcher returns when the chat log can't be found or created (chat_watcher.rs). */
@@ -55,6 +56,11 @@ const AppController: React.FC = () => {
 
   // Horadric Sim intents from pd2trader.com (sim finished, open report/planner) - exactly one instance, here
   useOverlayIntents();
+
+  // The notification log's saved entries (what was missed while the app was closed stays missed)
+  useEffect(() => {
+    void loadNotificationLog();
+  }, []);
 
   // Launch toast (outside the game it shows in the screen corner, see ToastLayer)
   useEffect(() => {
@@ -195,6 +201,7 @@ const AppController: React.FC = () => {
     // Typing starts right away: the palette takes the keyboard when it opens
     palette: () => togglePanel('palette', undefined, { focus: true }),
     simTryOn: handleSimTryOn,
+    notifications: () => togglePanel('notifications'),
   };
   const hotkeysRef = useRef(hotkeyHandlers);
   useEffect(() => {
@@ -211,6 +218,7 @@ const AppController: React.FC = () => {
   const onBuilds = useCallback(() => hotkeysRef.current.builds(), []);
   const onPalette = useCallback(() => hotkeysRef.current.palette(), []);
   const onSimTryOn = useCallback(() => hotkeysRef.current.simTryOn(), []);
+  const onNotifications = useCallback(() => hotkeysRef.current.notifications(), []);
   useAppShortcuts(
     onItemSearch,
     onQuickList,
@@ -223,6 +231,7 @@ const AppController: React.FC = () => {
     onBuilds,
     onPalette,
     onSimTryOn,
+    onNotifications,
   );
 
   useAppUpdates();

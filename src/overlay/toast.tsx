@@ -14,6 +14,14 @@ import { ListingToastBody } from '@/pages/market/alerts/ListingToastBody';
 import { useOverlay, usePanelOpen } from './OverlayProvider';
 import type { PanelPayloads } from './types';
 import { t } from '@/i18n';
+import {
+  logNotification,
+  markNotificationMissed,
+  type LoggedAction,
+  type NewNotification,
+  type NotificationKind,
+} from '@/lib/notification-log';
+import type { ListingPanelPayload } from '@/pages/market/lib/types';
 
 const DEFAULT_TITLE = 'PD2 Trader';
 const TOAST_MARGIN = 16;
@@ -83,18 +91,46 @@ async function runToastAction(action: NonNullable<CustomToastPayload['action']>)
   }
 }
 
+/** Watches a toast for the notification log: `onUnseen` when it timed out without the pointer ever on it. */
+interface ToastWatch {
+  onUnseen(): void;
+}
+
+/** Title/description wrapped to notice the pointer on the toast, and the auto-close hook that reports it unseen. */
+function watched(watch: ToastWatch | undefined) {
+  if (!watch) return { wrap: (node: React.ReactNode) => node, options: {} };
+  let touched = false;
+  const touch = () => {
+    touched = true;
+  };
+  return {
+    wrap: (node: React.ReactNode) => (node == null ? node : <span onPointerEnter={touch}>{node}</span>),
+    options: {
+      onAutoClose: () => {
+        if (!touched) watch.onUnseen();
+      },
+    },
+  };
+}
+
 /** Show a toast in the overlay's ToastLayer. */
-export function showToast(payload: ToastPayload): void {
+export function showToast(payload: ToastPayload, watch?: ToastWatch): void {
+  const { wrap, options: watchOptions } = watched(watch);
   if (typeof payload === 'string') {
-    toast(DEFAULT_TITLE, { description: payload, closeButton: true });
+    toast(wrap(DEFAULT_TITLE), { description: wrap(payload), closeButton: true, ...watchOptions });
     return;
   }
   if (!payload || typeof payload !== 'object') return;
 
   if (!('action' in payload)) {
     const generic = payload as GenericToastPayload;
-    const options = { description: generic.description, duration: generic.duration, closeButton: true };
-    const title = generic.title || DEFAULT_TITLE;
+    const options = {
+      description: wrap(generic.description),
+      duration: generic.duration,
+      closeButton: true,
+      ...watchOptions,
+    };
+    const title = wrap(generic.title || DEFAULT_TITLE);
     switch (generic.variant) {
       case 'error':
         toast.error(title, options);
@@ -122,7 +158,7 @@ export function showToast(payload: ToastPayload): void {
   const action = custom.action;
   if (!action) {
     // An object with a falsy `action` keeps the old ToastPage behaviour: a plain PD2 Trader toast.
-    toast(DEFAULT_TITLE, { description: custom.description, closeButton: true });
+    toast(wrap(DEFAULT_TITLE), { description: wrap(custom.description), closeButton: true, ...watchOptions });
     return;
   }
   const { listing, description, tone } = custom;
@@ -136,9 +172,9 @@ export function showToast(payload: ToastPayload): void {
       description
     );
   const show = tone === 'error' ? toast.error : toast;
-  show(custom.title || DEFAULT_TITLE, {
+  show(wrap(custom.title || DEFAULT_TITLE), {
     ...(tone === 'muted' && { className: '[--toast-accent:var(--muted-foreground)] opacity-80' }),
-    description: listing ? <ListingToastBody listingId={listing.listingId}>{text}</ListingToastBody> : text,
+    description: wrap(listing ? <ListingToastBody listingId={listing.listingId}>{text}</ListingToastBody> : text),
     duration: custom.duration,
     closeButton: true,
     action: {
@@ -148,8 +184,57 @@ export function showToast(payload: ToastPayload): void {
     },
     // Before the action button: the listing drawer (tooltip, price, seller, offer/whisper) without the market
     ...(listing && { cancel: { label: t('app:toast.details'), onClick: () => bridge?.openListing(listing) } }),
+    ...watchOptions,
   });
 }
+
+/** The log entry of a toast payload. */
+function entryOf(
+  kind: NotificationKind,
+  payload: GenericToastPayload | CustomToastPayload,
+  groupKey?: string,
+): NewNotification {
+  const custom: CustomToastPayload = payload;
+  const variant = 'variant' in payload ? payload.variant : undefined;
+  const tone: NewNotification['tone'] =
+    custom.tone ?? (variant === 'success' || variant === 'warning' || variant === 'error' ? variant : undefined);
+  return {
+    kind,
+    title: payload.title || DEFAULT_TITLE,
+    description: payload.description,
+    action: custom.action ?? undefined,
+    listing: custom.listing,
+    tone,
+    groupKey,
+  };
+}
+
+export interface NotifyOptions {
+  /** Show the toast (false: suppressed by focus or settings, so the entry is missed right away). */
+  toast: boolean;
+  /** Consecutive entries with this key fold into one ("×3"). */
+  groupKey?: string;
+}
+
+/**
+ * Something that happened to the user (not feedback on their own action): logged in the notification log, and
+ * toasted when `toast`. A toast that times out unseen marks the entry missed.
+ */
+export function notify(
+  kind: NotificationKind,
+  payload: GenericToastPayload | CustomToastPayload,
+  { toast: shown, groupKey }: NotifyOptions,
+): void {
+  const id = logNotification(entryOf(kind, payload, groupKey), { missed: !shown });
+  if (shown) showToast(payload, { onUnseen: () => markNotificationMissed(id) });
+}
+
+/** A logged entry's action (the same as its toast's). */
+export const runLoggedAction = (action: LoggedAction): Promise<void> =>
+  runToastAction({ label: action.label, type: action.type, data: action.data });
+
+/** A logged entry's Details: the listing drawer. */
+export const openLoggedListing = (listing: ListingPanelPayload): void => bridge?.openListing(listing);
 
 /**
  * Success toast with an image preview (price check "Copy image"). Owns `imageUrl` (an object URL):

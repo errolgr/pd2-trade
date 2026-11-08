@@ -48,8 +48,12 @@
       "stashValue": "Valeur du coffre",
       "offers": "Offres",
       "manageListings": "Gérer les annonces",
-      "settings": "Paramètres"
-    }
+      "settings": "Paramètres",
+      "notifications": "Notifications"
+    },
+    "missedNotifications_one": "{{count}} notification manquée",
+    "missedNotifications_many": "{{count}} de notifications manquées",
+    "missedNotifications_other": "{{count}} notifications manquées"
   },
   "chatTemplateForm": {
     "name": "Nom",
@@ -111,5 +115,23 @@
     "toastTitle": "Zone corrompue",
     "toastDescription": "{{zone}} : créez une nouvelle partie Hell (jusqu'à {{until}})",
     "toastSoonDescription": "{{zone}} dans {{minutes}} min : créez une nouvelle partie Hell à partir de {{from}} (jusqu'à {{until}})"
+  },
+  "notificationLog": {
+    "title": "Notifications",
+    "close": "Fermer",
+    "clear": "Effacer",
+    "filters": "Filtrer les notifications",
+    "filter": {
+      "all": "Toutes",
+      "trade": "Échange",
+      "chat": "Chat",
+      "alerts": "Alertes",
+      "system": "Système"
+    },
+    "empty": "Rien pour le moment.",
+    "missed_one": "Manquée · {{count}}",
+    "missed_many": "Manquées · {{count}}",
+    "missed_other": "Manquées · {{count}}",
+    "earlier": "Plus tôt"
   }
 }

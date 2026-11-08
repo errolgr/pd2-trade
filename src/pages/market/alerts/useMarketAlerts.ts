@@ -13,7 +13,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useOAuth } from '@/hooks/useOAuth';
 import { useOptions } from '@/hooks/useOptions';
 import { playNotificationSound } from '@/hooks/useSocketNotifications';
-import { showToast } from '@/overlay';
+import { notify } from '@/overlay';
 import { useSignIn } from '@/hooks/useSignIn';
 import { refuseSavedSearchToken, syncSavedSearches, useMarketStore } from '@/pages/market/store/useMarketStore';
 import { publishMarketAlerts } from './alert-events';
@@ -88,7 +88,7 @@ export function useMarketAlerts(): void {
     if (!active || !token) return;
     const controller = new AbortController();
     const onAlerts = (alerts: MarketAlert[]) => {
-      alertToasts(alerts, toastMs.current).forEach((toast) => showToast(toast));
+      alertToasts(alerts, toastMs.current).forEach((toast) => notify('market', toast, { toast: true }));
       if (sound.current.enabled) playNotificationSound(sound.current.volume);
       // The open market panel lights up matching cards of the watched search on screen
       publishMarketAlerts(alerts);

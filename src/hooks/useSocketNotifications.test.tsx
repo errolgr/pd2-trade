@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { showToast } from '@/overlay';
+import { notify, showToast } from '@/overlay';
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import type { ISettings } from '@/hooks/useOptions';
 import { ToastActionType } from '@/common/types/Events';
@@ -55,7 +55,16 @@ const bus = vi.hoisted(() => {
 /** usePd2Website() as seen by the hook: the provider's socket state and the offers owner's refresh. */
 const pd2 = vi.hoisted(() => ({ isConnected: false, refresh: vi.fn() }));
 
-vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
+// notify() logs and toasts when asked: the toast half goes through the showToast mock
+vi.mock('@/overlay', () => {
+  const showToast = vi.fn();
+  return {
+    showToast,
+    notify: vi.fn((_kind: string, payload: unknown, { toast }: { toast: boolean }) => {
+      if (toast) showToast(payload);
+    }),
+  };
+});
 vi.mock('@/assets/poe_whisper.mp3', () => ({ default: 'whisper.mp3' }));
 // The module fetches the sound at import to make its blob: URL; keep that off the network
 vi.hoisted(() =>
@@ -111,6 +120,11 @@ function whisper(overrides: Record<string, unknown> = {}) {
 
 function toasts() {
   return vi.mocked(showToast).mock.calls.map(([payload]) => payload);
+}
+
+/** Notification log entries: [kind, whether a toast showed it]. */
+function logged() {
+  return vi.mocked(notify).mock.calls.map(([kind, , options]) => [kind, options.toast]);
 }
 
 async function renderNotifications(props: {
@@ -422,6 +436,8 @@ describe('useSocketNotifications whispers', () => {
 
     expect(sounds).toEqual([0.7]);
     expect(toasts()).toEqual([]);
+    // Still in the notification log, missed
+    expect(logged()).toEqual([['whisper', false]]);
   });
 
   it.each([
@@ -430,7 +446,6 @@ describe('useSocketNotifications whispers', () => {
     ['ignored player (normalized)', whisper({ from: '*BOB' }), { whisperIgnoreList: ['bob'] }],
     ['general whispers disabled', whisper(), { whisperNotificationsEnabled: false }],
     ['timing never', whisper(), { whisperNotificationTiming: 'never' }],
-    ['timing in-game while tabbed out', whisper(), { whisperNotificationTiming: 'in-game' }],
   ])('stays silent for %s', async (_label, payload, settings) => {
     await renderNotifications({ isConnected: false, settings: settings as Partial<ISettings> });
 
@@ -438,6 +453,17 @@ describe('useSocketNotifications whispers', () => {
 
     expect(sounds).toEqual([]);
     expect(toasts()).toEqual([]);
+    expect(logged()).toEqual([]);
+  });
+
+  it('outside the notify timing: no sound or toast, but logged as missed', async () => {
+    await renderNotifications({ isConnected: false, settings: { whisperNotificationTiming: 'in-game' } });
+
+    await fire('whisper-received', whisper());
+
+    expect(sounds).toEqual([]);
+    expect(toasts()).toEqual([]);
+    expect(logged()).toEqual([['whisper', false]]);
   });
 
   it('notifies announcements when enabled', async () => {
@@ -486,10 +512,11 @@ describe('useSocketNotifications whispers', () => {
     expect(sounds).toEqual([]);
   });
 
-  it('notifies joins only when enabled and tabbed out', async () => {
+  it('notifies joins only when enabled and tabbed out; logs them whenever enabled', async () => {
     const { rerender } = await renderNotifications({ isConnected: false });
     await fire('whisper-received', whisper({ isJoin: true }));
     expect(sounds).toEqual([]);
+    expect(logged()).toEqual([]);
 
     rerender({ isConnected: false, settings: { whisperJoinNotificationsEnabled: true } });
     await act(async () => {});
@@ -500,6 +527,10 @@ describe('useSocketNotifications whispers', () => {
     expect(sounds).toHaveLength(1);
     expect(toasts()).toEqual([
       { title: 'Player Joined', description: 'Bob joined the game', duration: 5000, variant: 'default' },
+    ]);
+    expect(logged()).toEqual([
+      ['join', true],
+      ['join', false],
     ]);
   });
 
@@ -544,7 +575,7 @@ describe('useSocketNotifications chat messages', () => {
     ]);
   });
 
-  it('shows no toast for a muted conversation', async () => {
+  it('shows no toast and logs nothing for a muted conversation', async () => {
     changeChatPrefs((prefs) => setThreadPrefs(prefs, ['c1'], { muted: true }));
     await renderNotifications({ isConnected: true });
     await fire(CHAT_EVENT, chat);
@@ -552,6 +583,7 @@ describe('useSocketNotifications chat messages', () => {
     expect(toasts()).toEqual([
       expect.objectContaining({ action: expect.objectContaining({ data: { conversationId: 'c2' } }) }),
     ]);
+    expect(logged()).toEqual([['chat', true]]);
   });
 
   it("shows no toast for a conversation a muted person started after muting (by the sender's website user)", async () => {
@@ -578,9 +610,10 @@ describe('useSocketNotifications chat messages', () => {
     expect(toasts()).toEqual([expect.objectContaining({ description: `Hi, I'm interested in your ${link}...` })]);
   });
 
-  it('respects the whispers toast type', async () => {
+  it('respects the whispers toast type (the message is still logged, missed)', async () => {
     await renderNotifications({ isConnected: true, settings: { toastPopupTypes: ['offers'] } });
     await fire(CHAT_EVENT, chat);
     expect(toasts()).toEqual([]);
+    expect(logged()).toEqual([['chat', false]]);
   });
 });

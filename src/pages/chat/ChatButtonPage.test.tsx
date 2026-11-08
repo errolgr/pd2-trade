@@ -16,6 +16,7 @@ import ChatButtonPage from './ChatButtonPage';
 import { setChatDockOffset } from './chat-dock';
 import { publishChatFeed, provideChatFeedActions, resetChatFeed, type FeedItem } from './chat-feed';
 import { PEEK_DELAY_MS } from '@/components/custom/ChatButton';
+import { logNotification, markAllNotificationsSeen, resetNotificationLog } from '@/lib/notification-log';
 
 vi.mock('@/overlay', async (importOriginal) => ({
   ...(await importOriginal<typeof Overlay>()),
@@ -54,6 +55,7 @@ afterEach(() => {
     setChatDockOffset(0.008);
   });
   localStorage.clear();
+  act(() => resetNotificationLog());
 });
 
 describe('ChatButtonPage', () => {
@@ -79,6 +81,27 @@ describe('ChatButtonPage', () => {
 
     act(() => setBadgeCount('whisperTrades', 0));
     expect(screen.getByLabelText('4 trade offers')).not.toBeNull();
+  });
+
+  it('shows the notification log button only while something is missed, warning-colored for an offer', () => {
+    render(<ChatButtonPage />);
+    const logButton = () => screen.queryByRole('button', { name: /missed notification/ });
+    expect(logButton()).toBeNull();
+
+    // Seen (its toast is still up): no button
+    act(() => void logNotification({ kind: 'market', title: 'Market Watch' }, { missed: false }));
+    expect(logButton()).toBeNull();
+
+    act(() => void logNotification({ kind: 'offer', title: 'New Offer', description: 'Bob: 2 Ist' }, { missed: true }));
+    expect(logButton()?.getAttribute('aria-label')).toBe('1 missed notification');
+    expect(logButton()?.className).toContain('text-warning');
+    expect(logButton()?.getAttribute('title')).toBe('Bob: 2 Ist');
+
+    fireEvent.click(logButton()!);
+    expect(overlay.openPanel).toHaveBeenCalledWith('notifications', undefined, expect.anything());
+
+    act(() => markAllNotificationsSeen());
+    expect(logButton()).toBeNull();
   });
 
   it('asks for confirmation before disabling the overlay, then disables it and notifies the user', async () => {
@@ -185,6 +208,8 @@ describe('ChatButtonPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
     expect(screen.getAllByRole('menuitem').map((el) => el.textContent?.replace(/\d+/, ''))).toEqual([
+      // The notification log's row stays first, outside the user's order
+      'Notifications',
       'Settings',
       'Offers',
       'Chat',

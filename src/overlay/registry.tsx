@@ -17,6 +17,8 @@ import CorruptedZoneTimerPage from '@/pages/corrupted-zones/CorruptedZoneTimerPa
 import BuildsPage from '@/pages/builds/BuildsPage';
 import PalettePage from '@/pages/palette/PalettePage';
 import SimPage from '@/pages/sim/SimPage';
+import NotificationLogPage from '@/pages/notifications/NotificationLogPage';
+import { NOTIFICATION_LOG_SIZE } from '@/pages/notifications/size';
 import type { PanelDefs } from './types';
 
 /**
@@ -272,6 +274,20 @@ export const PANEL_DEFS: PanelDefs = {
     persist: true,
     keyboard: 'onPointerDown',
     keepMounted: false, // polls only while open
+    hideOnGameBlur: true,
+    closeOnBlur: true,
+  },
+
+  // ---- notifications (Group Notifications): the notification log, opened from the chat dock ----
+  notifications: {
+    id: 'notifications',
+    component: NotificationLogPage,
+    size: NOTIFICATION_LOG_SIZE,
+    resizable: false,
+    placement: 'gameCenter', // the dock opens it beside itself ({ placement: { x, y } })
+    persist: false,
+    keyboard: 'onPointerDown',
+    keepMounted: false, // opening it marks what was missed: always fresh
     hideOnGameBlur: true,
     closeOnBlur: true,
   },

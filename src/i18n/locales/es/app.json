@@ -48,8 +48,12 @@
       "stashValue": "Valor del alijo",
       "offers": "Ofertas",
       "manageListings": "Gestionar anuncios",
-      "settings": "Ajustes"
-    }
+      "settings": "Ajustes",
+      "notifications": "Notificaciones"
+    },
+    "missedNotifications_one": "{{count}} notificación perdida",
+    "missedNotifications_many": "{{count}} de notificaciones perdidas",
+    "missedNotifications_other": "{{count}} notificaciones perdidas"
   },
   "chatTemplateForm": {
     "name": "Nombre",
@@ -111,5 +115,23 @@
     "toastTitle": "Zona corrupta",
     "toastDescription": "{{zone}}: crea una nueva partida de Hell (hasta las {{until}})",
     "toastSoonDescription": "{{zone}} en {{minutes}} min: crea una nueva partida de Hell desde las {{from}} (hasta las {{until}})"
+  },
+  "notificationLog": {
+    "title": "Notificaciones",
+    "close": "Cerrar",
+    "clear": "Borrar",
+    "filters": "Filtrar notificaciones",
+    "filter": {
+      "all": "Todas",
+      "trade": "Comercio",
+      "chat": "Chat",
+      "alerts": "Alertas",
+      "system": "Sistema"
+    },
+    "empty": "Aún no hay nada.",
+    "missed_one": "Perdida · {{count}}",
+    "missed_many": "Perdidas · {{count}}",
+    "missed_other": "Perdidas · {{count}}",
+    "earlier": "Anteriores"
   }
 }

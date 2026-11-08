@@ -48,8 +48,12 @@
       "stashValue": "Valor do baú",
       "offers": "Ofertas",
       "manageListings": "Gerenciar anúncios",
-      "settings": "Configurações"
-    }
+      "settings": "Configurações",
+      "notifications": "Notificações"
+    },
+    "missedNotifications_one": "{{count}} notificação perdida",
+    "missedNotifications_many": "{{count}} de notificações perdidas",
+    "missedNotifications_other": "{{count}} notificações perdidas"
   },
   "chatTemplateForm": {
     "name": "Nome",
@@ -111,5 +115,23 @@
     "toastTitle": "Zona Corrupted",
     "toastDescription": "{{zone}}: crie um novo jogo Hell (até {{until}})",
     "toastSoonDescription": "{{zone}} em {{minutes}} min: crie um novo jogo Hell a partir de {{from}} (até {{until}})"
+  },
+  "notificationLog": {
+    "title": "Notificações",
+    "close": "Fechar",
+    "clear": "Limpar",
+    "filters": "Filtrar notificações",
+    "filter": {
+      "all": "Todas",
+      "trade": "Troca",
+      "chat": "Chat",
+      "alerts": "Alertas",
+      "system": "Sistema"
+    },
+    "empty": "Nada por aqui ainda.",
+    "missed_one": "Perdida · {{count}}",
+    "missed_many": "Perdidas · {{count}}",
+    "missed_other": "Perdidas · {{count}}",
+    "earlier": "Anteriores"
   }
 }

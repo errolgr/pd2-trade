@@ -10,6 +10,7 @@ import {
   Settings,
   Shield,
   ShoppingBag,
+  History,
   Star,
   Store,
   TrendingUp,
@@ -54,6 +55,13 @@ interface ChatButtonProps {
   onOrderChange?: (order: ChatDockItem[]) => void;
   /** Called with the new favorites (menu order) when a window is starred or unstarred. Omitted: no stars. */
   onFavoritesChange?: (favorites: ChatDockItem[]) => void;
+  /**
+   * Missed notifications: while `count` > 0 the tab shows the log's button above the caret (urgent: warning
+   * color; `latest`: its tooltip). Nothing missed: no button.
+   */
+  missed?: { count: number; urgent: boolean; latest?: string };
+  /** Opens the notification log (the button above, and the menu's first row). Omitted: neither. */
+  onNotificationsClick?: () => void;
 }
 
 /** Moving the pointer from the tab to the menu crosses a small gap: only close after this long outside both. */
@@ -226,6 +234,8 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
   favorites,
   onOrderChange,
   onFavoritesChange,
+  missed,
+  onNotificationsClick,
 }) => {
   const { t } = useTranslation('app');
   const [menuOpen, setMenuOpen] = useState(false);
@@ -243,13 +253,20 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
   });
   const menuOrder = draft?.from === orderKey ? draft.order : order;
 
-  // One pulse per increase of either count (not on mount, not when they drop); adjusted during render, no effect
+  // One pulse per increase of any count (not on mount, not when they drop); adjusted during render, no effect
+  const missedCount = onNotificationsClick ? (missed?.count ?? 0) : 0;
   const [pulse, setPulse] = useState(0);
-  const [seen, setSeen] = useState({ unreadCount, tradeOffersCount });
-  if (seen.unreadCount !== unreadCount || seen.tradeOffersCount !== tradeOffersCount) {
-    if (unreadCount > seen.unreadCount || tradeOffersCount > seen.tradeOffersCount) setPulse((n) => n + 1);
-    setSeen({ unreadCount, tradeOffersCount });
+  const [seen, setSeen] = useState({ unreadCount, tradeOffersCount, missedCount });
+  if (
+    seen.unreadCount !== unreadCount ||
+    seen.tradeOffersCount !== tradeOffersCount ||
+    seen.missedCount !== missedCount
+  ) {
+    if (unreadCount > seen.unreadCount || tradeOffersCount > seen.tradeOffersCount || missedCount > seen.missedCount)
+      setPulse((n) => n + 1);
+    setSeen({ unreadCount, tradeOffersCount, missedCount });
   }
+  const missedBadge = missed?.urgent ? 'bg-warning text-warning-foreground' : 'bg-primary text-primary-foreground';
 
   useEffect(
     () => () => {
@@ -460,8 +477,30 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
               </AnimatePresence>
             </button>
           ))}
-          {onTab.length > 0 && <div aria-hidden
-            className="mx-auto h-px w-1/2 shrink-0 bg-border" />}
+          {missedCount > 0 && (
+            <button
+              type="button"
+              onClick={onNotificationsClick}
+              className={cn(segment, missed?.urgent ? 'text-warning' : 'text-primary')}
+              aria-label={t('chatButton.missedNotifications', { count: missedCount })}
+              title={missed?.latest ?? t('chatButton.menu.notifications')}
+            >
+              <History style={icon} />
+              <AnimatePresence>
+                <CountBadge
+                  key="missed"
+                  count={missedCount}
+                  label={t('chatButton.missedNotifications', { count: missedCount })}
+                  className={missedBadge}
+                  style={badge}
+                />
+              </AnimatePresence>
+            </button>
+          )}
+          {onTab.length + (missedCount > 0 ? 1 : 0) > 0 && (
+            <div aria-hidden
+              className="mx-auto h-px w-1/2 shrink-0 bg-border" />
+          )}
           <button
             type="button"
             onClick={() => setMenuOpen((open) => !open)}
@@ -496,6 +535,31 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
                 menuBelow ? 'top-full mt-1.5' : 'bottom-full mb-1.5',
               )}
             >
+              {onNotificationsClick && (
+                <>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={pick(onNotificationsClick)}
+                    className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left outline-none hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent"
+                  >
+                    <History className="size-4 shrink-0 text-muted-foreground" />
+                    <span className="flex-1">{t('chatButton.menu.notifications')}</span>
+                    {missedCount > 0 && (
+                      <span
+                        className={cn(
+                          'min-w-5 rounded-full px-1.5 text-center text-xs leading-5 font-bold tabular-nums',
+                          missedBadge,
+                        )}
+                      >
+                        {formatCount(missedCount)}
+                      </span>
+                    )}
+                  </button>
+                  <div role="separator"
+                    className="my-1 h-px bg-border" />
+                </>
+              )}
               <Reorder.Group
                 as="div"
                 axis="y"

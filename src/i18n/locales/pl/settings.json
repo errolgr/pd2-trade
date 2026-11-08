@@ -260,6 +260,10 @@
       "simTryOn": {
         "label": "Przymierz przedmiot na postaci (Horadric Sim)",
         "description": "Wysyła przedmiot pod kursorem do planera Horadric Sim, założony na domyślną postać."
+      },
+      "notifications": {
+        "label": "Powiadomienia",
+        "description": "Otwiera dziennik powiadomień: szepty, oferty, alerty i błędy, także te, które ominęły."
       }
     }
   },

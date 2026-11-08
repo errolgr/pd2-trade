@@ -257,6 +257,10 @@
       "simTryOn": {
         "label": "Testar item no personagem (Horadric Sim)",
         "description": "Envia o item sob o cursor ao planejador do Horadric Sim, equipado no seu personagem padrão."
+      },
+      "notifications": {
+        "label": "Notificações",
+        "description": "Abre o registro de notificações: sussurros, ofertas, alertas e erros, inclusive os que você perdeu."
       }
     }
   },

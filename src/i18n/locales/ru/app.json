@@ -50,8 +50,13 @@
       "stashValue": "Стоимость сундука",
       "offers": "Предложения",
       "manageListings": "Мои объявления",
-      "settings": "Настройки"
-    }
+      "settings": "Настройки",
+      "notifications": "Уведомления"
+    },
+    "missedNotifications_one": "{{count}} пропущенное уведомление",
+    "missedNotifications_few": "{{count}} пропущенных уведомления",
+    "missedNotifications_many": "{{count}} пропущенных уведомлений",
+    "missedNotifications_other": "{{count}} пропущенного уведомления"
   },
   "chatTemplateForm": {
     "name": "Название",
@@ -114,5 +119,24 @@
     "toastTitle": "Corrupted-зона",
     "toastDescription": "{{zone}}: создайте новую игру Hell (до {{until}})",
     "toastSoonDescription": "{{zone}} через {{minutes}} мин: создайте новую игру Hell с {{from}} (до {{until}})"
+  },
+  "notificationLog": {
+    "title": "Уведомления",
+    "close": "Закрыть",
+    "clear": "Очистить",
+    "filters": "Фильтр уведомлений",
+    "filter": {
+      "all": "Все",
+      "trade": "Торговля",
+      "chat": "Чат",
+      "alerts": "Оповещения",
+      "system": "Система"
+    },
+    "empty": "Пока ничего нет.",
+    "missed_one": "Пропущено · {{count}}",
+    "missed_few": "Пропущено · {{count}}",
+    "missed_many": "Пропущено · {{count}}",
+    "missed_other": "Пропущено · {{count}}",
+    "earlier": "Ранее"
   }
 }

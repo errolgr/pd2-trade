@@ -50,8 +50,13 @@
       "stashValue": "Wartość skrzyni",
       "offers": "Oferty",
       "manageListings": "Zarządzaj ogłoszeniami",
-      "settings": "Ustawienia"
-    }
+      "settings": "Ustawienia",
+      "notifications": "Powiadomienia"
+    },
+    "missedNotifications_one": "{{count}} pominięte powiadomienie",
+    "missedNotifications_few": "{{count}} pominięte powiadomienia",
+    "missedNotifications_many": "{{count}} pominiętych powiadomień",
+    "missedNotifications_other": "{{count}} pominiętego powiadomienia"
   },
   "chatTemplateForm": {
     "name": "Nazwa",
@@ -114,5 +119,24 @@
     "toastTitle": "Skażona strefa",
     "toastDescription": "{{zone}}: utwórz nową grę Hell (do {{until}})",
     "toastSoonDescription": "{{zone}} za {{minutes}} min: utwórz nową grę Hell od {{from}} (do {{until}})"
+  },
+  "notificationLog": {
+    "title": "Powiadomienia",
+    "close": "Zamknij",
+    "clear": "Wyczyść",
+    "filters": "Filtruj powiadomienia",
+    "filter": {
+      "all": "Wszystkie",
+      "trade": "Handel",
+      "chat": "Czat",
+      "alerts": "Alerty",
+      "system": "System"
+    },
+    "empty": "Na razie nic tu nie ma.",
+    "missed_one": "Pominięte · {{count}}",
+    "missed_few": "Pominięte · {{count}}",
+    "missed_many": "Pominięte · {{count}}",
+    "missed_other": "Pominięte · {{count}}",
+    "earlier": "Wcześniejsze"
   }
 }

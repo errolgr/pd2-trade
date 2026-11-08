@@ -257,6 +257,10 @@
       "simTryOn": {
         "label": "Essayer l’objet sur le personnage (Horadric Sim)",
         "description": "Envoie l’objet survolé au planificateur Horadric Sim, équipé sur ton personnage par défaut."
+      },
+      "notifications": {
+        "label": "Notifications",
+        "description": "Ouvre le journal des notifications : chuchotements, offres, alertes et erreurs, y compris celles que vous avez manquées."
       }
     }
   },

@@ -251,6 +251,10 @@
       "simTryOn": {
         "label": "在角色上试穿物品（Horadric Sim）",
         "description": "将鼠标下的物品发送到 Horadric Sim 规划器，并在默认角色身上试穿。"
+      },
+      "notifications": {
+        "label": "通知",
+        "description": "打开通知记录:私聊、报价、警报和错误,包括你错过的通知。"
       }
     }
   },

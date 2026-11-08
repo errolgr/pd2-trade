@@ -5,10 +5,10 @@ import { holdListener } from '@/lib/listener';
 import { isTauri, invoke } from '@tauri-apps/api/core';
 import { usePd2Website } from './pd2website/usePD2Website';
 import { toOfferNotification } from './pd2website/useOfferNotifications';
-import { ToastActionType, GenericToastPayload } from '@/common/types/Events';
+import { ToastActionType } from '@/common/types/Events';
 import { ISettings } from './useOptions';
 import poeWhisperSound from '@/assets/poe_whisper.mp3';
-import { showToast } from '@/overlay';
+import { notify } from '@/overlay';
 import { isThreadMuted, loadChatPrefs } from '@/lib/chat-prefs';
 import { normalizeName as personKey } from '@/lib/whisper-history';
 import { whisperThreadId } from '@/pages/chat/lib/identity';
@@ -119,9 +119,10 @@ export const useSocketNotifications = ({
         playNotificationSound(volume);
       }
 
-      // Show toast notification opening the offer in the chat
-      if (isToastEnabled(settings, 'offers')) {
-        showToast({
+      // Logged always; toasted (opening the offer in the chat) when offer popups are on
+      notify(
+        'offer',
+        {
           title: accepted ? t('system:notifications.offerAccepted') : t('system:notifications.newOffer'),
           description: offerMessage,
           duration: OFFER_TOAST_DURATION_MS,
@@ -130,8 +131,9 @@ export const useSocketNotifications = ({
             type: ToastActionType.OPEN_CHAT_OFFER,
             data: { notificationId: notification.id, accepted },
           },
-        });
-      }
+        },
+        { toast: isToastEnabled(settings, 'offers') },
+      );
     });
   }, [
     isConnected,
@@ -167,25 +169,22 @@ export const useSocketNotifications = ({
           data: { threadId },
         };
 
-        // Handle join messages separately
+        // Handle join messages separately: logged while join notifications are on, sound and toast only when
+        // Diablo is not focused
         if (whisper.isJoin) {
-          // Only notify if join notifications are enabled and Diablo is not focused
+          if (!(settings?.whisperJoinNotificationsEnabled ?? false)) return;
           const isDiabloFocused = await invoke<boolean>('is_diablo_focused');
-          if ((settings?.whisperJoinNotificationsEnabled ?? false) && !isDiabloFocused) {
-            // Play notification sound
-            const volume = settings?.whisperNotificationVolume ?? 70;
-            playNotificationSound(volume);
-
-            if (isToastEnabled(settings, 'joins')) {
-              const toastPayload: GenericToastPayload = {
-                title: t('system:notifications.playerJoined'),
-                description: t('system:notifications.playerJoinedDescription', { player: whisper.from }),
-                duration: 5000,
-                variant: 'default',
-              };
-              showToast(toastPayload);
-            }
-          }
+          if (!isDiabloFocused) playNotificationSound(settings?.whisperNotificationVolume ?? 70);
+          notify(
+            'join',
+            {
+              title: t('system:notifications.playerJoined'),
+              description: t('system:notifications.playerJoinedDescription', { player: whisper.from }),
+              duration: 5000,
+              variant: 'default',
+            },
+            { toast: !isDiabloFocused && isToastEnabled(settings, 'joins') },
+          );
           return; // Don't process join messages as regular whispers
         }
 
@@ -213,58 +212,55 @@ export const useSocketNotifications = ({
         // Determine if we should notify based on timing setting
         const timing = settings?.whisperNotificationTiming || 'both';
 
-        // If timing is 'never', don't notify at all
+        // If timing is 'never', don't notify (or log) at all
         if (timing === 'never') {
           return;
         }
 
+        // Outside the timing: no sound or toast, but the log keeps it (missed)
         const shouldNotifyByTiming =
           timing === 'both' ||
           (timing === 'in-game' && isDiabloFocused) ||
           (timing === 'out-of-game' && !isDiabloFocused);
-
-        if (!shouldNotifyByTiming) {
-          return; // Don't notify based on timing setting
-        }
+        const volume = settings?.whisperNotificationVolume ?? 70;
+        const groupKey = `whisper:${threadId}`;
 
         // Handle trade whispers
         if (whisper.isTrade) {
-          const tradeEnabled = settings?.tradeNotificationsEnabled ?? true;
-          if (tradeEnabled) {
-            // Play notification sound
-            const volume = settings?.whisperNotificationVolume ?? 70;
-            playNotificationSound(volume);
-
-            // Show toast with item name only if Diablo is not focused
-            if (whisper.itemName && !isDiabloFocused && isToastEnabled(settings, 'trade')) {
-              showToast({
-                title: t('system:notifications.tradeWhisper'),
-                description: `${whisper.from}: ${whisper.itemName}`,
-                duration: 5000,
-                action: reply,
-              });
-            }
-          }
+          if (!(settings?.tradeNotificationsEnabled ?? true)) return;
+          if (shouldNotifyByTiming) playNotificationSound(volume);
+          // Toast with the item name only when Diablo is not focused
+          notify(
+            'trade',
+            {
+              title: t('system:notifications.tradeWhisper'),
+              description: `${whisper.from}: ${whisper.itemName || shortenMessage(whisper.message, 80)}`,
+              duration: 5000,
+              action: reply,
+            },
+            {
+              toast:
+                shouldNotifyByTiming && !!whisper.itemName && !isDiabloFocused && isToastEnabled(settings, 'trade'),
+              groupKey,
+            },
+          );
           return; // Trade whispers handled
         }
 
         // Handle general whispers (non-trade)
-        const generalEnabled = settings?.whisperNotificationsEnabled ?? true;
-        if (generalEnabled) {
-          // Play notification sound
-          const volume = settings?.whisperNotificationVolume ?? 70;
-          playNotificationSound(volume);
-
-          // Show toast when tabbed out of Diablo
-          if (!isDiabloFocused && isToastEnabled(settings, 'whispers')) {
-            showToast({
-              title: t('system:notifications.whisperFrom', { player: whisper.from }),
-              description: shortenMessage(whisper.message, 80),
-              duration: 5000,
-              action: reply,
-            });
-          }
-        }
+        if (!(settings?.whisperNotificationsEnabled ?? true)) return;
+        if (shouldNotifyByTiming) playNotificationSound(volume);
+        // Toast when tabbed out of Diablo
+        notify(
+          'whisper',
+          {
+            title: t('system:notifications.whisperFrom', { player: whisper.from }),
+            description: shortenMessage(whisper.message, 80),
+            duration: 5000,
+            action: reply,
+          },
+          { toast: shouldNotifyByTiming && !isDiabloFocused && isToastEnabled(settings, 'whispers'), groupKey },
+        );
       }),
       'whisper-received',
     );
@@ -296,22 +292,24 @@ export const useSocketNotifications = ({
       }
 
       // Muted: the conversation, or (a conversation started after muting them) the sender's website user
-      if (!isToastEnabled(settings, 'whispers') || isThreadMuted([msg.conversation_id, `user:${msg.sender_id}`])) {
-        return;
-      }
+      if (isThreadMuted([msg.conversation_id, `user:${msg.sender_id}`])) return;
 
       const messagePreview = msg.content && shortenMessage(msg.content, 80);
 
       // Toasts can't take typing: Reply opens the conversation with the composer focused
-      showToast({
-        title: t('system:notifications.newChatMessage'),
-        description: messagePreview,
-        action: {
-          label: t('system:notifications.reply'),
-          type: ToastActionType.OPEN_CHAT_CONVERSATION,
-          data: { conversationId: msg.conversation_id },
+      notify(
+        'chat',
+        {
+          title: t('system:notifications.newChatMessage'),
+          description: messagePreview,
+          action: {
+            label: t('system:notifications.reply'),
+            type: ToastActionType.OPEN_CHAT_CONVERSATION,
+            data: { conversationId: msg.conversation_id },
+          },
         },
-      });
+        { toast: isToastEnabled(settings, 'whispers'), groupKey: `chat:${msg.conversation_id}` },
+      );
     });
   }, [isConnected, subscribeSocket, settings?.toastPopupsEnabled, settings?.toastPopupTypes]);
 };
