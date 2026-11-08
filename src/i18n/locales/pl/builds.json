@@ -5,6 +5,7 @@
     "lookupPlaceholder": "Nazwa postaci…",
     "lookupLabel": "Wyszukaj postać",
     "mode": "Tryb",
+    "followingShortcut": "Obserwowane ({{n}})",
     "tabs": {
       "meta": "Meta",
       "characters": "Postacie"
@@ -118,6 +119,8 @@
     "updated": "Zaktualizowano {{time}}",
     "firstSeen": "Pierwszy raz widziana {{time}}",
     "follow": "Obserwuj",
+    "followedToast": "Obserwujesz {{name}}",
+    "followedToastDescription": "Zapisano w {{characters}} → {{following}}",
     "openSite": "Otwórz na pd2trader.com",
     "viewingSnapshot": "Podgląd <date>{{date}}</date><muted> · ceny ukryte</muted>",
     "backToNow": "Wróć do teraz",

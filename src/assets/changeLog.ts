@@ -18,6 +18,7 @@ export const changeLog = {
     '🆕 Try-on hotkey (Horadric Sim): sends the hovered item to the planner, tried on your default character. Off by default; bind it under Settings → Hotkeys → Try item on character. The price check Sim button shows the binding.',
     '✨ Chat: market listings linked in a message get a Try on button that opens the listing on your default character in the Horadric Sim planner.',
     '✨ Command palette: a Horadric Sim group with the Horadric Sim panel, Open planner on your default character, your last report (24 hours) and Send stash to Simulator.',
+    '✨ Builds: characters you follow are easier to find. The Characters tab opens on Following when you follow anyone, a ★ count next to the Meta / Characters tabs jumps straight there, and following a character tells you where it went',
   ],
   '0.10.16': [
     "✨ Horadric Sim (beta): the Sim buttons in the price check, market and Net Worth now say when you're not in the closed beta yet, with a link to join the waitlist (or your place on it)",
