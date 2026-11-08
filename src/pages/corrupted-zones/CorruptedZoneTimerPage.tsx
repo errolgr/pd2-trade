@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, Lock, LockOpen } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronDown, Lock, LockOpen } from 'lucide-react';
 import { useOptions } from '@/hooks/useOptions';
 import { usePanel, useOverlay } from '@/overlay';
 import { overlayViewport, useDragToMove } from '@/overlay/useDragToMove';
@@ -17,6 +17,10 @@ import { currentLocale, useTranslation } from '@/i18n';
 
 /** Upcoming slots listed next to the pill when it is expanded. */
 const UPCOMING_SLOTS = 6;
+
+/** The list's footer buttons (lock, direction). */
+const footerButton =
+  'flex cursor-pointer items-center gap-1.5 text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-surface-foreground focus-visible:text-surface-foreground';
 
 const clockTime = (ts: number) =>
   new Date(ts).toLocaleTimeString(currentLocale(), { hour: 'numeric', minute: '2-digit' });
@@ -36,12 +40,14 @@ interface BoxSize {
 
 /**
  * Corrupted zone timer panel: a pill with the zone(s) corrupted in Hell games made now and the time left until
- * the next rotation; click lists the upcoming zones, below or above the pill. With "Only zones I follow" (and at
- * least one zone followed) both show followed zones only: the pill shows the next one and the time until it starts
- * while it is not corrupted yet. Sized to its content and placed like the net worth ticker: at its anchor on the
- * game (following it), or for `custom` where the user dragged it (the panel layout keeps it). Locked, a drag does
- * not move it. The vertical layout is a narrow column (pill and list share one width, names wrap; no rotated text,
- * which reads poorly at overlay sizes) for the side of the screen, its list still opening up or down.
+ * the next rotation; click lists the upcoming zones, below or above the pill: up in the lower half of the screen,
+ * down in the upper half, or the way the list's arrow fixed it (until a drag carries the pill into the other half).
+ * With "Only zones I follow" (and at least one zone followed) both show followed zones only: the pill shows the next
+ * one and the time until it starts while it is not corrupted yet. Sized to its content and placed like the net
+ * worth ticker: at its anchor on the game (following it), or for `custom` where the user dragged it (the panel
+ * layout keeps it). Locked, a drag does not move it. The vertical layout is a narrow column (pill and list share
+ * one width, names wrap; no rotated text, which reads poorly at overlay sizes) for the side of the screen, its list
+ * still opening up or down.
  */
 const CorruptedZoneTimer: React.FC = () => {
   const { t } = useTranslation('app');
@@ -53,19 +59,41 @@ const CorruptedZoneTimer: React.FC = () => {
   const [boxSize, setBoxSize] = useState<BoxSize | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [expanded, setExpanded] = useState(false);
-  // The list opens upwards when the pill sits in the lower half of the overlay, else downwards: decided when it
-  // opens and kept until it opens again, so closing it (or dragging it meanwhile) lands the pill where it was
+  // The list opens upwards when the pill sits in the lower half of the overlay, else downwards, unless the user
+  // fixed a direction with the list's arrow: decided when it opens and kept until it opens again, so closing it (or
+  // dragging it meanwhile) lands the pill where it was
   const [listAbove, setListAbove] = useState(false);
+  const listDirection = settings.corruptedZoneTimerListDirection;
   const anchor = settings.corruptedZoneTimerAnchor ?? 'top-right';
   const locked = settings.corruptedZoneTimerLocked === true;
   const vertical = settings.corruptedZoneTimerLayout === 'vertical';
   // 'above-chat' follows the chat dock as it is dragged along the edge or grows/shrinks with its favorites
   const dockOffset = useChatDockOffset();
   const dockButtons = chatDockLayout(settings).favorites.length;
-  // A finished drag switches the timer to Custom; the panel layout keeps the dragged position
+  // Whether the pill (not the list) sits in the lower half of the overlay
+  const pillHeight = boxSize?.pill ?? rect.height;
+  const pillTop = listAbove ? rect.y + rect.height - pillHeight : rect.y;
+  const lowOnScreen = pillTop + pillHeight / 2 > overlayViewport().height / 2;
+  // The half the pill was pressed in, to tell when a drag crosses the middle
+  const [pressLow, setPressLow] = useState(lowOnScreen);
+  // A finished drag switches the timer to Custom (the panel layout keeps the dragged position) and, across the
+  // middle of the screen, drops the fixed list direction so the list follows the side it is on again
   const drag = useDragToMove(rect, setRect, () => {
-    if (anchor !== 'custom') updateSettings({ corruptedZoneTimerAnchor: 'custom' });
+    const crossed = listDirection !== undefined && lowOnScreen !== pressLow;
+    if (anchor !== 'custom' || crossed) {
+      updateSettings({
+        ...(anchor !== 'custom' && { corruptedZoneTimerAnchor: 'custom' as const }),
+        ...(crossed && { corruptedZoneTimerListDirection: undefined }),
+      });
+    }
   });
+  const dragHandlers = {
+    ...drag.handlers,
+    onPointerDown: (event: React.PointerEvent<HTMLElement>) => {
+      setPressLow(lowOnScreen);
+      drag.handlers.onPointerDown(event);
+    },
+  };
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000);
@@ -101,9 +129,18 @@ const CorruptedZoneTimer: React.FC = () => {
     rectRef.current = rect;
   });
 
-  const lowOnScreen = rect.y + rect.height / 2 > overlayViewport().height / 2;
+  const restingUp = listDirection ? listDirection === 'up' : lowOnScreen;
   // Where a click opens it (the chevron points there)
-  const opensUp = expanded ? listAbove : lowOnScreen;
+  const opensUp = expanded ? listAbove : restingUp;
+  // The list's arrow: shows where it opens and flips it, keeping the pill in place
+  const flipDirection = () => {
+    const up = !listAbove;
+    if (anchor === 'custom') {
+      setRect({ y: up ? rect.y + pillHeight - rect.height : rect.y + rect.height - pillHeight });
+    }
+    setListAbove(up);
+    updateSettings({ corruptedZoneTimerListDirection: up ? 'up' : 'down' });
+  };
 
   // Keep the panel exactly the content's size, in the overlay, with the pill at its anchor on the game or (custom)
   // where it is: the box grows away from the pill, so the edge on the pill's side stays put
@@ -216,10 +253,10 @@ const CorruptedZoneTimer: React.FC = () => {
         data-interactive="true"
         onClick={() => {
           if (drag.consumeDragClick()) return;
-          if (!expanded) setListAbove(lowOnScreen);
+          if (!expanded) setListAbove(restingUp);
           setExpanded((open) => !open);
         }}
-        {...(locked ? {} : drag.handlers)}
+        {...(locked ? {} : dragHandlers)}
         aria-expanded={expanded}
         className={cn(
           'pointer-events-auto flex cursor-pointer select-none border border-q-corrupted-zone/45 bg-surface text-xs font-medium text-surface-foreground shadow-[inset_0_0_12px_-4px_var(--q-corrupted-zone)] outline-none backdrop-blur-md transition-[background-color,border-color] duration-(--dur-fast) ease-out hover:border-q-corrupted-zone/80 hover:bg-surface-elevated focus-visible:border-q-corrupted-zone active:bg-muted',
@@ -276,21 +313,31 @@ const CorruptedZoneTimer: React.FC = () => {
               </li>
             ))}
           </ol>
-          <button
-            type="button"
-            aria-pressed={locked}
-            onClick={() => updateSettings({ corruptedZoneTimerLocked: !locked })}
-            title={t(locked ? 'corruptedZones.lock.lockedTitle' : 'corruptedZones.lock.unlockedTitle')}
-            className={cn(
-              'flex cursor-pointer items-center gap-1.5 self-start border-t border-border/60 pt-1.5 text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-surface-foreground focus-visible:text-surface-foreground',
-              locked && 'text-q-corrupted-zone',
-            )}
-          >
-            {locked ? <Lock aria-hidden
-              className="size-3" /> : <LockOpen aria-hidden
-                className="size-3" />}
-            {t('corruptedZones.lock.label')}
-          </button>
+          <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-1.5">
+            <button
+              type="button"
+              aria-pressed={locked}
+              onClick={() => updateSettings({ corruptedZoneTimerLocked: !locked })}
+              title={t(locked ? 'corruptedZones.lock.lockedTitle' : 'corruptedZones.lock.unlockedTitle')}
+              className={cn(footerButton, locked && 'text-q-corrupted-zone')}
+            >
+              {locked ? <Lock aria-hidden
+                className="size-3" /> : <LockOpen aria-hidden
+                  className="size-3" />}
+              {t('corruptedZones.lock.label')}
+            </button>
+            <button
+              type="button"
+              onClick={flipDirection}
+              aria-label={t(listAbove ? 'corruptedZones.direction.up' : 'corruptedZones.direction.down')}
+              title={t(listAbove ? 'corruptedZones.direction.upTitle' : 'corruptedZones.direction.downTitle')}
+              className={cn(footerButton, listDirection && 'text-q-corrupted-zone')}
+            >
+              {listAbove ? <ArrowUp aria-hidden
+                className="size-3" /> : <ArrowDown aria-hidden
+                  className="size-3" />}
+            </button>
+          </div>
         </div>
       )}
     </div>

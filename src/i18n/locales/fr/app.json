@@ -108,6 +108,12 @@
       "lockedTitle": "Verrouillé : le glisser ne déplace pas le minuteur. Cliquez pour déverrouiller.",
       "unlockedTitle": "Empêche le minuteur de bouger quand on le glisse."
     },
+    "direction": {
+      "up": "La liste s’ouvre vers le haut",
+      "down": "La liste s’ouvre vers le bas",
+      "upTitle": "S’ouvre vers le haut. Cliquez pour l’ouvrir vers le bas désormais.",
+      "downTitle": "S’ouvre vers le bas. Cliquez pour l’ouvrir vers le haut désormais."
+    },
     "toastTitle": "Zone corrompue",
     "toastDescription": "{{zone}} : créez une nouvelle partie Hell (jusqu'à {{until}})",
     "toastSoonDescription": "{{zone}} dans {{minutes}} min : créez une nouvelle partie Hell à partir de {{from}} (jusqu'à {{until}})"

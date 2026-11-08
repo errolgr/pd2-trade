@@ -105,6 +105,12 @@
       "lockedTitle": "Locked: dragging does not move the timer. Click to unlock.",
       "unlockedTitle": "Stop the timer from moving when dragged."
     },
+    "direction": {
+      "up": "List opens up",
+      "down": "List opens down",
+      "upTitle": "Opens upwards. Click to open it downwards from now on.",
+      "downTitle": "Opens downwards. Click to open it upwards from now on."
+    },
     "toastTitle": "Corrupted zone",
     "toastDescription": "{{zone}}: make a new Hell game (until {{until}})",
     "toastSoonDescription": "{{zone}} in {{minutes}} min: make a new Hell game from {{from}} (until {{until}})"

@@ -105,6 +105,12 @@
       "lockedTitle": "Gesperrt: Ziehen verschiebt den Timer nicht. Klicken zum Entsperren.",
       "unlockedTitle": "Verhindert, dass sich der Timer beim Ziehen bewegt."
     },
+    "direction": {
+      "up": "Liste öffnet nach oben",
+      "down": "Liste öffnet nach unten",
+      "upTitle": "Öffnet nach oben. Klicken, um sie ab jetzt nach unten zu öffnen.",
+      "downTitle": "Öffnet nach unten. Klicken, um sie ab jetzt nach oben zu öffnen."
+    },
     "toastTitle": "Corrupted Zone",
     "toastDescription": "{{zone}}: neues Hell-Spiel erstellen (bis {{until}})",
     "toastSoonDescription": "{{zone}} in {{minutes}} Min.: ab {{from}} ein neues Hell-Spiel erstellen (bis {{until}})"

@@ -111,6 +111,9 @@ export interface ISettings {
   corruptedZoneTimerAnchor?: NetWorthTickerAnchor;
   corruptedZoneTimerOpacity?: number; // 30-100
   corruptedZoneTimerLocked?: boolean; // true: dragging the timer does not move it (clicks still open the schedule)
+  // Where the timer's schedule list opens, set from its arrow; unset: up in the lower half of the screen, else down.
+  // Cleared when a drag carries the timer into the other half.
+  corruptedZoneTimerListDirection?: 'up' | 'down';
   corruptedZoneTimerLayout?: 'horizontal' | 'vertical'; // vertical: a narrow column for the side of the screen
   corruptedZoneTimerZones?: 'all' | 'followed'; // timer: every zone, or only followed ones (all while none followed)
   corruptedZoneAlerts?: 'off' | 'all' | 'followed'; // toast when the corrupted zone rotates (any, or a followed one)
