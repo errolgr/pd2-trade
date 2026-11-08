@@ -193,6 +193,9 @@ function Section({ label, accent, children }: { label?: string; accent?: boolean
   );
 }
 
+const ROW_ACTION =
+  'text-xs font-medium text-primary outline-none underline-offset-2 hover:underline focus-visible:underline';
+
 function Row({
   entry,
   now,
@@ -207,48 +210,46 @@ function Row({
   const { t } = useTranslation('app');
   const { icon: Icon, className } = KIND_ICONS[entry.kind];
   const { listing, action } = entry;
+  // One grid for every row: icon | text (title, description, actions) | time, so times line up on the right edge
+  // whether or not a row has buttons
   return (
-    <li className="group/row flex items-start gap-2.5 rounded-md px-2 py-1.5 hover:bg-accent/50">
-      <Icon className={cn('mt-0.5 size-4 shrink-0', entry.tone ? TONE_CLASS[entry.tone] : className)} />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-baseline gap-2">
-          <span className="min-w-0 flex-1 truncate text-sm font-medium">
-            {entry.title}
-            {entry.count > 1 && (
-              <span className="ml-1.5 text-xs font-normal tabular-nums text-muted-foreground">×{entry.count}</span>
-            )}
-          </span>
-          <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">{timeAgo(entry.at, now)}</span>
-        </div>
+    <li className="grid grid-cols-[1rem_minmax(0,1fr)_auto] items-start gap-x-2.5 rounded-md px-2 py-1.5 hover:bg-accent/50">
+      <Icon className={cn('mt-0.5 size-4', entry.tone ? TONE_CLASS[entry.tone] : className)} />
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium">
+          {entry.title}
+          {entry.count > 1 && (
+            <span className="ml-1.5 text-xs font-normal tabular-nums text-muted-foreground">×{entry.count}</span>
+          )}
+        </p>
         {entry.description && (
           <p className="line-clamp-2 whitespace-pre-line text-xs text-muted-foreground">{entry.description}</p>
         )}
+        {(action || listing) && (
+          <div className="mt-1 flex gap-3">
+            {action && (
+              <button type="button"
+                onClick={() => onRun(entry)}
+                className={ROW_ACTION}>
+                {action.label}
+              </button>
+            )}
+            {listing && (
+              <button
+                type="button"
+                onClick={() => {
+                  onDetails();
+                  openLoggedListing(listing);
+                }}
+                className={cn(ROW_ACTION, 'text-muted-foreground')}
+              >
+                {t('toast.details')}
+              </button>
+            )}
+          </div>
+        )}
       </div>
-      {(action || listing) && (
-        <div className="flex shrink-0 gap-1 self-center">
-          {listing && (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-6 px-2 text-xs"
-              onClick={() => {
-                onDetails();
-                openLoggedListing(listing);
-              }}
-            >
-              {t('toast.details')}
-            </Button>
-          )}
-          {action && (
-            <Button size="sm"
-              variant="outline"
-              className="h-6 px-2 text-xs"
-              onClick={() => onRun(entry)}>
-              {action.label}
-            </Button>
-          )}
-        </div>
-      )}
+      <span className="pt-0.5 text-[11px] tabular-nums text-muted-foreground">{timeAgo(entry.at, now)}</span>
     </li>
   );
 }
