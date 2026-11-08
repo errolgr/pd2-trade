@@ -8,8 +8,9 @@ import { NET_WORTH_CATEGORIES, type Valuation } from '@/lib/networth-api';
 import { CATEGORY_COLORS, categoryLabel, formatUnitPrice } from '../lib/networth-format';
 import { currentLocale, useTranslation } from '@/i18n';
 import { ConfidenceBadge, HoldingName, PriceChange } from './HoldingCells';
+import { ListAtNetWorthButton } from './ListAtNetWorth';
 
-const TOP_GRID = 'grid grid-cols-[1fr_3rem_4rem_5rem_3.5rem_5.5rem] items-center gap-2 px-3';
+const TOP_GRID = 'grid grid-cols-[1fr_3rem_4rem_5rem_3.5rem_5.5rem_1.75rem] items-center gap-2 px-3';
 
 function SectionTitle({ children, aside }: { children: React.ReactNode; aside?: React.ReactNode }) {
   return (
@@ -85,6 +86,7 @@ export function OverviewTab({ valuation }: { valuation: Valuation }) {
             <span className="text-right">{t('columns.value')}</span>
             <span className="text-right">{t('columns.change7d')}</span>
             <span className="text-right">{t('columns.price')}</span>
+            <span className="sr-only">{t('columns.actions')}</span>
           </div>
           {top.length > 0 ? (
             <motion.div variants={listStagger}
@@ -109,6 +111,9 @@ export function OverviewTab({ valuation }: { valuation: Valuation }) {
                   </span>
                   <span className="flex justify-end">
                     <ConfidenceBadge line={line} />
+                  </span>
+                  <span className="flex justify-end">
+                    <ListAtNetWorthButton line={line} />
                   </span>
                 </motion.div>
               ))}

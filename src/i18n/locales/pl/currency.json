@@ -58,7 +58,8 @@
     "value": "Wartość",
     "share": "%",
     "change7d": "7 dni",
-    "price": "Cena"
+    "price": "Cena",
+    "actions": "Akcje"
   },
   "table": {
     "noResults": "Brak wyników.",
@@ -233,5 +234,21 @@
       "lowTitle": "{{n}} prawdop. niskiej wartości · {{tab}}",
       "lowNote": "Sprawdź przedmioty bez kluczowej statystyki"
     }
+  },
+  "listAtNetWorth": {
+    "button": "Wystaw na rynku po cenie z Majątku",
+    "listedTooltip": "Wystawiony na rynku",
+    "title": "Wystaw po cenie z Majątku",
+    "loading": "Szukam przedmiotu w skrzyni…",
+    "gone": "Przedmiot przeniesiony lub zniknął — odśwież Majątek",
+    "loadFailed": "Nie udało się wczytać przedmiotu ze skrzyni.",
+    "pickItem": "Przedmiot do wystawienia",
+    "listed": "Wystawiony",
+    "allListed": "Już wystawiony na rynku.",
+    "manageListings": "Zarządzaj ofertami",
+    "price": "Cena (HR)",
+    "note": "Notatka (opcjonalnie)",
+    "list": "Wystaw",
+    "listFailed": "Nie udało się wystawić przedmiotu."
   }
 }

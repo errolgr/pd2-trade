@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import type { ValuationLine } from '@/lib/networth-api';
 import { HoldingsTable } from './HoldingsTable';
+import { Pd2WebsiteContext } from '@/hooks/pd2website/usePD2Website';
 
 afterEach(cleanup);
 
@@ -219,5 +220,31 @@ describe('HoldingsTable', () => {
   it('renders the toolbar slot next to the filters', () => {
     renderTable({ toolbar: <button type="button">Rune exchange</button> });
     expect(screen.getByRole('button', { name: 'Rune exchange' })).not.toBeNull();
+  });
+
+  it('offers to list only the rows backed by stash items, when signed in to PD2', () => {
+    const lines = [
+      line({ key: 'shako', name: 'Harlequin Crest', category: 'uniques', unitPrice: 2, value: 2, itemHashes: ['h1'] }),
+      line({ key: 'ber', name: 'Ber Rune', unitPrice: 6, value: 6 }),
+    ];
+    const signedIn = { authData: { user: { _id: 'u' } } } as never;
+    render(
+      <Pd2WebsiteContext.Provider value={signedIn}>
+        <TooltipProvider>
+          <HoldingsTable lines={lines}
+            totalHr={8} />
+        </TooltipProvider>
+      </Pd2WebsiteContext.Provider>,
+    );
+    const listButtons = (name: string) =>
+      [...document.querySelectorAll('tbody tr')]
+        .find((tr) => tr.querySelector('td p')?.textContent === name)!
+        .querySelectorAll('button[aria-label="List on market at Net Worth price"]').length;
+    expect(listButtons('Harlequin Crest')).toBe(1);
+    expect(listButtons('Ber Rune')).toBe(0);
+
+    cleanup();
+    renderTable({ lines });
+    expect(screen.queryByRole('button', { name: 'List on market at Net Worth price' })).toBeNull();
   });
 });

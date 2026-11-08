@@ -58,7 +58,8 @@
     "value": "Valeur",
     "share": "%",
     "change7d": "7 j",
-    "price": "Prix"
+    "price": "Prix",
+    "actions": "Actions"
   },
   "table": {
     "noResults": "Aucun résultat.",
@@ -221,5 +222,21 @@
       "lowTitle": "{{n}} probablement de faible valeur · {{tab}}",
       "lowNote": "Vérifiez les objets sans stat clé"
     }
+  },
+  "listAtNetWorth": {
+    "button": "Mettre en vente au prix de la Valeur nette",
+    "listedTooltip": "En vente sur le marché",
+    "title": "Mettre en vente au prix de la Valeur nette",
+    "loading": "Recherche de l'objet dans votre coffre…",
+    "gone": "Objet déplacé ou disparu — actualisez la Valeur nette",
+    "loadFailed": "Impossible de charger l'objet depuis votre coffre.",
+    "pickItem": "Objet à mettre en vente",
+    "listed": "En vente",
+    "allListed": "Déjà en vente sur le marché.",
+    "manageListings": "Gérer les annonces",
+    "price": "Prix (HR)",
+    "note": "Note (facultatif)",
+    "list": "Mettre en vente",
+    "listFailed": "Impossible de mettre l'objet en vente."
   }
 }

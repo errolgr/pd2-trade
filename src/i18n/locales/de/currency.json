@@ -58,7 +58,8 @@
     "value": "Wert",
     "share": "%",
     "change7d": "7 T.",
-    "price": "Preis"
+    "price": "Preis",
+    "actions": "Aktionen"
   },
   "table": {
     "noResults": "Keine Ergebnisse.",
@@ -209,5 +210,21 @@
       "lowTitle": "{{n}} wohl geringer Wert · {{tab}}",
       "lowNote": "Prüfen-Items ohne Schlüsselwert"
     }
+  },
+  "listAtNetWorth": {
+    "button": "Zum Vermögenspreis auf dem Markt anbieten",
+    "listedTooltip": "Auf dem Markt angeboten",
+    "title": "Zum Vermögenspreis anbieten",
+    "loading": "Item wird in deiner Truhe gesucht…",
+    "gone": "Item verschoben oder weg — Vermögen aktualisieren",
+    "loadFailed": "Das Item konnte nicht aus deiner Truhe geladen werden.",
+    "pickItem": "Anzubietendes Item",
+    "listed": "Angeboten",
+    "allListed": "Bereits auf dem Markt angeboten.",
+    "manageListings": "Angebote verwalten",
+    "price": "Preis (HR)",
+    "note": "Notiz (optional)",
+    "list": "Anbieten",
+    "listFailed": "Das Item konnte nicht angeboten werden."
   }
 }

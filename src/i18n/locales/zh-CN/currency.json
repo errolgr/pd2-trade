@@ -58,7 +58,8 @@
     "value": "价值",
     "share": "%",
     "change7d": "7 天",
-    "price": "价格"
+    "price": "价格",
+    "actions": "操作"
   },
   "table": {
     "noResults": "无结果。",
@@ -197,5 +198,21 @@
       "lowTitle": "{{n}} 个可能低价值 · {{tab}}",
       "lowNote": "查看没有关键属性的物品"
     }
+  },
+  "listAtNetWorth": {
+    "button": "按净资产价格上架到市场",
+    "listedTooltip": "已在市场上架",
+    "title": "按净资产价格上架",
+    "loading": "正在储物箱中查找物品…",
+    "gone": "物品已移动或不存在 — 请刷新净资产",
+    "loadFailed": "无法从储物箱加载该物品。",
+    "pickItem": "要上架的物品",
+    "listed": "已上架",
+    "allListed": "已在市场上架。",
+    "manageListings": "管理上架",
+    "price": "价格 (HR)",
+    "note": "备注（可选）",
+    "list": "上架",
+    "listFailed": "无法上架该物品。"
   }
 }

@@ -58,7 +58,8 @@
     "value": "Valor",
     "share": "%",
     "change7d": "7d",
-    "price": "Preço"
+    "price": "Preço",
+    "actions": "Ações"
   },
   "table": {
     "noResults": "Nenhum resultado.",
@@ -221,5 +222,21 @@
       "lowTitle": "{{n}} provável baixo valor · {{tab}}",
       "lowNote": "Confira itens sem um atributo-chave"
     }
+  },
+  "listAtNetWorth": {
+    "button": "Anunciar no mercado pelo preço do Patrimônio",
+    "listedTooltip": "Anunciado no mercado",
+    "title": "Anunciar pelo preço do Patrimônio",
+    "loading": "Procurando o item no seu baú…",
+    "gone": "Item movido ou sumiu — atualize o Patrimônio",
+    "loadFailed": "Não foi possível carregar o item do seu baú.",
+    "pickItem": "Item a anunciar",
+    "listed": "Anunciado",
+    "allListed": "Já anunciado no mercado.",
+    "manageListings": "Gerenciar anúncios",
+    "price": "Preço (HR)",
+    "note": "Nota (opcional)",
+    "list": "Anunciar",
+    "listFailed": "Não foi possível anunciar o item."
   }
 }

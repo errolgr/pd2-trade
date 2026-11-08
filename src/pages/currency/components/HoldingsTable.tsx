@@ -9,6 +9,7 @@ import type { ValuationLine } from '@/lib/networth-api';
 import { DataTable } from './DataTable';
 import { DataTableColumnHeader } from './DataTableColumnHeader';
 import { ConfidenceBadge, HoldingName, PriceChange } from './HoldingCells';
+import { ListAtNetWorthButton } from './ListAtNetWorth';
 import { formatUnitPrice } from '../lib/networth-format';
 import type { TFunction } from 'i18next';
 import { useTranslation } from '@/i18n';
@@ -76,6 +77,13 @@ function createColumns(totalHr: number, showTab: boolean, t: TFunction): ColumnD
       header: t('columns.price'),
       enableSorting: false,
       cell: ({ row }) => <ConfidenceBadge line={row.original} />,
+    },
+    {
+      id: 'actions',
+      header: () => <span className="sr-only">{t('columns.actions')}</span>,
+      enableSorting: false,
+      meta: { align: 'right' },
+      cell: ({ row }) => <ListAtNetWorthButton line={row.original} />,
     },
   ];
 }

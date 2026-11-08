@@ -34,6 +34,11 @@ export interface ValuationLine {
   tab: string | null;
   /** `/assets/…` is served by BACKEND_URL; `/runes|/currency|/ubers/…` are bundled public assets. */
   iconPath: string | null;
+  /**
+   * PD2 stash item hashes of the items aggregated into this line, in stash order: the item(s) to list at this price.
+   * Live sync responses only; absent for currency-object lines and from older servers (not listable).
+   */
+  itemHashes?: string[];
 }
 
 export interface Valuation {
