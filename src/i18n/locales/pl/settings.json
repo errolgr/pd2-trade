@@ -10,6 +10,10 @@
       "label": "Nakładka przycisku czatu",
       "description": "Pokazuj pływający przycisk czatu w prawym dolnym rogu ekranu."
     },
+    "uiScale": {
+      "label": "Skala interfejsu",
+      "description": "Rozmiar wszystkich tekstów i paneli nakładki. Zwiększ na monitorach o wysokiej rozdzielczości."
+    },
     "windowTransparency": {
       "label": "Przezroczystość okien: <num>{{value}}%</num>",
       "description": "Widok gry przez tła okien. 0% to pełne krycie."

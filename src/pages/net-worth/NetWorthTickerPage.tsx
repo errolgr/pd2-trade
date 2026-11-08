@@ -6,7 +6,7 @@ import { useOptions } from '@/hooks/useOptions';
 import { useNetWorth } from '@/hooks/useNetWorth';
 import { useWealthRank } from '@/hooks/useWealthRank';
 import { usePanel, useOverlay } from '@/overlay';
-import { screenToOverlayRect } from '@/overlay/game';
+import { overlayPixelRatio, screenToOverlayRect } from '@/overlay/game';
 import { loadPanelRect } from '@/overlay/layout-storage';
 import { cn } from '@/lib/utils';
 import { AnimatedNumber, useChangeFlash } from '@/pages/currency/components/AnimatedNumber';
@@ -33,8 +33,8 @@ async function legacyTickerOrigin(position: { x: number; y: number }): Promise<{
   if (!isTauri()) return position;
   try {
     const win = getCurrentWindow();
-    const [outer, scaleFactor] = await Promise.all([win.outerPosition(), win.scaleFactor()]);
-    const { x, y } = screenToOverlayRect({ ...position, width: 0, height: 0 }, outer, scaleFactor);
+    const [outer, ratio] = await Promise.all([win.outerPosition(), overlayPixelRatio(win)]);
+    const { x, y } = screenToOverlayRect({ ...position, width: 0, height: 0 }, outer, ratio);
     return { x, y };
   } catch (error) {
     console.warn('[NetWorthTicker] Could not convert the saved ticker position:', error);

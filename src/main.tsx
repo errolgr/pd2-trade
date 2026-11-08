@@ -7,6 +7,7 @@ import './globals.css';
 import '@/i18n';
 import { initDebugLoggingFromSettings } from '@/lib/debug-logger';
 import { initTheme } from '@/lib/themes';
+import { initUiScale } from '@/lib/ui-scale';
 import { initTelemetryFromSettings } from '@/lib/telemetry-opt-out';
 import { Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
 import { OptionsProvider } from './hooks/useOptions';
@@ -27,8 +28,9 @@ import PrimitivesGallery from './pages/dev/PrimitivesGallery';
 import { SignInWindowPage } from './pages/sign-in/SignInPage';
 import { SignInProvider } from './hooks/useSignIn';
 
-// Apply the cached theme before the first render (no flash of the default theme)
+// Apply the cached theme and UI scale before the first render (no flash of the defaults)
 initTheme();
+initUiScale();
 
 // Initialize debug logging if enabled in settings
 initDebugLoggingFromSettings();

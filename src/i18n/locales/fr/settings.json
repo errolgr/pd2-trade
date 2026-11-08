@@ -10,6 +10,10 @@
       "label": "Bouton de chat",
       "description": "Afficher le bouton de chat flottant dans le coin inférieur droit de l'écran."
     },
+    "uiScale": {
+      "label": "Échelle de l'interface",
+      "description": "Taille de tous les textes et panneaux de l'overlay. Augmentez-la sur les écrans haute résolution."
+    },
     "windowTransparency": {
       "label": "Transparence des fenêtres : <num>{{value}} %</num>",
       "description": "Voir le jeu à travers l'arrière-plan des fenêtres. 0 % = totalement opaque."

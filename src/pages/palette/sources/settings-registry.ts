@@ -24,6 +24,7 @@ import {
   TICKER_ANCHOR_OPTIONS,
   TIMER_LAYOUT_OPTIONS,
   TIMER_ZONES_OPTIONS,
+  uiScaleOptions,
   ZONE_ALERT_OPTIONS,
 } from '@/components/dialogs/optionsv2/setting-options';
 import { HOTKEY_ROWS } from '@/components/dialogs/optionsv2/hotkeys/hotkey-form';
@@ -31,6 +32,7 @@ import { formatHotkey } from '../lib/hotkey';
 import { getSeasonSettingOptions } from '@/lib/seasons';
 import { clampWindowTransparency, getTheme, THEMES } from '@/lib/themes';
 import { DEFAULT_PRICE_WINDOW_HOURS } from '@/lib/price-window';
+import { clampUiScale } from '@/lib/ui-scale';
 
 /**
  * Every user-facing setting of the Settings window, for the command palette's settings source: where it lives, the
@@ -295,6 +297,17 @@ export const SETTINGS_REGISTRY: readonly SettingEntry[] = [
     groupKeys: ['settings:interface.overlays'],
     keywords: ['chat button', 'overlay', 'floating'],
     value: (s) => s.chatButtonOverlayEnabled ?? true,
+  },
+  {
+    kind: 'select',
+    key: 'uiScale',
+    section: 'Interface',
+    labelKey: 'settings:interface.uiScale.label',
+    groupKeys: ['settings:interface.overlays'],
+    keywords: ['scale', 'zoom', 'size', 'font', 'text', 'bigger', 'larger', 'smaller', 'dpi', 'resolution'],
+    value: (s) => String(clampUiScale(s.uiScale)),
+    options: (s) => uiScaleOptions(s.uiScale),
+    numeric: true,
   },
   {
     kind: 'open',
