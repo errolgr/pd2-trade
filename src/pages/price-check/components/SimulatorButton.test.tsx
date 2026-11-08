@@ -45,7 +45,8 @@ const access = (over: Partial<SimAccess> = {}): SimAccess => ({
 });
 const openPanel = vi.fn();
 const fetchAndCacheStash = vi.fn<() => Promise<GameData>>();
-let settings: { pd2Token?: string; account?: string };
+let settings: { pd2Token?: string; account?: string; simCharacter?: string; simGoal?: 'quick_sim' | 'top_gear' };
+const updateSettings = vi.fn();
 
 const SHAKO = {
   hash: 'h-shako',
@@ -90,6 +91,7 @@ beforeEach(() => {
   localStorage.clear();
   clearSimLadderCharactersCache();
   clearCharacterItemsCache();
+  updateSettings.mockReset();
   settings = { pd2Token: 'tok', account: 'Hammerdin' };
   openPanel.mockReset();
   fetchAndCacheStash.mockReset();
@@ -100,7 +102,7 @@ beforeEach(() => {
   vi.mocked(openUrl).mockReset();
   vi.mocked(openUrl).mockResolvedValue();
   vi.mocked(useSimAccess).mockReturnValue(access());
-  vi.mocked(useOptions).mockImplementation(() => ({ settings }) as never);
+  vi.mocked(useOptions).mockImplementation(() => ({ settings, updateSettings }) as never);
   vi.mocked(usePd2Website).mockReturnValue({ fetchAndCacheStash } as unknown as ReturnType<typeof usePd2Website>);
   vi.mocked(useOverlay).mockReturnValue({ openPanel } as unknown as OverlayApi);
   vi.mocked(getMyCharacters).mockResolvedValue({
@@ -192,7 +194,12 @@ describe('SimulatorButton', () => {
 
     fireEvent.click(planner());
     await waitFor(() => expect(screen.queryByText('Send to Simulator')).toBeNull());
-    expect(createSimExport).toHaveBeenCalledWith('tok', 'HammerPal', { stashItems: [SHAKO], try: { stash: 0 } });
+    expect(createSimExport).toHaveBeenCalledWith(
+      'tok',
+      'HammerPal',
+      { stashItems: [SHAKO], try: { stash: 0 } },
+      'quick_sim',
+    );
     expect(openUrl).toHaveBeenCalledWith(URL_OUT);
     expect(trackMeasurement).toHaveBeenCalledWith('sim_export', expect.objectContaining({ stash_items: 1 }), {
       outcome: 'success',
@@ -207,7 +214,9 @@ describe('SimulatorButton', () => {
     await waitFor(() => expect(planner().disabled).toBe(false));
     fireEvent.click(screen.getByRole('radio', { name: /Add to Top Gear pool/ }));
     fireEvent.click(planner());
-    await waitFor(() => expect(createSimExport).toHaveBeenCalledWith('tok', 'HammerPal', { stashItems: [SHAKO] }));
+    await waitFor(() =>
+      expect(createSimExport).toHaveBeenCalledWith('tok', 'HammerPal', { stashItems: [SHAKO] }, 'top_gear'),
+    );
   });
 
   it('remembers the last chosen character', async () => {
@@ -217,7 +226,12 @@ describe('SimulatorButton', () => {
     expect(screen.getByRole('combobox', { name: 'Character' }).textContent).toContain('AltZon');
     fireEvent.click(planner());
     await waitFor(() =>
-      expect(createSimExport).toHaveBeenCalledWith('tok', 'AltZon', { stashItems: [SHAKO], try: { stash: 0 } }),
+      expect(createSimExport).toHaveBeenCalledWith(
+        'tok',
+        'AltZon',
+        { stashItems: [SHAKO], try: { stash: 0 } },
+        'quick_sim',
+      ),
     );
   });
 
@@ -240,7 +254,12 @@ describe('SimulatorButton', () => {
     expect(picker.textContent).toBe('AltZonAmazon · Lvl 85');
     fireEvent.click(planner());
     await waitFor(() =>
-      expect(createSimExport).toHaveBeenCalledWith('tok', 'AltZon', { stashItems: [SHAKO], try: { stash: 0 } }),
+      expect(createSimExport).toHaveBeenCalledWith(
+        'tok',
+        'AltZon',
+        { stashItems: [SHAKO], try: { stash: 0 } },
+        'quick_sim',
+      ),
     );
   });
 
@@ -256,7 +275,12 @@ describe('SimulatorButton', () => {
 
     fireEvent.click(planner());
     await waitFor(() =>
-      expect(createSimExport).toHaveBeenCalledWith('tok', 'HammerPal', { stashItems: [worn], try: { stash: 0 } }),
+      expect(createSimExport).toHaveBeenCalledWith(
+        'tok',
+        'HammerPal',
+        { stashItems: [worn], try: { stash: 0 } },
+        'quick_sim',
+      ),
     );
   });
 
@@ -269,10 +293,15 @@ describe('SimulatorButton', () => {
 
     fireEvent.click(planner());
     await waitFor(() =>
-      expect(createSimExport).toHaveBeenCalledWith('tok', 'HammerPal', {
-        clipboardItems: [copied],
-        try: { clipboard: 0 },
-      }),
+      expect(createSimExport).toHaveBeenCalledWith(
+        'tok',
+        'HammerPal',
+        {
+          clipboardItems: [copied],
+          try: { clipboard: 0 },
+        },
+        'quick_sim',
+      ),
     );
     expect(trackMeasurement).toHaveBeenCalledWith(
       'sim_export',

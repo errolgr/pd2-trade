@@ -1,4 +1,9 @@
 export const changeLog = {
+  '0.10.17': [
+    '✨ Horadric Sim now shares your default character and goal across price check, market and Net Worth. Configure both under Settings → Account.',
+    '✨ Market Sim opens the selected character with the listing even in a fresh browser tab; Net Worth can open Quick Sim, Top Gear, Upgrade Finder, Stat Weights or Skills & Charms.',
+    '🔧 Simulator browser-open failures stay visible and can be retried instead of silently closing the handoff.',
+  ],
   '0.10.16': [
     "✨ Horadric Sim (beta): the Sim buttons in the price check, market and Net Worth now say when you're not in the closed beta yet, with a link to join the waitlist (or your place on it)",
   ],
@@ -12,7 +17,6 @@ export const changeLog = {
     '🔧 Chat: a listing made from a personal stash shows "Personal" as its stash instead of "Shared 0"',
     '🔧 Price check: searching by Enhanced Damage finds listings again (it found none since 0.10.13)',
     '🔧 Price check: All Resistances and All Attributes find every item with that line again, not only items that roll each resistance or attribute separately',
-
   ],
   '0.10.14': [
     '🆕 Price check: click Price or Age to sort (again to flip the order)',

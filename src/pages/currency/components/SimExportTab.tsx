@@ -14,10 +14,12 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { SimCharacterPicker } from '@/components/custom/SimCharacterPicker';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useSimLadderCharacters } from '@/hooks/useSimLadderCharacters';
+import { useOptions } from '@/hooks/useOptions';
 import { openUrl } from '@/lib/browser-opener';
 import { preferredSimCharacter } from '@/lib/sim-characters';
 import {
@@ -28,6 +30,7 @@ import {
   MAX_SIM_EXPORT_ITEMS,
   SimExportApiError,
 } from '@/lib/sim-export-api';
+import { legacySimCharacter, rememberLegacySimCharacter, SIM_GOALS, type SimGoal } from '@/lib/sim-preferences';
 import { trackMeasurement } from '@/lib/telemetry';
 import { cn } from '@/lib/utils';
 import { useOverlay } from '@/overlay';
@@ -50,12 +53,14 @@ const sectionLabel = 'text-[11px] font-semibold uppercase tracking-wider text-mu
 export function SimExportTab({ token, account }: { token: string; account: string }) {
   const { fetchAndCacheStash } = usePd2Website();
   const { openPanel } = useOverlay();
+  const { settings, updateSettings } = useOptions();
   const [charactersVersion, setCharactersVersion] = useState(0);
   const characters = useSimLadderCharacters(token, account, charactersVersion);
   const [stash, setStash] = useState<Load<GameStashItem[]>>({ status: 'loading' });
   const [stashVersion, setStashVersion] = useState(0);
-  const [pickedCharacter, setPickedCharacter] = useState('');
-  // The selected account's highest level, unless the pick is listed
+  const [pickedCharacter, setPickedCharacter] = useState(settings.simCharacter || legacySimCharacter());
+  const [goal, setGoal] = useState<SimGoal>(settings.simGoal ?? 'top_gear');
+  // The selected account's highest level, unless the preference is listed
   const character = preferredSimCharacter(characters.status === 'ok' ? characters.data : [], pickedCharacter);
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
   const [query, setQuery] = useState('');
@@ -99,19 +104,24 @@ export function SimExportTab({ token, account }: { token: string; account: strin
     const started = performance.now();
     setSend({ status: 'sending' });
     try {
-      const { url } = await createSimExport(token, character, { stashItems: chosen });
+      const { url } = await createSimExport(token, character, { stashItems: chosen }, goal);
+      await openUrl(url);
       trackMeasurement(
         'sim_export',
         { duration_ms: performance.now() - started, stash_items: chosen.length },
-        { outcome: 'success' },
+        { outcome: 'success', source: 'net_worth', goal },
       );
       setSend({ status: 'sent', url });
-      await openUrl(url).catch((error) => console.warn('[SimExport] Could not open the browser:', error));
     } catch (error) {
       trackMeasurement(
         'sim_export',
         { duration_ms: performance.now() - started, stash_items: chosen.length },
-        { outcome: 'error', status: error instanceof SimExportApiError ? error.status : undefined },
+        {
+          outcome: 'error',
+          source: 'net_worth',
+          goal,
+          status: error instanceof SimExportApiError ? error.status : undefined,
+        },
       );
       setSend({ status: 'error', error });
     }
@@ -160,15 +170,46 @@ export function SimExportTab({ token, account }: { token: string; account: strin
         )}
         {characters.status === 'ok' &&
           (character ? (
-            <SimCharacterPicker characters={characters.data}
+            <SimCharacterPicker
+              characters={characters.data}
               value={character}
-              onChange={setPickedCharacter}
-              className="w-64" />
+              onChange={(name) => {
+                setPickedCharacter(name);
+                rememberLegacySimCharacter(name);
+                updateSettings({ simCharacter: name });
+              }}
+              className="w-64"
+            />
           ) : (
             <EmptyState compact
               icon={<UserRound />}
               title="No ladder characters found on your PD2 accounts." />
           ))}
+      </section>
+
+      <section className="space-y-2">
+        <span className={sectionLabel}>Goal</span>
+        <Select
+          value={goal}
+          onValueChange={(value) => {
+            const next = value as SimGoal;
+            setGoal(next);
+            updateSettings({ simGoal: next });
+          }}
+        >
+          <SelectTrigger className="w-64"
+            aria-label="Simulator goal">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SIM_GOALS.map((option) => (
+              <SelectItem key={option.value}
+                value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </section>
 
       <section className="space-y-2">
