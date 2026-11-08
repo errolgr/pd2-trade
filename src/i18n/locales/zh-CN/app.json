@@ -44,8 +44,10 @@
       "stashValue": "储物箱价值",
       "offers": "报价",
       "manageListings": "管理挂单",
-      "settings": "设置"
-    }
+      "settings": "设置",
+      "notifications": "通知"
+    },
+    "missedNotifications_other": "{{count}} 条错过的通知"
   },
   "chatTemplateForm": {
     "name": "名称",
@@ -111,5 +113,23 @@
     "toastTitle": "腐化区域",
     "toastDescription": "{{zone}}：请创建新的 Hell 游戏（{{until}} 前）",
     "toastSoonDescription": "{{zone}} 将在 {{minutes}} 分钟后开始：请从 {{from}} 起创建新的 Hell 游戏（{{until}} 前）"
+  },
+  "notificationLog": {
+    "title": "通知",
+    "close": "关闭",
+    "clear": "清除",
+    "filters": "筛选通知",
+    "filter": {
+      "all": "全部",
+      "trade": "交易",
+      "chat": "聊天",
+      "alerts": "警报",
+      "system": "系统"
+    },
+    "empty": "这里还没有内容。",
+    "missed_other": "错过 · {{count}}",
+    "earlier": "更早",
+    "rowHint": "点击打开 · 向左或向右滑动以移除",
+    "rowHintRemoveOnly": "向左或向右滑动以移除"
   }
 }

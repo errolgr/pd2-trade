@@ -64,7 +64,7 @@ vi.mock('./keyboard', () => ({
   },
 }));
 vi.mock('./region', () => ({ useRegionSync: () => {}, holdRegionLoop: () => () => {} }));
-vi.mock('./toast', () => ({ ToastLayer: () => null, setToastBridge: vi.fn(), showToast: vi.fn() }));
+vi.mock('./toast', () => ({ ToastLayer: () => null, setToastBridge: vi.fn(), showToast: vi.fn(), notify: vi.fn() }));
 const tauri = vi.hoisted(() => ({ on: false }));
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => tauri.on, invoke: vi.fn(async () => {}) }));
 /** Rust events the provider listens to (e.g. the outside-click hook). */

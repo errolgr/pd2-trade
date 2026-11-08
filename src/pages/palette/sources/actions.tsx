@@ -4,6 +4,7 @@ import {
   Camera,
   Hammer,
   Handshake,
+  History,
   ListChecks,
   LogIn,
   LogOut,
@@ -80,6 +81,14 @@ export const useActionsSource: PaletteSource = ({ query, scope, limit, refs }) =
         keywords: ['meta', 'characters', 'ladder', 'armory'],
         hotkey: ['hotkeyModifierBuilds', 'hotkeyKeyBuilds'],
         run: (ctx) => ctx.openPanel('builds'),
+      },
+      {
+        key: 'notifications',
+        labelKey: 'palette:actions.notifications',
+        icon: <History className={ICON} />,
+        keywords: ['notifications', 'missed', 'log', 'history', 'alerts'],
+        hotkey: ['hotkeyModifierNotifications', 'hotkeyKeyNotifications'],
+        run: (ctx) => ctx.openPanel('notifications'),
       },
       {
         key: 'stashValue',

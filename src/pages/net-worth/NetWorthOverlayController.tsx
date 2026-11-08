@@ -4,7 +4,7 @@ import { useNetWorth } from '@/hooks/useNetWorth';
 import { isToastEnabled } from '@/hooks/useSocketNotifications';
 import type { SnapshotResponse, ValuationLine } from '@/lib/networth-api';
 import type { GenericToastPayload } from '@/common/types/Events';
-import { showToast, useOverlay } from '@/overlay';
+import { notify, useOverlay } from '@/overlay';
 import { formatSignedHr } from './overlay';
 import { t } from '@/i18n';
 
@@ -59,7 +59,7 @@ const NetWorthOverlayController: React.FC = () => {
     const change = latest.delta.sincePrevious;
     const threshold = settingsRef.current.netWorthToastThresholdHr ?? 0.5;
     if (change === null || Math.abs(change) < threshold) return;
-    if (settingsRef.current.netWorthTickerEnabled !== true || !isToastEnabled(settingsRef.current, 'networth')) return;
+    if (settingsRef.current.netWorthTickerEnabled !== true) return;
 
     const movers = previous ? describeTopChanges(previous.valuation.lines, latest.valuation.lines, change > 0) : '';
     const payload: GenericToastPayload = {
@@ -69,7 +69,7 @@ const NetWorthOverlayController: React.FC = () => {
         : t('netWorth:toast.change', { change: formatSignedHr(change) }),
       variant: change > 0 ? 'success' : 'warning',
     };
-    showToast(payload);
+    notify('networth', payload, { toast: isToastEnabled(settingsRef.current, 'networth') });
   }, [latest]);
 
   // Ticker: off until turned on in Settings → Net Worth, and only while signed in

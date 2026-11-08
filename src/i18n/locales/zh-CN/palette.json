@@ -55,6 +55,7 @@
     "changelog": "更新内容",
     "checkUpdates": "检查更新",
     "signIn": "登录",
-    "signOut": "退出登录"
+    "signOut": "退出登录",
+    "notifications": "通知"
   }
 }

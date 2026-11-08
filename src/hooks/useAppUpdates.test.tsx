@@ -11,7 +11,16 @@ import { CustomToastPayload, ToastActionType } from '@/common/types/Events';
 import { manualUpdateToast, resetManualUpdateRequired } from '@/lib/manual-update';
 import { resetUpdateNotification, useAppUpdates } from './useAppUpdates';
 
-vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
+// notify() logs and toasts when asked: the toast half goes through the showToast mock
+vi.mock('@/overlay', () => {
+  const showToast = vi.fn();
+  return {
+    showToast,
+    notify: vi.fn((_kind: string, payload: unknown, { toast }: { toast: boolean }) => {
+      if (toast) showToast(payload);
+    }),
+  };
+});
 vi.mock('@tauri-apps/plugin-updater', () => ({ check: vi.fn() }));
 vi.mock('@tauri-apps/plugin-process', () => ({ relaunch: vi.fn() }));
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => true }));

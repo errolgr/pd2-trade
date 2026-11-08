@@ -46,8 +46,11 @@
       "stashValue": "Truhenwert",
       "offers": "Angebote",
       "manageListings": "Inserate verwalten",
-      "settings": "Einstellungen"
-    }
+      "settings": "Einstellungen",
+      "notifications": "Benachrichtigungen"
+    },
+    "missedNotifications_one": "{{count}} verpasste Benachrichtigung",
+    "missedNotifications_other": "{{count}} verpasste Benachrichtigungen"
   },
   "chatTemplateForm": {
     "name": "Name",
@@ -114,5 +117,24 @@
     "toastTitle": "Corrupted Zone",
     "toastDescription": "{{zone}}: neues Hell-Spiel erstellen (bis {{until}})",
     "toastSoonDescription": "{{zone}} in {{minutes}} Min.: ab {{from}} ein neues Hell-Spiel erstellen (bis {{until}})"
+  },
+  "notificationLog": {
+    "title": "Benachrichtigungen",
+    "close": "Schließen",
+    "clear": "Leeren",
+    "filters": "Benachrichtigungen filtern",
+    "filter": {
+      "all": "Alle",
+      "trade": "Handel",
+      "chat": "Chat",
+      "alerts": "Warnungen",
+      "system": "System"
+    },
+    "empty": "Noch nichts vorhanden.",
+    "missed_one": "Verpasst · {{count}}",
+    "missed_other": "Verpasst · {{count}}",
+    "earlier": "Früher",
+    "rowHint": "Klicken zum Öffnen · nach links oder rechts schieben zum Entfernen",
+    "rowHintRemoveOnly": "Nach links oder rechts schieben zum Entfernen"
   }
 }

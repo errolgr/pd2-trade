@@ -12,7 +12,7 @@ import { useSimAccess } from '@/hooks/useSimAccess';
 import { isToastEnabled } from '@/hooks/useSocketNotifications';
 import { publishIntent, runIntentStream, SIM_RESULT_KINDS, type OverlayIntent } from '@/lib/overlay-intents';
 import { reportSlug } from '@/lib/sim-jobs-api';
-import { showToast } from '@/overlay';
+import { notify } from '@/overlay';
 
 /** Long enough to read a sim summary and click through (hover pauses it). */
 export const SIM_TOAST_DURATION_MS = 15_000;
@@ -91,7 +91,7 @@ export function useOverlayIntents(): void {
     if (!active || !token) return;
     const controller = new AbortController();
     const show = (toast: CustomToastPayload | null) => {
-      if (toast && isToastEnabled(settingsRef.current, 'sim')) showToast(toast);
+      if (toast) notify('sim', toast, { toast: isToastEnabled(settingsRef.current, 'sim') });
     };
     /** Replayed sim results of the current connect burst; null outside a burst. */
     let away: OverlayIntent[] | null = null;

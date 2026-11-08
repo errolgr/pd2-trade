@@ -46,8 +46,11 @@
       "stashValue": "Stash value",
       "offers": "Offers",
       "manageListings": "Manage listings",
-      "settings": "Settings"
-    }
+      "settings": "Settings",
+      "notifications": "Notifications"
+    },
+    "missedNotifications_one": "{{count}} missed notification",
+    "missedNotifications_other": "{{count}} missed notifications"
   },
   "chatTemplateForm": {
     "name": "Name",
@@ -114,5 +117,24 @@
     "toastTitle": "Corrupted zone",
     "toastDescription": "{{zone}}: make a new Hell game (until {{until}})",
     "toastSoonDescription": "{{zone}} in {{minutes}} min: make a new Hell game from {{from}} (until {{until}})"
+  },
+  "notificationLog": {
+    "title": "Notifications",
+    "close": "Close",
+    "clear": "Clear",
+    "filters": "Filter notifications",
+    "filter": {
+      "all": "All",
+      "trade": "Trade",
+      "chat": "Chat",
+      "alerts": "Alerts",
+      "system": "System"
+    },
+    "empty": "Nothing here yet.",
+    "missed_one": "Missed · {{count}}",
+    "missed_other": "Missed · {{count}}",
+    "earlier": "Earlier",
+    "rowHint": "Click to open · slide left or right to remove",
+    "rowHintRemoveOnly": "Slide left or right to remove"
   }
 }

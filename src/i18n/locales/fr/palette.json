@@ -55,6 +55,7 @@
     "changelog": "Nouveautés",
     "checkUpdates": "Rechercher des mises à jour",
     "signIn": "Se connecter",
-    "signOut": "Se déconnecter"
+    "signOut": "Se déconnecter",
+    "notifications": "Notifications"
   }
 }

@@ -155,6 +155,7 @@ export const useAppShortcuts = (
   onBuilds?: ShortcutHandler,
   onPalette?: ShortcutHandler,
   onSimTryOn?: ShortcutHandler,
+  onNotifications?: ShortcutHandler,
 ) => {
   const { settings, isLoading } = useOptions();
 
@@ -261,6 +262,14 @@ export const useAppShortcuts = (
       });
     }
 
+    if (settings.hotkeyKeyNotifications && onNotifications) {
+      configs.push({
+        modifier: settings.hotkeyModifierNotifications ?? 'ctrl',
+        key: settings.hotkeyKeyNotifications,
+        handler: onNotifications,
+      });
+    }
+
     return configs;
   }, [
     isLoading,
@@ -286,6 +295,8 @@ export const useAppShortcuts = (
     settings.hotkeyKeyPalette,
     settings.hotkeyModifierSimTryOn,
     settings.hotkeyKeySimTryOn,
+    settings.hotkeyModifierNotifications,
+    settings.hotkeyKeyNotifications,
     onItemSearch,
     onQuickList,
     onCurrencyValuation,
@@ -297,6 +308,7 @@ export const useAppShortcuts = (
     onBuilds,
     onPalette,
     onSimTryOn,
+    onNotifications,
   ]);
 
   useShortcuts(shortcuts);

@@ -1,5 +1,5 @@
 import { encodeItem } from '@/lib/item-utils';
-import { showToast, type ToastPayload } from './toast';
+import { notify, showToast, type ToastPayload } from './toast';
 import type { OverlayState } from './OverlayProvider';
 import type { OpenOptions, PanelId, PanelPayloads } from './types';
 
@@ -26,6 +26,8 @@ export interface Pd2OverlayDevHook {
   togglePanel<K extends PanelId>(id: K, payload?: PanelPayloads[K], opts?: OpenOptions): void;
   isOpen(id: PanelId): boolean;
   showToast(payload: ToastPayload): void;
+  /** A notification as the app logs it: `notify('offer', { title, description }, { toast: false })` = missed. */
+  notify: typeof notify;
   /**
    * Price-checks `item` as if copied in game: an item object, or the raw clipboard JSON string. Without one, a
    * sample rare ring. `__pd2Overlay.priceCheck()` / `__pd2Overlay.priceCheck(JSON.parse(copiedText))`.
@@ -44,13 +46,14 @@ declare global {
 
 /** Exposes window.__pd2Overlay in dev builds; returns the uninstall function. */
 export function installDevHook(
-  api: Omit<Pd2OverlayDevHook, 'showToast' | 'priceCheck' | 'state'> & { getState(): OverlayState },
+  api: Omit<Pd2OverlayDevHook, 'showToast' | 'notify' | 'priceCheck' | 'state'> & { getState(): OverlayState },
 ) {
   if (!import.meta.env.DEV) return () => {};
   const { getState, ...actions } = api;
   window.__pd2Overlay = {
     ...actions,
     showToast,
+    notify,
     priceCheck: (item = SAMPLE_ITEM) =>
       actions.openPanel('itemSearch', { text: encodeItem(typeof item === 'string' ? item : JSON.stringify(item)) }),
     get state() {

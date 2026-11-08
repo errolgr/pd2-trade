@@ -258,6 +258,10 @@
       "simTryOn": {
         "label": "Try item on character (Horadric Sim)",
         "description": "Send the hovered item to the Horadric Sim planner, tried on your default character."
+      },
+      "notifications": {
+        "label": "Notifications",
+        "description": "Open the notification log: whispers, offers, alerts and errors, including the ones you missed."
       }
     }
   },

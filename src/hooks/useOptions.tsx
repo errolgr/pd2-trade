@@ -155,6 +155,8 @@ export interface ISettings {
   simLastExport?: SimLastExport; // the last overlay export sent to the planner (no item data)
   hotkeyModifierSimTryOn?: 'ctrl' | 'alt';
   hotkeyKeySimTryOn?: string; // Horadric Sim: try the hovered item on the default character; '' = unbound
+  hotkeyModifierNotifications?: 'ctrl' | 'alt';
+  hotkeyKeyNotifications?: string; // the notification log; '' = unbound
 }
 
 interface OptionsContextProps {
@@ -255,6 +257,8 @@ const DEFAULT_SETTINGS: ISettings = {
   paletteRecents: [],
   hotkeyModifierSimTryOn: 'ctrl',
   hotkeyKeySimTryOn: '',
+  hotkeyModifierNotifications: 'ctrl',
+  hotkeyKeyNotifications: '',
 };
 
 /** Every hotkey, as [modifier field, key field]. */
@@ -271,6 +275,7 @@ const HOTKEYS: [keyof ISettings, keyof ISettings][] = [
   ['hotkeyModifierBuilds', 'hotkeyKeyBuilds'],
   ['hotkeyModifierPalette', 'hotkeyKeyPalette'],
   ['hotkeyModifierSimTryOn', 'hotkeyKeySimTryOn'],
+  ['hotkeyModifierNotifications', 'hotkeyKeyNotifications'],
 ];
 
 /** Hotkeys added after release with a default key, in the order they were added. */
