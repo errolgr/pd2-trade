@@ -18,10 +18,11 @@ import type { JewelElement } from '@/pages/chat/lib/listing-art';
 import { useListingActions } from '../hooks/useListingActions';
 import { buildCardModel, modMatchesStatKey, type CardMod, type SocketGroup } from '../lib/card-model';
 import { listingAge, sellerAccount } from '../lib/listing';
+import { isAnniversaryItem } from '../lib/anniversary';
 import type { MarketApi, ScoredListing } from '../lib/types';
 import { itemNameColor } from './ItemTooltip';
 import { OfferButton, WhisperButton, iconActionClass } from './ListingActions';
-import { LoadMoreFooter, type LoadMoreState, OnlineDots, formatHrPrice } from './ResultsList';
+import { LoadMoreFooter, type LoadMoreState, OnlineDots, formatHrPrice, itemArtGlow } from './ResultsList';
 import { formatStat, statWithValue } from './stat-text';
 import { AddAllModsButton, ModMenu } from './ModMenu';
 import { EnterOnce, type EnterTracker } from './EnterOnce';
@@ -359,7 +360,7 @@ const ResultCard = React.memo(function ResultCard({
           <ListingThumb
             listing={listing}
             className="size-full border-0 bg-none shadow-none"
-            artClassName="max-h-[68px] max-w-14"
+            artClassName={cn('max-h-[68px] max-w-14', itemArtGlow(item))}
           />
         </div>
         <div className="min-w-0 flex-1">
@@ -376,7 +377,12 @@ const ResultCard = React.memo(function ResultCard({
               <span className={cn(pill, 'border-border/70 text-muted-foreground')}>{`${item.socket_count}os`}</span>
             )}
             {item.corrupted && <span className={cn(pill, 'border-border/70 text-q-corrupted')}>Corrupted</span>}
-            {item.is_ethereal && <span className={cn(pill, 'border-border/70 text-muted-foreground')}>Ethereal</span>}
+            {item.is_ethereal && (
+              <span className={cn(pill, 'border-q-normal bg-q-normal text-background')}>Ethereal</span>
+            )}
+            {isAnniversaryItem(item) && (
+              <span className={cn(pill, 'border-q-unique/50 text-q-unique')}>Anniversary</span>
+            )}
             {item.item_level > 0 && (
               <span className={cn(pill, 'border-border/70 text-muted-foreground')}>{`ilvl ${item.item_level}`}</span>
             )}

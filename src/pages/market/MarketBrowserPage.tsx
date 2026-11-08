@@ -410,6 +410,9 @@ const MarketBrowserPage: React.FC = () => {
                   <ItemNameSearch
                     value={filters.itemName}
                     onChange={(itemName) => setFilters({ ...filters, itemName })}
+                    onPickGroup={(group) =>
+                      setFilters({ ...filters, itemName: undefined, typeCode: group.typeCode, baseCode: group.code })
+                    }
                     ladder={filters.ladder}
                     hardcore={filters.hardcore}
                     inputRef={nameSearchRef}

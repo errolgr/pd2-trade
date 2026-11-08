@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  baseGroupMatches,
   basesForType,
   CORRUPTION_OPTIONS,
   corruptionOption,
@@ -41,6 +42,17 @@ describe('catalog', () => {
     expect(findTypeOption('ring')?.label).toBe('Jewelry');
     expect(optionCodes('{"$in": ["a", "b"]}')).toEqual(['a', 'b']);
     expect(optionCodes('circ')).toEqual(['circ']);
+  });
+
+  it('offers base groups first in their Type, found by their words; a member base still maps to its own option', () => {
+    const keys = '{"$in": ["pk1", "pk2", "pk3"]}';
+    expect(basesForType('ubr')[0]).toEqual({ code: keys, label: 'Any Pandemonium Key' });
+    expect(baseGroupMatches('keys').map((g) => g.code)).toEqual([keys]);
+    expect(baseGroupMatches('pgem').map((g) => g.label)).toEqual(['Any Perfect Gem']);
+    expect(baseGroupMatches('EARS').map((g) => g.label)).toEqual(['Any Corrupted Ear']);
+    // Two letters match too much to offer anything
+    expect(baseGroupMatches('ke')).toEqual([]);
+    expect(findBaseOption('pk1')).toEqual({ typeCode: 'ubr', baseCode: 'pk1' });
   });
 
   it('suggests item names: prefix first, then word starts, then substrings', () => {

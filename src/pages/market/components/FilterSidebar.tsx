@@ -15,6 +15,7 @@ import {
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import { CLASSES, ITEM_TYPES, RARITIES, basesForType, optionCodes } from '../lib/catalog';
 import { defaultAgeDays, MAX_FILTER_TEXT, MAX_SELLER_NAME, type SearchDefaults, withSource } from '../lib/defaults';
+import { anniversaryTri, withAnniversary } from '../lib/anniversary';
 import {
   codeCounts,
   CODE_FACET_SIZE,
@@ -296,7 +297,15 @@ export function FilterSidebar({
 
         <Section
           {...section('Properties', t('filters.sections.properties'))}
-          active={countDefined(f.ethereal, f.corrupted, f.desecrated, f.identified, f.socketsMin, f.socketsMax)}
+          active={countDefined(
+            f.ethereal,
+            f.corrupted,
+            f.desecrated,
+            f.identified,
+            anniversaryTri(f.stats),
+            f.socketsMin,
+            f.socketsMax,
+          )}
         >
           <TriField
             label={t('filters.corrupted')}
@@ -325,6 +334,11 @@ export function FilterSidebar({
             label={t('filters.identified')}
             value={f.identified}
             onChange={(identified) => set({ identified })}
+          />
+          <TriField
+            label={t('filters.anniversary')}
+            value={anniversaryTri(f.stats)}
+            onChange={(value) => set({ stats: withAnniversary(f.stats, value) })}
           />
         </Section>
 

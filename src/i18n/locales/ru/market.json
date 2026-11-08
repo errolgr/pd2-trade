@@ -141,6 +141,7 @@
     "ethereal": "Ethereal",
     "desecrated": "Desecrated",
     "identified": "Опознан",
+    "anniversary": "Юбилейный",
     "mode": "Режим",
     "listedWithin": "Выставлено за",
     "sort": {
@@ -407,7 +408,8 @@
     "label": "Название предмета",
     "placeholder": "Поиск предметов…  ( / )",
     "clear": "Очистить название",
-    "closeMatch": "похожее название"
+    "closeMatch": "похожее название",
+    "groupHint": "Все виды · задаёт Тип и Основу"
   },
   "detail": {
     "label": "Детали объявления",

@@ -40,6 +40,26 @@ const MISC_BASE_ART: Record<string, string> = {
   jewel: 'invgswe',
 };
 
+/** Misc items the base catalog has no art for, by item name (the game's inventory files). */
+const NAMED_ART: Record<string, string> = {
+  'Key of Terror': 'invmph',
+  'Key of Hate': 'invmph',
+  'Key of Destruction': 'invmph',
+  "Mephisto's Brain": 'invbrnz',
+  "Baal's Eye": 'inveye',
+  "Diablo's Horn": 'invhorn',
+  'Perfect Topaz': 'invgsye',
+  'Perfect Diamond': 'invgswe',
+  'Perfect Amethyst': 'invgsve',
+  'Perfect Sapphire': 'invgsbe',
+  'Perfect Emerald': 'invgsge',
+  'Perfect Ruby': 'invgsre',
+  'Perfect Skull': 'invskz',
+};
+
+/** PD2's Corrupted <Class>'s Ear: the game's ear art (only projectdiablo2.com hosts it; see listingArtCandidates). */
+const EAR = /^Corrupted .+'s Ear$/;
+
 /** Charm size by base name: invch<3·variant + size> is 28×28 (small), 28×56 (large) or 28×84 (grand). */
 const CHARM_SIZE: Record<string, 1 | 2 | 3> = { 'small charm': 1, 'large charm': 2, 'grand charm': 3 };
 
@@ -136,7 +156,12 @@ export function listingArtUrl(item: ArtItem, itemsByKey: Record<string, ItemType
   if (BUNDLED_ART[stem]) return `/${BUNDLED_ART[stem]}/${stem}.png`;
 
   const baseName = item.base?.name ?? name;
-  const invfile = baseArtFile(baseName) ?? MISC_BASE_ART[baseName.toLowerCase()] ?? charmArt(item);
+  const invfile =
+    NAMED_ART[name] ??
+    (EAR.test(name) ? 'invear' : null) ??
+    baseArtFile(baseName) ??
+    MISC_BASE_ART[baseName.toLowerCase()] ??
+    charmArt(item);
   return invfile ? `${ITEM_ART}/${invfile}.png` : null;
 }
 

@@ -125,6 +125,7 @@
     "ethereal": "Ethereal",
     "desecrated": "Desecrated",
     "identified": "Identified",
+    "anniversary": "Anniversary",
     "mode": "Mode",
     "listedWithin": "Listed within",
     "sort": {
@@ -375,7 +376,8 @@
     "label": "Item name",
     "placeholder": "Search items…  ( / )",
     "clear": "Clear item name",
-    "closeMatch": "close match"
+    "closeMatch": "close match",
+    "groupHint": "Every kind · sets Type and Base"
   },
   "detail": {
     "label": "Listing detail",

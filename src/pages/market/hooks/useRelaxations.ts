@@ -94,7 +94,8 @@ export function useRelaxationCounts<T>(
 
 /**
  * The market browser's: for a search that found nothing, how many listings it finds without each of its filters
- * (the item name last, the one the user most likely wants to keep). Null when `filters` is null or has none.
+ * (the item name last, the one the user most likely wants to keep). Null when `filters` is null or has fewer than
+ * two: dropping a search's only filter would just list the whole market.
  */
 export function useRelaxations(
   count: CountListings | null,
@@ -104,6 +105,7 @@ export function useRelaxations(
   const candidates = useMemo(() => {
     if (!filters) return null;
     const active = activeFilters(filters, defaults);
+    if (active.length < 2) return null;
     return [
       ...active.filter((a) => a.spec.kind !== 'itemName'),
       ...active.filter((a) => a.spec.kind === 'itemName'),

@@ -103,15 +103,27 @@ describe('useRelaxations', () => {
     expect(count).not.toHaveBeenCalled();
   });
 
+  it('offers nothing for a search with one filter: dropping it would list the whole market', () => {
+    const count = fakeCount(() => 100_000);
+    for (const only of [{ itemName: 'Shako' }, { corrupted: 'no' as const }]) {
+      const { result } = renderHook(() => useRelaxations(count, mergeFilters(base, only), SITE_SEARCH_DEFAULTS));
+      expect(result.current).toBeNull();
+    }
+    expect(count).not.toHaveBeenCalled();
+  });
+
   it('does not count again when the same search re-renders with rebuilt filters', async () => {
-    const f = mergeFilters(base, { corrupted: 'no' });
+    const f = mergeFilters(base, { itemName: 'Shako', corrupted: 'no' });
     const count = fakeCount(() => 2);
     const { result, rerender } = renderHook(({ filters }) => useRelaxations(count, filters, SITE_SEARCH_DEFAULTS), {
       initialProps: { filters: f },
     });
-    await waitFor(() => expect(result.current?.[0].counting).toBe(false));
+    await waitFor(() => expect(result.current!.every((r) => !r.counting)).toBe(true));
     rerender({ filters: { ...f } });
-    expect(counted(result.current)).toEqual([['corrupted', 2, true]]);
-    expect(count).toHaveBeenCalledTimes(1);
+    expect(counted(result.current)).toEqual([
+      ['corrupted', 2, true],
+      ['itemName', 2, true],
+    ]);
+    expect(count).toHaveBeenCalledTimes(2);
   });
 });

@@ -141,6 +141,7 @@
     "ethereal": "Ethereal",
     "desecrated": "Desecrated",
     "identified": "Zidentyfikowany",
+    "anniversary": "Rocznicowy",
     "mode": "Tryb",
     "listedWithin": "Wystawione w ciągu",
     "sort": {
@@ -407,7 +408,8 @@
     "label": "Nazwa przedmiotu",
     "placeholder": "Szukaj przedmiotów…  ( / )",
     "clear": "Wyczyść nazwę przedmiotu",
-    "closeMatch": "podobna nazwa"
+    "closeMatch": "podobna nazwa",
+    "groupHint": "Wszystkie rodzaje · ustawia Typ i Bazę"
   },
   "detail": {
     "label": "Szczegóły ogłoszenia",

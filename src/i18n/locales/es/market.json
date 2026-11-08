@@ -133,6 +133,7 @@
     "ethereal": "Ethereal",
     "desecrated": "Desecrated",
     "identified": "Identificado",
+    "anniversary": "Aniversario",
     "mode": "Modo",
     "listedWithin": "Anunciado en",
     "sort": {
@@ -391,7 +392,8 @@
     "label": "Nombre del objeto",
     "placeholder": "Buscar objetos…  ( / )",
     "clear": "Limpiar nombre del objeto",
-    "closeMatch": "nombre parecido"
+    "closeMatch": "nombre parecido",
+    "groupHint": "Todos los tipos · fija Tipo y Base"
   },
   "detail": {
     "label": "Detalle del anuncio",

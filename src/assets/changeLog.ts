@@ -1,5 +1,9 @@
 export const changeLog = {
   '0.10.17': [
+    '🆕 Market browser: an Anniversary filter under Properties finds items with the 5th Anniversary Edition skin (or leaves them out)',
+    '🆕 Market browser: search a whole family at once. Type "keys", "pgem", "ears", "essences" or "organs" in the item search (or pick it in Base) to list every Pandemonium Key, Perfect Gem, Corrupted Ear, Essence or Uber Organ',
+    '✨ Market browser: ethereal items glow white and 5th Anniversary Edition items glow gold; cards show a white Ethereal chip and a gold Anniversary chip ("anniv" in rows)',
+    '✨ Market browser: a search with only one filter that finds nothing no longer offers to drop it (that would list the whole market)',
     '✨ Horadric Sim now shares your default character and goal across price check, market and Net Worth. Configure both under Settings → Account.',
     '✨ Market Sim opens the selected character with the listing even in a fresh browser tab; Net Worth can open Quick Sim, Top Gear, Upgrade Finder, Stat Weights or Skills & Charms.',
     '🔧 Simulator browser-open failures stay visible and can be retried instead of silently closing the handoff.',

@@ -117,6 +117,7 @@
     "ethereal": "Ethereal",
     "desecrated": "Desecrated",
     "identified": "已鉴定",
+    "anniversary": "周年外观",
     "mode": "模式",
     "listedWithin": "挂出时间范围",
     "sort": {
@@ -359,7 +360,8 @@
     "label": "物品名称",
     "placeholder": "搜索物品…  ( / )",
     "clear": "清除物品名称",
-    "closeMatch": "相近名称"
+    "closeMatch": "相近名称",
+    "groupHint": "全部种类 · 设置类型和底材"
   },
   "detail": {
     "label": "挂单详情",

@@ -4,7 +4,7 @@
  * site's own name list, so picking one sets exactly the filter the local list would.
  */
 import type { CatalogItem, CatalogSearchHit } from '@/lib/catalog-search-api';
-import { itemNameOption, type ItemNameOption } from './catalog';
+import { type BaseGroup, itemNameOption, type ItemNameOption } from './catalog';
 
 export interface ItemNameSuggestion extends ItemNameOption {
   /** Where the typed text sits in the name (a plain substring match): the part to highlight. */
@@ -13,6 +13,8 @@ export interface ItemNameSuggestion extends ItemNameOption {
   closeMatch?: boolean;
   /** Found by one of its nicknames (the server's aliases, e.g. "shako" for Harlequin Crest). */
   alias?: boolean;
+  /** Not a name: a family of bases ("Any Pandemonium Key") picked as the Type and Base filters. */
+  group?: BaseGroup;
 }
 
 export const suggestionKey = (o: ItemNameOption) => `${o.quality}:${o.name}`;
