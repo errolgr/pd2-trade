@@ -10,6 +10,23 @@ export const SIM_GOALS: readonly { value: SimGoal; label: string; description: s
   { value: 'skill_charm_optimizer', label: 'Skills & Charms', description: 'Optimize skill points and charms' },
 ];
 
+/** Planner links from `POST /api/sim/exports` expire after this long. */
+export const SIM_EXPORT_LINK_TTL_MS = 24 * 60 * 60 * 1000;
+
+/** The last export sent to the planner (Settings `simLastExport`): what and when, never the items. */
+export interface SimLastExport {
+  character: string;
+  goal: SimGoal;
+  items: number;
+  url: string;
+  /** ISO */
+  sentAt: string;
+}
+
+export function simGoalLabel(goal: SimGoal): string {
+  return SIM_GOALS.find((g) => g.value === goal)?.label ?? goal;
+}
+
 export function legacySimCharacter(): string {
   try {
     return localStorage.getItem(SIM_CHARACTER_STORAGE_KEY) ?? '';

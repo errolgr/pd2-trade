@@ -3,6 +3,8 @@ export const changeLog = {
     '✨ Horadric Sim now shares your default character and goal across price check, market and Net Worth. Configure both under Settings → Account.',
     '✨ Market Sim opens the selected character with the listing even in a fresh browser tab; Net Worth can open Quick Sim, Top Gear, Upgrade Finder, Stat Weights or Skills & Charms.',
     '🔧 Simulator browser-open failures stay visible and can be retried instead of silently closing the handoff.',
+    '✨ Horadric Sim tells you in game when a sim you started from the overlay finishes, and reports or plans you send to the overlay from pd2trader.com pop up here. Each toast has an Open button; turn them off under Settings → Chat → Toast popup types → Horadric Sim.',
+    '✨ Net Worth → Simulator shows what you last sent to the planner, with a Reopen planner button while the link still works (24 hours).',
   ],
   '0.10.16': [
     "✨ Horadric Sim (beta): the Sim buttons in the price check, market and Net Worth now say when you're not in the closed beta yet, with a link to join the waitlist (or your place on it)",

@@ -425,7 +425,8 @@
       "trade": "Échanges",
       "joins": "Arrivées",
       "offers": "Offres",
-      "networth": "Valeur nette"
+      "networth": "Valeur nette",
+      "sim": "Horadric Sim"
     },
     "timing": {
       "off": "Les notifications sont désactivées. Choisissez une autre option pour modifier les paramètres ci-dessous.",

@@ -15,6 +15,7 @@ import { Slider } from '@/components/ui/slider';
 import { DUR, EASE_OUT, fadeIn, popIn } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { templatePlaceholders } from '@/lib/message-templates';
+import { DEFAULT_TOAST_POPUP_TYPES, isToastTypeOn, toggleToastType } from '@/lib/toast-types';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import { CHAT_TIMING_OPTIONS, optionLabel } from '../setting-options';
 import { ChatTemplatesEditor } from './chat-templates-editor';
@@ -26,6 +27,7 @@ const TOAST_TYPES = [
   { id: 'joins', labelKey: 'chat.toastTypes.joins' },
   { id: 'offers', labelKey: 'chat.toastTypes.offers' },
   { id: 'networth', labelKey: 'chat.toastTypes.networth' },
+  { id: 'sim', labelKey: 'chat.toastTypes.sim' },
 ] as const;
 
 const COMMON_TOKENS = ['{accountName}', '{characterName}', '{itemName}', '{price}'];
@@ -58,7 +60,7 @@ export function ChatForm() {
     defaultValues: {
       whisperNotificationsEnabled: settings?.whisperNotificationsEnabled ?? true,
       toastPopupsEnabled: settings?.toastPopupsEnabled ?? true,
-      toastPopupTypes: settings?.toastPopupTypes ?? ['whispers', 'trade', 'joins', 'offers', 'networth'],
+      toastPopupTypes: settings?.toastPopupTypes ?? DEFAULT_TOAST_POPUP_TYPES,
       tradeNotificationsEnabled: settings?.tradeNotificationsEnabled ?? true,
       whisperIgnoreList: settings?.whisperIgnoreList || [],
       whisperAnnouncementsEnabled: settings?.whisperAnnouncementsEnabled ?? false,
@@ -79,7 +81,7 @@ export function ChatForm() {
         {
           whisperNotificationsEnabled: settings.whisperNotificationsEnabled ?? true,
           toastPopupsEnabled: settings.toastPopupsEnabled ?? true,
-          toastPopupTypes: settings.toastPopupTypes ?? ['whispers', 'trade', 'joins', 'offers', 'networth'],
+          toastPopupTypes: settings.toastPopupTypes ?? DEFAULT_TOAST_POPUP_TYPES,
           tradeNotificationsEnabled: settings.tradeNotificationsEnabled ?? true,
           whisperIgnoreList: settings.whisperIgnoreList || [],
           whisperAnnouncementsEnabled: settings.whisperAnnouncementsEnabled ?? false,
@@ -237,25 +239,19 @@ export function ChatForm() {
                         control={form.control}
                         name="toastPopupTypes"
                         render={({ field: typesField }) => {
-                          const types = typesField.value ?? ['whispers', 'trade', 'joins', 'offers', 'networth'];
-                          const toggleType = (typeId: string) => {
-                            const updated = types.includes(typeId)
-                              ? types.filter((type: string) => type !== typeId)
-                              : [...types, typeId];
-                            typesField.onChange(updated);
-                          };
+                          const types = typesField.value ?? DEFAULT_TOAST_POPUP_TYPES;
                           return (
                             <div role="group"
                               aria-label={t('chat.toasts.typesLabel')}
                               className="flex flex-wrap gap-2">
                               {TOAST_TYPES.map((type) => {
-                                const isActive = types.includes(type.id);
+                                const isActive = isToastTypeOn(types, type.id);
                                 return (
                                   <button
                                     key={type.id}
                                     type="button"
                                     aria-pressed={isActive}
-                                    onClick={() => toggleType(type.id)}
+                                    onClick={() => typesField.onChange(toggleToastType(types, type.id))}
                                     className={cn(
                                       'inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-xs font-medium outline-none',
                                       'transition-[color,background-color,border-color,box-shadow,transform] duration-(--dur-fast) ease-out',

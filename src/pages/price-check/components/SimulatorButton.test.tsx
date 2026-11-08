@@ -207,6 +207,9 @@ describe('SimulatorButton', () => {
       mode: 'try',
       item_source: 'stash',
     });
+    expect(updateSettings).toHaveBeenCalledWith({
+      simLastExport: { character: 'HammerPal', goal: 'quick_sim', items: 1, url: URL_OUT, sentAt: expect.any(String) },
+    });
   });
 
   it('adds it to the Top Gear pool without trying it on', async () => {

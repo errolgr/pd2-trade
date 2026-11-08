@@ -125,6 +125,10 @@ describe('SimExportTab', () => {
       source: 'net_worth',
       goal: 'top_gear',
     });
+    // Remembered for "Last sent": what and when, never the items
+    expect(updateSettings).toHaveBeenCalledWith({
+      simLastExport: { character: 'HammerPal', goal: 'top_gear', items: 1, url: URL_OUT, sentAt: expect.any(String) },
+    });
 
     fireEvent.click(screen.getByRole('button', { name: 'Open planner' }));
     expect(openUrl).toHaveBeenCalledTimes(2);

@@ -425,7 +425,8 @@
       "trade": "Troca",
       "joins": "Entradas",
       "offers": "Ofertas",
-      "networth": "Patrimônio"
+      "networth": "Patrimônio",
+      "sim": "Horadric Sim"
     },
     "timing": {
       "off": "As notificações estão desligadas. Escolha outra opção para editar as configurações abaixo.",
