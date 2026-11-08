@@ -132,6 +132,8 @@
     "missed_one": "Perdida · {{count}}",
     "missed_many": "Perdidas · {{count}}",
     "missed_other": "Perdidas · {{count}}",
-    "earlier": "Anteriores"
+    "earlier": "Anteriores",
+    "rowHint": "Haz clic para abrir · desliza a la izquierda o derecha para quitar",
+    "rowHintRemoveOnly": "Desliza a la izquierda o derecha para quitar"
   }
 }

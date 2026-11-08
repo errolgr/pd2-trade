@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion, useMotionValue, useTransform } from 'framer-motion';
 import {
   AlertTriangle,
   ArrowDownLeft,
@@ -21,6 +22,7 @@ import { useTranslation } from '@/i18n';
 import {
   clearNotificationLog,
   markAllNotificationsSeen,
+  removeNotification,
   NOTIFICATION_GROUPS,
   type NotificationEntry,
   type NotificationGroup,
@@ -92,10 +94,11 @@ const NotificationLogPage: React.FC = () => {
   const missed = shown.filter((e) => missedAtOpen.has(e.id));
   const earlier = shown.filter((e) => !missedAtOpen.has(e.id));
 
-  const run = (entry: NotificationEntry) => {
-    if (!entry.action) return;
+  /** A row's click: its toast's action, else the listing drawer. */
+  const open = (entry: NotificationEntry) => {
     close();
-    void runLoggedAction(entry.action);
+    if (entry.action) void runLoggedAction(entry.action);
+    else if (entry.listing) openLoggedListing(entry.listing);
   };
 
   return (
@@ -144,7 +147,7 @@ const NotificationLogPage: React.FC = () => {
         {shown.length === 0 ? (
           <p className="px-4 py-10 text-center text-sm text-muted-foreground">{t('notificationLog.empty')}</p>
         ) : (
-          <div className="flex flex-col gap-2 p-2">
+          <div className="flex flex-col gap-2 overflow-x-hidden p-2">
             {missed.length > 0 && (
               <Section label={t('notificationLog.missed', { count: missed.length })}
                 accent>
@@ -152,8 +155,7 @@ const NotificationLogPage: React.FC = () => {
                   <Row key={entry.id}
                     entry={entry}
                     now={now}
-                    onRun={run}
-                    onDetails={close} />
+                    onOpen={open} />
                 ))}
               </Section>
             )}
@@ -163,8 +165,7 @@ const NotificationLogPage: React.FC = () => {
                   <Row key={entry.id}
                     entry={entry}
                     now={now}
-                    onRun={run}
-                    onDetails={close} />
+                    onOpen={open} />
                 ))}
               </Section>
             )}
@@ -188,69 +189,94 @@ function Section({ label, accent, children }: { label?: string; accent?: boolean
           {label}
         </h3>
       )}
-      <ul className="flex flex-col">{children}</ul>
+      <ul className="flex flex-col">
+        <AnimatePresence initial={false}>{children}</AnimatePresence>
+      </ul>
     </section>
   );
 }
 
-const ROW_ACTION =
-  'text-xs font-medium text-primary outline-none underline-offset-2 hover:underline focus-visible:underline';
+/** Slide a row this far (px), or flick it, to remove it. */
+const SWIPE_PX = 90;
+const SWIPE_VELOCITY = 600;
+/** A flick still has to move the row this far (px): a click's jitter never removes it. */
+const FLICK_MIN_PX = 40;
 
+/**
+ * One entry: click (or Enter) opens it, as its toast's action would; slide it left or right (or Delete) to remove
+ * it. One grid for every row (icon | text | time), so times line up on the right edge.
+ */
 function Row({
   entry,
   now,
-  onRun,
-  onDetails,
+  onOpen,
 }: {
   entry: NotificationEntry;
   now: number;
-  onRun: (entry: NotificationEntry) => void;
-  onDetails: () => void;
+  onOpen: (entry: NotificationEntry) => void;
 }) {
   const { t } = useTranslation('app');
   const { icon: Icon, className } = KIND_ICONS[entry.kind];
-  const { listing, action } = entry;
-  // One grid for every row: icon | text (title, description, actions) | time, so times line up on the right edge
-  // whether or not a row has buttons
+  const openable = !!(entry.action || entry.listing);
+  const x = useMotionValue(0);
+  const opacity = useTransform(x, [-SWIPE_PX * 1.5, 0, SWIPE_PX * 1.5], [0, 1, 0]);
+  // The click that ends a drag must not open the entry
+  const dragged = useRef(false);
+
+  // Removed right away: the row is already slid out and faded, the exit collapses it
+  const remove = () => removeNotification(entry.id);
+
   return (
-    <li className="grid grid-cols-[1rem_minmax(0,1fr)_auto] items-start gap-x-2.5 rounded-md px-2 py-1.5 hover:bg-accent/50">
-      <Icon className={cn('mt-0.5 size-4', entry.tone ? TONE_CLASS[entry.tone] : className)} />
-      <div className="min-w-0">
-        <p className="truncate text-sm font-medium">
-          {entry.title}
-          {entry.count > 1 && (
-            <span className="ml-1.5 text-xs font-normal tabular-nums text-muted-foreground">×{entry.count}</span>
+    <motion.li
+      layout
+      exit={{ height: 0, opacity: 0, transition: { duration: 0.16 } }}
+      className="relative overflow-hidden rounded-md"
+    >
+      <motion.div
+        drag="x"
+        dragDirectionLock
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.9}
+        style={{ x, opacity }}
+        onDragStart={() => {
+          dragged.current = true;
+        }}
+        onDragEnd={(_, info) => {
+          window.setTimeout(() => (dragged.current = false));
+          const distance = Math.abs(info.offset.x);
+          if (distance > SWIPE_PX || (distance > FLICK_MIN_PX && Math.abs(info.velocity.x) > SWIPE_VELOCITY)) remove();
+        }}
+        role={openable ? 'button' : undefined}
+        tabIndex={0}
+        aria-label={entry.description ? `${entry.title}: ${entry.description}` : entry.title}
+        title={openable ? t('notificationLog.rowHint') : t('notificationLog.rowHintRemoveOnly')}
+        onClick={() => {
+          if (!dragged.current && openable) onOpen(entry);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && openable) onOpen(entry);
+          else if (e.key === 'Delete' || e.key === 'Backspace') remove();
+        }}
+        className={cn(
+          'grid touch-pan-y select-none grid-cols-[1rem_minmax(0,1fr)_auto] items-start gap-x-2.5 rounded-md px-2 py-1.5 outline-none hover:bg-accent/50 focus-visible:bg-accent/50',
+          openable ? 'cursor-pointer' : 'cursor-grab',
+        )}
+      >
+        <Icon className={cn('mt-0.5 size-4', entry.tone ? TONE_CLASS[entry.tone] : className)} />
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium">
+            {entry.title}
+            {entry.count > 1 && (
+              <span className="ml-1.5 text-xs font-normal tabular-nums text-muted-foreground">×{entry.count}</span>
+            )}
+          </p>
+          {entry.description && (
+            <p className="line-clamp-2 whitespace-pre-line text-xs text-muted-foreground">{entry.description}</p>
           )}
-        </p>
-        {entry.description && (
-          <p className="line-clamp-2 whitespace-pre-line text-xs text-muted-foreground">{entry.description}</p>
-        )}
-        {(action || listing) && (
-          <div className="mt-1 flex gap-3">
-            {action && (
-              <button type="button"
-                onClick={() => onRun(entry)}
-                className={ROW_ACTION}>
-                {action.label}
-              </button>
-            )}
-            {listing && (
-              <button
-                type="button"
-                onClick={() => {
-                  onDetails();
-                  openLoggedListing(listing);
-                }}
-                className={cn(ROW_ACTION, 'text-muted-foreground')}
-              >
-                {t('toast.details')}
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-      <span className="pt-0.5 text-[11px] tabular-nums text-muted-foreground">{timeAgo(entry.at, now)}</span>
-    </li>
+        </div>
+        <span className="pt-0.5 text-[11px] tabular-nums text-muted-foreground">{timeAgo(entry.at, now)}</span>
+      </motion.div>
+    </motion.li>
   );
 }
 

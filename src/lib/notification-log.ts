@@ -221,6 +221,8 @@ export const markNotificationMissed = (id: string): void => set(markMissed(log, 
 /** The log was opened. */
 export const markAllNotificationsSeen = (): void => set(markAllSeen(log));
 export const clearNotificationLog = (): void => set([]);
+/** Slid away in the log. */
+export const removeNotification = (id: string): void => set(log.filter((e) => e.id !== id));
 
 const subscribe = (listener: () => void) => {
   listeners.add(listener);

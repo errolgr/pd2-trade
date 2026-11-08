@@ -132,6 +132,8 @@
     "missed_one": "Manquée · {{count}}",
     "missed_many": "Manquées · {{count}}",
     "missed_other": "Manquées · {{count}}",
-    "earlier": "Plus tôt"
+    "earlier": "Plus tôt",
+    "rowHint": "Cliquez pour ouvrir · glissez à gauche ou à droite pour retirer",
+    "rowHintRemoveOnly": "Glissez à gauche ou à droite pour retirer"
   }
 }

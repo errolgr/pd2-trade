@@ -122,6 +122,8 @@
     },
     "empty": "这里还没有内容。",
     "missed_other": "错过 · {{count}}",
-    "earlier": "更早"
+    "earlier": "更早",
+    "rowHint": "点击打开 · 向左或向右滑动以移除",
+    "rowHintRemoveOnly": "向左或向右滑动以移除"
   }
 }

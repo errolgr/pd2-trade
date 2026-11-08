@@ -127,6 +127,8 @@
     "empty": "Nothing here yet.",
     "missed_one": "Missed · {{count}}",
     "missed_other": "Missed · {{count}}",
-    "earlier": "Earlier"
+    "earlier": "Earlier",
+    "rowHint": "Click to open · slide left or right to remove",
+    "rowHintRemoveOnly": "Slide left or right to remove"
   }
 }
