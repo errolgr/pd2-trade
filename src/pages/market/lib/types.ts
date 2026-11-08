@@ -70,7 +70,7 @@ export interface MarketFilters {
   hrMax?: number;
   /** `hrMax` is exclusive (`< hrMax`, a price chart bucket's upper edge) instead of `<=` (a typed max). */
   hrMaxExclusive?: boolean;
-  /** item.base.type_code */
+  /** item.base.type_code: a type, a site `{"$in": [...]}` entry, or a type group code (`group:bows`, type-groups.ts) */
   typeCode?: string;
   /** item.base_code */
   baseCode?: string;
@@ -130,7 +130,7 @@ export interface StatPreset {
   id: string;
   name: string;
   builtIn: boolean;
-  /** Optional item.base.type_code(s) this preset targets; applied to filters when exactly one. */
+  /** Optional Type value(s) this preset targets (type codes or type group codes); applied to filters when exactly one. */
   typeCodes?: string[];
   /** Optional item name applied with the preset (e.g. `Grand Charm`, matched the way the site matches names). */
   itemName?: string;

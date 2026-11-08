@@ -27,6 +27,7 @@
     "header": {
       "base": "Base: {{type}}",
       "type": "Type: {{type}}",
+      "group": "Group: {{group}}",
       "toggleSearchMode": "Click to toggle search mode",
       "cycleQuality": "Click to cycle quality",
       "anyQuality": "Any",

@@ -63,6 +63,7 @@ import { type PriceCheckRelaxation, priceCheckRelaxations } from '../lib/relaxat
 import { statText } from '../lib/tooltip-lines';
 import type { MarketFilters, ScoredListing } from '@/pages/market/lib/types';
 import { withRowPresence } from '@/pages/market/lib/presence';
+import { typeGroupOf } from '@/pages/market/lib/type-groups';
 import { MarketBackendError, searchMarketListings } from '@/lib/market-search-api';
 import { reportApiError } from '@/lib/error-reporting';
 import { rememberListingPresence, useListingPresence } from '@/hooks/useListingPresence';
@@ -248,7 +249,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     rootMargin: '100px',
   });
 
-  // Search mode: 0 = category (base), 1 = typeLabel
+  // Search mode: 0 = category (base), 1 = typeLabel, 2 = the type's group
   const [searchMode, setSearchMode] = useState(0);
   // Quality override: null = use item's original quality; ANY_QUALITY = every base quality
   const [qualityOverride, setQualityOverride] = useState<ItemQuality | typeof ANY_QUALITY | null>(null);
@@ -477,6 +478,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     if (!item.type) return null;
     return itemTypes.find((type) => type.bases.some((b) => b.label.toLowerCase() === item.type.toLowerCase()));
   }, [item.type]);
+  // The matched type's group ("Bows" for Amazon Bow): search mode 2
+  const typeGroup = useMemo(
+    () => (matchedItemType ? typeGroupOf(matchedItemType.typeValue) : undefined),
+    [matchedItemType],
+  );
 
   // Check if item should use toggle (only for base item qualities, not uniques/sets/runewords)
   const shouldUseToggle = BASE_QUALITIES.includes(item.quality);
@@ -742,15 +748,13 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const toggleSearchMode = useCallback(() => {
     if (!shouldUseToggle) return; // Don't toggle for uniques/sets/runewords
     setSearchMode((prev) => {
-      // Cycle through: 0 -> 1 -> 0
-      // Skip mode 1 if there's no matched item type
-      let next = (prev + 1) % 2;
-      if (next === 1 && !matchedItemType) {
-        next = 0;
-      }
+      // Cycle through: 0 -> 1 -> 2 -> 0, skipping type without a matched item type and group without a type group
+      const available = [true, !!matchedItemType, !!matchedItemType && !!typeGroup];
+      let next = (prev + 1) % available.length;
+      while (!available[next]) next = (next + 1) % available.length;
       return next;
     });
-  }, [matchedItemType, shouldUseToggle]);
+  }, [matchedItemType, typeGroup, shouldUseToggle]);
 
   // Get display text for current search mode
   const getSearchModeDisplay = useCallback(() => {
@@ -761,10 +765,14 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         return matchedItemType
           ? t('overlay.header.type', { type: matchedItemType.typeLabel })
           : t('overlay.header.base', { type: item.type });
+      case 2:
+        return typeGroup
+          ? t('overlay.header.group', { group: typeGroup.label })
+          : t('overlay.header.base', { type: item.type });
       default:
         return t('overlay.header.base', { type: item.type });
     }
-  }, [searchMode, item.type, matchedItemType, t]);
+  }, [searchMode, item.type, matchedItemType, typeGroup, t]);
 
   const openCurrencyValuation = useCallback(() => openPanel('currency'), [openPanel]);
 
@@ -1196,10 +1204,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       showNoResults && totalCount === 0 && ranSearch && !ranSearch.pd2Only
         ? priceCheckRelaxations(ranSearch.search, ranSearch.sort, {
             searchType: shouldUseToggle && !!matchedItemType,
+            searchTypeGroup: shouldUseToggle && !!matchedItemType && !!typeGroup,
             anyQuality: shouldUseToggle,
           })
         : null,
-    [showNoResults, totalCount, ranSearch, shouldUseToggle, matchedItemType],
+    [showNoResults, totalCount, ranSearch, shouldUseToggle, matchedItemType, typeGroup],
   );
   const relaxations = useRelaxationCounts(searchMarketListings, relaxCandidates);
   // The suggestion the pointer is on: the rows or header control it would change are ringed (only while shown)
@@ -1228,6 +1237,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       }
       case 'type':
         return item.type;
+      case 'typeGroup':
+        return matchedItemType?.typeLabel ?? item.type;
       case 'quality': {
         const quality = ranSearch?.search.qualityOverride;
         return typeof quality === 'string' ? quality : item.quality;
@@ -1253,6 +1264,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         break;
       case 'type':
         setSearchMode(1);
+        break;
+      case 'typeGroup':
+        setSearchMode(2);
         break;
       case 'quality':
         setQualityOverride(ANY_QUALITY);
@@ -1344,7 +1358,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                       onClick={toggleSearchMode}
                       title={t('overlay.header.toggleSearchMode')}
                       className="text-muted-foreground"
-                      marked={hoveredRelaxation?.kind === 'type'}
+                      marked={hoveredRelaxation?.kind === 'type' || hoveredRelaxation?.kind === 'typeGroup'}
                     >
                       {getSearchModeDisplay()}
                     </HeaderToggle>

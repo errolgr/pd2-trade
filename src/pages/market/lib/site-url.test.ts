@@ -55,6 +55,12 @@ describe('siteSearchLink', () => {
     });
   });
 
+  it('sends a type group as the $in of its member types (the site has no group codes)', () => {
+    const f = base({ typeCode: 'group:bows' });
+    expect(new URL(siteSearchLink(f).url).searchParams.get('type')).toBe('{"$in": ["bow", "abow"]}');
+    expect(siteSearchLink(f).dropped).toEqual([]);
+  });
+
   it('opens sold searches on the archive, at its default age window', () => {
     const f = withSource(base({ hardcore: true, ladder: false }), 'archive');
     expect(query(f)).toEqual({

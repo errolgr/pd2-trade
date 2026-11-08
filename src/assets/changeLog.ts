@@ -1,4 +1,8 @@
 export const changeLog = {
+  '0.11.1': [
+    '🆕 Market browser: the Type filter groups class items under their family. Pick Bows, Spears, Javelins, Helms or Shields to search every type in it at once (Bows finds Amazon Bows too; Helms includes Barbarian Helms, Druid Pelts and Circlets; Shields includes Paladin Shields and Shrunken Heads), or pick one type under it as before',
+    '🆕 Price check: the base / type switch in the header has a third step for those items. A Ceremonial Bow goes Ceremonial Bow → Amazon Bow → Bows, so a class bow is compared with every bow',
+  ],
   '0.11.0': [
     '🆕 Notification log: every whisper, offer, alert and sim result you missed in one place. A button on the chat dock lights up when something is waiting',
     '🆕 Horadric Sim panel (dock menu): your running sims and the last 24 hours of results, with Market and Watch buttons for suggested upgrades',

@@ -27,6 +27,7 @@
     "header": {
       "base": "Основа: {{type}}",
       "type": "Тип: {{type}}",
+      "group": "Группа: {{group}}",
       "toggleSearchMode": "Нажмите, чтобы сменить режим поиска",
       "cycleQuality": "Нажмите, чтобы сменить качество",
       "anyQuality": "Любое",

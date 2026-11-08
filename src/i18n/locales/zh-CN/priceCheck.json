@@ -27,6 +27,7 @@
     "header": {
       "base": "底材：{{type}}",
       "type": "类型：{{type}}",
+      "group": "类别：{{group}}",
       "toggleSearchMode": "点击切换搜索模式",
       "cycleQuality": "点击切换品质",
       "anyQuality": "任意",

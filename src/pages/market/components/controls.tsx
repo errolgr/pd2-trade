@@ -313,7 +313,8 @@ export function RangeField({
 
 /**
  * Compact Select; `anyLabel` (default "Any") adds an entry mapped to undefined, `anyLabel: null` omits it. An
- * option's `count` (facets) shows in the list, not in the trigger.
+ * option's `count` (facets) shows in the list, not in the trigger; `depth: 1` indents it under the option above
+ * (a type group's member types).
  */
 export function SelectField({
   label,
@@ -325,7 +326,7 @@ export function SelectField({
 }: {
   label: string;
   value: string | undefined;
-  options: { value: string; label: string; count?: number }[];
+  options: { value: string; label: string; count?: number; depth?: 0 | 1 }[];
   onChange: (v: string | undefined) => void;
   anyLabel?: string | null;
   disabled?: boolean;
@@ -355,6 +356,7 @@ export function SelectField({
               value={o.value}
               label={o.label}
               count={o.count}
+              depth={o.depth}
               peak={peak}
               selected={o.value === value}
             />
@@ -370,12 +372,14 @@ function FacetSelectItem({
   value,
   label,
   count,
+  depth,
   peak,
   selected,
 }: {
   value: string;
   label: string;
   count: number | undefined;
+  depth: 0 | 1 | undefined;
   peak: number;
   selected: boolean;
 }) {
@@ -391,7 +395,7 @@ function FacetSelectItem({
       onBlur={() => setFocused(false)}
       style={facetFill(facetShare(count, peak))}
       // The picked option stays readable even when it finds nothing
-      className={cn('text-xs', count === 0 && !selected && FACET_DIM)}
+      className={cn('text-xs', depth === 1 && 'pl-5', count === 0 && !selected && FACET_DIM)}
       aside={text && <FacetRowTip text={text}
         open={focused} />}
     >

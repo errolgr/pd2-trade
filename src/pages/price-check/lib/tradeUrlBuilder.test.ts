@@ -341,6 +341,13 @@ describe('buildTradeUrl', () => {
       expect(p.has('base')).toBe(false);
     });
 
+    it("searches the type's group as the $in of its members in group mode, without base", () => {
+      const matched = { typeLabel: 'Amazon Bow', typeValue: 'abow', bases: [] };
+      const { p } = urlParams(makeItem({ type: 'Ceremonial Bow' }), [], {}, { searchMode: 2, matched });
+      expect(p.get('type')).toBe('{"$in": ["bow", "abow"]}');
+      expect(p.has('base')).toBe(false);
+    });
+
     it('omits type/base and warns for unknown base types', () => {
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
       const { p } = urlParams(makeItem({ type: 'Mystery Box' }));
@@ -676,6 +683,17 @@ describe('buildGetMarketListingQuery', () => {
       const q = query(makeItem({ type: 'Feral Claws' }), [], {}, { searchMode: 1, matched });
       expect(q['item.base.type_code']).toEqual({ $in: ['h2h', 'h2h2'] });
       expect(q).not.toHaveProperty(['item.base_code']);
+    });
+
+    it("searches the type's group in group mode as the $in of its members", () => {
+      const matched = { typeLabel: 'Amazon Bow', typeValue: 'abow', bases: [] };
+      const q = query(makeItem({ type: 'Ceremonial Bow' }), [], {}, { searchMode: 2, matched });
+      expect(q['item.base.type_code']).toEqual({ $in: ['bow', 'abow'] });
+      expect(q).not.toHaveProperty(['item.base_code']);
+      // A type without a group (Sorceress Orb) can't search one: group mode falls back to its base
+      const orb = { typeLabel: 'Sorceress Orb', typeValue: 'orb', bases: [] };
+      const o = query(makeItem({ type: 'Eagle Orb' }), [], {}, { searchMode: 2, matched: orb });
+      expect(o['item.base.type_code']).toBe('orb');
     });
 
     it('omits type and warns for unknown bases', () => {
