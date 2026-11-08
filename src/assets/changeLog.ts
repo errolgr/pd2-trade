@@ -21,6 +21,7 @@ export const changeLog = {
     '✨ Builds: characters you follow are easier to find. The Characters tab opens on Following when you follow anyone, a ★ count next to the Meta / Characters tabs jumps straight there, and following a character tells you where it went',
     '🆕 Settings → Interface → UI scale: make all overlay text and panels bigger (up to 200%) or smaller, for high-resolution and ultrawide monitors',
     '✨ Corrupted zone timer: an arrow at the bottom of the upcoming zones shows which way the list opens; click it to make it open the other way wherever the timer sits. Dragging the timer into the other half of the screen goes back to opening toward the middle',
+    '🆕 Net Worth: list straight from your holdings. Right-click a unique, set item, key, organ or other stash item and choose "List on market…" to put it on the market at its Net Worth price; check or change the price, add a note, and pick which one when you have several.',
   ],
   '0.10.16': [
     "✨ Horadric Sim (beta): the Sim buttons in the price check, market and Net Worth now say when you're not in the closed beta yet, with a link to join the waitlist (or your place on it)",

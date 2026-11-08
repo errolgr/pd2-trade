@@ -221,5 +221,22 @@
       "lowTitle": "{{n}} probablement de faible valeur · {{tab}}",
       "lowNote": "Vérifiez les objets sans stat clé"
     }
+  },
+  "listAtNetWorth": {
+    "menuItem": "Mettre en vente…",
+    "alreadyListed": "Déjà en vente",
+    "title": "Mettre en vente au prix de la Valeur nette",
+    "loading": "Recherche de l'objet dans votre coffre…",
+    "gone": "Objet déplacé ou disparu — actualisez la Valeur nette",
+    "loadFailed": "Impossible de charger l'objet depuis votre coffre.",
+    "pickItem": "Objet à mettre en vente",
+    "listed": "En vente",
+    "allListed": "Déjà en vente sur le marché.",
+    "manageListings": "Gérer les annonces",
+    "price": "Prix (HR)",
+    "note": "Note (facultatif)",
+    "list": "Mettre en vente",
+    "listFailed": "Impossible de mettre l'objet en vente.",
+    "sessionExpired": "Votre session PD2 a expiré. Reconnectez-vous pour mettre cet objet en vente."
   }
 }
