@@ -46,6 +46,8 @@ vi.mock('@/hooks/useChangelog', () => ({ useChangelog: vi.fn() }));
 vi.mock('@/hooks/useSocketNotifications', () => ({ useSocketNotifications: vi.fn() }));
 vi.mock('@/pages/market/alerts/useMarketAlerts', () => ({ useMarketAlerts: vi.fn() }));
 vi.mock('@/hooks/useOverlayIntents', () => ({ useOverlayIntents: vi.fn() }));
+const tryOn = vi.hoisted(() => vi.fn(async (_raw: string) => {}));
+vi.mock('@/hooks/useSimTryOn', () => ({ useSimTryOn: () => tryOn }));
 const delistItem = vi.hoisted(() => vi.fn(async () => {}));
 vi.mock('@/pages/delist/DelistHandler', () => ({ useDelist: () => ({ delistItem }) }));
 // Item parsing has its own tests; here "ITEM…" is a valid item and "…stash…" marks it as in the shared stash.
@@ -318,6 +320,22 @@ describe('AppController hotkey registration', () => {
     await mount();
     await press(8);
     expect(h.overlay.togglePanel).toHaveBeenCalledWith('builds');
+  });
+
+  it('try-on hotkey hands the copied item to the Horadric Sim try-on (index 10, after the palette)', async () => {
+    await mount();
+    await press(10);
+    await advance(300);
+    expect(tryOn).toHaveBeenCalledWith('ITEM sword');
+  });
+
+  it('try-on hotkey toasts instead when no item is under the cursor', async () => {
+    itemUnderCursor = null;
+    await mount();
+    await press(10);
+    await advance(300);
+    expect(tryOn).not.toHaveBeenCalled();
+    expect(toasts()).toContainEqual(expect.objectContaining({ title: 'Horadric Sim', variant: 'error' }));
   });
 });
 

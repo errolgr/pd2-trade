@@ -186,6 +186,19 @@ describe('SimulatorButton', () => {
     expect(localStorage.getItem(SIM_CALLOUT_STORAGE_KEY)).toBe('1');
   });
 
+  it('shows the try-on hotkey binding on the button and links to it from the popover', async () => {
+    settings = { ...settings, hotkeyModifierSimTryOn: 'alt', hotkeyKeySimTryOn: 'j' };
+    render(<SimulatorButton item={checked()} />);
+    expect(screen.getByRole('button', { name: /^Sim/ }).getAttribute('title')).toBe('Try-on hotkey: Alt+J');
+    cleanup();
+
+    settings = { ...settings, hotkeyKeySimTryOn: '' };
+    await openPopover();
+    expect(screen.getByRole('button', { name: /^Sim/ }).getAttribute('title')).toBe('Try-on hotkey: not set');
+    fireEvent.click(screen.getByRole('button', { name: 'Try-on hotkey: not set' }));
+    expect(openPanel).toHaveBeenCalledWith('settings', { section: 'Hotkeys', field: 'hotkeyKeySimTryOn' });
+  });
+
   it('tries the stash item on with the selected account’s highest ladder character, opens the planner and closes', async () => {
     await openPopover();
     await screen.findByText('Found in your stash');

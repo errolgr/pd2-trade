@@ -25,6 +25,7 @@ export const CHAT_DOCK_ITEMS = [
   'chat',
   'market',
   'builds',
+  'sim',
   'netWorth',
   'stashValue',
   'offers',

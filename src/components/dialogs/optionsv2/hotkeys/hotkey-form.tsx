@@ -45,6 +45,8 @@ const makeHotkeyFormSchema = (t: TFunction) => {
       hotkeyKeyBuilds: optionalKey,
       hotkeyModifierPalette: z.enum(['ctrl', 'alt']),
       hotkeyKeyPalette: optionalKey,
+      hotkeyModifierSimTryOn: z.enum(['ctrl', 'alt']),
+      hotkeyKeySimTryOn: optionalKey,
     })
     .refine((data) => !(data.hotkeyModifier === 'ctrl' && hotkeyKeyToken(data.hotkeyKey) === 'C'), {
       message: t('hotkeys.validation.ctrlC'),
@@ -142,6 +144,13 @@ export const HOTKEY_ROWS: HotkeyRowConfig[] = [
     key: 'hotkeyKeyPalette',
     optional: true,
   },
+  {
+    labelKey: 'hotkeys.rows.simTryOn.label',
+    descriptionKey: 'hotkeys.rows.simTryOn.description',
+    modifier: 'hotkeyModifierSimTryOn',
+    key: 'hotkeyKeySimTryOn',
+    optional: true,
+  },
 ];
 
 export function HotkeyForm() {
@@ -174,6 +183,8 @@ export function HotkeyForm() {
       hotkeyKeyBuilds: '',
       hotkeyModifierPalette: 'ctrl',
       hotkeyKeyPalette: 'space',
+      hotkeyModifierSimTryOn: 'ctrl',
+      hotkeyKeySimTryOn: '',
     },
   });
 

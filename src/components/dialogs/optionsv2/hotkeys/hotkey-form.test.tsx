@@ -181,4 +181,18 @@ describe('HotkeyForm', () => {
     const warnings = screen.getAllByRole('status').map((el) => el.textContent);
     expect(warnings).toEqual(['Also used by Command palette.', 'Also used by Chat Window.']);
   });
+
+  it('lists the Horadric Sim try-on hotkey, unbound until a key is pressed', () => {
+    renderForm({ ...HOTKEYS, hotkeyModifierSimTryOn: 'ctrl', hotkeyKeySimTryOn: '' });
+    const label = 'Try item on character (Horadric Sim)';
+    expect(keyInput(label).value).toBe('');
+    expect(keyInput(label).placeholder).toBe('Off');
+    pressKey(label, 'j');
+    expect(store.updateSettings.mock.calls.at(-1)?.[0]).toMatchObject({
+      hotkeyModifierSimTryOn: 'ctrl',
+      hotkeyKeySimTryOn: 'j',
+    });
+    pressKey(label, 'Backspace');
+    expect(store.updateSettings.mock.calls.at(-1)?.[0].hotkeyKeySimTryOn).toBe('');
+  });
 });

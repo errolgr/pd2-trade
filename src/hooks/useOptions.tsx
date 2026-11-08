@@ -148,6 +148,8 @@ export interface ISettings {
   simCharacter?: string; // default ladder character for Horadric Sim entry points
   simGoal?: SimGoal; // default planner goal for Horadric Sim entry points
   simLastExport?: SimLastExport; // the last overlay export sent to the planner (no item data)
+  hotkeyModifierSimTryOn?: 'ctrl' | 'alt';
+  hotkeyKeySimTryOn?: string; // Horadric Sim: try the hovered item on the default character; '' = unbound
 }
 
 interface OptionsContextProps {
@@ -244,6 +246,8 @@ const DEFAULT_SETTINGS: ISettings = {
     { id: 'actions:settings', group: 'actions', title: 'Settings' },
   ],
   paletteRecents: [],
+  hotkeyModifierSimTryOn: 'ctrl',
+  hotkeyKeySimTryOn: '',
 };
 
 /** Every hotkey, as [modifier field, key field]. */
@@ -259,6 +263,7 @@ const HOTKEYS: [keyof ISettings, keyof ISettings][] = [
   ['hotkeyModifierMarket', 'hotkeyKeyMarket'],
   ['hotkeyModifierBuilds', 'hotkeyKeyBuilds'],
   ['hotkeyModifierPalette', 'hotkeyKeyPalette'],
+  ['hotkeyModifierSimTryOn', 'hotkeyKeySimTryOn'],
 ];
 
 /** Hotkeys added after release with a default key, in the order they were added. */
