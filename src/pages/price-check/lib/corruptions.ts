@@ -1,4 +1,6 @@
 import { cubeCorruptions } from '@/assets/cube-corruptions';
+import type { Item } from './interfaces';
+import { StatId } from './stat-mappings';
 
 /**
  * The `item.corruptions` names the market records for each cube corruption stat (the `stat` of an entry in
@@ -103,4 +105,26 @@ export function sameCorruptionNames(a: readonly string[], b: readonly string[]):
   if (a.length !== b.length) return false;
   const sortedB = [...b].sort();
   return [...a].sort().every((name, i) => name === sortedB[i]);
+}
+
+const FLAT_DAMAGE_REDUCTION = 34;
+const PERCENT_DAMAGE_REDUCTION = 36;
+
+/**
+ * BH's Ctrl+C export merges stats by name: flat (34) and % (36) damage reduction are both "Physical Damage Taken
+ * Reduced by", so an item with both exports one stat 34 entry holding the larger value (fixed upstream in
+ * Project-Diablo-2/BH#117). When that value came from a % damage reduction corruption, the entry is flagged
+ * corrupted: it is the % roll, so it gets id 36 back. The other roll is lost either way.
+ */
+export function repairMergedDamageReduction(item: Item): Item {
+  const roll = item.stats?.find((s) => s.stat_id === StatId.Corrupted)?.value;
+  const corruption = roll === undefined ? undefined : cubeCorruptions.find((c) => c.key === roll);
+  if (!corruption?.stats.some(({ stat }) => stat === 'red-dmg%')) return item;
+  if (!item.stats.some((s) => s.stat_id === FLAT_DAMAGE_REDUCTION && s.corrupted)) return item;
+  return {
+    ...item,
+    stats: item.stats.map((s) =>
+      s.stat_id === FLAT_DAMAGE_REDUCTION && s.corrupted ? { ...s, stat_id: PERCENT_DAMAGE_REDUCTION } : s,
+    ),
+  };
 }

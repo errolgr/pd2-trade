@@ -2,6 +2,7 @@ export const changeLog = {
   '0.11.1': [
     '🆕 Market browser: the Type filter groups class items under their family. Pick Bows, Spears, Javelins, Helms or Shields to search every type in it at once (Bows finds Amazon Bows too; Helms includes Barbarian Helms, Druid Pelts and Circlets; Shields includes Paladin Shields and Shrunken Heads), or pick one type under it as before',
     '🆕 Price check: the base / type switch in the header has a third step for those items. A Ceremonial Bow goes Ceremonial Bow → Amazon Bow → Bows, so a class bow is compared with every bow',
+    "🔧 Price check: corrupted items with flat damage reduction and a % damage reduction corruption are priced on the % roll. BH's Ctrl+C export reported it as flat damage reduction",
   ],
   '0.11.0': [
     '🆕 Notification log: every whisper, offer, alert and sim result you missed in one place. A button on the chat dock lights up when something is waiting',

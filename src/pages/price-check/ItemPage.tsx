@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { PackageSearch } from 'lucide-react';
 import ItemOverlayWidget from '@/pages/price-check/components/ItemOverlayWidget';
 import type { Item } from '@/pages/price-check/lib/interfaces';
+import { repairMergedDamageReduction } from '@/pages/price-check/lib/corruptions';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 import { usePanel } from '@/overlay';
 import { useTranslation } from '@/i18n';
@@ -18,7 +19,9 @@ const ItemWindow: React.FC = () => {
     if (payload?.text) {
       try {
         // encodeItem(): base64 of the URI-encoded UTF-8 JSON
-        next = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(payload.text)))));
+        next = repairMergedDamageReduction(
+          JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(payload.text))))),
+        );
       } catch (err) {
         console.error('[ItemWindow] Failed to parse item payload:', err);
       }
