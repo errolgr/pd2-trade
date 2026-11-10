@@ -333,11 +333,27 @@ export function bhStatRange(item: Item, nStat: number, param = 0): StatRange | n
 }
 
 /**
+ * Game names (skill string table, S14) that neither the site's labels nor Skills.txt use: the site still says
+ * "Raise Skeleton" and "IronGolem" where the game and BH's Ctrl+C export say "Raise Skeleton Warrior" and "Iron Golem".
+ */
+const GAME_SKILL_NAMES: Record<string, number> = {
+  'enchant fire': 52,
+  'raise skeleton warrior': 70,
+  'iron golem': 90,
+  'one handed weapon mastery': 128,
+  'two handed weapon mastery': 134,
+  'summon ravens': 221,
+  'claw and dagger mastery': 252,
+};
+
+/**
  * Skills by the name the game draws ("Lower Resist", "Werewolf"): the site's +skill labels, first entry
- * kept (class skills come before their same-named procs). Skills.txt names ("LowRes", "Wearwolf") stay a fallback.
+ * kept (class skills come before their same-named procs), and GAME_SKILL_NAMES. Skills.txt names ("LowRes",
+ * "Wearwolf") stay a fallback.
  */
 const skillsByDisplayName = (() => {
   const byName: Record<string, CharacterSkill> = {};
+  for (const [name, id] of Object.entries(GAME_SKILL_NAMES)) byName[name] = characterSkillMap[id];
   for (const [key, label] of SITE_STAT_OPTIONS) {
     const id = /^item_singleskill\{(\d+)\}$/.exec(key)?.[1];
     const skill = id === undefined ? undefined : characterSkillMap[Number(id)];

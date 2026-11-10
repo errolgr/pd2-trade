@@ -186,6 +186,9 @@ describe('buildTradeUrl', () => {
     stats: [
       { name: '+3 to Lower Resist', skill: 'Lower Resist', value: 3 } as Stat,
       { name: '+3 to Fire Golem', skill: 'Fire Golem', value: 3 } as Stat,
+      // S14 game names the site's labels don't use ("Raise Skeleton", "IronGolem")
+      { name: '+3 to Raise Skeleton Warrior', skill: 'Raise Skeleton Warrior', value: 3 } as Stat,
+      { name: '+3 to Iron Golem', skill: 'Iron Golem', value: 3 } as Stat,
     ],
   });
 
@@ -193,6 +196,8 @@ describe('buildTradeUrl', () => {
     [hawkmail, 'Raven', 'item_nonclassskill{221}'],
     [necroHead, 'Lower Resist', 'item_singleskill{91}'],
     [necroHead, 'Fire Golem', 'item_singleskill{94}'],
+    [necroHead, 'Raise Skeleton Warrior', 'item_singleskill{70}'],
+    [necroHead, 'Iron Golem', 'item_singleskill{90}'],
   ])('maps exported skill line %#: %s to %s', (item, skill, prop) => {
     const key = `skill:${skill.toLowerCase()}`;
     expect(urlParams(item, [key], { [key]: { min: '3' } }).p.get(`properties[${prop}][min]`)).toBe('3');
