@@ -3,7 +3,9 @@ import { openUrl } from '@/lib/browser-opener';
 import { writeText } from '@/lib/browser-clipboard';
 import { useChatTemplates } from '@/hooks/useChatTemplates';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { useOptions } from '@/hooks/useOptions';
 import { fillTemplate, templatePlaceholders, type ChatTemplate } from '@/lib/message-templates';
+import { trackEvent } from '@/lib/telemetry';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { verifyListing } from '../lib/freshness';
 import { itemDisplayName, listingUrl, sellerAccount } from '../lib/listing';
@@ -11,7 +13,7 @@ import { buildWhisper } from '../lib/whisper';
 import { t } from '@/i18n';
 
 export interface ListingActions {
-  /** Copies `/w *account …` (default wording, or `template` in buildWhisper's tokens) and toasts. */
+  /** Copies `/w *account …` (`template` in buildWhisper's tokens, else Settings → Market's, else the default wording). */
   copyWhisper: (template?: string) => Promise<void>;
   /**
    * Re-checks the listing on PD2 before acting on it. Resolves the listing to act on (PD2's current copy, so a
@@ -30,7 +32,8 @@ export interface ListingActions {
 /** Opens the chat panel on the listing's seller with their Trader sidebar showing. */
 export function useOpenTrader(listing: MarketListingEntry): () => void {
   const { openPanel } = useOverlay();
-  return () =>
+  return () => {
+    trackEvent('market_trader_opened');
     openPanel(
       'chat',
       {
@@ -40,12 +43,14 @@ export function useOpenTrader(listing: MarketListingEntry): () => void {
       },
       { focus: true },
     );
+  };
 }
 
 /** Whisper / message / website actions shared by the detail pane and the result cards. */
 export function useListingActions(listing: MarketListingEntry): ListingActions {
   const { openPanel } = useOverlay();
   const { templates } = useChatTemplates();
+  const { settings } = useOptions();
   const { marketApi } = usePd2Website();
   const openTrader = useOpenTrader(listing);
   // buildWhisper falls back to the website username, as the price check does
@@ -56,6 +61,7 @@ export function useListingActions(listing: MarketListingEntry): ListingActions {
     const check = await verifyListing(marketApi, listing);
     if (check.status === 'unknown') return listing;
     if (check.status === 'gone') {
+      trackEvent('market_listing_gone');
       showToast({
         title: t('market:actions.goneTitle'),
         description: t('market:actions.goneDescription', { item: displayName }),
@@ -92,7 +98,10 @@ export function useListingActions(listing: MarketListingEntry): ListingActions {
       const current = await ensureFresh();
       if (!current) return;
       try {
-        await writeText(buildWhisper(current, template));
+        await writeText(buildWhisper(current, template ?? settings?.marketWhisperTemplate));
+        trackEvent('market_whisper_copied', {
+          template: template ? 'picked' : settings?.marketWhisperTemplate ? 'settings' : 'default',
+        });
         showToast({
           title: t('market:actions.whisperCopied'),
           description: t('market:actions.whisperCopiedDescription', { account }),
@@ -106,7 +115,8 @@ export function useListingActions(listing: MarketListingEntry): ListingActions {
       }
     },
     ensureFresh,
-    openDm: () =>
+    openDm: () => {
+      trackEvent('market_dm_opened');
       openPanel(
         'chat',
         {
@@ -116,8 +126,12 @@ export function useListingActions(listing: MarketListingEntry): ListingActions {
           reply: true,
         },
         { focus: true },
-      ),
+      );
+    },
     openTrader,
-    openWebsite: () => void openUrl(listingUrl(listing)),
+    openWebsite: () => {
+      trackEvent('market_listing_opened_on_site');
+      void openUrl(listingUrl(listing));
+    },
   };
 }

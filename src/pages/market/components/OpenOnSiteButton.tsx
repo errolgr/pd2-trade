@@ -1,5 +1,6 @@
 import { ExternalLink } from 'lucide-react';
 import { openUrl } from '@/lib/browser-opener';
+import { trackEvent } from '@/lib/telemetry';
 import { showToast } from '@/overlay';
 import { siteSearchLink } from '@/pages/market/lib/site-url';
 import type { MarketFilters } from '@/pages/market/lib/types';
@@ -19,6 +20,7 @@ export function OpenOnSiteButton({ filters }: { filters: MarketFilters | null })
   const open = () => {
     if (!link) return;
     void openUrl(link.url);
+    trackEvent('market_search_opened_on_site', { dropped_filters: link.dropped.length });
     if (link.dropped.length) {
       showToast({
         title: t('openOnSite.toastTitle'),

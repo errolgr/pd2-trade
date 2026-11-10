@@ -8,6 +8,9 @@ vi.mock('@/overlay', () => ({ usePanel: () => ({ close }) }));
 vi.mock('@/pages/chat/components/ChatOverlayWidget', () => ({
   default: ({ onClose }: { onClose: () => void }) => <button onClick={onClose}>close widget</button>,
 }));
+vi.mock('@/pages/chat/components/ChatSimTryOn', () => ({
+  ChatSimTryOnProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
 
 afterEach(cleanup);
 

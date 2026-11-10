@@ -1,6 +1,6 @@
 import { t } from '@/i18n';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { invoke, isTauri } from '@tauri-apps/api/core';
+import { isDiabloFocused } from '@/lib/diablo-focus';
 import { useOptions } from '@/hooks/useOptions';
 import { useOAuth } from '@/hooks/useOAuth';
 import { AccountMismatchError, AuthenticationError, usePd2Website } from '@/hooks/pd2website/usePD2Website';
@@ -21,7 +21,8 @@ import {
 import { getCurrentSeason, SEASONS, startedSeasons } from '@/lib/seasons';
 
 export type NetWorthStatus = 'idle' | 'loading' | 'ok' | 'error' | 'signed-out';
-export type NetWorthTab = 'overview' | 'history';
+/** Net Worth window tabs another panel can open it on ('simulator': Send to Simulator, for beta users). */
+export type NetWorthTab = 'overview' | 'history' | 'simulator';
 
 export interface NetWorthContextValue {
   owner: NetWorthOwner | null;
@@ -76,15 +77,6 @@ function holdingsSignature(response: SnapshotResponse): string {
     .map((line) => `${line.key}@${line.tab ?? ''}:${line.qty}`)
     .sort()
     .join('|');
-}
-
-async function isDiabloFocused(): Promise<boolean> {
-  if (!isTauri()) return true;
-  try {
-    return await invoke<boolean>('is_diablo_focused');
-  } catch {
-    return false;
-  }
 }
 
 /**

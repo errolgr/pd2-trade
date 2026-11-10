@@ -15,7 +15,9 @@ import { Slider } from '@/components/ui/slider';
 import { DUR, EASE_OUT, fadeIn, popIn } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { templatePlaceholders } from '@/lib/message-templates';
+import { DEFAULT_TOAST_POPUP_TYPES, isToastTypeOn, toggleToastType } from '@/lib/toast-types';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
+import { CHAT_TIMING_OPTIONS, optionLabel } from '../setting-options';
 import { ChatTemplatesEditor } from './chat-templates-editor';
 import { Trans, useTranslation } from '@/i18n';
 
@@ -25,6 +27,7 @@ const TOAST_TYPES = [
   { id: 'joins', labelKey: 'chat.toastTypes.joins' },
   { id: 'offers', labelKey: 'chat.toastTypes.offers' },
   { id: 'networth', labelKey: 'chat.toastTypes.networth' },
+  { id: 'sim', labelKey: 'chat.toastTypes.sim' },
 ] as const;
 
 const COMMON_TOKENS = ['{accountName}', '{characterName}', '{itemName}', '{price}'];
@@ -39,8 +42,6 @@ const chatFormSchema = z.object({
   whisperJoinNotificationsEnabled: z.boolean().optional(),
   whisperNotificationTiming: z.enum(['in-game', 'out-of-game', 'both', 'never']).optional(),
   whisperNotificationVolume: z.number().int().min(0).max(100).optional(),
-  marketAlertSoundEnabled: z.boolean().optional(),
-  marketAlertVolume: z.number().int().min(0).max(100).optional(),
   acceptOfferMessageTemplate: z.string().optional(),
   rejectOfferMessageTemplate: z.string().optional(),
   soldOfferMessageTemplate: z.string().optional(),
@@ -59,15 +60,13 @@ export function ChatForm() {
     defaultValues: {
       whisperNotificationsEnabled: settings?.whisperNotificationsEnabled ?? true,
       toastPopupsEnabled: settings?.toastPopupsEnabled ?? true,
-      toastPopupTypes: settings?.toastPopupTypes ?? ['whispers', 'trade', 'joins', 'offers', 'networth'],
+      toastPopupTypes: settings?.toastPopupTypes ?? DEFAULT_TOAST_POPUP_TYPES,
       tradeNotificationsEnabled: settings?.tradeNotificationsEnabled ?? true,
       whisperIgnoreList: settings?.whisperIgnoreList || [],
       whisperAnnouncementsEnabled: settings?.whisperAnnouncementsEnabled ?? false,
       whisperJoinNotificationsEnabled: settings?.whisperJoinNotificationsEnabled ?? false,
       whisperNotificationTiming: settings?.whisperNotificationTiming || 'both',
       whisperNotificationVolume: settings?.whisperNotificationVolume ?? 70,
-      marketAlertSoundEnabled: settings?.marketAlertSoundEnabled ?? true,
-      marketAlertVolume: settings?.marketAlertVolume ?? 70,
       acceptOfferMessageTemplate:
         settings?.acceptOfferMessageTemplate || 'Your offer has been accepted. Game: {gameInfo}',
       rejectOfferMessageTemplate: settings?.rejectOfferMessageTemplate || 'Your offer has been rejected.',
@@ -82,15 +81,13 @@ export function ChatForm() {
         {
           whisperNotificationsEnabled: settings.whisperNotificationsEnabled ?? true,
           toastPopupsEnabled: settings.toastPopupsEnabled ?? true,
-          toastPopupTypes: settings.toastPopupTypes ?? ['whispers', 'trade', 'joins', 'offers', 'networth'],
+          toastPopupTypes: settings.toastPopupTypes ?? DEFAULT_TOAST_POPUP_TYPES,
           tradeNotificationsEnabled: settings.tradeNotificationsEnabled ?? true,
           whisperIgnoreList: settings.whisperIgnoreList || [],
           whisperAnnouncementsEnabled: settings.whisperAnnouncementsEnabled ?? false,
           whisperJoinNotificationsEnabled: settings.whisperJoinNotificationsEnabled ?? false,
           whisperNotificationTiming: settings.whisperNotificationTiming || 'both',
           whisperNotificationVolume: settings.whisperNotificationVolume ?? 70,
-          marketAlertSoundEnabled: settings.marketAlertSoundEnabled ?? true,
-          marketAlertVolume: settings.marketAlertVolume ?? 70,
           acceptOfferMessageTemplate:
             settings.acceptOfferMessageTemplate || 'Your offer has been accepted. Game: {gameInfo}',
           rejectOfferMessageTemplate: settings.rejectOfferMessageTemplate || 'Your offer has been rejected.',
@@ -152,6 +149,7 @@ export function ChatForm() {
             name="whisperNotificationTiming"
             render={({ field }) => (
               <SettingsRow
+                settingKey="whisperNotificationTiming"
                 label={t('chat.timing.label')}
                 description={t('chat.timing.description')}
                 control={
@@ -163,10 +161,12 @@ export function ChatForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="in-game">{t('chat.timing.options.inGame')}</SelectItem>
-                      <SelectItem value="out-of-game">{t('chat.timing.options.outOfGame')}</SelectItem>
-                      <SelectItem value="both">{t('chat.timing.options.always')}</SelectItem>
-                      <SelectItem value="never">{t('chat.timing.options.never')}</SelectItem>
+                      {CHAT_TIMING_OPTIONS.map((option) => (
+                        <SelectItem key={option.value}
+                          value={option.value}>
+                          {optionLabel(t, option)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 }
@@ -196,6 +196,7 @@ export function ChatForm() {
             render={({ field }) => (
               <SettingsRow
                 disabled={isDisabled}
+                settingKey="whisperNotificationsEnabled"
                 label={t('chat.general.label')}
                 description={t('chat.general.description')}
                 control={
@@ -214,6 +215,7 @@ export function ChatForm() {
             render={({ field }) => (
               <SettingsRow
                 disabled={isDisabled}
+                settingKey="toastPopupsEnabled"
                 label={t('chat.toasts.label')}
                 description={t('chat.toasts.description')}
                 control={
@@ -237,25 +239,19 @@ export function ChatForm() {
                         control={form.control}
                         name="toastPopupTypes"
                         render={({ field: typesField }) => {
-                          const types = typesField.value ?? ['whispers', 'trade', 'joins', 'offers', 'networth'];
-                          const toggleType = (typeId: string) => {
-                            const updated = types.includes(typeId)
-                              ? types.filter((type: string) => type !== typeId)
-                              : [...types, typeId];
-                            typesField.onChange(updated);
-                          };
+                          const types = typesField.value ?? DEFAULT_TOAST_POPUP_TYPES;
                           return (
                             <div role="group"
                               aria-label={t('chat.toasts.typesLabel')}
                               className="flex flex-wrap gap-2">
                               {TOAST_TYPES.map((type) => {
-                                const isActive = types.includes(type.id);
+                                const isActive = isToastTypeOn(types, type.id);
                                 return (
                                   <button
                                     key={type.id}
                                     type="button"
                                     aria-pressed={isActive}
-                                    onClick={() => toggleType(type.id)}
+                                    onClick={() => typesField.onChange(toggleToastType(types, type.id))}
                                     className={cn(
                                       'inline-flex h-7 items-center gap-1.5 rounded-full border px-3 text-xs font-medium outline-none',
                                       'transition-[color,background-color,border-color,box-shadow,transform] duration-(--dur-fast) ease-out',
@@ -286,6 +282,7 @@ export function ChatForm() {
             render={({ field }) => (
               <SettingsRow
                 disabled={isDisabled}
+                settingKey="tradeNotificationsEnabled"
                 label={t('chat.trade.label')}
                 description={t('chat.trade.description')}
                 control={
@@ -304,6 +301,7 @@ export function ChatForm() {
             render={({ field }) => (
               <SettingsRow
                 disabled={isDisabled}
+                settingKey="whisperAnnouncementsEnabled"
                 label={t('chat.announcements.label')}
                 description={t('chat.announcements.description')}
                 control={
@@ -322,6 +320,7 @@ export function ChatForm() {
             render={({ field }) => (
               <SettingsRow
                 disabled={isDisabled}
+                settingKey="whisperJoinNotificationsEnabled"
                 label={t('chat.joins.label')}
                 description={t('chat.joins.description')}
                 control={
@@ -353,6 +352,7 @@ export function ChatForm() {
               <SettingsRow
                 layout="stacked"
                 disabled={isDisabled}
+                settingKey="whisperIgnoreList"
                 label={t('chat.ignore.label')}
                 description={t('chat.ignore.description')}
                 control={
@@ -434,6 +434,7 @@ export function ChatForm() {
               return (
                 <SettingsRow
                   disabled={isDisabled}
+                  settingKey="whisperNotificationVolume"
                   label={
                     <Trans
                       t={t}
@@ -466,65 +467,6 @@ export function ChatForm() {
               );
             }}
           />
-          <FormField
-            control={form.control}
-            name="marketAlertSoundEnabled"
-            render={({ field }) => (
-              <SettingsRow
-                label={t('chat.sound.marketSound.label')}
-                description={t('chat.sound.marketSound.description')}
-                control={
-                  <FormControl>
-                    <Switch checked={field.value ?? true}
-                      onCheckedChange={field.onChange} />
-                  </FormControl>
-                }
-              />
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="marketAlertVolume"
-            render={({ field }) => {
-              const volume = field.value ?? 70;
-              const VolumeIcon = volume === 0 ? VolumeX : volume < 50 ? Volume1 : Volume2;
-              const soundOff = !(form.watch('marketAlertSoundEnabled') ?? true);
-              return (
-                <SettingsRow
-                  disabled={soundOff}
-                  label={
-                    <Trans
-                      t={t}
-                      i18nKey="chat.sound.marketVolume.label"
-                      values={{ value: volume }}
-                      components={{ num: <span className="tabular-nums" /> }}
-                    />
-                  }
-                  description={t('chat.sound.marketVolume.description')}
-                  control={
-                    <div className="flex w-[240px] items-center gap-3">
-                      <VolumeIcon aria-hidden
-                        className="size-4 shrink-0 text-muted-foreground" />
-                      <FormControl>
-                        <Slider
-                          aria-label={t('chat.sound.marketVolume.ariaLabel')}
-                          min={0}
-                          max={100}
-                          step={1}
-                          value={[volume]}
-                          onValueChange={(value) => field.onChange(value[0])}
-                          disabled={soundOff}
-                          className="flex-1"
-                        />
-                      </FormControl>
-                    </div>
-                  }
-                >
-                  <FormMessage />
-                </SettingsRow>
-              );
-            }}
-          />
         </SettingsGroup>
 
         <SettingsGroup title={t('chat.templates.group')}>
@@ -535,6 +477,7 @@ export function ChatForm() {
             render={({ field }) => (
               <SettingsRow
                 layout="stacked"
+                settingKey="acceptOfferMessageTemplate"
                 label={t('chat.templates.accept.label')}
                 description={
                   <PlaceholderHint
@@ -564,6 +507,7 @@ export function ChatForm() {
             render={({ field }) => (
               <SettingsRow
                 layout="stacked"
+                settingKey="rejectOfferMessageTemplate"
                 label={t('chat.templates.reject.label')}
                 description={
                   <PlaceholderHint
@@ -591,6 +535,7 @@ export function ChatForm() {
             render={({ field }) => (
               <SettingsRow
                 layout="stacked"
+                settingKey="soldOfferMessageTemplate"
                 label={t('chat.templates.sold.label')}
                 description={
                   <PlaceholderHint

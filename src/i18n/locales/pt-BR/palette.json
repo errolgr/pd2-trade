@@ -1,0 +1,61 @@
+{
+  "input": {
+    "label": "Paleta de comandos",
+    "placeholder": "Busque itens, builds, configurações…",
+    "scopedPlaceholder": "Buscar…"
+  },
+  "groups": {
+    "actions": "Ações",
+    "items": "Itens",
+    "builds": "Builds",
+    "chat": "Chat",
+    "listings": "Anúncios",
+    "settings": "Configurações",
+    "sim": "Horadric Sim",
+    "pinned": "Fixados",
+    "recent": "Recentes"
+  },
+  "scope": {
+    "tabHint": "Tab para filtrar",
+    "remove": "Parar de buscar só em {{label}}"
+  },
+  "loading": "Buscando…",
+  "signIn": {
+    "title": "Entre para buscar chats e anúncios"
+  },
+  "empty": {
+    "noResults": "Nenhum resultado para “{{query}}”"
+  },
+  "footer": {
+    "move": "↑↓ mover",
+    "open": "↵ abrir",
+    "actions": "Ctrl+K ações",
+    "scope": "Tab filtrar",
+    "unscope": "Backspace desfazer",
+    "close": "Esc fechar"
+  },
+  "menu": {
+    "label": "Ações de {{title}}",
+    "placeholder": "Buscar ações…",
+    "pin": "Fixar na paleta",
+    "unpin": "Desafixar da paleta"
+  },
+  "errors": {
+    "actionFailed": "Não funcionou"
+  },
+  "actions": {
+    "market": "Mercado",
+    "chat": "Chat",
+    "offers": "Ofertas de troca",
+    "builds": "Builds",
+    "stashValue": "Valor do baú",
+    "snapshot": "Registrar patrimônio agora",
+    "myListings": "Meus anúncios",
+    "settings": "Configurações",
+    "changelog": "Novidades",
+    "checkUpdates": "Verificar atualizações",
+    "signIn": "Entrar",
+    "signOut": "Sair",
+    "notifications": "Notificações"
+  }
+}

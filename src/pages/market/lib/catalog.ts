@@ -1,6 +1,7 @@
 import { runeWords, setItems, uniqueItems } from '@/assets/items';
 import { modifierByName } from '@/assets/modifiers';
 import { SITE_BASE_NAMES, SITE_ITEM_TYPES } from './catalog.data';
+import { inCodes, isTypeGroupCode, TYPE_GROUPS, typeGroupByCode, typeGroupMembers, typeGroupOf } from './type-groups';
 import { statLabel } from './stats';
 import type { CharClass, CorruptionOption, Rarity } from './types';
 
@@ -13,15 +14,104 @@ export interface CatalogOption {
 /** The site's Type select (without "Any"), sorted by label. */
 export const ITEM_TYPES: CatalogOption[] = SITE_ITEM_TYPES.map(({ code, label }) => ({ code, label }));
 
-const BASES_BY_TYPE = new Map(SITE_ITEM_TYPES.map((t) => [t.code, t.bases]));
-
-/** The site's Base select for a Type (sorted by label); empty for an unknown type. */
-export function basesForType(typeCode: string | undefined): CatalogOption[] {
-  return typeCode ? [...(BASES_BY_TYPE.get(typeCode) ?? [])] : [];
+/** A row of our Type select: a type group (depth 0) with its member types under it (depth 1), or a lone type. */
+export interface TypeOption extends CatalogOption {
+  depth: 0 | 1;
 }
 
-/** Codes a type/base option stands for: its own code, or every member of a `{"$in": [...]}` group. */
+/**
+ * Our Type select (without "Any"): the site's types sorted by label, with each type group in its place by label
+ * and its member types (by label) right under it instead of in their own places.
+ */
+export const TYPE_OPTIONS: TypeOption[] = (() => {
+  // One block per top-level row (a lone type, or a group and its members), kept in label order
+  const blocks: TypeOption[][] = ITEM_TYPES.filter((t) => !typeGroupOf(t.code)).map((t) => [{ ...t, depth: 0 }]);
+  for (const group of TYPE_GROUPS) {
+    const members: TypeOption[] = ITEM_TYPES.filter((t) => group.members.includes(t.code)).map((t) => ({
+      ...t,
+      depth: 1,
+    }));
+    const at = blocks.findIndex(([row]) => row.label.localeCompare(group.label) > 0);
+    blocks.splice(at === -1 ? blocks.length : at, 0, [{ code: group.code, label: group.label, depth: 0 }, ...members]);
+  }
+  return blocks.flat();
+})();
+
+const BASES_BY_TYPE = new Map(SITE_ITEM_TYPES.map((t) => [t.code, t.bases]));
+
+/**
+ * A Base option of ours that stands for a family of bases the site lists one by one ("any pgem", "any key"), with
+ * the words the item-name box finds it by. Picking it searches its Type with every base of the family.
+ */
+export interface BaseGroup extends CatalogOption {
+  typeCode: string;
+  aliases: string[];
+}
+
+const typeCodeOf = (label: string) => SITE_ITEM_TYPES.find((t) => t.label === label)?.code ?? '';
+const UBER = typeCodeOf('Uber Ingredient');
+
+export const BASE_GROUPS: BaseGroup[] = [
+  {
+    typeCode: typeCodeOf('Gem'),
+    label: 'Any Perfect Gem',
+    // Gem bases come plain and stacked (`gpv`, `gpvs`)
+    code: inCodes(['gpv', 'gpw', 'gpg', 'gpr', 'gpb', 'skz', 'gpy'].flatMap((c) => [c, `${c}s`])),
+    aliases: ['pgem', 'pgems', 'perfect gems', 'perfect skull'],
+  },
+  {
+    typeCode: UBER,
+    label: 'Any Pandemonium Key',
+    code: inCodes(['pk1', 'pk2', 'pk3']),
+    aliases: ['keys', 'pandemonium keys', 'uber keys', 'key of terror', 'key of hate', 'key of destruction'],
+  },
+  {
+    typeCode: UBER,
+    label: 'Any Corrupted Ear',
+    code: inCodes(['ivez', 'ivea', 'iveb', 'ived', 'iven', 'ivep', 'ives']),
+    aliases: ['ears', 'corrupted ears'],
+  },
+  {
+    typeCode: UBER,
+    label: 'Any Essence',
+    code: inCodes(['tes', 'ceh', 'bet', 'fed']),
+    aliases: ['essences', 'twisted essence', 'charged essence', 'burning essence', 'festering essence'],
+  },
+  {
+    typeCode: UBER,
+    label: 'Any Uber Organ',
+    code: inCodes(['mbr', 'dhn', 'bey']),
+    aliases: ['organs', "mephisto's brain", "diablo's horn", "baal's eye"],
+  },
+];
+
+/**
+ * The site's Base select for a Type (sorted by label), after our base groups for it; for a type group, those of
+ * every member type together, sorted by label. Empty for an unknown type.
+ */
+export function basesForType(typeCode: string | undefined): CatalogOption[] {
+  if (!typeCode) return [];
+  if (isTypeGroupCode(typeCode))
+    return typeGroupMembers(typeCode)
+      .flatMap((member) => basesForType(member))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  const groups = BASE_GROUPS.filter((g) => g.typeCode === typeCode).map(({ code, label }) => ({ code, label }));
+  return [...groups, ...(BASES_BY_TYPE.get(typeCode) ?? [])];
+}
+
+/** Base groups the item-name box offers for `query` (three letters or more of its label or one of its words). */
+export function baseGroupMatches(query: string): BaseGroup[] {
+  const q = query.trim().toLowerCase();
+  if (q.length < 3) return [];
+  return BASE_GROUPS.filter((g) => [g.label, ...g.aliases].some((term) => term.toLowerCase().includes(q)));
+}
+
+/**
+ * Codes a type/base option stands for: its own code, every member of a `{"$in": [...]}` entry, or every member
+ * type of a type group (`group:bows`; none for an unknown group).
+ */
 export function optionCodes(code: string): string[] {
+  if (isTypeGroupCode(code)) return typeGroupMembers(code);
   if (!code.startsWith('{')) return [code];
   try {
     const parsed = JSON.parse(code) as { $in?: unknown };
@@ -43,8 +133,13 @@ export function findBaseOption(baseCode: string): { typeCode: string; baseCode: 
   return null;
 }
 
-/** Type option for a raw `item.base.type_code` (grouped types such as Jewelry/Charm resolve to the group). */
+/**
+ * Type option for a raw `item.base.type_code` (grouped types such as Jewelry/Charm resolve to the group) or for
+ * a Type value (a type group code resolves to the group).
+ */
 export function findTypeOption(typeCode: string): CatalogOption | null {
+  const group = typeGroupByCode(typeCode);
+  if (group) return { code: group.code, label: group.label };
   return ITEM_TYPES.find((t) => t.code === typeCode || optionCodes(t.code).includes(typeCode)) ?? null;
 }
 
@@ -228,6 +323,13 @@ const ITEM_NAMES: ItemNameOption[] = (() => {
   }
   return out;
 })();
+
+const ITEM_NAMES_BY_NAME = new Map(ITEM_NAMES.map((o) => [o.name.toLowerCase(), o]));
+
+/** The autocomplete entry for an exact item name (case-insensitive); undefined when the site doesn't list it. */
+export function itemNameOption(name: string): ItemNameOption | undefined {
+  return ITEM_NAMES_BY_NAME.get(name.trim().toLowerCase());
+}
 
 /**
  * Item names matching `query` (case-insensitive): prefix matches, then word-start matches, then substring

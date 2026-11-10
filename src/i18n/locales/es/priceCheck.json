@@ -27,8 +27,10 @@
     "header": {
       "base": "Base: {{type}}",
       "type": "Tipo: {{type}}",
+      "group": "Grupo: {{group}}",
       "toggleSearchMode": "Haz clic para cambiar el modo de búsqueda",
       "cycleQuality": "Haz clic para cambiar la calidad",
+      "anyQuality": "Cualquiera",
       "defense": "Defensa: <value>{{defense}}</value>",
       "appraisalNote": "Nota de tasación: {{note}}"
     },
@@ -72,14 +74,14 @@
       "clearTitle": "Desmarcar todas las estadísticas"
     },
     "actions": {
-      "openTradeAria": "Abrir búsqueda en projectdiablo2.com",
-      "openTradeTooltip": "Abrir esta búsqueda en projectdiablo2.com",
+      "openTrade": "Abrir búsqueda en projectdiablo2.com",
+      "more": "Más",
       "openInMarket": "Abrir en el mercado",
       "list": "Anunciar",
-      "listDisabled": "El objeto debe estar en tu alijo compartido para anunciarlo.",
-      "showExpired": "Mostrar caducados"
+      "listDisabled": "El objeto debe estar en tu alijo (compartido o personal) para anunciarlo."
     },
     "results": {
+      "source": { "label": "Anuncios a buscar", "live": "Activos", "expired": "Caducados" },
       "matches": "Coincidencias: <value>{{total}}</value>",
       "showing": "· mostrando {{shown}}",
       "loading": "Cargando anuncios del mercado...",
@@ -88,19 +90,49 @@
       "noListings": "No se encontraron anuncios",
       "loosenFilters": "Prueba a relajar los filtros de estadísticas.",
       "loosenFiltersOrExpired": "Prueba a relajar los filtros de estadísticas o activa Mostrar caducados.",
+      "relax": {
+        "title": "Ningún anuncio cumple todos estos filtros",
+        "hint": "Quita uno: cada uno muestra lo que queda.",
+        "ranges": "Rangos de estadísticas",
+        "corrupted": "Corrupto",
+        "notCorrupted": "No corrupto",
+        "corruptions": "Filtro de corrupción",
+        "showExpired": "Mostrar caducados"
+      },
       "readyTitle": "Listo para buscar",
       "readyHint": "Elige las estadísticas que importan y pulsa Buscar o Enter en un campo mín./máx.",
       "price": "Precio",
-      "listed": "Anunciado",
       "loadingMore": "Cargando más...",
-      "loadMore": "Cargar más"
+      "loadMore": "Cargar más",
+      "sortPrice": "Ordenar por precio",
+      "sortListed": "Ordenar por fecha de publicación",
+      "filteredInGame": "· {{count}} en el juego",
+      "filteredOnSite": "· {{count}} en la web",
+      "filteredOnline": "· {{count}} conectados",
+      "noSellerMatch": "Ningún vendedor aquí coincide con el filtro de vendedor.",
+      "sellerFilter": "Filtro de vendedor",
+      "seller": "Vendedor",
+      "sellerAnyone": "Cualquiera",
+      "sellerInGame": "En el juego",
+      "sellerOnSite": "En la web de comercio",
+      "sellerEither": "En el juego o en la web",
+      "age": "Edad"
     },
     "listing": {
       "copyWhisper": "Copiar susurro",
       "whisperCopied": "Susurro copiado, clic derecho para pegar",
-      "onlineCopyWhisper": "En línea en el juego · clic para copiar susurro",
       "seller": "Vendedor: <name>{{seller}}</name>",
-      "online": "En línea en el juego"
+      "online": "En línea en el juego",
+      "endedSold": "vendido tras {{duration}}",
+      "endedRemoved": "retirado tras {{duration}}",
+      "endedExpired": "caducado tras {{duration}}",
+      "endedAt": "Terminó {{when}}",
+      "listedFor": "Anunciado durante {{duration}}",
+      "onSite": "En la web de comercio",
+      "notOnSite": "No está en la web de comercio",
+      "notInGame": "No está en el juego",
+      "inGame": "En el juego",
+      "presenceWhisper": "{{presence}} · clic para copiar el susurro"
     }
   },
   "statRow": {

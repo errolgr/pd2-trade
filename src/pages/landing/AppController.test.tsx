@@ -45,6 +45,9 @@ vi.mock('@/hooks/usePD2Auth', () => ({ usePD2Auth: vi.fn() }));
 vi.mock('@/hooks/useChangelog', () => ({ useChangelog: vi.fn() }));
 vi.mock('@/hooks/useSocketNotifications', () => ({ useSocketNotifications: vi.fn() }));
 vi.mock('@/pages/market/alerts/useMarketAlerts', () => ({ useMarketAlerts: vi.fn() }));
+vi.mock('@/hooks/useOverlayIntents', () => ({ useOverlayIntents: vi.fn() }));
+const tryOn = vi.hoisted(() => vi.fn(async (_raw: string) => {}));
+vi.mock('@/hooks/useSimTryOn', () => ({ useSimTryOn: () => tryOn }));
 const delistItem = vi.hoisted(() => vi.fn(async () => {}));
 vi.mock('@/pages/delist/DelistHandler', () => ({ useDelist: () => ({ delistItem }) }));
 // Item parsing has its own tests; here "ITEM…" is a valid item and "…stash…" marks it as in the shared stash.
@@ -232,20 +235,16 @@ describe('AppController list and delist hotkeys', () => {
     expect(toasts()).toEqual([]);
   });
 
-  it('opens Quick List in an error state and explains when the item is not in the shared stash', async () => {
+  it('opens Quick List in an error state and explains when the item is not in a stash', async () => {
     itemUnderCursor = 'ITEM inventory ring';
     await mount();
     await press(1);
     await advance(300);
-    expect(h.overlay.openPanel).toHaveBeenCalledWith(
-      'quickList',
-      { error: 'not_shared_stash' },
-      { placement: 'cursor' },
-    );
+    expect(h.overlay.openPanel).toHaveBeenCalledWith('quickList', { error: 'not_in_stash' }, { placement: 'cursor' });
     expect(toasts()).toContainEqual(
       expect.objectContaining({
         title: 'Cannot List Item',
-        description: expect.stringContaining('not in your shared stash'),
+        description: 'This item is not in your stash (shared or personal) and cannot be listed.',
       }),
     );
   });
@@ -255,11 +254,7 @@ describe('AppController list and delist hotkeys', () => {
     await mount();
     await press(1);
     await advance(300);
-    expect(h.overlay.openPanel).toHaveBeenCalledWith(
-      'quickList',
-      { error: 'not_shared_stash' },
-      { placement: 'cursor' },
-    );
+    expect(h.overlay.openPanel).toHaveBeenCalledWith('quickList', { error: 'not_in_stash' }, { placement: 'cursor' });
     expect(toasts()).toContainEqual(expect.objectContaining({ description: 'Item is not supported or invalid.' }));
   });
 
@@ -325,6 +320,22 @@ describe('AppController hotkey registration', () => {
     await mount();
     await press(8);
     expect(h.overlay.togglePanel).toHaveBeenCalledWith('builds');
+  });
+
+  it('try-on hotkey hands the copied item to the Horadric Sim try-on (index 10, after the palette)', async () => {
+    await mount();
+    await press(10);
+    await advance(300);
+    expect(tryOn).toHaveBeenCalledWith('ITEM sword');
+  });
+
+  it('try-on hotkey toasts instead when no item is under the cursor', async () => {
+    itemUnderCursor = null;
+    await mount();
+    await press(10);
+    await advance(300);
+    expect(tryOn).not.toHaveBeenCalled();
+    expect(toasts()).toContainEqual(expect.objectContaining({ title: 'Horadric Sim', variant: 'error' }));
   });
 });
 

@@ -22,9 +22,7 @@ async function retryWhileOccupied<T>(access: () => Promise<T>): Promise<T> {
       return await access();
     } catch (error) {
       if (attempt >= OCCUPIED_RETRY_DELAYS_MS.length || !String(error).includes(CLIPBOARD_OCCUPIED)) throw error;
-      const { promise, resolve } = Promise.withResolvers<void>();
-      setTimeout(resolve, OCCUPIED_RETRY_DELAYS_MS[attempt]);
-      await promise;
+      await new Promise((resolve) => setTimeout(resolve, OCCUPIED_RETRY_DELAYS_MS[attempt]));
     }
   }
 }

@@ -10,11 +10,15 @@ export default function SettingsInterface() {
     <div className="flex flex-col gap-y-10">
       <SettingsSection title={t('sections.interface.title')}
         description={t('sections.interface.description')}>
-        <InterfaceForm />
+        <InterfaceForm part="general" />
       </SettingsSection>
       <SettingsSection title={t('sections.theme.title')}
         description={t('sections.theme.description')}>
         <ThemePicker />
+      </SettingsSection>
+      <SettingsSection title={t('sections.zoneTimer.title')}
+        description={t('sections.zoneTimer.description')}>
+        <InterfaceForm part="zoneTimer" />
       </SettingsSection>
     </div>
   );

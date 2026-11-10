@@ -35,7 +35,12 @@
     "loadMoreFailed": "Não foi possível carregar mais",
     "rateLimitedUntil": "Limite de requisições até {{time}}",
     "listings": "Anúncios",
-    "favorite": "Favoritar"
+    "favorite": "Favoritar",
+    "noMatchAll": "Nenhum anúncio atende a todos estes filtros",
+    "relaxHint": "Remova um: cada um mostra o que sobra.",
+    "relaxDrop": "Sem {{filter}}",
+    "relaxLabel": "Filtros para remover",
+    "relaxDropCount": "Sem {{filter}}: {{count}} anúncios"
   },
   "search": {
     "rateLimited": "Muitas buscas no mercado. Tente novamente em instantes.",
@@ -128,6 +133,7 @@
     "ethereal": "Ethereal",
     "desecrated": "Desecrated",
     "identified": "Identificado",
+    "anniversary": "Aniversário",
     "mode": "Modo",
     "listedWithin": "Anunciado em até",
     "sort": {
@@ -164,13 +170,25 @@
     "sellerPlaceholder": "Conta ou nome de usuário",
     "sellerPicked": "Este vendedor (escolhido de um anúncio)",
     "clearSeller": "Limpar vendedor",
-    "modeLabel": "Softcore ou Hardcore"
+    "modeLabel": "Softcore ou Hardcore",
+    "applied": {
+      "not": "Sem {{name}}"
+    }
   },
   "controls": {
     "min": "mín",
     "max": "máx",
     "minLabel": "{{label}} mín",
     "maxLabel": "{{label}} máx"
+  },
+  "facets": {
+    "count": "{{label}} · {{n, number}}",
+    "price": "{{from}}–{{to}} HR",
+    "priceOpen": "{{from}}+ HR",
+    "priceUpTo": "Até {{to}} HR",
+    "priceAny": "qualquer preço",
+    "priceBars": "Anúncios por preço em HR: {{selection}}",
+    "priceClear": "Limpar preço em HR"
   },
   "stats": {
     "min": "Mín",
@@ -362,7 +380,8 @@
     "online": "online",
     "buyout": "compra imediata",
     "listingAge": "idade do anúncio",
-    "sort": "ordenação"
+    "sort": "ordenação",
+    "extendedStat": "atributo que o site não consegue expressar"
   },
   "nameSearch": {
     "noSales": "sem vendas",
@@ -372,7 +391,9 @@
     "fallbackWindow": "média de {{window}} · {{listings}}",
     "label": "Nome do item",
     "placeholder": "Buscar itens…  ( / )",
-    "clear": "Limpar nome do item"
+    "clear": "Limpar nome do item",
+    "closeMatch": "nome parecido",
+    "groupHint": "Todos os tipos · define Tipo e Base"
   },
   "detail": {
     "label": "Detalhes do anúncio",
@@ -518,5 +539,14 @@
     "notRemoved": "Favorito não removido",
     "notSaved": "Favorito não salvo",
     "refused": "O projectdiablo2.com recusou a alteração. Tente novamente em instantes."
+  },
+  "palette": {
+    "openInMarket": "Buscar no mercado",
+    "watchPrice": "Acompanhar preço",
+    "stopWatching": "Parar de acompanhar",
+    "buildsUsing": "Builds que o usam",
+    "copyName": "Copiar nome",
+    "nameCopied": "Nome copiado",
+    "nameNotCopied": "Nome não copiado"
   }
 }

@@ -325,6 +325,17 @@ describe('finding the item', () => {
     expect(console.error).not.toHaveBeenCalled();
   });
 
+  // DMG-METER-FRONTEND-4G9: PD2 unreachable rejects with the HTTP plugin's error string, not an Error
+  it('reports PD2 being unreachable as a warning with its reason, not an app error', async () => {
+    const reason = 'error sending request for url (https://api.projectdiablo2.com/game/stash/MyAcc)';
+    api.findMatchingItems.mockRejectedValueOnce(reason);
+    renderForm();
+    await flush();
+    expect(screen.getByRole('alert').textContent).toContain('Failed to find items');
+    expect(console.error).not.toHaveBeenCalled();
+    expect(console.warn).toHaveBeenCalledWith('[QuickList] Failed to find items:', reason);
+  });
+
   it('does not search before the user is authenticated', async () => {
     api.authData = null;
     renderForm();
@@ -385,6 +396,18 @@ describe('listing a new item', () => {
     fireEvent.change(priceInput(), { target: { value: '1' } });
     await submit();
     expect(screen.getByRole('alert').textContent).toContain('Item already listed');
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  // DMG-METER-FRONTEND-4Y1: signed out (or a 401) while the form was open
+  it('asks to sign in when the session is gone, without logging an app error', async () => {
+    api.listSpecificItem.mockRejectedValueOnce(new AuthenticationError('Sign in to PD2 to list this item'));
+    renderForm();
+    await flush();
+    fireEvent.change(priceInput(), { target: { value: '1' } });
+    await submit();
+    expect(screen.getByRole('alert').textContent).toContain('Sign in to PD2 to list this item');
+    expect(console.error).not.toHaveBeenCalled();
     expect(close).not.toHaveBeenCalled();
   });
 });
@@ -568,6 +591,39 @@ describe('queueing', () => {
     expect(toasts().at(-1)).toEqual({ title: 'Failed to list item', description: 'rejected', variant: 'error' });
   });
 
+  // DMG-METER-FRONTEND-6CK: a 401 on the queued listing's POST used to resolve null and crash on `listing._id`
+  it('asks to sign in when the session expired before a queued item is listed', async () => {
+    api.findMatchingItems.mockResolvedValue([]);
+    renderForm();
+    await flush();
+    await queueWithNote('x');
+    api.listSpecificItem.mockRejectedValueOnce(new AuthenticationError('Sign in to PD2 to list this item'));
+    api.findMatchingItems.mockResolvedValue([stash(4)]);
+    await tick(POLL_INTERVAL);
+    expect(toasts().at(-1)).toEqual({
+      title: 'Failed to list item',
+      description: 'Sign in to PD2 to list this item',
+      variant: 'error',
+    });
+    expect(console.error).not.toHaveBeenCalled();
+  });
+
+  it('does not crash when the listings count check hits a 401 (null page)', async () => {
+    api.findMatchingItems.mockResolvedValue([]);
+    renderForm();
+    await flush();
+    await queueWithNote('x');
+    api.getMarketListings.mockResolvedValueOnce(null as never);
+    api.findMatchingItems.mockResolvedValue([stash(4)]);
+    await tick(POLL_INTERVAL);
+    expect(api.listSpecificItem).not.toHaveBeenCalled();
+    expect(toasts().at(-1)).toMatchObject({
+      title: 'Failed to list item',
+      description: 'Sign in to PD2 to list this item',
+    });
+    expect(console.error).not.toHaveBeenCalled();
+  });
+
   async function queueThenCancel() {
     api.findMatchingItems.mockResolvedValue([]);
     renderForm();
@@ -647,13 +703,4 @@ describe('queueing', () => {
     await flush();
     expect(tab(/Queued/).getAttribute('data-state')).toBe('active');
   });
-});
-
-it('Manage tab receives the prefetched first page', async () => {
-  userListings = [marketListing(5), marketListing(6)];
-  renderForm();
-  await flush();
-  await selectTab(/Manage/);
-  await waitFor(() => expect(screen.queryByText('Shako #5')).not.toBeNull());
-  expect(screen.queryByText('Shako #6')).not.toBeNull();
 });

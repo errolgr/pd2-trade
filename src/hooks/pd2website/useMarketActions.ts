@@ -5,7 +5,7 @@ import { ISettings } from '../useOptions';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import { MarketListingFindQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import { MarketListingEntry, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import type { MarketApi, MarketFavorite } from '@/pages/market/lib/types';
+import type { ListingPresence, MarketApi, MarketFavorite } from '@/pages/market/lib/types';
 import { fetch as tauriFetch } from '@/lib/browser-http';
 import { searchMarketListings } from '@/lib/market-search-api';
 import qs from 'qs';
@@ -111,6 +111,8 @@ export function useMarketActions({
       note: string,
       type: 'exact' | 'note',
     ): Promise<MarketListingEntry> => {
+      // Signed out meanwhile (a 401 elsewhere cleared the session): expected, like a 401 here
+      if (!authData?.user) throw new AuthenticationError('Sign in to PD2 to list this item');
       const is_hardcore = settings.mode === 'hardcore';
       const is_ladder = settings.ladder === 'ladder';
       const bumped_at = new Date().toISOString();
@@ -137,7 +139,10 @@ export function useMarketActions({
         },
         body: JSON.stringify(body),
       });
-      return await handleApiResponse(response, onAuthError, body);
+      const listing: MarketListingEntry | null = await handleApiResponse(response, onAuthError, body);
+      // 401: re-authentication started and nothing was listed
+      if (!listing) throw new AuthenticationError('Sign in to PD2 to list this item');
+      return listing;
     },
     [settings, authData, onAuthError],
   );
@@ -335,10 +340,39 @@ export function useMarketActions({
     [settings.pd2Token, onAuthError],
   );
 
+  // Sellers' current last-seen times on live listings (GET /market/listing?_id[$in]=…). Not through
+  // handleApiResponse: a background lookup neither reports PD2 errors nor starts a sign-in on 401.
+  const getListingPresence = useCallback(
+    async (listingIds: string[]): Promise<Map<string, ListingPresence>> => {
+      const query = {
+        _id: { $in: listingIds },
+        $limit: listingIds.length,
+        $select: ['user_id', 'user_last_online', 'user_last_ingame'],
+      };
+      const response = await tauriFetch(buildUrlWithQuery('https://api.projectdiablo2.com/market/listing', query), {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${settings.pd2Token}` },
+      });
+      if (!response.ok) throw new Error(`Listing presence lookup answered ${response.status}`);
+      const body: { data?: unknown } = await response.json();
+      const presence = new Map<string, ListingPresence>();
+      for (const row of Array.isArray(body?.data) ? body.data : []) {
+        if (typeof row?._id !== 'string') continue;
+        presence.set(row._id, {
+          user_last_online: typeof row.user_last_online === 'string' ? row.user_last_online : null,
+          user_last_ingame: typeof row.user_last_ingame === 'string' ? row.user_last_ingame : null,
+        });
+      }
+      return presence;
+    },
+    [settings.pd2Token],
+  );
+
   const marketApi = useMemo<MarketApi>(
     () => ({
       searchListings: searchMarketListings,
       getListing,
+      getListingPresence,
       getMarketListings,
       getMarketListingsArchive,
       getFavorites,
@@ -346,7 +380,16 @@ export function useMarketActions({
       removeFavorite,
       createOffer,
     }),
-    [getListing, getMarketListings, getMarketListingsArchive, getFavorites, addFavorite, removeFavorite, createOffer],
+    [
+      getListing,
+      getListingPresence,
+      getMarketListings,
+      getMarketListingsArchive,
+      getFavorites,
+      addFavorite,
+      removeFavorite,
+      createOffer,
+    ],
   );
 
   return {

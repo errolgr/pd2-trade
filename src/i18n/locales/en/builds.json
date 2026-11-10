@@ -5,6 +5,7 @@
     "lookupPlaceholder": "Character name…",
     "lookupLabel": "Look up a character",
     "mode": "Mode",
+    "followingShortcut": "Following ({{n}})",
     "tabs": {
       "meta": "Meta",
       "characters": "Characters"
@@ -110,10 +111,13 @@
     "updated": "Updated {{time}}",
     "firstSeen": "First seen {{time}}",
     "follow": "Follow",
+    "followedToast": "Following {{name}}",
+    "followedToastDescription": "Saved to {{characters}} → {{following}}",
     "openSite": "Open on pd2trader.com",
     "viewingSnapshot": "Viewing <date>{{date}}</date><muted> · prices hidden</muted>",
     "backToNow": "Back to now",
     "equipment": "Equipment",
+    "charms": "Charms",
     "weaponSwitch": "Weapon switch",
     "mercTitle": "Merc <muted>· {{type}}</muted>",
     "paneLabel": "Character view",
@@ -209,5 +213,15 @@
     "skillLevel": "· level {{level}}",
     "usageCount_one": "{{formatted}} characters",
     "usageCount_other": "{{formatted}} characters"
+  },
+  "palette": {
+    "character": "character",
+    "account": "account",
+    "class": "class",
+    "skillOf": "{{className}} skill",
+    "hardcore": "HC",
+    "openBuild": "Open build",
+    "showCharacters": "Show characters",
+    "showMeta": "Show in Meta"
   }
 }

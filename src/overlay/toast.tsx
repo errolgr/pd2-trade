@@ -6,7 +6,7 @@ import { installUpdateAndRelaunch } from '@/lib/updater';
 import { RELEASE_PAGE_URL } from '@/lib/manual-update';
 import { openUrl } from '@/lib/browser-opener';
 import { CustomToastPayload, GenericToastPayload, ToastActionType } from '@/common/types/Events';
-import { chatDockSize } from '@/pages/chat/chat-dock';
+import { chatDockWidth } from '@/pages/chat/chat-dock';
 import { offerNotificationLanding } from '@/pages/chat/chat-feed';
 import { LinkedMessageContent } from '@/pages/chat/components/MessageContent';
 import { findMarketLinks } from '@/pages/chat/lib/market-links';
@@ -14,6 +14,14 @@ import { ListingToastBody } from '@/pages/market/alerts/ListingToastBody';
 import { useOverlay, usePanelOpen } from './OverlayProvider';
 import type { PanelPayloads } from './types';
 import { t } from '@/i18n';
+import {
+  logNotification,
+  markNotificationMissed,
+  type LoggedAction,
+  type NewNotification,
+  type NotificationKind,
+} from '@/lib/notification-log';
+import type { ListingPanelPayload } from '@/pages/market/lib/types';
 
 const DEFAULT_TITLE = 'PD2 Trader';
 const TOAST_MARGIN = 16;
@@ -25,6 +33,7 @@ interface ToastBridge {
   openChat(payload: PanelPayloads['chat']): void;
   openMarket(payload: PanelPayloads['market']): void;
   openListing(payload: PanelPayloads['listingDetail']): void;
+  openSim(payload: PanelPayloads['sim']): void;
 }
 let bridge: ToastBridge | null = null;
 export function setToastBridge(next: ToastBridge | null): void {
@@ -61,6 +70,16 @@ async function runToastAction(action: NonNullable<CustomToastPayload['action']>)
       case ToastActionType.OPEN_RELEASE_PAGE:
         await openUrl(RELEASE_PAGE_URL);
         break;
+      case ToastActionType.OPEN_URL:
+        if (typeof action.data?.url === 'string') await openUrl(action.data.url);
+        break;
+      case ToastActionType.OPEN_SIM_PANEL:
+        bridge?.openSim(
+          typeof action.data?.slug === 'string' && typeof action.data?.url === 'string'
+            ? { slug: action.data.slug, url: action.data.url }
+            : undefined,
+        );
+        break;
       default:
         console.warn('Unknown toast action type:', action.type);
     }
@@ -72,18 +91,46 @@ async function runToastAction(action: NonNullable<CustomToastPayload['action']>)
   }
 }
 
+/** Watches a toast for the notification log: `onUnseen` when it timed out without the pointer ever on it. */
+interface ToastWatch {
+  onUnseen(): void;
+}
+
+/** Title/description wrapped to notice the pointer on the toast, and the auto-close hook that reports it unseen. */
+function watched(watch: ToastWatch | undefined) {
+  if (!watch) return { wrap: (node: React.ReactNode) => node, options: {} };
+  let touched = false;
+  const touch = () => {
+    touched = true;
+  };
+  return {
+    wrap: (node: React.ReactNode) => (node == null ? node : <span onPointerEnter={touch}>{node}</span>),
+    options: {
+      onAutoClose: () => {
+        if (!touched) watch.onUnseen();
+      },
+    },
+  };
+}
+
 /** Show a toast in the overlay's ToastLayer. */
-export function showToast(payload: ToastPayload): void {
+export function showToast(payload: ToastPayload, watch?: ToastWatch): void {
+  const { wrap, options: watchOptions } = watched(watch);
   if (typeof payload === 'string') {
-    toast(DEFAULT_TITLE, { description: payload, closeButton: true });
+    toast(wrap(DEFAULT_TITLE), { description: wrap(payload), closeButton: true, ...watchOptions });
     return;
   }
   if (!payload || typeof payload !== 'object') return;
 
   if (!('action' in payload)) {
     const generic = payload as GenericToastPayload;
-    const options = { description: generic.description, duration: generic.duration, closeButton: true };
-    const title = generic.title || DEFAULT_TITLE;
+    const options = {
+      description: wrap(generic.description),
+      duration: generic.duration,
+      closeButton: true,
+      ...watchOptions,
+    };
+    const title = wrap(generic.title || DEFAULT_TITLE);
     switch (generic.variant) {
       case 'error':
         toast.error(title, options);
@@ -111,19 +158,23 @@ export function showToast(payload: ToastPayload): void {
   const action = custom.action;
   if (!action) {
     // An object with a falsy `action` keeps the old ToastPage behaviour: a plain PD2 Trader toast.
-    toast(DEFAULT_TITLE, { description: custom.description, closeButton: true });
+    toast(wrap(DEFAULT_TITLE), { description: wrap(custom.description), closeButton: true, ...watchOptions });
     return;
   }
-  const { listing, description } = custom;
+  const { listing, description, tone } = custom;
   // Listing links (an offer's or a message's text) read as the chat's item pills, hover for the item
   const text =
     description && findMarketLinks(description).length > 0 ? (
       <LinkedMessageContent content={description} />
+    ) : description?.includes('\n') ? (
+      <span className="whitespace-pre-line">{description}</span>
     ) : (
       description
     );
-  toast(custom.title || DEFAULT_TITLE, {
-    description: listing ? <ListingToastBody listingId={listing.listingId}>{text}</ListingToastBody> : text,
+  const show = tone === 'error' ? toast.error : toast;
+  show(wrap(custom.title || DEFAULT_TITLE), {
+    ...(tone === 'muted' && { className: '[--toast-accent:var(--muted-foreground)] opacity-80' }),
+    description: wrap(listing ? <ListingToastBody listingId={listing.listingId}>{text}</ListingToastBody> : text),
     duration: custom.duration,
     closeButton: true,
     action: {
@@ -133,8 +184,57 @@ export function showToast(payload: ToastPayload): void {
     },
     // Before the action button: the listing drawer (tooltip, price, seller, offer/whisper) without the market
     ...(listing && { cancel: { label: t('app:toast.details'), onClick: () => bridge?.openListing(listing) } }),
+    ...watchOptions,
   });
 }
+
+/** The log entry of a toast payload. */
+function entryOf(
+  kind: NotificationKind,
+  payload: GenericToastPayload | CustomToastPayload,
+  groupKey?: string,
+): NewNotification {
+  const custom: CustomToastPayload = payload;
+  const variant = 'variant' in payload ? payload.variant : undefined;
+  const tone: NewNotification['tone'] =
+    custom.tone ?? (variant === 'success' || variant === 'warning' || variant === 'error' ? variant : undefined);
+  return {
+    kind,
+    title: payload.title || DEFAULT_TITLE,
+    description: payload.description,
+    action: custom.action ?? undefined,
+    listing: custom.listing,
+    tone,
+    groupKey,
+  };
+}
+
+export interface NotifyOptions {
+  /** Show the toast (false: suppressed by focus or settings, so the entry is missed right away). */
+  toast: boolean;
+  /** Consecutive entries with this key fold into one ("×3"). */
+  groupKey?: string;
+}
+
+/**
+ * Something that happened to the user (not feedback on their own action): logged in the notification log, and
+ * toasted when `toast`. A toast that times out unseen marks the entry missed.
+ */
+export function notify(
+  kind: NotificationKind,
+  payload: GenericToastPayload | CustomToastPayload,
+  { toast: shown, groupKey }: NotifyOptions,
+): void {
+  const id = logNotification(entryOf(kind, payload, groupKey), { missed: !shown });
+  if (shown) showToast(payload, { onUnseen: () => markNotificationMissed(id) });
+}
+
+/** A logged entry's action (the same as its toast's). */
+export const runLoggedAction = (action: LoggedAction): Promise<void> =>
+  runToastAction({ label: action.label, type: action.type, data: action.data });
+
+/** A logged entry's Details: the listing drawer. */
+export const openLoggedListing = (listing: ListingPanelPayload): void => bridge?.openListing(listing);
 
 /**
  * Success toast with an image preview (price check "Copy image"). Owns `imageUrl` (an object URL):
@@ -228,12 +328,12 @@ export function ToastLayer() {
   const { gameRect, gameFocused } = useOverlay();
   const dockShown = usePanelOpen('chatButton') && gameFocused;
   const anchor = gameFocused ? gameRect : { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
-  const dock = chatDockSize(gameRect.height);
+  const dockWidth = chatDockWidth(gameRect.height);
 
   const offset = {
     right:
       Math.max(0, window.innerWidth - (anchor.x + anchor.width)) +
-      (dockShown ? dock.width + TOAST_MARGIN / 2 : TOAST_MARGIN),
+      (dockShown ? dockWidth + TOAST_MARGIN / 2 : TOAST_MARGIN),
     bottom: Math.max(0, window.innerHeight - (anchor.y + anchor.height)) + TOAST_MARGIN,
   };
 

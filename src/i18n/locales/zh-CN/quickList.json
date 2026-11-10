@@ -3,7 +3,7 @@
     "listItem": "挂单物品",
     "manage": "管理",
     "queued": "排队中",
-    "mustBeInStash": "物品必须在共享储物箱中才能挂单。"
+    "mustBeInStash": "物品必须在储物箱（共享或个人）中才能挂单。"
   },
   "shortcut": {
     "findFailed": "查找物品失败",
@@ -28,7 +28,7 @@
     "noItemDescription": "在游戏中复制物品（Ctrl+C）后重新打开此窗口即可挂单，或选择“管理挂单”查看你的有效交易。",
     "noItemsFound": "未找到与“{{name}}”匹配的物品",
     "whyNotFound": "为什么找不到我的物品？",
-    "notFoundTooltip": "物品必须放在共享储物箱（而非个人储物箱）中，并且你已创建新游戏，才能被找到。",
+    "notFoundTooltip": "物品放入共享储物箱，或放入设置中所选模式下某个角色的个人储物箱，并且你已创建新游戏后，即可被找到。",
     "queueHint": "你可以将此物品排队以自动挂单。我们会等待服务器从你的储物箱同步它（通常需要几分钟）。",
     "noneMatch": "都不匹配？",
     "queueModeHint": "将此物品排队，等待新物品出现在你的储物箱中（通常需要几分钟）。",
@@ -129,7 +129,7 @@
     "noMatches": "无匹配",
     "noMatchesFor": "未找到与“{{query}}”匹配的物品",
     "noActiveTitle": "无有效挂单",
-    "noActiveDescription": "你从共享储物箱挂单的物品会显示在这里。",
+    "noActiveDescription": "你从储物箱挂单的物品会显示在这里。",
     "notSignedInTitle": "未登录",
     "notSignedInDescription": "登录你的 PD2 账号以管理挂单。"
   },
@@ -164,5 +164,64 @@
     "hrPrice": "{{price}} HR",
     "listedAgo": "{{time}}上架",
     "removing": "正在移除…"
+  },
+  "autoDelist": {
+    "title": "物品已离开储物箱",
+    "removed": "已下架 {{name}}：该物品已不在你的储物箱中。",
+    "removeFailed": "{{name}} 已离开储物箱，但无法下架其挂单。",
+    "confirm": "{{name}} 已不在你的储物箱中。要下架吗？",
+    "confirmLookAlike": "一件与 {{name}} 相同的物品离开了储物箱。要下架你的 {{name}} 挂单吗？",
+    "pick": "与 {{name}} 相同的物品离开了储物箱。请选择要下架的挂单。",
+    "delist": "下架",
+    "keep": "保留",
+    "choose": "选择"
+  },
+  "myListings": {
+    "searchPlaceholder": "在 {{count}} 个挂单中搜索…",
+    "readyListed": "可顶帖 · 已挂单 {{listed}}",
+    "bumpedListed": "已顶帖 {{bumped}} · 已挂单 {{listed}}",
+    "sort": {
+      "label": "挂单排序",
+      "reverse": "反转顺序",
+      "attention": "需要处理",
+      "bumped": "最近顶帖",
+      "price": "价格",
+      "listed": "挂单时间",
+      "deal": "价格 vs 市场",
+      "name": "名称",
+      "updated": "最后更新"
+    },
+    "view": {
+      "label": "视图",
+      "cards": "卡片",
+      "rows": "紧凑行"
+    },
+    "filter": {
+      "ready": "可顶帖 {{count}}",
+      "offers": "报价 {{count}}"
+    },
+    "slots": "{{count}} / {{max}} 个栏位",
+    "bumpReady_other": "{{count}} 个可顶帖",
+    "nothingToBump": "没有可顶帖的物品",
+    "noneForFilter": "没有符合此筛选的挂单。",
+    "columns": {
+      "item": "物品",
+      "price": "价格",
+      "market": "市场",
+      "actions": "操作"
+    },
+    "stats": {
+      "all": "显示全部属性",
+      "less": "显示较少属性"
+    },
+    "flags": {
+      "corrupted": "腐化",
+      "ethereal": "无形",
+      "sockets": "{{count}} 孔"
+    }
+  },
+  "palette": {
+    "openOffer": "在聊天中打开",
+    "showListing": "在“管理”中显示"
   }
 }

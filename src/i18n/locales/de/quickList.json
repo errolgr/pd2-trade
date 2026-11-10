@@ -3,7 +3,7 @@
     "listItem": "Item inserieren",
     "manage": "Verwalten",
     "queued": "Warteschlange",
-    "mustBeInStash": "Das Item muss zum Inserieren in deiner geteilten Truhe liegen."
+    "mustBeInStash": "Das Item muss zum Inserieren in deiner Truhe (geteilt oder persönlich) liegen."
   },
   "shortcut": {
     "findFailed": "Items konnten nicht gefunden werden",
@@ -28,7 +28,7 @@
     "noItemDescription": "Kopiere ein Item im Spiel (Ctrl+C) und öffne dieses Fenster erneut, um es zu inserieren, oder wähle „Inserate verwalten“, um deine aktiven Handel zu sehen.",
     "noItemsFound": "Keine Items gefunden, die „{{name}}“ entsprechen",
     "whyNotFound": "Warum wurde mein Item nicht gefunden?",
-    "notFoundTooltip": "Ein Item wird nur gefunden, wenn es in deiner geteilten Truhe (nicht der persönlichen) liegt und du ein neues Spiel erstellt hast.",
+    "notFoundTooltip": "Ein Item wird gefunden, sobald es in deiner geteilten Truhe oder in der persönlichen Truhe eines Charakters im in den Einstellungen gewählten Modus liegt und du ein neues Spiel erstellt hast.",
     "queueHint": "Du kannst dieses Item in die Warteschlange stellen, damit es automatisch inseriert wird. Wir warten, bis der Server es aus deiner Truhe synchronisiert (dauert meist ein paar Minuten).",
     "noneMatch": "Nichts davon passt?",
     "queueModeHint": "Stelle dieses Item in die Warteschlange, um zu warten, bis das neue in deiner Truhe erscheint (dauert meist ein paar Minuten).",
@@ -132,7 +132,7 @@
     "noMatches": "Keine Treffer",
     "noMatchesFor": "Keine Items gefunden, die „{{query}}“ entsprechen",
     "noActiveTitle": "Keine aktiven Inserate",
-    "noActiveDescription": "Items, die du aus deiner geteilten Truhe inserierst, erscheinen hier.",
+    "noActiveDescription": "Items, die du aus deiner Truhe inserierst, erscheinen hier.",
     "notSignedInTitle": "Nicht angemeldet",
     "notSignedInDescription": "Melde dich mit deinem PD2-Konto an, um deine Inserate zu verwalten."
   },
@@ -168,5 +168,65 @@
     "hrPrice": "{{price}} HR",
     "listedAgo": "Eingestellt {{time}}",
     "removing": "Wird entfernt..."
+  },
+  "autoDelist": {
+    "title": "Gegenstand hat die Truhe verlassen",
+    "removed": "Inserat für {{name}} entfernt: Der Gegenstand ist nicht mehr in deiner Truhe.",
+    "removeFailed": "{{name}} hat deine Truhe verlassen, aber das Inserat konnte nicht entfernt werden.",
+    "confirm": "{{name}} ist nicht mehr in deiner Truhe. Inserat entfernen?",
+    "confirmLookAlike": "Ein Gegenstand wie {{name}} hat deine Truhe verlassen. Dein Inserat für {{name}} entfernen?",
+    "pick": "Gegenstände wie {{name}} haben deine Truhe verlassen. Wähle, welche Inserate entfernt werden.",
+    "delist": "Entfernen",
+    "keep": "Behalten",
+    "choose": "Auswählen"
+  },
+  "myListings": {
+    "searchPlaceholder": "{{count}} Inserate durchsuchen…",
+    "readyListed": "Bump bereit · inseriert {{listed}}",
+    "bumpedListed": "gebumpt {{bumped}} · inseriert {{listed}}",
+    "sort": {
+      "label": "Inserate sortieren",
+      "reverse": "Reihenfolge umkehren",
+      "attention": "Braucht Aufmerksamkeit",
+      "bumped": "Zuletzt gebumpt",
+      "price": "Preis",
+      "listed": "Inseriert am",
+      "deal": "Preis vs. Markt",
+      "name": "Name",
+      "updated": "Zuletzt aktualisiert"
+    },
+    "view": {
+      "label": "Ansicht",
+      "cards": "Karten",
+      "rows": "Kompakte Zeilen"
+    },
+    "filter": {
+      "ready": "Bump bereit {{count}}",
+      "offers": "Angebote {{count}}"
+    },
+    "slots": "{{count}} / {{max}} Slots",
+    "bumpReady_one": "{{count}} Bump bereit",
+    "bumpReady_other": "{{count}} Bumps bereit",
+    "nothingToBump": "Nichts zu bumpen",
+    "noneForFilter": "Kein Inserat passt zu diesem Filter.",
+    "columns": {
+      "item": "Gegenstand",
+      "price": "Preis",
+      "market": "Markt",
+      "actions": "Aktionen"
+    },
+    "stats": {
+      "all": "Alle Werte anzeigen",
+      "less": "Weniger Werte anzeigen"
+    },
+    "flags": {
+      "corrupted": "Korrumpiert",
+      "ethereal": "Äth",
+      "sockets": "{{count}} Fass."
+    }
+  },
+  "palette": {
+    "openOffer": "Im Chat öffnen",
+    "showListing": "In „Verwalten“ zeigen"
   }
 }

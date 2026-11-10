@@ -17,7 +17,7 @@
     "itemNotSupported": "物品不受支持或无效。",
     "nothingCopied": "未复制任何物品。请在游戏中将鼠标悬停在物品上后重试，或先在物品上按 Ctrl+C。",
     "cannotListItem": "无法挂单",
-    "notInSharedStash": "此物品不在你的共享储物箱中，无法挂单。",
+    "notInStash": "此物品不在你的储物箱（共享或个人）中，无法挂单。",
     "delist": "下架",
     "noItemUnderCursor": "光标下未找到有效物品。"
   },
@@ -30,16 +30,24 @@
     "unreadMessages_other": "{{count}} 条未读消息",
     "tradeOffers_other": "{{count}} 个交易报价",
     "disableOverlay": "关闭悬浮窗",
+    "move": "移动{{label}}",
+    "moveHint": "拖动排序（或 ↑/↓）",
+    "favorite": "收藏{{label}}",
+    "addFavorite": "添加到收藏（标签栏）",
+    "removeFavorite": "从收藏移除（标签栏）",
     "menu": {
       "chat": "聊天",
       "market": "市场浏览",
       "builds": "配装",
+      "sim": "Horadric Sim",
       "netWorth": "净资产",
       "stashValue": "储物箱价值",
       "offers": "报价",
       "manageListings": "管理挂单",
-      "settings": "设置"
-    }
+      "settings": "设置",
+      "notifications": "通知"
+    },
+    "missedNotifications_other": "{{count}} 条错过的通知"
   },
   "chatTemplateForm": {
     "name": "名称",
@@ -96,7 +104,32 @@
       "lockedTitle": "已锁定：拖动不会移动计时器。点击解锁。",
       "unlockedTitle": "拖动时不移动计时器。"
     },
+    "direction": {
+      "up": "列表向上展开",
+      "down": "列表向下展开",
+      "upTitle": "向上展开。点击后改为向下展开。",
+      "downTitle": "向下展开。点击后改为向上展开。"
+    },
     "toastTitle": "腐化区域",
-    "toastDescription": "{{zone}}：请创建新的 Hell 游戏（{{until}} 前）"
+    "toastDescription": "{{zone}}：请创建新的 Hell 游戏（{{until}} 前）",
+    "toastSoonDescription": "{{zone}} 将在 {{minutes}} 分钟后开始：请从 {{from}} 起创建新的 Hell 游戏（{{until}} 前）"
+  },
+  "notificationLog": {
+    "title": "通知",
+    "close": "关闭",
+    "clear": "清除",
+    "filters": "筛选通知",
+    "filter": {
+      "all": "全部",
+      "trade": "交易",
+      "chat": "聊天",
+      "alerts": "警报",
+      "system": "系统"
+    },
+    "empty": "这里还没有内容。",
+    "missed_other": "错过 · {{count}}",
+    "earlier": "更早",
+    "rowHint": "点击打开 · 向左或向右滑动以移除",
+    "rowHintRemoveOnly": "向左或向右滑动以移除"
   }
 }

@@ -3,7 +3,7 @@ import { ToastActionType } from '@/common/types/Events';
 import { defaultFilters } from '@/pages/market/lib/defaults';
 import type { MarketFilters, SavedSearch } from '@/pages/market/lib/types';
 import {
-  ALERT_TOAST_DURATION_MS,
+  DEFAULT_ALERT_TOAST_DURATION_MS,
   alertListingText,
   alertToasts,
   findWatch,
@@ -54,7 +54,7 @@ describe('alert popups', () => {
     expect(alertToasts([alert('a')])).toEqual([
       {
         title: 'Market watch',
-        duration: ALERT_TOAST_DURATION_MS,
+        duration: DEFAULT_ALERT_TOAST_DURATION_MS,
         description: 'Cheap Shako: Harlequin Crest — 0.5 HR',
         action: {
           label: 'View',
@@ -78,6 +78,12 @@ describe('alert popups', () => {
     expect(toasts[0].description).toMatch(/^5 new matches\. Newest: Cheap Shako: /);
     expect(toasts[0].action?.data.focusListingId).toBe(`l-a${many.length - 1}`);
     expect(toasts[0].listing).toEqual({ listingId: `l-a${many.length - 1}`, savedSearchId: 's1' });
+  });
+
+  it('uses the configured duration for single and summary popups', () => {
+    expect(alertToasts([alert('a')], 3_000)[0].duration).toBe(3_000);
+    const many = Array.from({ length: MAX_ALERT_TOASTS + 1 }, (_, i) => alert(`a${i}`));
+    expect(alertToasts(many, 15_000)[0].duration).toBe(15_000);
   });
 });
 

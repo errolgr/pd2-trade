@@ -221,5 +221,22 @@
       "lowTitle": "{{n}} provável baixo valor · {{tab}}",
       "lowNote": "Confira itens sem um atributo-chave"
     }
+  },
+  "listAtNetWorth": {
+    "menuItem": "Anunciar no mercado…",
+    "alreadyListed": "Já anunciado",
+    "title": "Anunciar pelo preço do Patrimônio",
+    "loading": "Procurando o item no seu baú…",
+    "gone": "Item movido ou sumiu — atualize o Patrimônio",
+    "loadFailed": "Não foi possível carregar o item do seu baú.",
+    "pickItem": "Item a anunciar",
+    "listed": "Anunciado",
+    "allListed": "Já anunciado no mercado.",
+    "manageListings": "Gerenciar anúncios",
+    "price": "Preço (HR)",
+    "note": "Nota (opcional)",
+    "list": "Anunciar",
+    "listFailed": "Não foi possível anunciar o item.",
+    "sessionExpired": "Sua sessão do PD2 expirou. Entre novamente para anunciar este item."
   }
 }

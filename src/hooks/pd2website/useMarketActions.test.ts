@@ -49,6 +49,7 @@ const priceCheckItem = { name: 'Harlequin Crest', type: 'Shako', quality: 'Uniqu
 function market(
   opts: {
     settings?: Partial<ISettings>;
+    authData?: AuthData | null;
     cache?: { data: GameData; timestamp: number } | null;
     findItemsByName?: (items: GameStashItem[], item: PriceCheckItem) => GameStashItem[];
   } = {},
@@ -60,7 +61,7 @@ function market(
   const { result } = renderHook(() =>
     useMarketActions({
       settings: { ...baseSettings, ...opts.settings } as ISettings,
-      authData,
+      authData: opts.authData === undefined ? authData : opts.authData,
       fetchAndCacheStash,
       findItemsByName,
       stashCache,
@@ -151,6 +152,21 @@ describe('listSpecificItem', () => {
     await actions.listSpecificItem(shako, 1, '', 'exact');
     const body = JSON.parse(lastCall().init.body as string);
     expect([body.is_hardcore, body.is_ladder]).toEqual([false, true]);
+  });
+
+  // DMG-METER-FRONTEND-4Y1: posting after the session was cleared read `null.user`
+  it('signed out: rejects with AuthenticationError and sends nothing', async () => {
+    const { actions } = market({ authData: null });
+    await expect(actions.listSpecificItem(shako, 1, '', 'exact')).rejects.toBeInstanceOf(AuthenticationError);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  // DMG-METER-FRONTEND-6CK: a 401 resolved to null and the caller read `null._id`
+  it('401: starts re-authentication and rejects with AuthenticationError instead of resolving null', async () => {
+    const { actions, onAuthError } = market();
+    fetchMock.mockResolvedValueOnce(fakeResponse(401, { message: 'jwt expired' }));
+    await expect(actions.listSpecificItem(shako, 1, '', 'exact')).rejects.toBeInstanceOf(AuthenticationError);
+    expect(onAuthError).toHaveBeenCalledTimes(1);
   });
 });
 

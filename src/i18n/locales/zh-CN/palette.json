@@ -1,0 +1,61 @@
+{
+  "input": {
+    "label": "命令面板",
+    "placeholder": "搜索物品、配装、设置…",
+    "scopedPlaceholder": "搜索…"
+  },
+  "groups": {
+    "actions": "操作",
+    "items": "物品",
+    "builds": "配装",
+    "chat": "聊天",
+    "listings": "挂单",
+    "settings": "设置",
+    "sim": "Horadric Sim",
+    "pinned": "已固定",
+    "recent": "最近"
+  },
+  "scope": {
+    "tabHint": "按 Tab 限定范围",
+    "remove": "不再只搜索{{label}}"
+  },
+  "loading": "搜索中…",
+  "signIn": {
+    "title": "登录后可搜索聊天和挂单"
+  },
+  "empty": {
+    "noResults": "没有找到“{{query}}”的结果"
+  },
+  "footer": {
+    "move": "↑↓ 移动",
+    "open": "↵ 打开",
+    "actions": "Ctrl+K 操作",
+    "scope": "Tab 限定",
+    "unscope": "Backspace 取消限定",
+    "close": "Esc 关闭"
+  },
+  "menu": {
+    "label": "{{title}} 的操作",
+    "placeholder": "搜索操作…",
+    "pin": "固定到面板",
+    "unpin": "从面板取消固定"
+  },
+  "errors": {
+    "actionFailed": "操作失败"
+  },
+  "actions": {
+    "market": "市场",
+    "chat": "聊天",
+    "offers": "交易报价",
+    "builds": "配装",
+    "stashValue": "储物箱价值",
+    "snapshot": "记录资产快照",
+    "myListings": "我的挂单",
+    "settings": "设置",
+    "changelog": "更新内容",
+    "checkUpdates": "检查更新",
+    "signIn": "登录",
+    "signOut": "退出登录",
+    "notifications": "通知"
+  }
+}

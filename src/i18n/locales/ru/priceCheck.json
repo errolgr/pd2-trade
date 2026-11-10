@@ -27,8 +27,10 @@
     "header": {
       "base": "Основа: {{type}}",
       "type": "Тип: {{type}}",
+      "group": "Группа: {{group}}",
       "toggleSearchMode": "Нажмите, чтобы сменить режим поиска",
       "cycleQuality": "Нажмите, чтобы сменить качество",
+      "anyQuality": "Любое",
       "defense": "Защита: <value>{{defense}}</value>",
       "appraisalNote": "Примечание к оценке: {{note}}"
     },
@@ -75,14 +77,14 @@
       "clearTitle": "Снять выбор со всех статов"
     },
     "actions": {
-      "openTradeAria": "Открыть поиск на projectdiablo2.com",
-      "openTradeTooltip": "Открыть этот поиск на projectdiablo2.com",
+      "openTrade": "Открыть поиск на projectdiablo2.com",
+      "more": "Ещё",
       "openInMarket": "Открыть на рынке",
       "list": "Выставить",
-      "listDisabled": "Чтобы выставить предмет, он должен быть в общем сундуке.",
-      "showExpired": "Показать истёкшие"
+      "listDisabled": "Чтобы выставить предмет, он должен быть в сундуке (общем или личном)."
     },
     "results": {
+      "source": { "label": "Где искать", "live": "Активные", "expired": "Истёкшие" },
       "matches": "Найдено: <value>{{total}}</value>",
       "showing": "· показано {{shown}}",
       "loading": "Загрузка объявлений...",
@@ -91,19 +93,49 @@
       "noListings": "Объявления не найдены",
       "loosenFilters": "Попробуйте ослабить фильтры статов.",
       "loosenFiltersOrExpired": "Попробуйте ослабить фильтры статов или включите «Показать истёкшие».",
+      "relax": {
+        "title": "Нет объявлений, подходящих под все фильтры",
+        "hint": "Уберите один: на каждом видно, что останется.",
+        "ranges": "Диапазоны статов",
+        "corrupted": "Осквернённый",
+        "notCorrupted": "Не осквернённый",
+        "corruptions": "Фильтр осквернения",
+        "showExpired": "Показать истёкшие"
+      },
       "readyTitle": "Готово к поиску",
       "readyHint": "Выберите нужные статы и нажмите «Поиск» или Enter в поле мин./макс.",
       "price": "Цена",
-      "listed": "Выставлено",
       "loadingMore": "Загрузка...",
-      "loadMore": "Загрузить ещё"
+      "loadMore": "Загрузить ещё",
+      "sortPrice": "Сортировать по цене",
+      "sortListed": "Сортировать по дате размещения",
+      "filteredInGame": "· {{count}} в игре",
+      "filteredOnSite": "· {{count}} на сайте",
+      "filteredOnline": "· {{count}} в сети",
+      "noSellerMatch": "Здесь нет продавцов, подходящих под фильтр.",
+      "sellerFilter": "Фильтр продавца",
+      "seller": "Продавец",
+      "sellerAnyone": "Любой",
+      "sellerInGame": "В игре",
+      "sellerOnSite": "На торговом сайте",
+      "sellerEither": "В игре или на сайте",
+      "age": "Срок"
     },
     "listing": {
       "copyWhisper": "Копировать личное сообщение",
       "whisperCopied": "Личное сообщение скопировано, вставьте правым кликом",
-      "onlineCopyWhisper": "В игре · нажмите, чтобы скопировать личное сообщение",
       "seller": "Продавец: <name>{{seller}}</name>",
-      "online": "В игре"
+      "online": "В игре",
+      "endedSold": "продано через {{duration}}",
+      "endedRemoved": "снято через {{duration}}",
+      "endedExpired": "истекло через {{duration}}",
+      "endedAt": "Завершено {{when}}",
+      "listedFor": "В продаже: {{duration}}",
+      "onSite": "На торговом сайте",
+      "notOnSite": "Не на торговом сайте",
+      "notInGame": "Не в игре",
+      "inGame": "В игре",
+      "presenceWhisper": "{{presence}} · нажмите, чтобы скопировать шёпот"
     }
   },
   "statRow": {

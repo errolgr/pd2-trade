@@ -8,7 +8,15 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
-import { DEFAULT_PRICE_WINDOW_HOURS, PRICE_WINDOW_OPTIONS } from '@/lib/price-window';
+import {
+  CORRUPTED_FILTER_OPTIONS,
+  MARGIN_UNIT_OPTIONS,
+  optionLabel,
+  PRICE_WINDOW_SELECT_OPTIONS,
+  RANK_DISPLAY_OPTIONS,
+  type SettingOption,
+} from '../setting-options';
+import { DEFAULT_PRICE_WINDOW_HOURS } from '@/lib/price-window';
 import { useTranslation } from '@/i18n';
 
 const statsFormSchema = z.object({
@@ -82,6 +90,13 @@ export function StatsForm() {
   }
 
   const marginUnit = form.watch('statFillMarginUnit') ?? 'percent';
+  const selectItems = (options: SettingOption[]) =>
+    options.map((option) => (
+      <SelectItem key={option.value}
+        value={option.value}>
+        {optionLabel(t, option)}
+      </SelectItem>
+    ));
 
   return (
     <Form {...form}>
@@ -92,6 +107,7 @@ export function StatsForm() {
             name="priceWindowHours"
             render={({ field }) => (
               <SettingsRow
+                settingKey="priceWindowHours"
                 label={t('stats.priceWindow.label')}
                 description={t('stats.priceWindow.description')}
                 control={
@@ -105,12 +121,7 @@ export function StatsForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {PRICE_WINDOW_OPTIONS.map((option) => (
-                        <SelectItem key={option.hours}
-                          value={String(option.hours)}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
+                      {selectItems(PRICE_WINDOW_SELECT_OPTIONS)}
                     </SelectContent>
                   </Select>
                 }
@@ -127,6 +138,7 @@ export function StatsForm() {
             name="fillStatValue"
             render={({ field }) => (
               <SettingsRow
+                settingKey="fillStatValue"
                 label={
                   marginUnit === 'percent' ? t('stats.fillStatValue.labelPercent') : t('stats.fillStatValue.labelFlat')
                 }
@@ -170,6 +182,7 @@ export function StatsForm() {
             name="statFillMarginUnit"
             render={({ field }) => (
               <SettingsRow
+                settingKey="statFillMarginUnit"
                 label={t('stats.marginUnit.label')}
                 description={t('stats.marginUnit.description')}
                 control={
@@ -181,8 +194,7 @@ export function StatsForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="percent">{t('stats.marginUnit.percent')}</SelectItem>
-                      <SelectItem value="flat">{t('stats.marginUnit.flat')}</SelectItem>
+                      {selectItems(MARGIN_UNIT_OPTIONS)}
                     </SelectContent>
                   </Select>
                 }
@@ -196,6 +208,7 @@ export function StatsForm() {
             name="statFillLeaveMinEmpty"
             render={({ field }) => (
               <SettingsRow
+                settingKey="statFillLeaveMinEmpty"
                 label={t('stats.leaveMinEmpty.label')}
                 description={t('stats.leaveMinEmpty.description')}
                 control={
@@ -214,6 +227,7 @@ export function StatsForm() {
             name="statFillLeaveMaxEmpty"
             render={({ field }) => (
               <SettingsRow
+                settingKey="statFillLeaveMaxEmpty"
                 label={t('stats.leaveMaxEmpty.label')}
                 description={t('stats.leaveMaxEmpty.description')}
                 control={
@@ -235,6 +249,7 @@ export function StatsForm() {
             name="statDefaultCorruptedFilter"
             render={({ field }) => (
               <SettingsRow
+                settingKey="statDefaultCorruptedFilter"
                 label={t('stats.corruptedFilter.label')}
                 description={t('stats.corruptedFilter.description')}
                 control={
@@ -246,9 +261,7 @@ export function StatsForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="both">{t('stats.corruptedFilter.both')}</SelectItem>
-                      <SelectItem value="corrupted">{t('stats.corruptedFilter.corrupted')}</SelectItem>
-                      <SelectItem value="non-corrupted">{t('stats.corruptedFilter.nonCorrupted')}</SelectItem>
+                      {selectItems(CORRUPTED_FILTER_OPTIONS)}
                     </SelectContent>
                   </Select>
                 }
@@ -265,6 +278,7 @@ export function StatsForm() {
             name="rareRankDisplay"
             render={({ field }) => (
               <SettingsRow
+                settingKey="rareRankDisplay"
                 label={t('stats.rankDisplay.label')}
                 description={t('stats.rankDisplay.description')}
                 control={
@@ -276,8 +290,7 @@ export function StatsForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="bar">{t('stats.rankDisplay.bar')}</SelectItem>
-                      <SelectItem value="blocks">{t('stats.rankDisplay.blocks')}</SelectItem>
+                      {selectItems(RANK_DISPLAY_OPTIONS)}
                     </SelectContent>
                   </Select>
                 }

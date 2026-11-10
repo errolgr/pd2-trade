@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultFilters, newStatFilter, withSource } from './defaults';
+import { defaultFilters, newStatFilter, searchDefaults, withSource } from './defaults';
 import { siteSearchLink } from './site-url';
 import type { MarketFilters } from './types';
 
@@ -55,6 +55,12 @@ describe('siteSearchLink', () => {
     });
   });
 
+  it('sends a type group as the $in of its member types (the site has no group codes)', () => {
+    const f = base({ typeCode: 'group:bows' });
+    expect(new URL(siteSearchLink(f).url).searchParams.get('type')).toBe('{"$in": ["bow", "abow"]}');
+    expect(siteSearchLink(f).dropped).toEqual([]);
+  });
+
   it('opens sold searches on the archive, at its default age window', () => {
     const f = withSource(base({ hardcore: true, ladder: false }), 'archive');
     expect(query(f)).toEqual({
@@ -70,6 +76,19 @@ describe('siteSearchLink', () => {
   it('requires a stat row without bounds', () => {
     const f = base({ stats: [newStatFilter({ kind: 'mod', key: 'item_fastercastrate' })] });
     expect(query(f).params).toContainEqual(['properties[item_fastercastrate][min]', '']);
+  });
+
+  it("names stat rows in the service's extended key grammar instead of sending them", () => {
+    const f = base({
+      stats: [
+        newStatFilter({ kind: 'mod', key: 'item_singleskill{54}', min: 2 }),
+        newStatFilter({ kind: 'mod', key: 'item_skillongethit{*,44}[0]', min: 15 }),
+      ],
+    });
+    expect(query(f).params.filter(([k]) => k.startsWith('properties'))).toEqual([
+      ['properties[item_singleskill{54}][min]', '2'],
+    ]);
+    expect(siteSearchLink(f).dropped).toEqual(["stat the site can't express"]);
   });
 
   it('joins an any-of block into the site alternatives key only when the rows share a range', () => {
@@ -137,5 +156,18 @@ describe('siteSearchLink', () => {
       'sort',
     ]);
     expect(query(f).params.map(([k]) => k)).toEqual(['is_hardcore', 'is_ladder']);
+  });
+
+  it("measures the age, online, buyout and sort filters against the site's defaults, not the user's", () => {
+    const defaults = searchDefaults({
+      marketDefaultSort: 'cheapest',
+      marketDefaultSeller: 'in-game',
+      marketDefaultHasBuyout: 'yes',
+      marketDefaultMaxAgeDays: 7,
+    });
+    const fresh = defaultFilters({ hardcore: false, ladder: true }, defaults);
+    expect(siteSearchLink(fresh).dropped).toEqual(['online', 'buyout', 'listing age', 'sort']);
+    // The archive keeps the site's 14 days whatever the live default
+    expect(siteSearchLink(withSource(fresh, 'archive', defaults)).dropped).not.toContain('listing age');
   });
 });

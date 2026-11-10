@@ -4,15 +4,22 @@ import { useCallback, useEffect } from 'react';
 import { readTextFile, writeTextFile, BaseDirectory, mkdir, exists } from '@/lib/browser-fs';
 import mergeWith from 'lodash/mergeWith';
 import { startDebugLogging, stopDebugLogging } from '@/lib/debug-logger';
+import { applyTelemetryOptOut } from '@/lib/telemetry-opt-out';
 import SettingsLayout from '@/components/dialogs/optionsv2/options-layout';
 import { isTauri } from '@tauri-apps/api/core';
 import { applyTheme, applyWindowTransparency, DEFAULT_THEME_ID, getTheme } from '@/lib/themes';
+import { applyUiScale, UI_SCALE_DEFAULT } from '@/lib/ui-scale';
 import { DEFAULT_PRICE_WINDOW_HOURS, type PriceWindowHours } from '@/lib/price-window';
 import { DEFAULT_CHAT_TEMPLATES, type ChatTemplate } from '@/lib/message-templates';
+import { DEFAULT_TOAST_POPUP_TYPES } from '@/lib/toast-types';
 import { showToast } from '@/overlay';
 import * as Sentry from '@sentry/react';
 import type { BuildsMode } from '@/lib/builds-api';
 import { applyLanguage, type LanguageSetting, t } from '@/i18n';
+import { DEFAULT_LISTINGS_SORT, type ListingsSort } from '@/pages/quick-list/listings/my-listings';
+import type { ChatDockItem } from '@/pages/chat/chat-dock';
+import type { PaletteRef } from '@/pages/palette/lib/types';
+import type { SimGoal, SimLastExport } from '@/lib/sim-preferences';
 
 /** A tracked character the builds panel remembers (followed / recently viewed). */
 export interface BuildCharacterRef {
@@ -28,6 +35,12 @@ export type NetWorthTickerAnchor =
   | 'bottom-right'
   | 'above-chat'
   | 'custom';
+
+/** Settings → Market: what happens when a listed item leaves the stash. */
+export type StashAutoDelistMode = 'off' | 'ask' | 'auto';
+
+/** Settings → Market: a fresh market search's order (newest bump, cheapest first, priciest first). */
+export type MarketDefaultSort = 'newest' | 'cheapest' | 'priciest';
 
 export interface ISettings {
   ladder: 'ladder' | 'non-ladder';
@@ -62,6 +75,8 @@ export interface ISettings {
   whisperNotificationsEnabled?: boolean; // General/non-trade whispers
   diablo2Directory?: string;
   chatButtonOverlayEnabled?: boolean; // Toggle for chat button overlay visibility
+  chatDockOrder?: ChatDockItem[]; // The chat dock menu's window order (pages/chat/chat-dock.ts); unset = default order
+  chatDockFavorites?: ChatDockItem[]; // Windows shown on the chat dock's tab as buttons; unset = chat + offers
   whisperIgnoreList?: string[];
   whisperAnnouncementsEnabled?: boolean;
   whisperJoinNotificationsEnabled?: boolean;
@@ -78,8 +93,9 @@ export interface ISettings {
   selectedSeasonId?: string; // Selected season for price filtering
   listingNoteMacros?: { label: string; text: string }[]; // Quick-fill note presets for listing items
   toastPopupsEnabled?: boolean; // Master toggle for toast popups
-  toastPopupTypes?: string[]; // Which toast types are enabled: 'whispers' | 'trade' | 'joins' | 'offers'
+  toastPopupTypes?: string[]; // Enabled toast types ('whispers' | 'trade' | 'joins' | 'offers' | 'networth' | 'sim'); '!sim' = sim turned off (lib/toast-types)
   debugLoggingEnabled?: boolean;
+  telemetryOptOut?: boolean; // stops Sentry and Faro; read directly from settings.json at startup
   netWorthTrackingEnabled?: boolean; // history snapshots on pd2trader.com; on unless explicitly turned off
   netWorthTickerEnabled?: boolean;
   netWorthTickerAnchor?: NetWorthTickerAnchor;
@@ -95,10 +111,28 @@ export interface ISettings {
   corruptedZoneTimerAnchor?: NetWorthTickerAnchor;
   corruptedZoneTimerOpacity?: number; // 30-100
   corruptedZoneTimerLocked?: boolean; // true: dragging the timer does not move it (clicks still open the schedule)
+  // Where the timer's schedule list opens, set from its arrow; unset: up in the lower half of the screen, else down.
+  // Cleared when a drag carries the timer into the other half.
+  corruptedZoneTimerListDirection?: 'up' | 'down';
   corruptedZoneTimerLayout?: 'horizontal' | 'vertical'; // vertical: a narrow column for the side of the screen
   corruptedZoneTimerZones?: 'all' | 'followed'; // timer: every zone, or only followed ones (all while none followed)
   corruptedZoneAlerts?: 'off' | 'all' | 'followed'; // toast when the corrupted zone rotates (any, or a followed one)
+  corruptedZoneAlertLeadMinutes?: number; // 0-15: toast that long before the zone starts (0 = when it starts)
   corruptedZoneFollowed?: string[]; // CORRUPTED_ZONES names for the 'followed' timer and toasts
+  // Settings → Market (src/components/dialogs/optionsv2/market)
+  stashAutoDelist?: StashAutoDelistMode; // a listed item leaves the stash: leave it, ask to delist, or delist it
+  marketDefaultSort?: MarketDefaultSort; // a fresh / reset market search's order
+  marketDefaultSeller?: 'all' | 'online' | 'in-game'; // a fresh search's seller filter: anyone, online on the site, in game
+  marketDefaultHasBuyout?: 'any' | 'yes' | 'no'; // a fresh search's buyout filter
+  marketDefaultMaxAgeDays?: number; // a fresh live search's listing age window (archive keeps 14 days)
+  marketPageSize?: 25 | 50 | 100; // market results per page
+  marketWhisperTemplate?: string; // "Copy whisper" body; placeholders {item} {price} {seller} {account}; '' = default
+  marketShowDealBadges?: boolean; // deal badge (price vs market) on listings
+  marketShowPriceHistory?: boolean; // price history chart in the listing detail
+  marketShowSellerCard?: boolean; // seller card (presence, other listings) in the listing detail
+  marketAlertToastSeconds?: number; // how long a Watch / saved-search alert popup stays up
+  myListingsView?: 'cards' | 'rows'; // My Listings: big cards or compact rows
+  myListingsSort?: ListingsSort; // My Listings order (both views)
   hotkeyModifierSnapshot?: 'ctrl' | 'alt';
   hotkeyKeySnapshot?: string; // '' = unbound
   hotkeyModifierMarket?: 'ctrl' | 'alt';
@@ -110,7 +144,19 @@ export interface ISettings {
   themeId?: string; // Color theme id from src/lib/themes.ts
   autoUpdateEnabled?: boolean; // false = only notify about new versions, never download/restart automatically
   windowTransparency?: number; // 0-WINDOW_TRANSPARENCY_MAX (%) from src/lib/themes.ts; 0 = opaque
+  uiScale?: number; // overlay zoom (%), see src/lib/ui-scale.ts; 100 = unscaled
   language?: LanguageSetting; // UI language (src/i18n); 'system' follows the OS language
+  hotkeyModifierPalette?: 'ctrl' | 'alt';
+  hotkeyKeyPalette?: string; // command palette; '' = unbound
+  palettePins?: PaletteRef[]; // command palette: pinned results shown on the empty state, in order
+  paletteRecents?: PaletteRef[]; // command palette: last picked results, newest first (PALETTE_RECENTS_MAX)
+  simCharacter?: string; // default ladder character for Horadric Sim entry points
+  simGoal?: SimGoal; // default planner goal for Horadric Sim entry points
+  simLastExport?: SimLastExport; // the last overlay export sent to the planner (no item data)
+  hotkeyModifierSimTryOn?: 'ctrl' | 'alt';
+  hotkeyKeySimTryOn?: string; // Horadric Sim: try the hovered item on the default character; '' = unbound
+  hotkeyModifierNotifications?: 'ctrl' | 'alt';
+  hotkeyKeyNotifications?: string; // the notification log; '' = unbound
 }
 
 interface OptionsContextProps {
@@ -118,7 +164,8 @@ interface OptionsContextProps {
   isLoading: boolean;
   setIsOpen: (open: boolean) => void;
   settings: ISettings;
-  updateSettings: (newSettings: Partial<ISettings>) => void;
+  /** Resolves true once the settings are saved (or already were), false when the write failed. */
+  updateSettings: (newSettings: Partial<ISettings>) => Promise<boolean>;
 }
 
 const DEFAULT_SETTINGS: ISettings = {
@@ -152,7 +199,7 @@ const DEFAULT_SETTINGS: ISettings = {
   marketAlertSoundEnabled: true,
   marketAlertVolume: 70,
   toastPopupsEnabled: true,
-  toastPopupTypes: ['whispers', 'trade', 'joins', 'offers', 'networth'],
+  toastPopupTypes: [...DEFAULT_TOAST_POPUP_TYPES],
   chatButtonOverlayEnabled: true,
   acceptOfferMessageTemplate: 'Your offer has been accepted. Game: {gameInfo}',
   rejectOfferMessageTemplate: 'Your offer has been rejected.',
@@ -171,7 +218,21 @@ const DEFAULT_SETTINGS: ISettings = {
   corruptedZoneTimerLayout: 'horizontal',
   corruptedZoneTimerZones: 'all',
   corruptedZoneAlerts: 'off',
+  corruptedZoneAlertLeadMinutes: 0,
   corruptedZoneFollowed: [],
+  stashAutoDelist: 'ask',
+  marketDefaultSort: 'newest',
+  marketDefaultSeller: 'all',
+  marketDefaultHasBuyout: 'any',
+  marketDefaultMaxAgeDays: 3,
+  marketPageSize: 25,
+  marketWhisperTemplate: '',
+  marketShowDealBadges: true,
+  marketShowPriceHistory: true,
+  marketShowSellerCard: true,
+  marketAlertToastSeconds: 8,
+  myListingsView: 'cards',
+  myListingsSort: DEFAULT_LISTINGS_SORT,
   hotkeyModifierSnapshot: 'ctrl',
   hotkeyKeySnapshot: '',
   hotkeyModifierMarket: 'ctrl',
@@ -183,11 +244,25 @@ const DEFAULT_SETTINGS: ISettings = {
   themeId: DEFAULT_THEME_ID,
   autoUpdateEnabled: true,
   windowTransparency: 0,
+  uiScale: UI_SCALE_DEFAULT,
   language: 'system',
+  hotkeyModifierPalette: 'ctrl',
+  hotkeyKeyPalette: 'space',
+  palettePins: [
+    { id: 'actions:market', group: 'actions', title: 'Market' },
+    { id: 'actions:chat', group: 'actions', title: 'Chat' },
+    { id: 'actions:builds', group: 'actions', title: 'Builds' },
+    { id: 'actions:settings', group: 'actions', title: 'Settings' },
+  ],
+  paletteRecents: [],
+  hotkeyModifierSimTryOn: 'ctrl',
+  hotkeyKeySimTryOn: '',
+  hotkeyModifierNotifications: 'ctrl',
+  hotkeyKeyNotifications: '',
 };
 
-/** The hotkeys besides the market one, as [modifier field, key field]. */
-const OTHER_HOTKEYS: [keyof ISettings, keyof ISettings][] = [
+/** Every hotkey, as [modifier field, key field]. */
+const HOTKEYS: [keyof ISettings, keyof ISettings][] = [
   ['hotkeyModifier', 'hotkeyKey'],
   ['hotkeyModifierListItem', 'hotkeyKeyListItem'],
   ['hotkeyModifierSettings', 'hotkeyKeySettings'],
@@ -196,20 +271,36 @@ const OTHER_HOTKEYS: [keyof ISettings, keyof ISettings][] = [
   ['hotkeyModifierOffers', 'hotkeyKeyOffers'],
   ['hotkeyModifierDelist', 'hotkeyKeyDelist'],
   ['hotkeyModifierSnapshot', 'hotkeyKeySnapshot'],
+  ['hotkeyModifierMarket', 'hotkeyKeyMarket'],
   ['hotkeyModifierBuilds', 'hotkeyKeyBuilds'],
+  ['hotkeyModifierPalette', 'hotkeyKeyPalette'],
+  ['hotkeyModifierSimTryOn', 'hotkeyKeySimTryOn'],
+  ['hotkeyModifierNotifications', 'hotkeyKeyNotifications'],
 ];
 
+/** Hotkeys added after release with a default key, in the order they were added. */
+const ADDED_HOTKEYS: [keyof ISettings, keyof ISettings][] = [
+  ['hotkeyModifierMarket', 'hotkeyKeyMarket'],
+  ['hotkeyModifierPalette', 'hotkeyKeyPalette'],
+];
+
+const combo = (settings: ISettings, [modifier, key]: [keyof ISettings, keyof ISettings]) =>
+  `${settings[modifier] ?? 'ctrl'}+${String(settings[key] ?? '').toLowerCase()}`;
+
 /**
- * Settings saved before the market hotkey existed get the default Ctrl+M, unless the user already bound that
- * combo to another hotkey: then the market hotkey starts unbound rather than stealing it.
+ * Settings saved before a hotkey existed get its default (Ctrl+M market, Ctrl+Space palette), unless the user already
+ * bound that combo to another hotkey: then the new hotkey starts unbound rather than stealing it.
  */
-export function migrateMarketHotkey(saved: Record<string, unknown> | null, merged: ISettings): ISettings {
-  if (saved?.hotkeyKeyMarket !== undefined) return merged;
-  const combo = `${merged.hotkeyModifierMarket}+${merged.hotkeyKeyMarket?.toLowerCase()}`;
-  const taken = OTHER_HOTKEYS.some(
-    ([modifier, key]) => `${merged[modifier] ?? 'ctrl'}+${String(merged[key] ?? '').toLowerCase()}` === combo,
-  );
-  return taken ? { ...merged, hotkeyKeyMarket: '' } : merged;
+export function migrateAddedHotkeys(saved: Record<string, unknown> | null, merged: ISettings): ISettings {
+  let out = merged;
+  for (const added of ADDED_HOTKEYS) {
+    const [, key] = added;
+    if (saved?.[key] !== undefined || !out[key]) continue;
+    const wanted = combo(out, added);
+    const taken = HOTKEYS.some((other) => other[1] !== key && out[other[1]] && combo(out, other) === wanted);
+    if (taken) out = { ...out, [key]: '' };
+  }
+  return out;
 }
 
 const SETTINGS_FILENAME = 'settings.json';
@@ -226,9 +317,9 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const settingsJsonRef = React.useRef('');
 
-  const updateSettings = useCallback(async (newSettings: Partial<ISettings>) => {
+  const updateSettings = useCallback(async (newSettings: Partial<ISettings>): Promise<boolean> => {
     try {
-      await navigator.locks.request('settings-file', async () => {
+      return await navigator.locks.request('settings-file', async () => {
         let currentSettings: ISettings;
         try {
           const file = await readTextFile(SETTINGS_FILENAME, { baseDir: SETTINGS_DIR });
@@ -242,7 +333,7 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const updatedJson = JSON.stringify(updated, null, 2);
 
         // Skip if nothing actually changed
-        if (updatedJson === settingsJsonRef.current) return;
+        if (updatedJson === settingsJsonRef.current) return true;
 
         // The config dir can disappear after load (Windows reports os error 3 on write), so recreate it.
         if (!(await exists('', { baseDir: SETTINGS_DIR }))) await mkdir('', { baseDir: SETTINGS_DIR, recursive: true });
@@ -252,10 +343,12 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         settingsJsonRef.current = updatedJson;
         setSettings(updated);
+        return true;
       });
     } catch (error) {
       // Fixed message: the fs error embeds the user's home path, which would split the Sentry issue per user.
       Sentry.captureException(new Error('Error updating settings'), { extra: { cause: String(error) } });
+      return false;
     }
   }, []);
 
@@ -281,7 +374,7 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         // Deep merge parsed into a copy of the defaults. Saved arrays replace the default ones whole (lodash
         // would merge them by index, bringing back removed toast types or deleted chat templates).
-        const merged: ISettings = migrateMarketHotkey(
+        const merged: ISettings = migrateAddedHotkeys(
           parsed,
           mergeWith({}, DEFAULT_SETTINGS, parsed, (_default: unknown, saved: unknown) =>
             Array.isArray(saved) ? saved : undefined,
@@ -341,9 +434,9 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [isLoading, settings?.pd2Token, updateSettings]);
 
-  // Single overlay window, single OptionsProvider: settings side effects (theme, transparency,
-  // debug logging) are applied here once loaded. Before that, main.tsx applied the cached theme
-  // and initDebugLoggingFromSettings() read the file directly.
+  // Single overlay window, single OptionsProvider: settings side effects (theme, transparency, UI scale,
+  // debug logging, telemetry opt-out) are applied here once loaded. Before that, main.tsx applied the cached
+  // theme and UI scale, and initDebugLoggingFromSettings() / initTelemetryFromSettings() read the file directly.
   useEffect(() => {
     if (isLoading) return;
     applyTheme(getTheme(settings.themeId));
@@ -356,9 +449,19 @@ export const OptionsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   useEffect(() => {
     if (isLoading) return;
+    applyUiScale(settings.uiScale);
+  }, [isLoading, settings.uiScale]);
+
+  useEffect(() => {
+    if (isLoading) return;
     if (settings.debugLoggingEnabled) startDebugLogging();
     else stopDebugLogging();
   }, [isLoading, settings.debugLoggingEnabled]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    applyTelemetryOptOut(settings.telemetryOptOut ?? false);
+  }, [isLoading, settings.telemetryOptOut]);
 
   useEffect(() => {
     if (isLoading) return;

@@ -3,7 +3,7 @@
     "listItem": "Anunciar objeto",
     "manage": "Gestionar",
     "queued": "En cola",
-    "mustBeInStash": "El objeto debe estar en tu alijo compartido para anunciarlo."
+    "mustBeInStash": "El objeto debe estar en tu alijo (compartido o personal) para anunciarlo."
   },
   "shortcut": {
     "findFailed": "No se pudieron encontrar objetos",
@@ -28,7 +28,7 @@
     "noItemDescription": "Copia un objeto en el juego (Ctrl+C) y vuelve a abrir esta ventana para anunciarlo, o selecciona \"Gestionar anuncios\" para ver tus intercambios activos.",
     "noItemsFound": "No se encontraron objetos que coincidan con \"{{name}}\"",
     "whyNotFound": "¿Por qué no se encontró mi objeto?",
-    "notFoundTooltip": "Un objeto no se encontrará a menos que esté en tu alijo compartido (no en el personal) y hayas creado una partida nueva.",
+    "notFoundTooltip": "Un objeto se encuentra cuando está en tu alijo compartido o en el alijo personal de un personaje del modo elegido en Ajustes, y has creado una partida nueva.",
     "queueHint": "Puedes poner este objeto en cola para anunciarlo automáticamente. Esperaremos a que el servidor lo sincronice desde tu alijo (suele tardar unos minutos).",
     "noneMatch": "¿Ninguno coincide?",
     "queueModeHint": "Pon este objeto en cola para esperar a que el nuevo aparezca en tu alijo (suele tardar unos minutos).",
@@ -135,7 +135,7 @@
     "noMatches": "Sin coincidencias",
     "noMatchesFor": "No se encontraron objetos que coincidan con \"{{query}}\"",
     "noActiveTitle": "No hay anuncios activos",
-    "noActiveDescription": "Los objetos que anuncies desde tu alijo compartido aparecerán aquí.",
+    "noActiveDescription": "Los objetos que anuncies desde tu alijo aparecerán aquí.",
     "notSignedInTitle": "No has iniciado sesión",
     "notSignedInDescription": "Inicia sesión con tu cuenta de PD2 para gestionar tus anuncios."
   },
@@ -172,5 +172,66 @@
     "hrPrice": "{{price}} HR",
     "listedAgo": "Publicado {{time}}",
     "removing": "Quitando..."
+  },
+  "autoDelist": {
+    "title": "Un objeto salió del alijo",
+    "removed": "Anuncio de {{name}} retirado: el objeto ya no está en tu alijo.",
+    "removeFailed": "{{name}} salió de tu alijo, pero no se pudo retirar su anuncio.",
+    "confirm": "{{name}} ya no está en tu alijo. ¿Retirar el anuncio?",
+    "confirmLookAlike": "Un objeto como {{name}} salió de tu alijo. ¿Retirar tu anuncio de {{name}}?",
+    "pick": "Objetos como {{name}} salieron de tu alijo. Elige qué anuncios retirar.",
+    "delist": "Retirar",
+    "keep": "Mantener",
+    "choose": "Elegir"
+  },
+  "myListings": {
+    "searchPlaceholder": "Buscar entre {{count}} anuncios…",
+    "readyListed": "subida lista · publicado {{listed}}",
+    "bumpedListed": "subido {{bumped}} · publicado {{listed}}",
+    "sort": {
+      "label": "Ordenar anuncios",
+      "reverse": "Invertir orden",
+      "attention": "Requiere atención",
+      "bumped": "Última subida",
+      "price": "Precio",
+      "listed": "Fecha de publicación",
+      "deal": "Precio vs mercado",
+      "name": "Nombre",
+      "updated": "Última actualización"
+    },
+    "view": {
+      "label": "Vista",
+      "cards": "Tarjetas",
+      "rows": "Filas compactas"
+    },
+    "filter": {
+      "ready": "Subida lista {{count}}",
+      "offers": "Ofertas {{count}}"
+    },
+    "slots": "{{count}} / {{max}} espacios",
+    "bumpReady_one": "Subir {{count}} listo",
+    "bumpReady_many": "Subir {{count}} de anuncios listos",
+    "bumpReady_other": "Subir {{count}} listos",
+    "nothingToBump": "Nada que subir",
+    "noneForFilter": "Ningún anuncio coincide con este filtro.",
+    "columns": {
+      "item": "Objeto",
+      "price": "Precio",
+      "market": "Mercado",
+      "actions": "Acciones"
+    },
+    "stats": {
+      "all": "Ver todas las estadísticas",
+      "less": "Ver menos estadísticas"
+    },
+    "flags": {
+      "corrupted": "Corrupto",
+      "ethereal": "Eté",
+      "sockets": "{{count}} ranuras"
+    }
+  },
+  "palette": {
+    "openOffer": "Abrir en el chat",
+    "showListing": "Ver en Gestionar"
   }
 }

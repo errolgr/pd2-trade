@@ -36,7 +36,12 @@
     "loadMoreFailed": "Не удалось загрузить ещё",
     "rateLimitedUntil": "Лимит запросов до {{time}}",
     "listings": "Объявления",
-    "favorite": "В избранное"
+    "favorite": "В избранное",
+    "noMatchAll": "Нет объявлений, подходящих под все фильтры",
+    "relaxHint": "Уберите один: на каждом видно, что останется.",
+    "relaxDrop": "Без {{filter}}",
+    "relaxLabel": "Фильтры, которые можно убрать",
+    "relaxDropCount": "Без {{filter}}: {{count}} объявлений"
   },
   "search": {
     "rateLimited": "Слишком много поисков на рынке. Попробуйте чуть позже.",
@@ -136,6 +141,7 @@
     "ethereal": "Ethereal",
     "desecrated": "Desecrated",
     "identified": "Опознан",
+    "anniversary": "Юбилейный",
     "mode": "Режим",
     "listedWithin": "Выставлено за",
     "sort": {
@@ -172,13 +178,25 @@
     "sellerPlaceholder": "Аккаунт или имя пользователя",
     "sellerPicked": "Этот продавец (выбран из объявления)",
     "clearSeller": "Сбросить продавца",
-    "modeLabel": "Softcore или hardcore"
+    "modeLabel": "Softcore или hardcore",
+    "applied": {
+      "not": "Без {{name}}"
+    }
   },
   "controls": {
     "min": "мин",
     "max": "макс",
     "minLabel": "{{label}}: мин",
     "maxLabel": "{{label}}: макс"
+  },
+  "facets": {
+    "count": "{{label}} · {{n, number}}",
+    "price": "{{from}}–{{to}} HR",
+    "priceOpen": "{{from}}+ HR",
+    "priceUpTo": "До {{to}} HR",
+    "priceAny": "любая цена",
+    "priceBars": "Объявления по цене в HR: {{selection}}",
+    "priceClear": "Сбросить цену в HR"
   },
   "stats": {
     "min": "Мин.",
@@ -377,7 +395,8 @@
     "online": "в сети",
     "buyout": "выкуп",
     "listingAge": "возраст объявления",
-    "sort": "сортировка"
+    "sort": "сортировка",
+    "extendedStat": "стат, который сайт не поддерживает"
   },
   "nameSearch": {
     "noSales": "нет продаж",
@@ -388,7 +407,9 @@
     "fallbackWindow": "сред. за {{window}} · {{listings}}",
     "label": "Название предмета",
     "placeholder": "Поиск предметов…  ( / )",
-    "clear": "Очистить название"
+    "clear": "Очистить название",
+    "closeMatch": "похожее название",
+    "groupHint": "Все виды · задаёт Тип и Основу"
   },
   "detail": {
     "label": "Детали объявления",
@@ -541,5 +562,14 @@
     "notRemoved": "Не удалось убрать из избранного",
     "notSaved": "Не удалось добавить в избранное",
     "refused": "projectdiablo2.com отклонил изменение. Попробуйте чуть позже."
+  },
+  "palette": {
+    "openInMarket": "Искать на рынке",
+    "watchPrice": "Следить за ценой",
+    "stopWatching": "Перестать следить",
+    "buildsUsing": "Билды с этим предметом",
+    "copyName": "Копировать название",
+    "nameCopied": "Название скопировано",
+    "nameNotCopied": "Название не скопировано"
   }
 }

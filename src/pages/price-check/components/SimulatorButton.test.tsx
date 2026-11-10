@@ -1,0 +1,354 @@
+// @vitest-environment happy-dom
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { MotionGlobalConfig } from 'framer-motion';
+import type { GameData, Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
+import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { useOptions } from '@/hooks/useOptions';
+import { useSimAccess } from '@/hooks/useSimAccess';
+import { clearSimLadderCharactersCache } from '@/hooks/useSimLadderCharacters';
+import { getAccountCharacters, getCharacterItems } from '@/lib/builds-api';
+import { openUrl } from '@/lib/browser-opener';
+import { createSimExport, getMyCharacters, SimExportApiError } from '@/lib/sim-export-api';
+import { clearCharacterItemsCache } from '@/lib/sim-item-sources';
+import type * as SimExportApi from '@/lib/sim-export-api';
+import type { SimAccess } from '@/lib/sim-export-api';
+import { trackMeasurement } from '@/lib/telemetry';
+import { useOverlay, type OverlayApi } from '@/overlay';
+import type { Item } from '../lib/interfaces';
+import { SIM_CALLOUT_STORAGE_KEY, SIM_CHARACTER_STORAGE_KEY, SimulatorButton } from './SimulatorButton';
+
+vi.mock('@/hooks/pd2website/usePD2Website', () => {
+  class AuthenticationError extends Error {}
+  class AccountMismatchError extends Error {}
+  return { AuthenticationError, AccountMismatchError, usePd2Website: vi.fn() };
+});
+vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
+vi.mock('@/hooks/useSimAccess', () => ({ useSimAccess: vi.fn() }));
+vi.mock('@/overlay', () => ({ useOverlay: vi.fn() }));
+vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
+vi.mock('@/lib/telemetry', () => ({ trackMeasurement: vi.fn() }));
+vi.mock('@/lib/builds-api', () => ({ getAccountCharacters: vi.fn(), getCharacterItems: vi.fn() }));
+vi.mock('@/lib/sim-export-api', async (importOriginal) => ({
+  ...(await importOriginal<typeof SimExportApi>()),
+  getMyCharacters: vi.fn(),
+  createSimExport: vi.fn(),
+}));
+
+const URL_OUT = 'https://pd2trader.com/sim/plan?export=0b7f6a1e-8a39-4f43-9a3e-5f4f2b8c0d11';
+const WAITLIST = 'https://pd2trader.com/sim/beta';
+const access = (over: Partial<SimAccess> = {}): SimAccess => ({
+  canUse: true,
+  waitlistUrl: WAITLIST,
+  waitlistPosition: null,
+  ...over,
+});
+const openPanel = vi.fn();
+const fetchAndCacheStash = vi.fn<() => Promise<GameData>>();
+let settings: { pd2Token?: string; account?: string; simCharacter?: string; simGoal?: 'quick_sim' | 'top_gear' };
+const updateSettings = vi.fn();
+
+const SHAKO = {
+  hash: 'h-shako',
+  name: 'Harlequin Crest',
+  is_simple: false,
+  is_ear: false,
+  is_ethereal: false,
+  is_runeword: false,
+  corrupted: false,
+  socket_count: 0,
+  quality: { id: 7, name: 'Unique' },
+  base: { name: 'Shako', stackable: false },
+  modifiers: [],
+} as unknown as GameStashItem;
+
+const checked = (over: Partial<Item> = {}): Item => ({
+  name: 'Harlequin Crest',
+  quality: 'Unique',
+  type: 'Shako',
+  iLevel: 85,
+  location: 'Stash',
+  stats: [],
+  ...over,
+});
+
+async function openPopover(item: Item = checked()) {
+  render(<SimulatorButton item={item} />);
+  fireEvent.click(screen.getByRole('button', { name: /^Sim/ }));
+  await screen.findByText('Send to Simulator');
+}
+
+const planner = () => screen.getByRole('button', { name: /Open planner/ }) as HTMLButtonElement;
+
+beforeAll(() => {
+  MotionGlobalConfig.skipAnimations = true;
+});
+afterAll(() => {
+  MotionGlobalConfig.skipAnimations = false;
+});
+
+beforeEach(() => {
+  localStorage.clear();
+  clearSimLadderCharactersCache();
+  clearCharacterItemsCache();
+  updateSettings.mockReset();
+  settings = { pd2Token: 'tok', account: 'Hammerdin' };
+  openPanel.mockReset();
+  fetchAndCacheStash.mockReset();
+  fetchAndCacheStash.mockResolvedValue({ items: [SHAKO] } as GameData);
+  vi.mocked(trackMeasurement).mockReset();
+  vi.mocked(createSimExport).mockReset();
+  vi.mocked(createSimExport).mockResolvedValue({ url: URL_OUT });
+  vi.mocked(openUrl).mockReset();
+  vi.mocked(openUrl).mockResolvedValue();
+  vi.mocked(useSimAccess).mockReturnValue(access());
+  vi.mocked(useOptions).mockImplementation(() => ({ settings, updateSettings }) as never);
+  vi.mocked(usePd2Website).mockReturnValue({ fetchAndCacheStash } as unknown as ReturnType<typeof usePd2Website>);
+  vi.mocked(useOverlay).mockReturnValue({ openPanel } as unknown as OverlayApi);
+  vi.mocked(getMyCharacters).mockResolvedValue({
+    accounts: [
+      { account: 'Alt', characters: ['AltZon'] },
+      { account: 'Hammerdin', characters: ['Sorc', 'HammerPal', 'OldPal'] },
+    ],
+  });
+  const pd2 = (account: string, name: string, className: string, level: number, ladder = true) => ({
+    account,
+    name,
+    className,
+    level,
+    hardcore: false,
+    ladder,
+  });
+  vi.mocked(getAccountCharacters).mockImplementation(async (account) =>
+    account === 'Alt'
+      ? [pd2('Alt', 'AltZon', 'Amazon', 85)]
+      : [
+          pd2('Hammerdin', 'Sorc', 'Sorceress', 70),
+          pd2('Hammerdin', 'HammerPal', 'Paladin', 92),
+          pd2('Hammerdin', 'OldPal', 'Paladin', 99, false),
+        ],
+  );
+  vi.mocked(getCharacterItems).mockReset();
+  vi.mocked(getCharacterItems).mockResolvedValue({ items: [], mercenary: [] });
+});
+
+afterEach(() => {
+  cleanup();
+});
+
+describe('SimulatorButton', () => {
+  it('is hidden while Horadric Sim is off or unknown', () => {
+    vi.mocked(useSimAccess).mockReturnValue(undefined);
+    const { rerender } = render(<SimulatorButton item={checked()} />);
+    expect(screen.queryByRole('button', { name: /^Sim/ })).toBeNull();
+    vi.mocked(useSimAccess).mockReturnValue(null);
+    rerender(<SimulatorButton item={checked()} />);
+    expect(screen.queryByRole('button', { name: /^Sim/ })).toBeNull();
+  });
+
+  it('sends users outside the closed beta to the waitlist instead of the export form', async () => {
+    vi.mocked(useSimAccess).mockReturnValue(access({ canUse: false }));
+    vi.mocked(getMyCharacters).mockClear();
+    render(<SimulatorButton item={checked()} />);
+    fireEvent.click(screen.getByRole('button', { name: /^Sim/ }));
+    await screen.findByText('Horadric Sim · Closed beta');
+    expect(screen.queryByText('Send to Simulator')).toBeNull();
+    expect(getMyCharacters).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: /Join the waitlist/ }));
+    expect(openUrl).toHaveBeenCalledWith(WAITLIST);
+    await waitFor(() => expect(screen.queryByText('Horadric Sim · Closed beta')).toBeNull());
+  });
+
+  it('shows a waitlisted user their place rather than another sign-up', async () => {
+    vi.mocked(useSimAccess).mockReturnValue(access({ canUse: false, waitlistPosition: 12 }));
+    render(<SimulatorButton item={checked()} />);
+    fireEvent.click(screen.getByRole('button', { name: /^Sim/ }));
+    expect((await screen.findByRole('status')).textContent).toContain("You're #12 on the waitlist");
+    expect(screen.getByRole('button', { name: /View waitlist/ })).toBeTruthy();
+  });
+
+  it('points new beta users at the button once: dismissing it keeps it away for good', () => {
+    render(<SimulatorButton item={checked()} />);
+    expect(screen.getByRole('note').textContent).toContain('Try this item on your character');
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+    expect(screen.queryByRole('note')).toBeNull();
+    expect(localStorage.getItem(SIM_CALLOUT_STORAGE_KEY)).toBe('1');
+
+    cleanup();
+    render(<SimulatorButton item={checked()} />);
+    expect(screen.queryByRole('note')).toBeNull();
+  });
+
+  it('counts opening the Simulator as having seen the callout', async () => {
+    await openPopover();
+    expect(screen.queryByRole('note')).toBeNull();
+    expect(localStorage.getItem(SIM_CALLOUT_STORAGE_KEY)).toBe('1');
+  });
+
+  it('shows the try-on hotkey binding on the button and links to it from the popover', async () => {
+    settings = { ...settings, hotkeyModifierSimTryOn: 'alt', hotkeyKeySimTryOn: 'j' };
+    render(<SimulatorButton item={checked()} />);
+    expect(screen.getByRole('button', { name: /^Sim/ }).getAttribute('title')).toBe('Try-on hotkey: Alt+J');
+    cleanup();
+
+    settings = { ...settings, hotkeyKeySimTryOn: '' };
+    await openPopover();
+    expect(screen.getByRole('button', { name: /^Sim/ }).getAttribute('title')).toBe('Try-on hotkey: not set');
+    fireEvent.click(screen.getByRole('button', { name: 'Try-on hotkey: not set' }));
+    expect(openPanel).toHaveBeenCalledWith('settings', { section: 'Hotkeys', field: 'hotkeyKeySimTryOn' });
+  });
+
+  it('tries the stash item on with the selected account’s highest ladder character, opens the planner and closes', async () => {
+    await openPopover();
+    await screen.findByText('Found in your stash');
+    await waitFor(() => expect(planner().disabled).toBe(false));
+    expect(screen.getByRole('radio', { name: /Try it on/ }).getAttribute('aria-checked')).toBe('true');
+
+    fireEvent.click(planner());
+    await waitFor(() => expect(screen.queryByText('Send to Simulator')).toBeNull());
+    expect(createSimExport).toHaveBeenCalledWith(
+      'tok',
+      'HammerPal',
+      { stashItems: [SHAKO], try: { stash: 0 } },
+      'quick_sim',
+    );
+    expect(openUrl).toHaveBeenCalledWith(URL_OUT);
+    expect(trackMeasurement).toHaveBeenCalledWith('sim_export', expect.objectContaining({ stash_items: 1 }), {
+      outcome: 'success',
+      source: 'price_check',
+      mode: 'try',
+      item_source: 'stash',
+    });
+    expect(updateSettings).toHaveBeenCalledWith({
+      simLastExport: { character: 'HammerPal', goal: 'quick_sim', items: 1, url: URL_OUT, sentAt: expect.any(String) },
+    });
+  });
+
+  it('adds it to the Top Gear pool without trying it on', async () => {
+    await openPopover();
+    await waitFor(() => expect(planner().disabled).toBe(false));
+    fireEvent.click(screen.getByRole('radio', { name: /Add to Top Gear pool/ }));
+    fireEvent.click(planner());
+    await waitFor(() =>
+      expect(createSimExport).toHaveBeenCalledWith('tok', 'HammerPal', { stashItems: [SHAKO] }, 'top_gear'),
+    );
+  });
+
+  it('remembers the last chosen character', async () => {
+    localStorage.setItem(SIM_CHARACTER_STORAGE_KEY, 'AltZon');
+    await openPopover();
+    await waitFor(() => expect(planner().disabled).toBe(false));
+    expect(screen.getByRole('combobox', { name: 'Character' }).textContent).toContain('AltZon');
+    fireEvent.click(planner());
+    await waitFor(() =>
+      expect(createSimExport).toHaveBeenCalledWith(
+        'tok',
+        'AltZon',
+        { stashItems: [SHAKO], try: { stash: 0 } },
+        'quick_sim',
+      ),
+    );
+  });
+
+  it('lists only ladder characters and finds them by name or class', async () => {
+    await openPopover();
+    await waitFor(() => expect(planner().disabled).toBe(false));
+    const picker = screen.getByRole('combobox', { name: 'Character' });
+    expect(picker.textContent).toBe('HammerPalPaladin · Lvl 92');
+    fireEvent.click(picker);
+    const names = () => screen.getAllByRole('option').map((o) => o.textContent);
+    expect(names()).toEqual([
+      'HammerPalPaladin · Lvl 92 · Hammerdin',
+      'SorcSorceress · Lvl 70 · Hammerdin',
+      'AltZonAmazon · Lvl 85 · Alt',
+    ]);
+
+    fireEvent.change(screen.getByPlaceholderText('Search characters…'), { target: { value: 'amaz' } });
+    expect(names()).toEqual(['AltZonAmazon · Lvl 85 · Alt']);
+    fireEvent.click(screen.getByRole('option'));
+    expect(picker.textContent).toBe('AltZonAmazon · Lvl 85');
+    fireEvent.click(planner());
+    await waitFor(() =>
+      expect(createSimExport).toHaveBeenCalledWith(
+        'tok',
+        'AltZon',
+        { stashItems: [SHAKO], try: { stash: 0 } },
+        'quick_sim',
+      ),
+    );
+  });
+
+  it('sends a worn item from the character wearing it, reading the chosen character first', async () => {
+    const worn = { ...SHAKO, location: { zone: 'Equipped', equipment: 'Helm', storage: 'Unknown' } } as GameStashItem;
+    vi.mocked(getCharacterItems).mockImplementation(async (name) =>
+      name === 'AltZon' ? { items: [worn], mercenary: [] } : { items: [], mercenary: [] },
+    );
+    await openPopover(checked({ location: 'Equip' }));
+    await screen.findByText('Found on AltZon (equipped)');
+    expect(vi.mocked(getCharacterItems).mock.calls[0][0]).toBe('HammerPal');
+    expect(fetchAndCacheStash).not.toHaveBeenCalled();
+
+    fireEvent.click(planner());
+    await waitFor(() =>
+      expect(createSimExport).toHaveBeenCalledWith(
+        'tok',
+        'HammerPal',
+        { stashItems: [worn], try: { stash: 0 } },
+        'quick_sim',
+      ),
+    );
+  });
+
+  it('sends the item as copied when PD2 has it nowhere, after looking on the characters and in the stash', async () => {
+    const copied = checked({ name: 'Arachnid Mesh', type: 'Spiderweb Sash', location: 'Inventory' });
+    await openPopover(copied);
+    await screen.findByText("PD2 hasn't saved this item yet, so it's sent as you copied it");
+    expect(getCharacterItems).toHaveBeenCalledTimes(3);
+    expect(fetchAndCacheStash).toHaveBeenCalled();
+
+    fireEvent.click(planner());
+    await waitFor(() =>
+      expect(createSimExport).toHaveBeenCalledWith(
+        'tok',
+        'HammerPal',
+        {
+          clipboardItems: [copied],
+          try: { clipboard: 0 },
+        },
+        'quick_sim',
+      ),
+    );
+    expect(trackMeasurement).toHaveBeenCalledWith(
+      'sim_export',
+      expect.anything(),
+      expect.objectContaining({ item_source: 'clipboard' }),
+    );
+  });
+
+  it('asks to sign in without a PD2 login', async () => {
+    settings = {};
+    await openPopover();
+    expect(screen.getByText('Sign in to send items to the planner.')).not.toBeNull();
+    expect(getMyCharacters).not.toHaveBeenCalledWith(undefined);
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+    expect(openPanel).toHaveBeenCalledWith('signIn');
+  });
+
+  it('shows why the export failed and offers sign-in on an expired session', async () => {
+    vi.mocked(createSimExport).mockRejectedValueOnce(
+      new SimExportApiError("stashItems[0] can't be simmed: no base", 400),
+    );
+    await openPopover();
+    await waitFor(() => expect(planner().disabled).toBe(false));
+    fireEvent.click(planner());
+    await screen.findByText("stashItems[0] can't be simmed: no base");
+    expect(openUrl).not.toHaveBeenCalled();
+
+    vi.mocked(createSimExport).mockRejectedValueOnce(new SimExportApiError('Unauthorized', 401));
+    fireEvent.click(planner());
+    await screen.findByText('Your PD2 session expired. Sign in again.');
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+    expect(openPanel).toHaveBeenCalledWith('signIn');
+  });
+});

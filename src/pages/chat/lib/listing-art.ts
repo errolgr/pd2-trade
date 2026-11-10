@@ -33,15 +33,35 @@ const BUNDLED_ART: Record<string, 'currency' | 'ubers'> = {
   Trang_Ouls_Jawbone: 'ubers',
 };
 
-/** Jewelry, jewels and charms have no weapon/armor family; pd2trader.com uses one art per kind. */
+/** Jewelry and jewels have no weapon/armor family; pd2trader.com uses one art per kind. */
 const MISC_BASE_ART: Record<string, string> = {
   ring: 'invrin',
   amulet: 'invamu',
   jewel: 'invgswe',
-  'small charm': 'invch4',
-  'large charm': 'invch4',
-  'grand charm': 'invch4',
 };
+
+/** Misc items the base catalog has no art for, by item name (the game's inventory files). */
+const NAMED_ART: Record<string, string> = {
+  'Key of Terror': 'invmph',
+  'Key of Hate': 'invmph',
+  'Key of Destruction': 'invmph',
+  "Mephisto's Brain": 'invbrnz',
+  "Baal's Eye": 'inveye',
+  "Diablo's Horn": 'invhorn',
+  'Perfect Topaz': 'invgsye',
+  'Perfect Diamond': 'invgswe',
+  'Perfect Amethyst': 'invgsve',
+  'Perfect Sapphire': 'invgsbe',
+  'Perfect Emerald': 'invgsge',
+  'Perfect Ruby': 'invgsre',
+  'Perfect Skull': 'invskz',
+};
+
+/** PD2's Corrupted <Class>'s Ear: the game's ear art (only projectdiablo2.com hosts it; see listingArtCandidates). */
+const EAR = /^Corrupted .+'s Ear$/;
+
+/** Charm size by base name: invch<3·variant + size> is 28×28 (small), 28×56 (large) or 28×84 (grand). */
+const CHARM_SIZE: Record<string, 1 | 2 | 3> = { 'small charm': 1, 'large charm': 2, 'grand charm': 3 };
 
 /** Case-insensitive name/key index per items map (keys differ from display names, e.g. "Eschuta's temper"). */
 const LOOSE_INDEX = new WeakMap<Record<string, ItemType>, Map<string, ItemType>>();
@@ -104,6 +124,15 @@ function jewelArt(item: ArtItem): string | null {
   return typeof graphic === 'number' && graphic >= 0 && graphic <= 5 ? `invgswe${graphic + 1}` : 'invgswe';
 }
 
+/** Charm art: three looks per size (invch1–3, 4–6, 7–9), picked by graphic_id; the first look without one. */
+function charmArt(item: ArtItem): string | null {
+  const size = CHARM_SIZE[(item.base?.name ?? item.name ?? '').toLowerCase()];
+  if (!size) return null;
+  const graphic = item.graphic_id;
+  const variant = typeof graphic === 'number' && graphic >= 0 && graphic <= 2 ? graphic : 0;
+  return `invch${variant * 3 + size}`;
+}
+
 /**
  * Thumbnail URL of a listed item: jewel art, unique/set art from the items database, bundled rune/currency/uber
  * art, else the base's inventory art. null when nothing matches (the card shows a placeholder).
@@ -127,7 +156,12 @@ export function listingArtUrl(item: ArtItem, itemsByKey: Record<string, ItemType
   if (BUNDLED_ART[stem]) return `/${BUNDLED_ART[stem]}/${stem}.png`;
 
   const baseName = item.base?.name ?? name;
-  const invfile = baseArtFile(baseName) ?? MISC_BASE_ART[baseName.toLowerCase()];
+  const invfile =
+    NAMED_ART[name] ??
+    (EAR.test(name) ? 'invear' : null) ??
+    baseArtFile(baseName) ??
+    MISC_BASE_ART[baseName.toLowerCase()] ??
+    charmArt(item);
   return invfile ? `${ITEM_ART}/${invfile}.png` : null;
 }
 

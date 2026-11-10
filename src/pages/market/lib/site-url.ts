@@ -1,6 +1,7 @@
 import { DEFAULT_MAX_AGE_DAYS } from './defaults';
 import { orBlockNumbers } from './stat-groups';
 import type { MarketFilters, StatFilter, Tri } from './types';
+import { typeGroupByCode, typeGroupSiteValue } from './type-groups';
 import { t } from '@/i18n';
 
 /**
@@ -17,6 +18,9 @@ export interface SiteSearchLink {
 
 const triParam = (t: Tri): string | undefined => (t === 'yes' ? 'true' : t === 'no' ? 'false' : undefined);
 
+/** The site's property keys: `name{p0,p1}` or `a|b`; the service's extended slots (`*`, `N|M`, ranges, `[i]`) aren't. */
+const SITE_KEY = /^\w+(?:\{\d+(?:,\d+)*\}|(?:\|\w+)*)$/;
+
 export function siteSearchLink(f: MarketFilters): SiteSearchLink {
   const params = new URLSearchParams();
   const dropped: string[] = [];
@@ -31,7 +35,9 @@ export function siteSearchLink(f: MarketFilters): SiteSearchLink {
   };
 
   set('name', f.itemName);
-  set('type', f.typeCode);
+  // The site doesn't know our type groups: a group goes as the `$in` of its member types
+  const typeGroup = typeGroupByCode(f.typeCode);
+  set('type', typeGroup ? typeGroupSiteValue(typeGroup) : f.typeCode);
   set('base', f.baseCode);
   if (f.rarity.length === 1) set('quality', f.rarity[0]);
   else if (f.rarity.length > 1) dropped.push(t('market:siteUrl.rarity', { rarities: f.rarity.join(', ') }));
@@ -43,7 +49,9 @@ export function siteSearchLink(f: MarketFilters): SiteSearchLink {
 
   const stats = f.stats.filter((s) => s.enabled && s.key.trim() !== '');
   const excluded = stats.filter((s) => s.not);
-  const mods = stats.filter((s) => s.kind === 'mod' && !s.not);
+  const statMods = stats.filter((s) => s.kind === 'mod' && !s.not);
+  const mods = statMods.filter((s) => SITE_KEY.test(s.key));
+  if (mods.length < statMods.length) dropped.push(t('market:siteUrl.extendedStat'));
   mods.filter((s) => s.or === undefined).forEach((s) => property(s.key, s));
   // The site has no any-of across rows: a block of one row is required; a larger block becomes the site's
   // `a|b` key, which matches any of the names with one shared range (exact only when the rows share theirs)

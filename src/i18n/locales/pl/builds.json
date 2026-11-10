@@ -5,6 +5,7 @@
     "lookupPlaceholder": "Nazwa postaci…",
     "lookupLabel": "Wyszukaj postać",
     "mode": "Tryb",
+    "followingShortcut": "Obserwowane ({{n}})",
     "tabs": {
       "meta": "Meta",
       "characters": "Postacie"
@@ -118,10 +119,13 @@
     "updated": "Zaktualizowano {{time}}",
     "firstSeen": "Pierwszy raz widziana {{time}}",
     "follow": "Obserwuj",
+    "followedToast": "Obserwujesz {{name}}",
+    "followedToastDescription": "Zapisano w {{characters}} → {{following}}",
     "openSite": "Otwórz na pd2trader.com",
     "viewingSnapshot": "Podgląd <date>{{date}}</date><muted> · ceny ukryte</muted>",
     "backToNow": "Wróć do teraz",
     "equipment": "Ekwipunek",
+    "charms": "Charmy",
     "weaponSwitch": "Zmiana broni",
     "mercTitle": "Najemnik <muted>· {{type}}</muted>",
     "paneLabel": "Widok postaci",
@@ -229,5 +233,15 @@
     "usageCount_few": "{{formatted}} postacie",
     "usageCount_many": "{{formatted}} postaci",
     "usageCount_other": "{{formatted}} postaci"
+  },
+  "palette": {
+    "character": "postać",
+    "account": "konto",
+    "class": "klasa",
+    "skillOf": "umiejętność: {{className}}",
+    "hardcore": "HC",
+    "openBuild": "Otwórz build",
+    "showCharacters": "Pokaż postacie",
+    "showMeta": "Pokaż w Meta"
   }
 }

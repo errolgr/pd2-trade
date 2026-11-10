@@ -10,6 +10,10 @@
       "label": "Botón de chat del overlay",
       "description": "Muestra el botón flotante de chat en la esquina inferior derecha de la pantalla."
     },
+    "uiScale": {
+      "label": "Escala de la interfaz",
+      "description": "Tamaño de todos los textos y paneles del overlay. Auméntala en monitores de alta resolución."
+    },
     "windowTransparency": {
       "label": "Transparencia de ventana: <num>{{value}}%</num>",
       "description": "Ve el juego a través del fondo de las ventanas. 0% es totalmente opaco."
@@ -47,8 +51,15 @@
         "label": "Zonas seguidas",
         "description": "Las zonas que siguen el temporizador y las notificaciones cuando está seleccionado Solo las zonas que sigo."
       },
-      "group": "Temporizador de zonas corruptas",
-      "opacity": "Opacidad del temporizador: <num>{{value}}%</num>"
+      "opacity": "Opacidad del temporizador: <num>{{value}}%</num>",
+      "lead": {
+        "atStart": "Avisar cuando empiece la zona",
+        "before_one": "Avisar {{count}} minuto antes de que empiece la zona",
+        "before_many": "Avisar {{count}} minutos antes de que empiece la zona",
+        "before_other": "Avisar {{count}} minutos antes de que empiece la zona",
+        "description": "Hasta 15 minutos antes, para entrar a tiempo en una nueva partida de Hell.",
+        "ariaLabel": "Avisar antes de que empiece la zona"
+      }
     },
     "zoneAlertOptions": {
       "off": "Desactivado",
@@ -144,7 +155,8 @@
     "priceCheck": "Consulta de precio",
     "netWorth": "Patrimonio",
     "hotkeys": "Atajos",
-    "about": "Acerca de"
+    "about": "Acerca de",
+    "market": "Mercado"
   },
   "layout": {
     "title": "Ajustes",
@@ -200,7 +212,7 @@
     "group": "Atajos",
     "modifierLabel": "Modificador de {{action}}",
     "off": "Desactivado",
-    "hint": "Haz clic en una casilla de tecla y pulsa la tecla que quieras usar. Pulsa Retroceso en la casilla de instantánea, mercado o builds para desactivar ese atajo.",
+    "hint": "Haz clic en una casilla de tecla y pulsa la tecla que quieras usar. Pulsa Retroceso en la casilla de instantánea, mercado, builds o paleta de comandos para desactivar ese atajo.",
     "rows": {
       "priceCheck": {
         "label": "Consulta de precio",
@@ -241,6 +253,18 @@
       "builds": {
         "label": "Builds",
         "description": "Muestra u oculta las builds ladder."
+      },
+      "palette": {
+        "label": "Paleta de comandos",
+        "description": "Busca acciones, objetos, builds y ajustes desde un solo cuadro."
+      },
+      "simTryOn": {
+        "label": "Probar objeto en el personaje (Horadric Sim)",
+        "description": "Envía el objeto bajo el cursor al planificador de Horadric Sim, equipado en tu personaje predeterminado."
+      },
+      "notifications": {
+        "label": "Notificaciones",
+        "description": "Abre el registro de notificaciones: susurros, ofertas, alertas y errores, incluidos los que te perdiste."
       }
     }
   },
@@ -272,6 +296,10 @@
       "debugLogging": {
         "label": "Registro de depuración",
         "description": "Escribe la salida de la consola en un archivo de registro para solucionar problemas."
+      },
+      "telemetryOptOut": {
+        "label": "Exclusión de telemetría",
+        "description": "Deja de enviar informes de errores y estadísticas de uso."
       }
     }
   },
@@ -409,7 +437,8 @@
       "trade": "Intercambio",
       "joins": "Uniones",
       "offers": "Ofertas",
-      "networth": "Patrimonio"
+      "networth": "Patrimonio",
+      "sim": "Horadric Sim"
     },
     "timing": {
       "off": "Las notificaciones están desactivadas. Elige otra opción para editar los ajustes de abajo.",
@@ -439,16 +468,7 @@
         "label": "Volumen de notificaciones: <num>{{value}}%</num>",
         "description": "Ajusta el volumen de los sonidos de notificación de susurros (0-100%)."
       },
-      "marketVolume": {
-        "label": "Volumen de alertas del mercado: <num>{{value}}%</num>",
-        "description": "Volumen del sonido de alerta del mercado (0-100%).",
-        "ariaLabel": "Volumen de alertas del mercado"
-      },
-      "group": "Sonido",
-      "marketSound": {
-        "label": "Sonido de alerta del mercado",
-        "description": "Reproduce un sonido con la notificación de un nuevo anuncio que coincida con una búsqueda que vigilas."
-      }
+      "group": "Sonido"
     },
     "templates": {
       "accept": {
@@ -528,6 +548,113 @@
     "stats": {
       "title": "Consulta de precio",
       "description": "Configura la ventana de precios y cómo se rellenan los rangos de estadísticas y los filtros en las búsquedas de consulta de precio."
+    },
+    "market": {
+      "title": "Mercado",
+      "description": "Tus anuncios, el navegador del mercado y las alertas del mercado."
+    },
+    "zoneTimer": {
+      "title": "Temporizador de zonas corruptas",
+      "description": "Qué zonas corrompen las nuevas partidas de Hell, la cuenta atrás hasta la próxima rotación y los avisos de zona."
     }
+  },
+  "market": {
+    "listings": {
+      "group": "Tus anuncios",
+      "autoDelist": {
+        "label": "Cuando un objeto anunciado sale de tu alijo",
+        "description": "Moverlo entre pestañas, o entre un alijo personal y el alijo compartido, no cuenta. Se comprueba cada minuto mientras Diablo II está en primer plano. Si hay objetos idénticos y no está claro cuál salió, siempre eliges tú.",
+        "options": {
+          "off": "No hacer nada",
+          "ask": "Preguntarme",
+          "auto": "Retirar el anuncio"
+        }
+      },
+      "view": {
+        "label": "Vista de anuncios",
+        "description": "Cómo muestra tus anuncios la pestaña Gestionar. El selector de la pestaña también lo cambia.",
+        "options": {
+          "cards": "Tarjetas",
+          "rows": "Filas compactas"
+        }
+      }
+    },
+    "browser": {
+      "group": "Navegador del mercado",
+      "defaultsHint": "Se usa en una búsqueda nueva y al restablecer los filtros.",
+      "sort": {
+        "label": "Orden predeterminado",
+        "options": {
+          "newest": "Más recientes primero",
+          "cheapest": "Más baratos primero",
+          "priciest": "Más caros primero"
+        }
+      },
+      "seller": {
+        "label": "Filtro de vendedor predeterminado",
+        "options": {
+          "all": "Cualquier vendedor",
+          "online": "En línea en la web",
+          "in-game": "En el juego"
+        }
+      },
+      "buyout": {
+        "label": "Filtro de compra inmediata predeterminado",
+        "options": {
+          "any": "Cualquiera",
+          "yes": "Con precio de compra inmediata",
+          "no": "Sin precio de compra inmediata"
+        }
+      },
+      "age": {
+        "label": "Antigüedad de anuncios predeterminada"
+      },
+      "pageSize": {
+        "label": "Resultados por página"
+      },
+      "whisper": {
+        "label": "Mensaje de susurro",
+        "description": "Lo que envía «Copiar susurro». Marcadores: {item}, {price}, {seller}, {account}. Déjalo vacío para usar el predeterminado."
+      },
+      "dealBadges": {
+        "label": "Insignias de oferta",
+        "description": "Muestra cómo se compara el precio de un anuncio con el mercado."
+      },
+      "priceHistory": {
+        "label": "Historial de precios",
+        "description": "Muestra el gráfico del historial de precios en los detalles de un anuncio."
+      },
+      "sellerCard": {
+        "label": "Ficha del vendedor",
+        "description": "Muestra el estado del vendedor y sus otros anuncios en los detalles de un anuncio."
+      }
+    },
+    "alerts": {
+      "group": "Alertas",
+      "duration": {
+        "label": "Duración de las ventanas de alerta",
+        "description": "Cuánto tiempo se mantiene la ventana de un anuncio nuevo que coincide con una búsqueda vigilada.",
+        "seconds_one": "{{count}} segundo",
+        "seconds_many": "{{count}} segundos",
+        "seconds_other": "{{count}} segundos"
+      },
+      "sound": {
+        "label": "Sonido de alerta del mercado",
+        "description": "Reproduce un sonido con la notificación de un nuevo anuncio que coincida con una búsqueda que vigilas."
+      },
+      "volume": {
+        "label": "Volumen de alertas del mercado: <num>{{value}}%</num>",
+        "description": "Volumen del sonido de alerta del mercado (0-100%).",
+        "ariaLabel": "Volumen de alertas del mercado"
+      }
+    }
+  },
+  "palette": {
+    "openInSettings": "Abrir en Ajustes",
+    "turnOn": "Activar",
+    "turnOff": "Desactivar",
+    "change": "Cambiar",
+    "select": "Elegir",
+    "current": "Actual"
   }
 }

@@ -30,7 +30,26 @@ describe('listingArtUrl', () => {
   it('uses the base art of rares, runewords and jewelry, any tier', () => {
     expect(art('Enigma', 'Normal', 'Archon Plate')).toBe('https://pd2trader.com/assets/items/invltp.png');
     expect(art('Doom Band', 'Rare', 'Ring')).toBe('https://pd2trader.com/assets/items/invrin.png');
-    expect(art('Grand Charm', 'Magic', 'Grand Charm')).toBe('https://pd2trader.com/assets/items/invch4.png');
+  });
+
+  it('draws each charm at its own size, in the look its graphic_id picks', () => {
+    const charm = (base: string, graphic_id?: number) =>
+      listingArtUrl(
+        { name: base, quality: { id: 4, name: 'Magic' }, base: { name: base }, graphic_id } as ItemDetail,
+        itemsByKey,
+      );
+    expect(charm('Small Charm')).toBe('https://pd2trader.com/assets/items/invch1.png');
+    expect(charm('Large Charm', 1)).toBe('https://pd2trader.com/assets/items/invch5.png');
+    expect(charm('Grand Charm')).toBe('https://pd2trader.com/assets/items/invch3.png');
+    expect(charm('Grand Charm', 2)).toBe('https://pd2trader.com/assets/items/invch9.png');
+  });
+
+  it('draws keys, uber organs, perfect gems and corrupted ears with their game art', () => {
+    const items = 'https://pd2trader.com/assets/items';
+    expect(art('Key of Hate', 'Normal', 'Key of Hate')).toBe(`${items}/invmph.png`);
+    expect(art("Diablo's Horn", 'Normal', "Diablo's Horn")).toBe(`${items}/invhorn.png`);
+    expect(art('Perfect Skull', 'Normal', 'Perfect Skull')).toBe(`${items}/invskz.png`);
+    expect(art("Corrupted Necromancer's Ear", 'Normal', "Corrupted Necromancer's Ear")).toBe(`${items}/invear.png`);
   });
 
   it('returns null when nothing matches', () => {

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, ChevronDown, RotateCcw, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -13,10 +13,21 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
-import { CLASSES, ITEM_TYPES, RARITIES, basesForType } from '../lib/catalog';
-import { DEFAULT_MAX_AGE_DAYS, MAX_FILTER_TEXT, MAX_SELLER_NAME, withSource } from '../lib/defaults';
+import { CLASSES, RARITIES, TYPE_OPTIONS, basesForType, optionCodes } from '../lib/catalog';
+import { defaultAgeDays, MAX_FILTER_TEXT, MAX_SELLER_NAME, type SearchDefaults, withSource } from '../lib/defaults';
+import { anniversaryTri, withAnniversary } from '../lib/anniversary';
+import {
+  codeCounts,
+  CODE_FACET_SIZE,
+  type CodeCounts,
+  countsByValue,
+  facetShare,
+  type MarketFacets,
+} from '../lib/facets';
 import type { MarketFilters, OnlineFilter, Rarity, SortBy } from '../lib/types';
 import { Field, RangeField, Section, Segmented, SelectField, TriField, fieldInputClass, ClearButton } from './controls';
+import { FACET_DIM, FacetRowTip, facetFill, useFacetText } from './FacetCounts';
+import { PriceControl } from './PriceControl';
 import { StatFilters, type StatFiltersProps } from './StatFilters';
 import { statName } from './stat-text';
 import { useTranslation } from '@/i18n';
@@ -25,8 +36,19 @@ const AGE_DAYS = [1, 3, 7, 14, 30, 90];
 
 const rarityColor = (r: Rarity) => (r === 'Runeword' ? 'text-q-rune' : qualityColor(r));
 
-/** Rarity: a multi-select dropdown (quality-coloured items with checkmarks), sized like the other selects. */
-function RarityField({ value, onChange }: { value: Rarity[]; onChange: (v: Rarity[]) => void }) {
+/**
+ * Rarity: a multi-select dropdown (quality-coloured items with checkmarks), sized like the other selects. `counts`
+ * (facets): listings each rarity alone finds, as row fills.
+ */
+function RarityField({
+  value,
+  onChange,
+  counts,
+}: {
+  value: Rarity[];
+  onChange: (v: Rarity[]) => void;
+  counts: Map<Rarity, number>;
+}) {
   const { t } = useTranslation('market');
   const summary =
     value.length === 0 ? (
@@ -41,6 +63,7 @@ function RarityField({ value, onChange }: { value: Rarity[]; onChange: (v: Rarit
     ) : (
       t('filters.selected', { count: value.length })
     );
+  const peak = Math.max(0, ...counts.values());
   return (
     <Field label={t('filters.rarity')}>
       <DropdownMenu>
@@ -54,16 +77,14 @@ function RarityField({ value, onChange }: { value: Rarity[]; onChange: (v: Rarit
         <DropdownMenuContent align="start"
           className="w-(--radix-dropdown-menu-trigger-width) min-w-40">
           {RARITIES.map((r) => (
-            <DropdownMenuCheckboxItem
+            <RarityItem
               key={r}
+              rarity={r}
+              count={counts.get(r)}
+              peak={peak}
               checked={value.includes(r)}
-              // Stay open: several rarities are usually picked in a row
-              onSelect={(e) => e.preventDefault()}
               onCheckedChange={(on) => onChange(on ? [...value, r] : value.filter((x) => x !== r))}
-              className={cn('text-xs', rarityColor(r))}
-            >
-              {r}
-            </DropdownMenuCheckboxItem>
+            />
           ))}
           {value.length > 0 && (
             <>
@@ -80,6 +101,42 @@ function RarityField({ value, onChange }: { value: Rarity[]; onChange: (v: Rarit
   );
 }
 
+/** One rarity in the dropdown, with its facet count (if any): row fill as its share of the busiest, dimmed at 0. */
+function RarityItem({
+  rarity,
+  count,
+  peak,
+  checked,
+  onCheckedChange,
+}: {
+  rarity: Rarity;
+  count: number | undefined;
+  peak: number;
+  checked: boolean;
+  onCheckedChange: (on: boolean) => void;
+}) {
+  const facetText = useFacetText();
+  const [focused, setFocused] = useState(false);
+  const text = count === undefined ? undefined : facetText(rarity, count);
+  return (
+    <DropdownMenuCheckboxItem
+      checked={checked}
+      aria-label={text}
+      // Stay open: several rarities are usually picked in a row
+      onSelect={(e) => e.preventDefault()}
+      onCheckedChange={onCheckedChange}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      style={facetFill(facetShare(count, peak))}
+      className={cn('text-xs', rarityColor(rarity), count === 0 && !checked && FACET_DIM)}
+    >
+      {rarity}
+      {text && <FacetRowTip text={text}
+        open={focused} />}
+    </DropdownMenuCheckboxItem>
+  );
+}
+
 const countDefined = (...values: unknown[]) =>
   values.filter((v) => v !== undefined && v !== '' && v !== 'any' && v !== 'all').length;
 
@@ -88,10 +145,25 @@ export interface FilterSidebarProps {
   onChange: (next: MarketFilters) => void;
   /** Back to the defaults (keeps mode/source). */
   onReset: () => void;
+  /** The user's fresh-search defaults: section badges count filters that differ from them. */
+  searchDefaults: SearchDefaults;
   stats: Omit<StatFiltersProps, 'stats' | 'onChange'>;
   /** Sections the user opened or closed (by title); the rest use their default. */
   sectionsOpen: Record<string, boolean>;
   onSectionOpen: (title: string, open: boolean) => void;
+  /** Facet counts of the current search (shown beside the options); null hides them. */
+  facets?: MarketFacets | null;
+}
+
+/**
+ * An option's count from a code facet: the sum over the codes it stands for; 0 when the facet lists every code found
+ * but none of these; undefined when unknown.
+ */
+function optionCount(code: string, counts: CodeCounts | undefined): number | undefined {
+  if (!counts) return undefined;
+  const known = optionCodes(code).flatMap((c) => (counts.byCode.has(c) ? [counts.byCode.get(c)!] : []));
+  if (known.length) return known.reduce((a, b) => a + b, 0);
+  return counts.complete ? 0 : undefined;
 }
 
 /** Stats and Item start open; the rest start collapsed (their badge counts active filters). */
@@ -102,9 +174,11 @@ export function FilterSidebar({
   filters: f,
   onChange,
   onReset,
+  searchDefaults: defaults,
   stats,
   sectionsOpen,
   onSectionOpen,
+  facets,
 }: FilterSidebarProps) {
   const { t } = useTranslation('market');
   const set = (changes: Partial<MarketFilters>) => onChange({ ...f, ...changes });
@@ -129,6 +203,17 @@ export function FilterSidebar({
     set({ requirements: { ...f.requirements, ...changes } });
   const bases = useMemo(() => (f.typeCode ? basesForType(f.typeCode) : []), [f.typeCode]);
   const req = f.requirements;
+  const counts = useMemo(
+    () => ({
+      quality: countsByValue(facets?.quality),
+      typeCode: codeCounts(facets?.typeCode, CODE_FACET_SIZE.typeCode),
+      baseCode: codeCounts(facets?.baseCode, CODE_FACET_SIZE.baseCode),
+      ethereal: countsByValue(facets?.ethereal),
+      corrupted: countsByValue(facets?.corrupted),
+    }),
+    [facets],
+  );
+  const yesNo = (m: Map<boolean, number>) => ({ yes: m.get(true), no: m.get(false) });
 
   return (
     <aside aria-label={t('filters.label')}
@@ -137,7 +222,7 @@ export function FilterSidebar({
         <Segmented
           label={t('filters.source.label')}
           value={f.source}
-          onChange={(source) => onChange(withSource(f, source))}
+          onChange={(source) => onChange(withSource(f, source, defaults))}
           options={[
             { value: 'live', label: t('filters.source.live') },
             { value: 'archive', label: t('filters.source.archive'), title: t('filters.source.archiveTitle') },
@@ -184,7 +269,12 @@ export function FilterSidebar({
           <SelectField
             label={t('filters.type')}
             value={f.typeCode}
-            options={ITEM_TYPES.map((t) => ({ value: t.code, label: t.label }))}
+            options={TYPE_OPTIONS.map((o) => ({
+              value: o.code,
+              label: o.label,
+              depth: o.depth,
+              count: optionCount(o.code, counts.typeCode),
+            }))}
             onChange={(typeCode) => set({ typeCode, baseCode: undefined })}
           />
           <SelectField
@@ -192,10 +282,11 @@ export function FilterSidebar({
             value={f.baseCode}
             disabled={!f.typeCode}
             anyLabel={f.typeCode ? t('filters.any') : t('filters.pickTypeFirst')}
-            options={bases.map((b) => ({ value: b.code, label: b.label }))}
+            options={bases.map((b) => ({ value: b.code, label: b.label, count: optionCount(b.code, counts.baseCode) }))}
             onChange={(baseCode) => set({ baseCode })}
           />
           <RarityField value={f.rarity}
+            counts={counts.quality}
             onChange={(rarity) => set({ rarity })} />
           <SelectField
             label={t('filters.class')}
@@ -207,20 +298,34 @@ export function FilterSidebar({
 
         <Section
           {...section('Properties', t('filters.sections.properties'))}
-          active={countDefined(f.ethereal, f.corrupted, f.desecrated, f.identified, f.socketsMin, f.socketsMax)}
+          active={countDefined(
+            f.ethereal,
+            f.corrupted,
+            f.desecrated,
+            f.identified,
+            anniversaryTri(f.stats),
+            f.socketsMin,
+            f.socketsMax,
+          )}
         >
-          <TriField label={t('filters.corrupted')}
+          <TriField
+            label={t('filters.corrupted')}
             value={f.corrupted}
-            onChange={(corrupted) => set({ corrupted })} />
+            counts={yesNo(counts.corrupted)}
+            onChange={(corrupted) => set({ corrupted })}
+          />
           <RangeField
             label={t('filters.sockets')}
             min={f.socketsMin}
             max={f.socketsMax}
             onChange={(socketsMin, socketsMax) => set({ socketsMin, socketsMax })}
           />
-          <TriField label={t('filters.ethereal')}
+          <TriField
+            label={t('filters.ethereal')}
             value={f.ethereal}
-            onChange={(ethereal) => set({ ethereal })} />
+            counts={yesNo(counts.ethereal)}
+            onChange={(ethereal) => set({ ethereal })}
+          />
           <TriField
             label={t('filters.desecrated')}
             value={f.desecrated}
@@ -231,14 +336,20 @@ export function FilterSidebar({
             value={f.identified}
             onChange={(identified) => set({ identified })}
           />
+          <TriField
+            label={t('filters.anniversary')}
+            value={anniversaryTri(f.stats)}
+            onChange={(value) => set({ stats: withAnniversary(f.stats, value) })}
+          />
         </Section>
 
         <Section
           {...section('Listing', t('filters.sections.listing'))}
-          // Collapsed by default: a non-default window or sort (e.g. "sort by this" from a mod menu) shows in the badge
+          // Collapsed by default: a window or sort other than the user's default (e.g. "sort by this" from a mod
+          // menu) shows in the badge
           active={
-            (f.maxAgeDays !== DEFAULT_MAX_AGE_DAYS[f.source] ? 1 : 0) +
-            (f.sort.by !== 'bumped' || f.sort.dir !== 'desc' ? 1 : 0)
+            (f.maxAgeDays !== defaultAgeDays(f.source, defaults) ? 1 : 0) +
+            (f.sort.by !== defaults.sort.by || f.sort.dir !== defaults.sort.dir ? 1 : 0)
           }
         >
           <Field label={t('filters.mode')}>
@@ -290,7 +401,7 @@ export function FilterSidebar({
                   type="button"
                   aria-label={t('filters.sort.stopStat')}
                   title={t('filters.sort.stopStat')}
-                  onClick={() => set({ sort: { by: 'bumped', dir: 'desc' } })}
+                  onClick={() => set({ sort: { ...defaults.sort } })}
                   className="inline-flex size-5 shrink-0 items-center justify-center rounded-full hover:bg-primary/20"
                 >
                   <X className="size-3" />
@@ -331,7 +442,7 @@ export function FilterSidebar({
 
         <Section
           {...section('Price', t('filters.sections.price'))}
-          active={countDefined(f.priceText, f.hrMin, f.hrMax, f.hasBuyout)}
+          active={countDefined(f.priceText, f.hrMin, f.hrMax) + (f.hasBuyout !== defaults.hasBuyout ? 1 : 0)}
         >
           <Field label={t('filters.priceNote')}
             htmlFor="market-price-text">
@@ -344,13 +455,14 @@ export function FilterSidebar({
               className={fieldInputClass}
             />
           </Field>
-          <RangeField
-            label={t('filters.hrPrice')}
-            step={0.1}
-            min={f.hrMin}
-            max={f.hrMax}
-            onChange={(hrMin, hrMax) => set({ hrMin, hrMax })}
-          />
+          <Field label={t('filters.hrPrice')}>
+            <PriceControl
+              label={t('filters.hrPrice')}
+              buckets={facets?.price}
+              value={{ hrMin: f.hrMin, hrMax: f.hrMax, hrMaxExclusive: f.hrMaxExclusive }}
+              onChange={set}
+            />
+          </Field>
           <TriField label={t('filters.hasBuyout')}
             value={f.hasBuyout}
             onChange={(hasBuyout) => set({ hasBuyout })} />
@@ -358,7 +470,11 @@ export function FilterSidebar({
 
         <Section
           {...section('Seller', t('filters.sections.seller'))}
-          active={countDefined(f.sellerUserId ?? f.sellerName, f.userOnlineSite, f.userOnlineGame)}
+          active={
+            countDefined(f.sellerUserId ?? f.sellerName) +
+            (f.userOnlineSite !== defaults.userOnlineSite ? 1 : 0) +
+            (f.userOnlineGame !== defaults.userOnlineGame ? 1 : 0)
+          }
         >
           <Field label={t('filters.seller')}
             htmlFor="market-seller">

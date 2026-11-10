@@ -14,6 +14,7 @@ import { useMarketStore } from '@/pages/market/store/useMarketStore';
 import { useListingLookup } from './alerts/listing-lookup';
 import { ListingDetail } from './components/ListingDetail';
 import { useMarketFavorites } from './hooks/useMarketFavorites';
+import { useSearchDefaults } from './hooks/useSearchDefaults';
 import { defaultFilters, upgradeFilters } from './lib/defaults';
 import { listingUrl } from './lib/listing';
 import { scoreListings } from './lib/search';
@@ -44,8 +45,12 @@ export const ListingDrawerPage: React.FC = () => {
     () => ({ hardcore: settings?.mode === 'hardcore', ladder: settings?.ladder !== 'non-ladder' }),
     [settings?.mode, settings?.ladder],
   );
+  const searchDefaults = useSearchDefaults();
   const watch = payload?.savedSearchId ? savedSearches.find((s) => s.id === payload.savedSearchId) : undefined;
-  const filters = useMemo(() => upgradeFilters(watch?.filters ?? defaultFilters(mode)), [watch?.filters, mode]);
+  const filters = useMemo(
+    () => upgradeFilters(watch?.filters ?? defaultFilters(mode, searchDefaults)),
+    [watch?.filters, mode, searchDefaults],
+  );
   const pseudoKeys = useMemo(
     () => filters.stats.filter((s) => s.enabled && !s.not && s.kind === 'pseudo').map((s) => s.key),
     [filters.stats],

@@ -8,6 +8,7 @@
     "opener:default",
     "core:window:allow-set-focus",
     "core:window:allow-set-focusable",
+    "core:webview:allow-set-webview-zoom",
     "core:resources:allow-close",
     "global-shortcut:allow-is-registered",
     "global-shortcut:allow-register",

@@ -6,6 +6,7 @@ import { openUrl } from '@/lib/browser-opener';
 import { installUpdateAndRelaunch } from '@/lib/updater';
 import { ToastActionType } from '@/common/types/Events';
 import { ToastLayer, confirmToast, setToastBridge, showToast, undoToast } from './toast';
+import { intentToast } from '@/hooks/useOverlayIntents';
 import { fetchMarketListing } from '@/pages/market/alerts/saved-search-api';
 import { listing, mod } from '@/pages/market/lib/test-utils';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
@@ -203,9 +204,28 @@ describe('showToast action toasts', () => {
     expect(openUrl).not.toHaveBeenCalled();
   });
 
+  it('Open on a Horadric Sim open request opens its page in the browser', async () => {
+    await renderLayer();
+    await show(() =>
+      showToast(
+        intentToast({
+          id: 'i1',
+          kind: 'open_report',
+          title: 'Top Gear · HammerPal',
+          lines: ['Best set +12.4% DPS'],
+          url: 'https://pd2trader.com/sim/r/abc',
+          createdAt: '2026-11-07T10:00:00Z',
+        }),
+      ),
+    );
+    expect(toastEl('Best set +12.4% DPS')?.textContent).toContain('Top Gear · HammerPal');
+    await click(screen.getByText('Open'));
+    expect(openUrl).toHaveBeenCalledWith('https://pd2trader.com/sim/r/abc');
+  });
+
   it('Reply opens chat on the conversation or whisper thread with the composer focused', async () => {
     const openChat = vi.fn();
-    setToastBridge({ openChat, openMarket: vi.fn(), openListing: vi.fn() });
+    setToastBridge({ openChat, openMarket: vi.fn(), openListing: vi.fn(), openSim: vi.fn() });
     await renderLayer();
     await show(() =>
       showToast({
@@ -230,7 +250,7 @@ describe('showToast action toasts', () => {
 
   it('a market alert action opens the market panel with its payload', async () => {
     const openMarket = vi.fn();
-    setToastBridge({ openChat: vi.fn(), openMarket, openListing: vi.fn() });
+    setToastBridge({ openChat: vi.fn(), openMarket, openListing: vi.fn(), openSim: vi.fn() });
     await renderLayer();
     await show(() =>
       showToast({
@@ -245,6 +265,38 @@ describe('showToast action toasts', () => {
     );
     await click(screen.getByText('View'));
     expect(openMarket).toHaveBeenCalledWith({ savedSearchId: 's1', focusListingId: 'l1', tab: 'search' });
+  });
+
+  it("a finished sim's Open opens the Sim panel on its report", async () => {
+    const openSim = vi.fn();
+    setToastBridge({ openChat: vi.fn(), openMarket: vi.fn(), openListing: vi.fn(), openSim });
+    await renderLayer();
+    await show(() =>
+      showToast(
+        intentToast({
+          id: 'i2',
+          kind: 'report_ready',
+          title: 'Top Gear finished · HammerPal',
+          lines: [],
+          url: 'https://pd2trader.com/sim/r/abc',
+          createdAt: '2026-11-07T10:00:00Z',
+        }),
+      ),
+    );
+    await click(screen.getByText('Open'));
+    expect(openSim).toHaveBeenCalledWith({ slug: 'abc', url: 'https://pd2trader.com/sim/r/abc' });
+    expect(openUrl).not.toHaveBeenCalled();
+  });
+
+  it('the away summary opens the Sim panel', async () => {
+    const openSim = vi.fn();
+    setToastBridge({ openChat: vi.fn(), openMarket: vi.fn(), openListing: vi.fn(), openSim });
+    await renderLayer();
+    await show(() =>
+      showToast({ title: '2 sims finished', action: { label: 'View status', type: ToastActionType.OPEN_SIM_PANEL } }),
+    );
+    await click(screen.getByText('View status'));
+    expect(openSim).toHaveBeenCalledWith(undefined);
   });
 
   describe('a market listing toast', () => {
@@ -297,7 +349,7 @@ describe('showToast action toasts', () => {
       vi.mocked(fetchMarketListing).mockResolvedValue({ listing: shako('drawer-1'), status: 'active' });
       const openListing = vi.fn();
       const openMarket = vi.fn();
-      setToastBridge({ openChat: vi.fn(), openMarket, openListing });
+      setToastBridge({ openChat: vi.fn(), openMarket, openListing, openSim: vi.fn() });
       await renderLayer();
       await show(() => showToast(alertToast('drawer-1')));
       await click(screen.getByText('Details'));

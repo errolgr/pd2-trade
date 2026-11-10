@@ -15,6 +15,10 @@ import MarketBrowserPage from '@/pages/market/MarketBrowserPage';
 import { ListingDrawerPage } from '@/pages/market/ListingDrawerPage';
 import CorruptedZoneTimerPage from '@/pages/corrupted-zones/CorruptedZoneTimerPage';
 import BuildsPage from '@/pages/builds/BuildsPage';
+import PalettePage from '@/pages/palette/PalettePage';
+import SimPage from '@/pages/sim/SimPage';
+import NotificationLogPage from '@/pages/notifications/NotificationLogPage';
+import { NOTIFICATION_LOG_SIZE } from '@/pages/notifications/size';
 import type { PanelDefs } from './types';
 
 /**
@@ -40,7 +44,9 @@ export const PANEL_DEFS: PanelDefs = {
   quickList: {
     id: 'quickList',
     component: QuickListPage,
-    size: { width: 600, height: 512 },
+    // Fits ~6 listing cards / ~16 compact rows; clamped to the screen
+    size: { width: 720, height: 680 },
+    minSize: { width: 520, height: 420 },
     resizable: true,
     placement: 'cursor', // manage mode opens with { placement: 'gameCenter' }
     persist: false,
@@ -237,6 +243,51 @@ export const PANEL_DEFS: PanelDefs = {
     persist: true,
     keyboard: 'onPointerDown',
     keepMounted: true, // filters, page and the open character survive closing
+    hideOnGameBlur: true,
+    closeOnBlur: true,
+  },
+
+  // ---- palette (Group Palette): one search over every panel, item, build and setting ----
+  palette: {
+    id: 'palette',
+    component: PalettePage,
+    // The bar sits at the top of a click-through frame centered on the game and grows down as results come in
+    size: { width: 640, height: 520 },
+    resizable: false,
+    placement: 'gameCenter',
+    persist: false,
+    keyboard: 'onPointerDown', // opened with { focus: true }: typing starts right away
+    keepMounted: false, // always opens fresh
+    hideOnGameBlur: true,
+    closeOnBlur: true,
+    interactive: 'children',
+  },
+  // ---- sim (Group Sim): the user's Horadric Sim runs and result cards; never starts, edits or stops a sim ----
+  sim: {
+    id: 'sim',
+    component: SimPage,
+    // Two panes: running sims and results | the selected result's card
+    size: { width: 760, height: 580 },
+    minSize: { width: 620, height: 420 },
+    resizable: true,
+    placement: 'gameCenter',
+    persist: true,
+    keyboard: 'onPointerDown',
+    keepMounted: false, // polls only while open
+    hideOnGameBlur: true,
+    closeOnBlur: true,
+  },
+
+  // ---- notifications (Group Notifications): the notification log, opened from the chat dock ----
+  notifications: {
+    id: 'notifications',
+    component: NotificationLogPage,
+    size: NOTIFICATION_LOG_SIZE,
+    resizable: false,
+    placement: 'gameCenter', // the dock opens it beside itself ({ placement: { x, y } })
+    persist: false,
+    keyboard: 'onPointerDown',
+    keepMounted: false, // opening it marks what was missed: always fresh
     hideOnGameBlur: true,
     closeOnBlur: true,
   },

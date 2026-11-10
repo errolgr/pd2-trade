@@ -17,7 +17,7 @@
     "itemNotSupported": "Item não suportado ou inválido.",
     "nothingCopied": "Nenhum item foi copiado. Passe o mouse sobre um item no jogo e tente novamente, ou pressione Ctrl+C nele primeiro.",
     "cannotListItem": "Não é possível anunciar o item",
-    "notInSharedStash": "Este item não está no seu baú compartilhado e não pode ser anunciado.",
+    "notInStash": "Este item não está no seu baú (compartilhado ou pessoal) e não pode ser anunciado.",
     "delist": "Remover anúncio",
     "noItemUnderCursor": "Nenhum item válido encontrado sob o cursor."
   },
@@ -34,16 +34,26 @@
     "tradeOffers_many": "{{count}} de ofertas de troca",
     "tradeOffers_other": "{{count}} ofertas de troca",
     "disableOverlay": "Desativar overlay",
+    "move": "Mover {{label}}",
+    "moveHint": "Arraste para reordenar (ou ↑/↓)",
+    "favorite": "Favoritar {{label}}",
+    "addFavorite": "Adicionar aos favoritos (a aba)",
+    "removeFavorite": "Remover dos favoritos (a aba)",
     "menu": {
       "chat": "Chat",
       "market": "Navegador do mercado",
       "builds": "Builds",
+      "sim": "Horadric Sim",
       "netWorth": "Patrimônio",
       "stashValue": "Valor do baú",
       "offers": "Ofertas",
       "manageListings": "Gerenciar anúncios",
-      "settings": "Configurações"
-    }
+      "settings": "Configurações",
+      "notifications": "Notificações"
+    },
+    "missedNotifications_one": "{{count}} notificação perdida",
+    "missedNotifications_many": "{{count}} de notificações perdidas",
+    "missedNotifications_other": "{{count}} notificações perdidas"
   },
   "chatTemplateForm": {
     "name": "Nome",
@@ -102,7 +112,34 @@
       "lockedTitle": "Travado: arrastar não move o timer. Clique para destravar.",
       "unlockedTitle": "Impede que o timer se mova ao ser arrastado."
     },
+    "direction": {
+      "up": "A lista abre para cima",
+      "down": "A lista abre para baixo",
+      "upTitle": "Abre para cima. Clique para abri-la para baixo a partir de agora.",
+      "downTitle": "Abre para baixo. Clique para abri-la para cima a partir de agora."
+    },
     "toastTitle": "Zona Corrupted",
-    "toastDescription": "{{zone}}: crie um novo jogo Hell (até {{until}})"
+    "toastDescription": "{{zone}}: crie um novo jogo Hell (até {{until}})",
+    "toastSoonDescription": "{{zone}} em {{minutes}} min: crie um novo jogo Hell a partir de {{from}} (até {{until}})"
+  },
+  "notificationLog": {
+    "title": "Notificações",
+    "close": "Fechar",
+    "clear": "Limpar",
+    "filters": "Filtrar notificações",
+    "filter": {
+      "all": "Todas",
+      "trade": "Troca",
+      "chat": "Chat",
+      "alerts": "Alertas",
+      "system": "Sistema"
+    },
+    "empty": "Nada por aqui ainda.",
+    "missed_one": "Perdida · {{count}}",
+    "missed_many": "Perdidas · {{count}}",
+    "missed_other": "Perdidas · {{count}}",
+    "earlier": "Anteriores",
+    "rowHint": "Clique para abrir · deslize para a esquerda ou direita para remover",
+    "rowHintRemoveOnly": "Deslize para a esquerda ou direita para remover"
   }
 }

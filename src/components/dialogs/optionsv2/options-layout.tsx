@@ -1,17 +1,6 @@
 import React, { useState } from 'react';
 import { motion, MotionConfig } from 'framer-motion';
-import {
-  Check,
-  Info,
-  Keyboard,
-  LayoutPanelTop,
-  MessageSquare,
-  Search,
-  SlidersHorizontal,
-  TrendingUp,
-  UserRound,
-  type LucideIcon,
-} from 'lucide-react';
+import { Check, type LucideIcon } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 import { usePanel } from '@/overlay';
@@ -26,7 +15,8 @@ import SettingsChat from './chat/layout';
 import SettingsInterface from './interface/layout';
 import SettingsStats from './stats/layout';
 import SettingsNetWorth from './networth/layout';
-import { SettingsNavContext, type SettingsSectionId } from './settings-ui';
+import SettingsMarket from './market/layout';
+import { SETTINGS_SECTIONS, SettingsNavContext, type SettingsSectionId } from './settings-ui';
 import { useTranslation } from '@/i18n';
 
 interface INavItem {
@@ -35,16 +25,28 @@ interface INavItem {
   icon: LucideIcon;
   content: React.ReactNode;
 }
-const sidebarNavItems: INavItem[] = [
-  { title: 'General', titleKey: 'nav.general', icon: SlidersHorizontal, content: <SettingGenereal /> },
-  { title: 'Account', titleKey: 'nav.account', icon: UserRound, content: <SettingsAccount /> },
-  { title: 'Chat', titleKey: 'nav.chat', icon: MessageSquare, content: <SettingsChat /> },
-  { title: 'Interface', titleKey: 'nav.interface', icon: LayoutPanelTop, content: <SettingsInterface /> },
-  { title: 'Price Check', titleKey: 'nav.priceCheck', icon: Search, content: <SettingsStats /> },
-  { title: 'Net Worth', titleKey: 'nav.netWorth', icon: TrendingUp, content: <SettingsNetWorth /> },
-  { title: 'Hotkeys', titleKey: 'nav.hotkeys', icon: Keyboard, content: <SettingsHotkeys /> },
-  { title: 'About', titleKey: 'nav.about', icon: Info, content: <SettingsAbout /> },
-];
+const SECTION_CONTENT: Record<SettingsSectionId, React.ReactNode> = {
+  General: <SettingGenereal />,
+  Account: <SettingsAccount />,
+  Chat: <SettingsChat />,
+  Interface: <SettingsInterface />,
+  'Price Check': <SettingsStats />,
+  Market: <SettingsMarket />,
+  'Net Worth': <SettingsNetWorth />,
+  Hotkeys: <SettingsHotkeys />,
+  About: <SettingsAbout />,
+};
+const sidebarNavItems: INavItem[] = SETTINGS_SECTIONS.map((section) => ({
+  title: section.id,
+  titleKey: section.titleKey,
+  icon: section.icon,
+  content: SECTION_CONTENT[section.id],
+}));
+
+/** How long the setting openPanel('settings', { field }) jumps to stays highlighted. */
+const FIELD_FLASH_MS = 1600;
+/** How long to wait for that setting's row to render (forms show a skeleton until settings load). */
+const FIELD_WAIT_MS = 2000;
 
 const NAV_KEYS: Record<string, (i: number, n: number) => number> = {
   ArrowDown: (i, n) => (i + 1) % n,
@@ -95,16 +97,60 @@ function useSavedFlash() {
 const findSection = (section: SettingsSectionId | undefined) =>
   section ? sidebarNavItems.find((i) => i.title === section) : undefined;
 
+/** The setting asked for by openPanel('settings', { field }); `version` re-triggers the same field on a re-open. */
+type FieldRequest = { key: string; version: number } | null;
+
+/**
+ * Scrolls the asked-for setting (its `data-setting-key` element, see SettingsRow) into view once it renders, and
+ * flashes it.
+ */
+function useRevealField(field: FieldRequest, rootRef: React.RefObject<HTMLElement | null>) {
+  React.useEffect(() => {
+    const root = rootRef.current;
+    if (!field || !root) return;
+    const selector = `[data-setting-key="${field.key}"]`;
+    let flashed: HTMLElement | null = null;
+    let flashTimer: number | undefined;
+    const reveal = (el: HTMLElement) => {
+      observer.disconnect();
+      window.clearTimeout(waitTimer);
+      const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      el.scrollIntoView?.({ block: 'center', behavior: reduceMotion ? 'auto' : 'smooth' });
+      el.setAttribute('data-highlighted', '');
+      flashed = el;
+      flashTimer = window.setTimeout(() => el.removeAttribute('data-highlighted'), FIELD_FLASH_MS);
+    };
+    const observer = new MutationObserver(() => {
+      const el = root.querySelector<HTMLElement>(selector);
+      if (el) reveal(el);
+    });
+    const waitTimer = window.setTimeout(() => observer.disconnect(), FIELD_WAIT_MS);
+    const present = root.querySelector<HTMLElement>(selector);
+    if (present) reveal(present);
+    else observer.observe(root, { childList: true, subtree: true });
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(waitTimer);
+      window.clearTimeout(flashTimer);
+      flashed?.removeAttribute('data-highlighted');
+    };
+  }, [field, rootRef]);
+}
+
 export default function SettingsLayout() {
   const { t } = useTranslation('settings');
-  // keepMounted panel: every openPanel('settings', { section }) switches to that section
+  // keepMounted panel: every openPanel('settings', { section, field }) switches to that section (and setting)
   const { close, payload, payloadVersion } = usePanel<'settings'>();
   const [selectedItem, setSelectedItem] = useState<INavItem>(() => findSection(payload?.section) ?? sidebarNavItems[0]);
+  const [field, setField] = useState<FieldRequest>(() =>
+    payload?.field ? { key: payload.field, version: payloadVersion } : null,
+  );
   const [seenVersion, setSeenVersion] = useState(payloadVersion);
   if (payloadVersion !== seenVersion) {
     setSeenVersion(payloadVersion);
     const requested = findSection(payload?.section);
     if (requested) setSelectedItem(requested);
+    setField(payload?.field ? { key: payload.field, version: payloadVersion } : null);
   }
   const tabRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -114,6 +160,9 @@ export default function SettingsLayout() {
   React.useLayoutEffect(() => {
     scrollRef.current?.querySelector<HTMLElement>('[data-radix-scroll-area-viewport]')?.scrollTo({ top: 0 });
   }, [selectedItem]);
+
+  // After the scroll-to-top above: effects run after layout effects
+  useRevealField(field, scrollRef);
 
   const goTo = React.useCallback((section: SettingsSectionId) => {
     const item = findSection(section);

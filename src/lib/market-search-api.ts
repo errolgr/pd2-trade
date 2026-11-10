@@ -5,8 +5,9 @@
 import { fetch } from '@/lib/browser-http';
 import { BACKEND_URL } from '@/lib/pkce';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { type MarketFacetName, type MarketFacets, parseFacets } from '@/pages/market/lib/facets';
 import { MAX_FILTER_TEXT, MAX_SELLER_NAME } from '@/pages/market/lib/defaults';
-import type { MarketFilters, ScoredListing } from '@/pages/market/lib/types';
+import type { MarketFilters, MarketListingStatus, ScoredListing } from '@/pages/market/lib/types';
 
 /** A search that hasn't answered by then counts as the service being unavailable. */
 export const MARKET_SEARCH_TIMEOUT_MS = 8000;
@@ -41,13 +42,20 @@ export interface MarketSearchPage {
    * never on `items.length`.
    */
   fetched: number;
+  /** Facet counts, when the search asked for `facets`. */
+  facets?: MarketFacets;
 }
 
 /**
  * The request body: exactly the fields the service accepts (it rejects unknown ones), so filters restored from
  * older saved state can't break a search. `sort.key` only travels with a stat sort.
  */
-export function marketSearchBody(filters: MarketFilters, page: number, limit: number) {
+export function marketSearchBody(
+  filters: MarketFilters,
+  page: number,
+  limit: number,
+  facets?: readonly MarketFacetName[],
+) {
   const f = filters;
   return {
     filters: {
@@ -58,6 +66,8 @@ export function marketSearchBody(filters: MarketFilters, page: number, limit: nu
       priceText: f.priceText?.slice(0, MAX_FILTER_TEXT),
       hrMin: f.hrMin,
       hrMax: f.hrMax,
+      // Only with a max, and only when set: a typed max stays inclusive
+      hrMaxExclusive: f.hrMax !== undefined && f.hrMaxExclusive ? true : undefined,
       typeCode: f.typeCode,
       baseCode: f.baseCode,
       rarity: f.rarity,
@@ -95,15 +105,18 @@ export function marketSearchBody(filters: MarketFilters, page: number, limit: nu
           or: s.or,
           not: s.not || undefined,
         })),
+      status: f.status?.length ? f.status : undefined,
       maxAgeDays: f.maxAgeDays,
       sort: { by: f.sort.by, dir: f.sort.dir, key: f.sort.by === 'stat' ? f.sort.key : undefined },
     },
     page,
     limit,
+    ...(facets?.length ? { facets } : {}),
   };
 }
 
 const finiteOrNull = (n: unknown): number | null => (typeof n === 'number' && Number.isFinite(n) ? n : null);
+const STATUSES: readonly string[] = ['active', 'sold', 'removed', 'expired'] satisfies MarketListingStatus[];
 
 function parsePage(body: unknown): MarketSearchPage {
   if (!body || typeof body !== 'object' || !('items' in body) || !Array.isArray(body.items)) {
@@ -124,9 +137,17 @@ function parsePage(body: unknown): MarketSearchPage {
       pseudo,
       score: 'score' in row ? finiteOrNull(row.score) : null,
       value: 'value' in row ? finiteOrNull(row.value) : null,
+      // Older services send none of these
+      ...('status' in row && STATUSES.includes(row.status as string)
+        ? { status: row.status as MarketListingStatus }
+        : {}),
+      ...('listedAt' in row ? { listedAt: typeof row.listedAt === 'string' ? row.listedAt : null } : {}),
+      ...('endedAt' in row ? { endedAt: typeof row.endedAt === 'string' ? row.endedAt : null } : {}),
+      ...('durationSeconds' in row ? { durationSeconds: finiteOrNull(row.durationSeconds) } : {}),
     });
   }
-  return { items, total: total ?? items.length, totalExact, fetched: (body.items as unknown[]).length };
+  const facets = 'facets' in body ? parseFacets(body.facets) : undefined;
+  return { items, total: total ?? items.length, totalExact, fetched: (body.items as unknown[]).length, facets };
 }
 
 async function errorMessage(response: Response): Promise<string | null> {
@@ -145,7 +166,12 @@ async function errorMessage(response: Response): Promise<string | null> {
  */
 export async function searchMarketListings(
   filters: MarketFilters,
-  { page, limit, signal }: { page: number; limit: number; signal?: AbortSignal },
+  {
+    page,
+    limit,
+    signal,
+    facets,
+  }: { page: number; limit: number; signal?: AbortSignal; facets?: readonly MarketFacetName[] },
 ): Promise<MarketSearchPage> {
   if (signal?.aborted) throw signal.reason;
   const controller = new AbortController();
@@ -163,7 +189,7 @@ export async function searchMarketListings(
       response = await fetch(`${BACKEND_URL}/api/market/search`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(marketSearchBody(filters, page, limit)),
+        body: JSON.stringify(marketSearchBody(filters, page, limit, facets)),
         signal: controller.signal,
       });
     } catch {

@@ -17,7 +17,7 @@
     "itemNotSupported": "Item wird nicht unterstützt oder ist ungültig.",
     "nothingCopied": "Es wurde kein Item kopiert. Fahre im Spiel über ein Item und versuche es erneut, oder drücke zuerst Ctrl+C darauf.",
     "cannotListItem": "Item kann nicht inseriert werden",
-    "notInSharedStash": "Dieses Item liegt nicht in deiner geteilten Truhe und kann nicht inseriert werden.",
+    "notInStash": "Dieses Item liegt nicht in deiner Truhe (geteilt oder persönlich) und kann nicht inseriert werden.",
     "delist": "Inserat entfernen",
     "noItemUnderCursor": "Kein gültiges Item unter dem Mauszeiger gefunden."
   },
@@ -32,16 +32,25 @@
     "tradeOffers_one": "{{count}} Handelsangebot",
     "tradeOffers_other": "{{count}} Handelsangebote",
     "disableOverlay": "Overlay deaktivieren",
+    "move": "{{label}} verschieben",
+    "moveHint": "Ziehen zum Sortieren (oder ↑/↓)",
+    "favorite": "{{label}} als Favorit",
+    "addFavorite": "Zu Favoriten hinzufügen (Leiste)",
+    "removeFavorite": "Aus Favoriten entfernen (Leiste)",
     "menu": {
       "chat": "Chat",
       "market": "Marktbrowser",
       "builds": "Builds",
+      "sim": "Horadric Sim",
       "netWorth": "Vermögen",
       "stashValue": "Truhenwert",
       "offers": "Angebote",
       "manageListings": "Inserate verwalten",
-      "settings": "Einstellungen"
-    }
+      "settings": "Einstellungen",
+      "notifications": "Benachrichtigungen"
+    },
+    "missedNotifications_one": "{{count}} verpasste Benachrichtigung",
+    "missedNotifications_other": "{{count}} verpasste Benachrichtigungen"
   },
   "chatTemplateForm": {
     "name": "Name",
@@ -99,7 +108,33 @@
       "lockedTitle": "Gesperrt: Ziehen verschiebt den Timer nicht. Klicken zum Entsperren.",
       "unlockedTitle": "Verhindert, dass sich der Timer beim Ziehen bewegt."
     },
+    "direction": {
+      "up": "Liste öffnet nach oben",
+      "down": "Liste öffnet nach unten",
+      "upTitle": "Öffnet nach oben. Klicken, um sie ab jetzt nach unten zu öffnen.",
+      "downTitle": "Öffnet nach unten. Klicken, um sie ab jetzt nach oben zu öffnen."
+    },
     "toastTitle": "Corrupted Zone",
-    "toastDescription": "{{zone}}: neues Hell-Spiel erstellen (bis {{until}})"
+    "toastDescription": "{{zone}}: neues Hell-Spiel erstellen (bis {{until}})",
+    "toastSoonDescription": "{{zone}} in {{minutes}} Min.: ab {{from}} ein neues Hell-Spiel erstellen (bis {{until}})"
+  },
+  "notificationLog": {
+    "title": "Benachrichtigungen",
+    "close": "Schließen",
+    "clear": "Leeren",
+    "filters": "Benachrichtigungen filtern",
+    "filter": {
+      "all": "Alle",
+      "trade": "Handel",
+      "chat": "Chat",
+      "alerts": "Warnungen",
+      "system": "System"
+    },
+    "empty": "Noch nichts vorhanden.",
+    "missed_one": "Verpasst · {{count}}",
+    "missed_other": "Verpasst · {{count}}",
+    "earlier": "Früher",
+    "rowHint": "Klicken zum Öffnen · nach links oder rechts schieben zum Entfernen",
+    "rowHintRemoveOnly": "Nach links oder rechts schieben zum Entfernen"
   }
 }

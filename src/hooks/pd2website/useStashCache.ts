@@ -16,6 +16,8 @@ import {
 import { useItems } from '../useItems';
 import { createItemsMapByKey } from '@/lib/item-utils';
 import { allItems } from '@/assets/items';
+import { fetchPersonalStashes, type PersonalStashes } from './personal-stash';
+import type { SocketRequest } from './useSocket';
 
 function buildUrlWithQuery(base: string, query?: Record<string, any>) {
   if (!query) return base;
@@ -26,17 +28,24 @@ function buildUrlWithQuery(base: string, query?: Record<string, any>) {
   return url.toString();
 }
 
+/**
+ * The selected account's stash: the shared stash (REST) plus the personal stash of each character in the selected
+ * mode (socket; see fetchPersonalStashes). Callers see one item list; personal stash items carry `character_id`.
+ */
 export function useStashCache(
   authData,
   settings,
   onAuthErrorRef?: React.MutableRefObject<(() => void | Promise<void>) | null>,
+  requestSocket?: SocketRequest,
 ) {
   const stashCache = useRef(null);
+  // The last personal stash read per character, for the account and mode it was read for
+  const personalStashes = useRef<{ key: string; stashes: PersonalStashes } | null>(null);
   const itemsMapByKey = useMemo(() => createItemsMapByKey(allItems), []);
 
   const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-  // Helper: fetch stash from server and update cache (RESTful)
+  // Helper: fetch stash from server and update cache
   const fetchAndCacheStash = useCallback(async () => {
     // Signed out (or the session expired): expected user state; callers skip error reports for AuthenticationError
     if (!authData) throw new AuthenticationError('Not authenticated');
@@ -46,6 +55,13 @@ export function useStashCache(
     const is_ladder = settings.ladder === 'ladder';
     const account = settings.account;
     if (!account?.trim()) throw new NoAccountSelectedError();
+
+    // Read alongside the shared stash: an item moved between the two then can hardly be missed by both reads
+    const personalKey = `${account.toLowerCase()}|${is_hardcore}|${is_ladder}`;
+    const previous = personalStashes.current?.key === personalKey ? personalStashes.current.stashes : new Map();
+    const personalRead = requestSocket
+      ? fetchPersonalStashes(requestSocket, account, { hardcore: is_hardcore, ladder: is_ladder }, previous)
+      : Promise.resolve(previous);
 
     const params = {
       account,
@@ -94,9 +110,12 @@ export function useStashCache(
     }
     // handleApiResponse returns null on 401 (re-auth flow already triggered); never cache or return it
     if (!stashData) throw new AuthenticationError('Session expired while fetching stash');
-    stashCache.current = { data: stashData, timestamp: Date.now() };
-    return stashData;
-  }, [settings, authData, onAuthErrorRef]);
+    const stashes = await personalRead;
+    personalStashes.current = { key: personalKey, stashes };
+    const data: GameData = { ...stashData, items: [...(stashData.items ?? []), ...[...stashes.values()].flat()] };
+    stashCache.current = { data, timestamp: Date.now() };
+    return data;
+  }, [settings, authData, onAuthErrorRef, requestSocket]);
 
   // Helper: calculate modifier similarity score between PriceCheckItem and stash item
   function calculateModifierSimilarity(priceCheckItem: PriceCheckItem, stashItem: GameStashItem): number {
@@ -265,9 +284,10 @@ export function useStashCache(
     [stashCache],
   );
 
-  // Clear the stash cache
+  // Clear the stash cache (and the personal stash fallback: the next user or account starts fresh)
   const clearStashCache = useCallback(() => {
     stashCache.current = null;
+    personalStashes.current = null;
   }, []);
 
   return { fetchAndCacheStash, findItemsByName, stashCache, CACHE_TTL, updateItemByHash, clearStashCache };

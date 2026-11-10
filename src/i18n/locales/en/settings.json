@@ -10,6 +10,10 @@
       "label": "Chat Button Overlay",
       "description": "Show the floating chat button overlay in the bottom-right corner of the screen."
     },
+    "uiScale": {
+      "label": "UI scale",
+      "description": "Size of all overlay text and panels. Raise it on high-resolution monitors."
+    },
     "windowTransparency": {
       "label": "Window transparency: <num>{{value}}%</num>",
       "description": "See the game through window backgrounds. 0% is fully opaque."
@@ -47,8 +51,14 @@
         "label": "Followed zones",
         "description": "The zones the timer and notifications follow when set to Only zones I follow."
       },
-      "group": "Corrupted zone timer",
-      "opacity": "Timer opacity: <num>{{value}}%</num>"
+      "opacity": "Timer opacity: <num>{{value}}%</num>",
+      "lead": {
+        "atStart": "Notify when the zone starts",
+        "before_one": "Notify {{count}} minute before the zone starts",
+        "before_other": "Notify {{count}} minutes before the zone starts",
+        "description": "Up to 15 minutes ahead, to get into a new Hell game in time.",
+        "ariaLabel": "Notify before the zone starts"
+      }
     },
     "zoneAlertOptions": {
       "off": "Off",
@@ -144,7 +154,8 @@
     "priceCheck": "Price Check",
     "netWorth": "Net Worth",
     "hotkeys": "Hotkeys",
-    "about": "About"
+    "about": "About",
+    "market": "Market"
   },
   "layout": {
     "title": "Settings",
@@ -198,7 +209,7 @@
     "group": "Shortcuts",
     "modifierLabel": "{{action}} modifier",
     "off": "Off",
-    "hint": "Click a key box and press the key to use. Press Backspace in the snapshot, market or builds box to turn that hotkey off.",
+    "hint": "Click a key box and press the key to use. Press Backspace in the snapshot, market, builds, command palette or Horadric Sim box to turn that hotkey off.",
     "rows": {
       "priceCheck": {
         "label": "Price check",
@@ -239,6 +250,18 @@
       "builds": {
         "label": "Builds",
         "description": "Show or hide the ladder builds."
+      },
+      "palette": {
+        "label": "Command palette",
+        "description": "Search actions, items, builds and settings from one box."
+      },
+      "simTryOn": {
+        "label": "Try item on character (Horadric Sim)",
+        "description": "Send the hovered item to the Horadric Sim planner, tried on your default character."
+      },
+      "notifications": {
+        "label": "Notifications",
+        "description": "Open the notification log: whispers, offers, alerts and errors, including the ones you missed."
       }
     }
   },
@@ -270,6 +293,10 @@
       "debugLogging": {
         "label": "Debug Logging",
         "description": "Write console output to a log file for troubleshooting."
+      },
+      "telemetryOptOut": {
+        "label": "Telemetry Opt-Out",
+        "description": "Stop sending error reports and usage statistics."
       }
     }
   },
@@ -406,7 +433,8 @@
       "trade": "Trade",
       "joins": "Joins",
       "offers": "Offers",
-      "networth": "Net Worth"
+      "networth": "Net Worth",
+      "sim": "Horadric Sim"
     },
     "timing": {
       "off": "Notifications are off. Pick another option to edit the settings below.",
@@ -435,16 +463,7 @@
         "label": "Notification Volume: <num>{{value}}%</num>",
         "description": "Adjust the volume for whisper notification sounds (0-100%)."
       },
-      "marketVolume": {
-        "label": "Market Alert Volume: <num>{{value}}%</num>",
-        "description": "Volume of the market alert sound (0-100%).",
-        "ariaLabel": "Market alert volume"
-      },
-      "group": "Sound",
-      "marketSound": {
-        "label": "Market Alert Sound",
-        "description": "Play a sound with the popup for a new listing matching a market search you watch."
-      }
+      "group": "Sound"
     },
     "templates": {
       "accept": {
@@ -524,6 +543,112 @@
     "stats": {
       "title": "Price Check",
       "description": "Configure the price window and how stat ranges and filters are populated for price-check searches."
+    },
+    "market": {
+      "title": "Market",
+      "description": "Your listings, the market browser and market alerts."
+    },
+    "zoneTimer": {
+      "title": "Corrupted zone timer",
+      "description": "Which zones new Hell games corrupt, the countdown to the next rotation, and zone notifications."
     }
+  },
+  "market": {
+    "listings": {
+      "group": "Your listings",
+      "autoDelist": {
+        "label": "When a listed item leaves your stash",
+        "description": "Moving it between stash tabs, or between a personal stash and the shared stash, doesn't count. Checked every minute while Diablo II is in front. If look-alike items make it unclear which one left, you always pick.",
+        "options": {
+          "off": "Do nothing",
+          "ask": "Ask me",
+          "auto": "Delist it"
+        }
+      },
+      "view": {
+        "label": "Listings view",
+        "description": "How the Manage tab shows your listings. The toggle in the tab changes it too.",
+        "options": {
+          "cards": "Cards",
+          "rows": "Compact rows"
+        }
+      }
+    },
+    "browser": {
+      "group": "Market browser",
+      "defaultsHint": "Used for a new search and when you reset the filters.",
+      "sort": {
+        "label": "Default sort",
+        "options": {
+          "newest": "Newest first",
+          "cheapest": "Cheapest first",
+          "priciest": "Most expensive first"
+        }
+      },
+      "seller": {
+        "label": "Default seller filter",
+        "options": {
+          "all": "Any seller",
+          "online": "Online on the site",
+          "in-game": "In game"
+        }
+      },
+      "buyout": {
+        "label": "Default buyout filter",
+        "options": {
+          "any": "Any",
+          "yes": "Has a buyout price",
+          "no": "No buyout price"
+        }
+      },
+      "age": {
+        "label": "Default listing age"
+      },
+      "pageSize": {
+        "label": "Results per page"
+      },
+      "whisper": {
+        "label": "Whisper message",
+        "description": "What Copy whisper sends. Placeholders: {item}, {price}, {seller}, {account}. Leave empty for the default."
+      },
+      "dealBadges": {
+        "label": "Deal badges",
+        "description": "Show how a listing's price compares with the market."
+      },
+      "priceHistory": {
+        "label": "Price history",
+        "description": "Show the price history chart in a listing's details."
+      },
+      "sellerCard": {
+        "label": "Seller card",
+        "description": "Show the seller's status and other listings in a listing's details."
+      }
+    },
+    "alerts": {
+      "group": "Alerts",
+      "duration": {
+        "label": "Alert popup duration",
+        "description": "How long the popup for a new listing matching a watched search stays up.",
+        "seconds_one": "{{count}} second",
+        "seconds_other": "{{count}} seconds"
+      },
+      "sound": {
+        "label": "Market Alert Sound",
+        "description": "Play a sound with the popup for a new listing matching a market search you watch."
+      },
+      "volume": {
+        "label": "Market Alert Volume: <num>{{value}}%</num>",
+        "description": "Volume of the market alert sound (0-100%).",
+        "ariaLabel": "Market alert volume"
+      }
+    }
+  },
+  "palette": {
+    "openInSettings": "Open in Settings",
+    "turnOn": "Turn on",
+    "turnOff": "Turn off",
+    "change": "Change",
+    "select": "Select",
+    "current": "Current"
   }
 }

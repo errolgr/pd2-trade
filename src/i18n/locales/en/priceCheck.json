@@ -27,8 +27,10 @@
     "header": {
       "base": "Base: {{type}}",
       "type": "Type: {{type}}",
+      "group": "Group: {{group}}",
       "toggleSearchMode": "Click to toggle search mode",
       "cycleQuality": "Click to cycle quality",
+      "anyQuality": "Any",
       "defense": "Defense: <value>{{defense}}</value>",
       "appraisalNote": "Appraisal note: {{note}}"
     },
@@ -69,14 +71,14 @@
       "clearTitle": "Untick every stat"
     },
     "actions": {
-      "openTradeAria": "Open search on projectdiablo2.com",
-      "openTradeTooltip": "Open this search on projectdiablo2.com",
+      "openTrade": "Open search on projectdiablo2.com",
+      "more": "More",
       "openInMarket": "Open in market",
       "list": "List",
-      "listDisabled": "Item must be in your shared stash to list.",
-      "showExpired": "Show Expired"
+      "listDisabled": "Item must be in your stash (shared or personal) to list."
     },
     "results": {
+      "source": { "label": "Listings to search", "live": "Live", "expired": "Expired" },
       "matches": "Matches: <value>{{total}}</value>",
       "showing": "· showing {{shown}}",
       "loading": "Loading market listings...",
@@ -85,19 +87,49 @@
       "noListings": "No listings found",
       "loosenFilters": "Try loosening your stat filters.",
       "loosenFiltersOrExpired": "Try loosening your stat filters or turn on Show Expired.",
+      "relax": {
+        "title": "No listings match all these filters",
+        "hint": "Drop one: each shows what's left.",
+        "ranges": "Stat ranges",
+        "corrupted": "Corrupted",
+        "notCorrupted": "Not corrupted",
+        "corruptions": "Corruption filter",
+        "showExpired": "Show expired"
+      },
       "readyTitle": "Ready to search",
       "readyHint": "Pick the stats that matter, then hit Search or press Enter in a min/max field.",
       "price": "Price",
-      "listed": "Listed",
       "loadingMore": "Loading more...",
-      "loadMore": "Load more"
+      "loadMore": "Load more",
+      "sortPrice": "Sort by price",
+      "sortListed": "Sort by listing date",
+      "filteredInGame": "· {{count}} in game",
+      "filteredOnSite": "· {{count}} on site",
+      "filteredOnline": "· {{count}} online",
+      "noSellerMatch": "No sellers here match the seller filter.",
+      "sellerFilter": "Seller filter",
+      "seller": "Seller",
+      "sellerAnyone": "Anyone",
+      "sellerInGame": "In game",
+      "sellerOnSite": "On the trade site",
+      "sellerEither": "In game or on trade site",
+      "age": "Age"
     },
     "listing": {
       "copyWhisper": "Copy whisper",
       "whisperCopied": "Copied whisper, right click to paste",
-      "onlineCopyWhisper": "Online in-game · click to copy whisper",
       "seller": "Seller: <name>{{seller}}</name>",
-      "online": "Online in-game"
+      "online": "Online in-game",
+      "endedSold": "sold after {{duration}}",
+      "endedRemoved": "removed after {{duration}}",
+      "endedExpired": "expired after {{duration}}",
+      "endedAt": "Ended {{when}}",
+      "listedFor": "Listed for {{duration}}",
+      "onSite": "On the trade site",
+      "notOnSite": "Not on the trade site",
+      "notInGame": "Not in game",
+      "inGame": "In game",
+      "presenceWhisper": "{{presence}} · click to copy whisper"
     }
   },
   "statRow": {

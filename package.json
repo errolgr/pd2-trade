@@ -1,7 +1,7 @@
 {
   "name": "pd2-trader",
   "private": true,
-  "version": "0.10.10",
+  "version": "0.11.0",
   "type": "module",
   "main": "./src/index.ts",
   "exports": {
@@ -27,6 +27,7 @@
     "prepare": "husky",
     "test": "vitest run",
     "verify:updater": "node scripts/verify-updater.mjs",
+    "release": "node scripts/release.mjs",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
@@ -35,6 +36,7 @@
     "@hookform/resolvers": "^4.1.3",
     "@radix-ui/react-alert-dialog": "^1.1.6",
     "@radix-ui/react-checkbox": "^1.3.2",
+    "@radix-ui/react-context-menu": "~2.2.16",
     "@radix-ui/react-dialog": "^1.1.6",
     "@radix-ui/react-dropdown-menu": "^2.1.6",
     "@radix-ui/react-label": "^2.1.2",
@@ -63,6 +65,7 @@
     "@tauri-apps/plugin-updater": "^2.9.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
     "framer-motion": "^12.4.2",
     "fuse.js": "^7.1.0",
     "i18next": "^26.5.11",

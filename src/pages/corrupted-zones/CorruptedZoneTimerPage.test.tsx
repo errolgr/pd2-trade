@@ -176,6 +176,50 @@ describe('CorruptedZoneTimer', () => {
     expect(setRect).toHaveBeenLastCalledWith({ x: 112, y: 478 + 180 - 28, width: 301, height: 28 });
   });
 
+  it.each([
+    ['in the lower half opens downwards when set to', 'down', 900, 900],
+    ['in the upper half opens upwards when set to', 'up', 400, 400 + 28 - 180],
+  ] as const)('a custom timer %s %s', (_case, direction, y, openY) => {
+    settings = { corruptedZoneTimerAnchor: 'custom', corruptedZoneTimerListDirection: direction };
+    panelRect = { x: 40, y, width: 301, height: 28 };
+    render(<CorruptedZoneTimerPage />);
+    clickPill();
+    expect(setRect).toHaveBeenLastCalledWith({ x: 40, y: openY, width: 400, height: 180 });
+    clickPill();
+    expect(setRect).toHaveBeenLastCalledWith({ x: 40, y, width: 301, height: 28 });
+  });
+
+  it('the arrow under the schedule shows where it opens and flips it, the pill staying put', () => {
+    settings = { corruptedZoneTimerAnchor: 'custom' };
+    panelRect = { x: 40, y: 900, width: 301, height: 28 };
+    const { rerender } = render(<CorruptedZoneTimerPage />);
+    clickPill();
+    rerender(<CorruptedZoneTimerPage />); // pick up the open rect (y 748, pill at 900)
+    fireEvent.click(screen.getByRole('button', { name: 'List opens up' }));
+    expect(updateSettings).toHaveBeenCalledExactlyOnceWith({ corruptedZoneTimerListDirection: 'down' });
+    expect(panelRect).toEqual({ x: 40, y: 900, width: 400, height: 180 });
+    settings = { ...settings, corruptedZoneTimerListDirection: 'down' };
+    rerender(<CorruptedZoneTimerPage />);
+    expect(screen.getByRole('button', { name: 'List opens down' })).toBeTruthy();
+    clickPill();
+    expect(setRect).toHaveBeenLastCalledWith({ x: 40, y: 900, width: 301, height: 28 });
+  });
+
+  it.each([
+    ['into the other half drops the set direction', 800, { corruptedZoneTimerListDirection: undefined }],
+    ['within its half keeps the set direction', 300, undefined],
+  ] as const)('a drag %s', (_case, toY, update) => {
+    settings = { corruptedZoneTimerAnchor: 'custom', corruptedZoneTimerListDirection: 'up' };
+    panelRect = { x: 40, y: 100, width: 301, height: 28 };
+    const { rerender } = render(<CorruptedZoneTimerPage />);
+    fireEvent.pointerDown(pill(), { button: 0, pointerId: 1, clientX: 50, clientY: 110 });
+    fireEvent.pointerMove(pill(), { pointerId: 1, clientX: 50, clientY: 110 + toY - 100 });
+    rerender(<CorruptedZoneTimerPage />); // pick up the dragged rect
+    fireEvent.pointerUp(pill(), { pointerId: 1 });
+    if (update) expect(updateSettings).toHaveBeenCalledExactlyOnceWith(update);
+    else expect(updateSettings).not.toHaveBeenCalled();
+  });
+
   describe('only followed zones', () => {
     beforeEach(() => {
       settings = { corruptedZoneTimerZones: 'followed', corruptedZoneFollowed: ['Chaos Sanctuary'] };

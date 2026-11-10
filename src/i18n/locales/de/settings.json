@@ -10,6 +10,10 @@
       "label": "Chat-Button-Overlay",
       "description": "Den schwebenden Chat-Button unten rechts auf dem Bildschirm anzeigen."
     },
+    "uiScale": {
+      "label": "UI-Skalierung",
+      "description": "Größe aller Overlay-Texte und -Fenster. Auf hochauflösenden Monitoren erhöhen."
+    },
     "windowTransparency": {
       "label": "Fenstertransparenz: <num>{{value}}%</num>",
       "description": "Das Spiel durch Fensterhintergründe sehen. 0 % ist vollständig deckend."
@@ -47,8 +51,14 @@
         "label": "Gefolgte Zonen",
         "description": "Die Zonen, denen Timer und Benachrichtigungen folgen, wenn „Nur Zonen, denen ich folge“ eingestellt ist."
       },
-      "group": "Corrupted-Zone-Timer",
-      "opacity": "Timer-Deckkraft: <num>{{value}}%</num>"
+      "opacity": "Timer-Deckkraft: <num>{{value}}%</num>",
+      "lead": {
+        "atStart": "Benachrichtigen, wenn die Zone beginnt",
+        "before_one": "{{count}} Minute vor Beginn der Zone benachrichtigen",
+        "before_other": "{{count}} Minuten vor Beginn der Zone benachrichtigen",
+        "description": "Bis zu 15 Minuten vorher, um rechtzeitig in ein neues Hell-Spiel zu kommen.",
+        "ariaLabel": "Vor Beginn der Zone benachrichtigen"
+      }
     },
     "zoneAlertOptions": {
       "off": "Aus",
@@ -144,7 +154,8 @@
     "priceCheck": "Preischeck",
     "netWorth": "Vermögen",
     "hotkeys": "Hotkeys",
-    "about": "Über"
+    "about": "Über",
+    "market": "Markt"
   },
   "layout": {
     "title": "Einstellungen",
@@ -198,7 +209,7 @@
     "group": "Tastenkürzel",
     "modifierLabel": "Modifikator für {{action}}",
     "off": "Aus",
-    "hint": "Klicke auf ein Tastenfeld und drücke die gewünschte Taste. Drücke im Feld für Snapshot, Markt oder Builds die Rücktaste, um diesen Hotkey zu deaktivieren.",
+    "hint": "Klicke auf ein Tastenfeld und drücke die gewünschte Taste. Drücke im Feld für Snapshot, Markt, Builds oder Befehlspalette die Rücktaste, um diesen Hotkey zu deaktivieren.",
     "rows": {
       "priceCheck": {
         "label": "Preischeck",
@@ -239,6 +250,18 @@
       "builds": {
         "label": "Builds",
         "description": "Die Ladder-Builds ein- oder ausblenden."
+      },
+      "palette": {
+        "label": "Befehlspalette",
+        "description": "Aktionen, Items, Builds und Einstellungen in einem Feld durchsuchen."
+      },
+      "simTryOn": {
+        "label": "Item am Charakter testen (Horadric Sim)",
+        "description": "Schickt das Item unter dem Mauszeiger an den Horadric-Sim-Planer, angelegt an deinem Standardcharakter."
+      },
+      "notifications": {
+        "label": "Benachrichtigungen",
+        "description": "Öffnet das Benachrichtigungsprotokoll: Flüstern, Angebote, Warnungen und Fehler, auch die, die du verpasst hast."
       }
     }
   },
@@ -270,6 +293,10 @@
       "debugLogging": {
         "label": "Debug-Protokoll",
         "description": "Konsolenausgabe zur Fehlerbehebung in eine Logdatei schreiben."
+      },
+      "telemetryOptOut": {
+        "label": "Telemetrie-Opt-out",
+        "description": "Keine Fehlerberichte und Nutzungsstatistiken mehr senden."
       }
     }
   },
@@ -406,7 +433,8 @@
       "trade": "Handel",
       "joins": "Beitritte",
       "offers": "Angebote",
-      "networth": "Vermögen"
+      "networth": "Vermögen",
+      "sim": "Horadric Sim"
     },
     "timing": {
       "off": "Benachrichtigungen sind aus. Wähle eine andere Option, um die Einstellungen unten zu bearbeiten.",
@@ -435,16 +463,7 @@
         "label": "Benachrichtigungslautstärke: <num>{{value}}%</num>",
         "description": "Lautstärke der Töne für Flüster-Benachrichtigungen (0–100 %)."
       },
-      "marketVolume": {
-        "label": "Lautstärke Marktalarm: <num>{{value}}%</num>",
-        "description": "Lautstärke des Marktalarm-Tons (0–100 %).",
-        "ariaLabel": "Lautstärke Marktalarm"
-      },
-      "group": "Ton",
-      "marketSound": {
-        "label": "Marktalarm-Ton",
-        "description": "Einen Ton mit der Benachrichtigung abspielen, wenn ein neues Inserat zu einer beobachteten Marktsuche passt."
-      }
+      "group": "Ton"
     },
     "templates": {
       "accept": {
@@ -524,6 +543,112 @@
     "stats": {
       "title": "Preischeck",
       "description": "Lege den Preiszeitraum fest und wie Wertebereiche und Filter für Preischeck-Suchen befüllt werden."
+    },
+    "market": {
+      "title": "Markt",
+      "description": "Deine Inserate, der Marktbrowser und Marktalarme."
+    },
+    "zoneTimer": {
+      "title": "Corrupted-Zone-Timer",
+      "description": "Welche Zonen neue Hell-Spiele verderben, der Countdown bis zur nächsten Rotation und Zonen-Benachrichtigungen."
     }
+  },
+  "market": {
+    "listings": {
+      "group": "Deine Inserate",
+      "autoDelist": {
+        "label": "Wenn ein inserierter Gegenstand die Truhe verlässt",
+        "description": "Verschieben zwischen Tabs oder zwischen einer persönlichen und der geteilten Truhe zählt nicht. Geprüft jede Minute, solange Diablo II im Vordergrund ist. Ist bei gleich aussehenden Gegenständen unklar, welcher fehlt, wählst du immer selbst.",
+        "options": {
+          "off": "Nichts tun",
+          "ask": "Mich fragen",
+          "auto": "Inserat entfernen"
+        }
+      },
+      "view": {
+        "label": "Inseratsansicht",
+        "description": "Wie der Verwalten-Tab deine Inserate zeigt. Der Umschalter im Tab ändert das ebenfalls.",
+        "options": {
+          "cards": "Karten",
+          "rows": "Kompakte Zeilen"
+        }
+      }
+    },
+    "browser": {
+      "group": "Marktbrowser",
+      "defaultsHint": "Gilt für eine neue Suche und beim Zurücksetzen der Filter.",
+      "sort": {
+        "label": "Standardsortierung",
+        "options": {
+          "newest": "Neueste zuerst",
+          "cheapest": "Günstigste zuerst",
+          "priciest": "Teuerste zuerst"
+        }
+      },
+      "seller": {
+        "label": "Standard-Verkäuferfilter",
+        "options": {
+          "all": "Alle Verkäufer",
+          "online": "Online auf der Website",
+          "in-game": "Im Spiel"
+        }
+      },
+      "buyout": {
+        "label": "Standard-Sofortkauffilter",
+        "options": {
+          "any": "Alle",
+          "yes": "Mit Sofortkaufpreis",
+          "no": "Ohne Sofortkaufpreis"
+        }
+      },
+      "age": {
+        "label": "Standard-Inseratsalter"
+      },
+      "pageSize": {
+        "label": "Ergebnisse pro Seite"
+      },
+      "whisper": {
+        "label": "Flüsternachricht",
+        "description": "Was „Flüstern kopieren“ sendet. Platzhalter: {item}, {price}, {seller}, {account}. Leer lassen für den Standard."
+      },
+      "dealBadges": {
+        "label": "Deal-Abzeichen",
+        "description": "Zeigt, wie der Preis eines Inserats im Vergleich zum Markt liegt."
+      },
+      "priceHistory": {
+        "label": "Preisverlauf",
+        "description": "Zeigt das Preisverlaufsdiagramm in den Inseratsdetails."
+      },
+      "sellerCard": {
+        "label": "Verkäuferkarte",
+        "description": "Zeigt Status und weitere Inserate des Verkäufers in den Inseratsdetails."
+      }
+    },
+    "alerts": {
+      "group": "Alarme",
+      "duration": {
+        "label": "Dauer des Alarm-Popups",
+        "description": "Wie lange das Popup für ein neues Inserat zu einer beobachteten Suche sichtbar bleibt.",
+        "seconds_one": "{{count}} Sekunde",
+        "seconds_other": "{{count}} Sekunden"
+      },
+      "sound": {
+        "label": "Marktalarm-Ton",
+        "description": "Einen Ton mit der Benachrichtigung abspielen, wenn ein neues Inserat zu einer beobachteten Marktsuche passt."
+      },
+      "volume": {
+        "label": "Lautstärke Marktalarm: <num>{{value}}%</num>",
+        "description": "Lautstärke des Marktalarm-Tons (0–100 %).",
+        "ariaLabel": "Lautstärke Marktalarm"
+      }
+    }
+  },
+  "palette": {
+    "openInSettings": "In Einstellungen öffnen",
+    "turnOn": "Einschalten",
+    "turnOff": "Ausschalten",
+    "change": "Ändern",
+    "select": "Auswählen",
+    "current": "Aktuell"
   }
 }

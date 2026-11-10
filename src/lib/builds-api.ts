@@ -1,8 +1,9 @@
 /**
  * Client for the pd2-price-crawler builds API (`/api/builds/*`, public, no auth) plus PD2's public
- * `game/account` endpoint (a linked account's characters, live).
+ * `game/account` (a linked account's characters, live) and `game/character` (a character's saved items) endpoints.
  * Wire types mirror the server's src/builds/builds.types.ts; keep them in sync.
  */
+import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { fetch } from '@/lib/browser-http';
 import { BACKEND_URL } from '@/lib/pkce';
 
@@ -106,6 +107,16 @@ export interface PricedEquippedItem extends EquippedItem {
   priceHr: number | null;
 }
 
+/** A charm in the inventory's charm area (its bottom 4 rows); slot `Inventory`. */
+export interface CharmItem extends PricedEquippedItem {
+  /** 0–3 within the charm area. */
+  row: number;
+  /** 0–9 */
+  column: number;
+  /** Cells tall: small 1, large 2, grand 3. */
+  height: 1 | 2 | 3;
+}
+
 export interface Merc<Item> {
   /** Act/aura flavour (`Fire Arrow`, `Defensive Auras`, …). */
   type: string;
@@ -200,6 +211,8 @@ export interface CharacterDetail {
   skills: CharacterSkill[];
   equipped: PricedEquippedItem[];
   merc: Merc<PricedEquippedItem> | null;
+  /** Live builds only; missing for characters not re-crawled since charms were added. */
+  charms?: CharmItem[];
   gearValueHr: number | null;
   firstSeenAt: string;
   lastUpdated: string;
@@ -242,6 +255,28 @@ export interface AccountCharacter {
   level: number;
   hardcore: boolean;
   ladder: boolean;
+}
+
+/** A tracked character whose name or account matches a suggest query. */
+export interface BuildSuggestCharacter {
+  name: string;
+  account: string | null;
+  className: string;
+  level: number;
+  isHardcore: boolean;
+  matchedOn: 'name' | 'account';
+}
+
+/** An account with tracked characters that matches a suggest query. */
+export interface BuildSuggestAccount {
+  account: string;
+  characters: number;
+}
+
+/** `/suggest`: already ranked (exact > prefix > contains); empty below 2 characters. */
+export interface BuildSuggestResponse {
+  characters: BuildSuggestCharacter[];
+  accounts: BuildSuggestAccount[];
 }
 
 // ───────────────────────────── requests ─────────────────────────────
@@ -383,4 +418,85 @@ export async function getAccountCharacters(account: string, signal?: AbortSignal
         ]
       : [],
   );
+}
+
+/** A character's class, level and allocated Strength / Dexterity (without gear), as PD2 last saved them. */
+export interface CharacterStats {
+  className: string;
+  level: number;
+  strength: number;
+  dexterity: number;
+}
+
+/**
+ * What PD2 has saved of a character (public): its own items (inventory, cube, equipped), its mercenary's, and its
+ * stats (absent when PD2 sent none usable).
+ */
+export interface CharacterItems {
+  items: GameStashItem[];
+  mercenary: GameStashItem[];
+  stats?: CharacterStats;
+}
+
+function parseCharacterStats(raw: unknown): CharacterStats | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const c = raw as { class?: { name?: unknown }; level?: unknown; attributes?: Record<string, unknown> };
+  const { strength, dexterity } = c.attributes ?? {};
+  if (typeof c.class?.name !== 'string' || typeof c.level !== 'number') return undefined;
+  if (typeof strength !== 'number' || typeof dexterity !== 'number') return undefined;
+  return { className: c.class.name, level: c.level, strength, dexterity };
+}
+
+export async function getCharacterItems(name: string, signal?: AbortSignal): Promise<CharacterItems> {
+  const data = await getJson<{ items?: unknown; mercenary?: { items?: unknown } | null; character?: unknown }>(
+    `${PD2_GAME_URL}/character/${encodeURIComponent(name)}`,
+    signal,
+  );
+  const stats = parseCharacterStats(data.character);
+  return {
+    items: Array.isArray(data.items) ? data.items : [],
+    mercenary: Array.isArray(data.mercenary?.items) ? data.mercenary.items : [],
+    ...(stats && { stats }),
+  };
+}
+
+function parseSuggestCharacter(raw: unknown): BuildSuggestCharacter[] {
+  if (!raw || typeof raw !== 'object') return [];
+  const c = raw as Record<string, unknown>;
+  if (typeof c.name !== 'string' || !c.name || typeof c.className !== 'string') return [];
+  if (typeof c.level !== 'number' || !Number.isFinite(c.level)) return [];
+  return [
+    {
+      name: c.name,
+      account: typeof c.account === 'string' && c.account ? c.account : null,
+      className: c.className,
+      level: c.level,
+      isHardcore: c.isHardcore === true,
+      matchedOn: c.matchedOn === 'account' ? 'account' : 'name',
+    },
+  ];
+}
+
+function parseSuggestAccount(raw: unknown): BuildSuggestAccount[] {
+  if (!raw || typeof raw !== 'object') return [];
+  const a = raw as Record<string, unknown>;
+  if (typeof a.account !== 'string' || !a.account) return [];
+  const characters = typeof a.characters === 'number' && Number.isFinite(a.characters) ? a.characters : 0;
+  return [{ account: a.account, characters }];
+}
+
+/** Characters and accounts matching `q`, ranked by the server; malformed entries are dropped. */
+export async function suggestBuilds(
+  q: string,
+  opts: { limit: number; season?: string; mode?: BuildsMode },
+  signal?: AbortSignal,
+): Promise<BuildSuggestResponse> {
+  const data = await getJson<{ characters?: unknown; accounts?: unknown } | null>(
+    builds('/suggest', { q, limit: opts.limit, ...seasonParams(opts) }),
+    signal,
+  );
+  return {
+    characters: Array.isArray(data?.characters) ? data.characters.flatMap(parseSuggestCharacter) : [],
+    accounts: Array.isArray(data?.accounts) ? data.accounts.flatMap(parseSuggestAccount) : [],
+  };
 }

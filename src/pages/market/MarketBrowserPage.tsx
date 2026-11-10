@@ -13,6 +13,7 @@ import { showToast, usePanel } from '@/overlay';
 import { useSignIn } from '@/hooks/useSignIn';
 import { useOptions } from '@/hooks/useOptions';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { useListingPresence } from '@/hooks/useListingPresence';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { useDealIndicators } from '@/pages/market/enrich/useDealIndicators';
 import { type MarketViewMode, useMarketStore } from '@/pages/market/store/useMarketStore';
@@ -21,8 +22,14 @@ import { applyPreset, BUILT_IN_PRESETS } from './lib/presets';
 import type { MarketFilters, MarketTab, ScoredListing, StatPreset } from './lib/types';
 import { indexListingOffers } from './lib/listing-offers';
 import { scoreListings } from './lib/search';
+import { withRowPresence } from './lib/presence';
 import { type MarketSearch, searchCountText, useMarketSearch } from './hooks/useMarketSearch';
 import { type MarketFavorites, useMarketFavorites } from './hooks/useMarketFavorites';
+import { type Relaxation, useRelaxations } from './hooks/useRelaxations';
+import type { ActiveFilter } from './lib/active-filters';
+import { useActiveFilterText, useFilterHighlight } from './components/active-filter-text';
+import { FilterHighlightContext } from './components/controls';
+import { RelaxationChips, relaxationChips } from './components/RelaxationChips';
 import { FilterSidebar } from './components/FilterSidebar';
 import { ItemNameSearch } from './components/ItemNameSearch';
 import { type LoadMoreState, ResultsList } from './components/ResultsList';
@@ -37,6 +44,7 @@ import { OpenOnSiteButton } from './components/OpenOnSiteButton';
 import { lookupListing } from './alerts/listing-lookup';
 import { useEnterTracker } from './components/EnterOnce';
 import { useLiveAlertGlow } from './hooks/useLiveAlertGlow';
+import { useSearchDefaults } from './hooks/useSearchDefaults';
 import { useTranslation } from '@/i18n';
 
 /** Card hotkeys (lowercase key → action on the selected card). */
@@ -54,7 +62,7 @@ const MarketBrowserPage: React.FC = () => {
   const { t } = useTranslation('market');
   const { payload, payloadVersion, close, visible } = usePanel<'market'>();
   const { openSignIn } = useSignIn();
-  const { settings } = useOptions();
+  const { settings, isLoading: settingsLoading } = useOptions();
   const { marketApi, outgoingOffers, hiddenOutgoingOffers, incomingOffers } = usePd2Website();
   const store = useMarketStore();
   const { viewMode } = store;
@@ -64,6 +72,7 @@ const MarketBrowserPage: React.FC = () => {
     () => ({ hardcore: settings?.mode === 'hardcore', ladder: settings?.ladder !== 'non-ladder' }),
     [settings?.mode, settings?.ladder],
   );
+  const searchDefaults = useSearchDefaults();
 
   const [tab, setTab] = useState<MarketTab>('search');
   const [filters, setFilters] = useState<MarketFilters | null>(null);
@@ -84,16 +93,17 @@ const MarketBrowserPage: React.FC = () => {
   const [activated, setActivated] = useState(false);
   if (visible && !activated) setActivated(true);
 
-  // Apply openPanel('market', payload) once the saved state is loaded (saved searches, last filters).
-  // Adjusted during render, like the chat panel's payload handling.
+  // Apply openPanel('market', payload) once the saved state (saved searches, last filters) and the settings (the
+  // user's search defaults) are loaded. Adjusted during render, like the chat panel's payload handling.
   const [handledVersion, setHandledVersion] = useState(-1);
-  if (store.loaded && handledVersion !== payloadVersion) {
+  if (store.loaded && !settingsLoading && handledVersion !== payloadVersion) {
     setHandledVersion(payloadVersion);
     const saved = payload?.savedSearchId ? store.savedSearches.find((s) => s.id === payload.savedSearchId) : undefined;
     let next: MarketFilters | null = null;
     if (saved) next = upgradeFilters(saved.filters);
-    else if (payload?.filters) next = upgradeFilters(mergeFilters(defaultFilters(mode), payload.filters));
-    else if (!filters) next = upgradeFilters(store.lastFilters ?? defaultFilters(mode));
+    else if (payload?.filters)
+      next = upgradeFilters(mergeFilters(defaultFilters(mode, searchDefaults), payload.filters));
+    else if (!filters) next = upgradeFilters(store.lastFilters ?? defaultFilters(mode, searchDefaults));
     if (next) {
       setFilters(next);
       setSelectedId(null);
@@ -108,8 +118,25 @@ const MarketBrowserPage: React.FC = () => {
     );
   }
 
-  const search = useMarketSearch(marketApi ?? null, activated ? filters : null, { signedIn });
+  const search = useMarketSearch(marketApi ?? null, activated ? filters : null, {
+    signedIn,
+    pageSize: settings?.marketPageSize,
+  });
   const favorites = useMarketFavorites(marketApi ?? null, signedIn && activated);
+  // A search that found nothing: count what dropping each of its filters would find
+  const relaxations = useRelaxations(
+    marketApi?.searchListings ?? null,
+    tab === 'search' && search.status === 'ready' && search.total === 0 ? search.filters : null,
+    searchDefaults,
+  );
+  // The suggestion the pointer is on: its filter is marked in the sidebar (only while that suggestion is shown)
+  const [hoveredRelax, setHoveredRelax] = useState<string | null>(null);
+  const filterHighlight = useFilterHighlight();
+  const hoveredFilter = relaxations?.find((r) => r.id === hoveredRelax)?.value;
+  const highlight = useMemo(
+    () => (hoveredFilter ? filterHighlight(hoveredFilter.spec) : null),
+    [hoveredFilter, filterHighlight],
+  );
 
   // Remember the last search that actually ran (not per keystroke / re-rank: each call writes market-prefs.json)
   const { setLastFilters } = store;
@@ -131,9 +158,17 @@ const MarketBrowserPage: React.FC = () => {
     [favorites.favorites, filters],
   );
 
+  // Seller presence pops in on search results: they render as the market service sent them, then PD2's current
+  // last-seen times (live listings only; asked with the user's token) merge in. Favorites come from PD2 already.
+  const presenceIds = useMemo(
+    () => search.items.filter((r) => !r.status || r.status === 'active').map((r) => r.listing._id),
+    [search.items],
+  );
+  const presence = useListingPresence(signedIn ? (marketApi ?? null) : null, presenceIds);
+  const searchRows = useMemo(() => withRowPresence(search.items, presence), [search.items, presence]);
   const rows = useMemo(
-    () => (tab === 'favorites' ? favoriteRows : tab === 'search' ? search.items : []),
-    [tab, favoriteRows, search.items],
+    () => (tab === 'favorites' ? favoriteRows : tab === 'search' ? searchRows : []),
+    [tab, favoriteRows, searchRows],
   );
   const listings = useMemo(() => rows.map((r) => r.listing), [rows]);
   const deals = useDealIndicators(listings);
@@ -250,9 +285,9 @@ const MarketBrowserPage: React.FC = () => {
     setDetailOpen(mode === 'rows' && !!selectedId);
   };
 
-  /** Defaults for the current realm and source (Clear, "browse seller"). */
+  /** The user's defaults for the current realm and source (Reset, "browse seller"). */
   const freshFilters = (f: MarketFilters) =>
-    withSource(defaultFilters({ hardcore: f.hardcore, ladder: f.ladder }), f.source);
+    withSource(defaultFilters({ hardcore: f.hardcore, ladder: f.ladder }, searchDefaults), f.source, searchDefaults);
   const resetFilters = () => filters && setFilters(freshFilters(filters));
 
   const presets = {
@@ -303,7 +338,13 @@ const MarketBrowserPage: React.FC = () => {
   const browseSeller = (listing: MarketListingEntry) => {
     if (!filters) return;
     setFilters(
-      mergeFilters(freshFilters(filters), { sellerUserId: listing.user_id, sellerName: listing.user?.username }),
+      // All of the seller's listings: the default online filters would hide them while the seller is away
+      mergeFilters(freshFilters(filters), {
+        sellerUserId: listing.user_id,
+        sellerName: listing.user?.username,
+        userOnlineSite: 'all',
+        userOnlineGame: 'all',
+      }),
     );
     setTab('search');
     setDetailOpen(false);
@@ -369,6 +410,9 @@ const MarketBrowserPage: React.FC = () => {
                   <ItemNameSearch
                     value={filters.itemName}
                     onChange={(itemName) => setFilters({ ...filters, itemName })}
+                    onPickGroup={(group) =>
+                      setFilters({ ...filters, itemName: undefined, typeCode: group.typeCode, baseCode: group.code })
+                    }
                     ladder={filters.ladder}
                     hardcore={filters.hardcore}
                     inputRef={nameSearchRef}
@@ -448,14 +492,18 @@ const MarketBrowserPage: React.FC = () => {
               <div className="flex min-h-0 flex-1 overflow-hidden">
                 {tab === 'search' && (
                   <div className="w-[300px] shrink-0">
-                    <FilterSidebar
-                      filters={filters}
-                      onChange={setFilters}
-                      onReset={resetFilters}
-                      stats={presets}
-                      sectionsOpen={store.sectionsOpen}
-                      onSectionOpen={store.setSectionOpen}
-                    />
+                    <FilterHighlightContext.Provider value={highlight}>
+                      <FilterSidebar
+                        filters={filters}
+                        onChange={setFilters}
+                        onReset={resetFilters}
+                        searchDefaults={searchDefaults}
+                        stats={presets}
+                        sectionsOpen={store.sectionsOpen}
+                        onSectionOpen={store.setSectionOpen}
+                        facets={search.facets}
+                      />
+                    </FilterHighlightContext.Provider>
                   </div>
                 )}
 
@@ -492,9 +540,12 @@ const MarketBrowserPage: React.FC = () => {
                           // No live listing for this search: offer the same search over sold listings
                           onSearchArchive={
                             tab === 'search' && filters?.source === 'live'
-                              ? () => setFilters(withSource(filters, 'archive'))
+                              ? () => setFilters(withSource(filters, 'archive', searchDefaults))
                               : undefined
                           }
+                          relaxations={relaxations}
+                          onRelax={(r) => search.filters && setFilters(r.value.clear(search.filters))}
+                          onRelaxHover={setHoveredRelax}
                           itemName={filters?.itemName}
                           toolbar={
                             <>
@@ -667,6 +718,9 @@ function ResultsPane({
   onSignIn,
   onSearchArchive,
   itemName,
+  relaxations,
+  onRelax,
+  onRelaxHover,
   toolbar,
   children,
 }: {
@@ -682,11 +736,17 @@ function ResultsPane({
   onSearchArchive?: () => void;
   /** The searched item name, for the empty-state wording. */
   itemName?: string;
+  /** The empty search's filters that find something when dropped, best first (null: none, or still counting). */
+  relaxations: Relaxation<ActiveFilter>[] | null;
+  onRelax: (relaxation: Relaxation<ActiveFilter>) => void;
+  /** The suggestion the pointer is on (null: none), to mark its filter in the sidebar. */
+  onRelaxHover: (id: string | null) => void;
   /** Right end of the status strip (view toggle). */
   toolbar: React.ReactNode;
   children: React.ReactNode;
 }) {
   const { t } = useTranslation(['market', 'common']);
+  const filterText = useActiveFilterText();
   if (!signedIn || (tab === 'search' && search.status === 'auth')) {
     return (
       <EmptyState
@@ -780,6 +840,32 @@ function ResultsPane({
           icon={<Heart />}
           title={t('results.noFavoritesTitle')}
           description={t('results.noFavoritesDescription')}
+        />
+      ) : relaxations?.length ? (
+        <EmptyState
+          className="m-6"
+          icon={<SearchX />}
+          title={t('results.noMatchAll')}
+          description={t('results.relaxHint')}
+          action={
+            <div className="flex flex-col items-center gap-3">
+              <RelaxationChips
+                chips={relaxationChips(relaxations, (filter) => filterText(filter.spec))}
+                onPick={(id) => {
+                  const picked = relaxations.find((r) => r.id === id);
+                  if (picked) onRelax(picked);
+                }}
+                onHover={onRelaxHover}
+              />
+              {onSearchArchive && (
+                <Button size="sm"
+                  variant="ghost"
+                  onClick={onSearchArchive}>
+                  {t('results.searchArchive')}
+                </Button>
+              )}
+            </div>
+          }
         />
       ) : onSearchArchive ? (
         <EmptyState

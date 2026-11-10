@@ -228,6 +228,8 @@ export interface Item {
   properties: string[];
   damage?: Partial<DamageRange>;
   hash: string;
+  /** Lowercase name of the character whose personal stash holds the item; absent for shared stash items. */
+  character_id?: string;
 }
 
 export interface BaseInfo {

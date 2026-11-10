@@ -118,6 +118,7 @@ describe('ChatForm', () => {
   });
 
   it('toggles toast popup types, and hides them when toast popups are off', async () => {
+    // Saved before Horadric Sim toasts existed: they read as on without rewriting the list
     renderForm({ toastPopupTypes: ['whispers', 'trade'] });
     const group = screen.getByRole('group', { name: 'Toast popup types' });
     const pressed = () =>
@@ -125,13 +126,18 @@ describe('ChatForm', () => {
         .getAllByRole('button')
         .filter((b) => b.getAttribute('aria-pressed') === 'true')
         .map((b) => b.textContent);
-    expect(pressed()).toEqual(['Whispers', 'Trade']);
+    expect(pressed()).toEqual(['Whispers', 'Trade', 'Horadric Sim']);
 
     fireEvent.click(within(group).getByRole('button', { name: 'Whispers' }));
     fireEvent.click(within(group).getByRole('button', { name: 'Offers' }));
+    fireEvent.click(within(group).getByRole('button', { name: 'Horadric Sim' }));
     expect(pressed()).toEqual(['Trade', 'Offers']);
     await advance(500);
-    expect(lastSaved()?.toastPopupTypes).toEqual(['trade', 'offers']);
+    expect(lastSaved()?.toastPopupTypes).toEqual(['trade', 'offers', '!sim']);
+
+    fireEvent.click(within(group).getByRole('button', { name: 'Horadric Sim' }));
+    await advance(500);
+    expect(lastSaved()?.toastPopupTypes).toEqual(['trade', 'offers', 'sim']);
 
     fireEvent.click(screen.getByRole('switch', { name: 'Toast Popups' }));
     await advance(100);
@@ -157,15 +163,6 @@ describe('ChatForm', () => {
     expect(lastSaved()?.whisperNotificationVolume).toBe(1);
   });
 
-  it('turns the market alert sound off and dims its volume', async () => {
-    renderForm({ marketAlertSoundEnabled: true, marketAlertVolume: 70 });
-    expect(screen.getByText(/Market Alert Volume/).textContent).toContain('70%');
-    fireEvent.click(screen.getByRole('switch', { name: 'Market Alert Sound' }));
-    await advance(500);
-    expect(lastSaved()?.marketAlertSoundEnabled).toBe(false);
-    expect(screen.getAllByRole('slider')[1].getAttribute('data-disabled')).not.toBeNull();
-  });
-
   it('does not save when settings change externally', async () => {
     // Real settings are always merged with defaults, so every chat field is present.
     const full: Partial<ISettings> = {
@@ -178,8 +175,6 @@ describe('ChatForm', () => {
       whisperJoinNotificationsEnabled: false,
       whisperNotificationTiming: 'both',
       whisperNotificationVolume: 70,
-      marketAlertSoundEnabled: true,
-      marketAlertVolume: 70,
       acceptOfferMessageTemplate: 'a',
       rejectOfferMessageTemplate: 'r',
       soldOfferMessageTemplate: 's',

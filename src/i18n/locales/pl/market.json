@@ -36,7 +36,12 @@
     "loadMoreFailed": "Nie można wczytać więcej",
     "rateLimitedUntil": "Limit zapytań do {{time}}",
     "listings": "Ogłoszenia",
-    "favorite": "Ulubione"
+    "favorite": "Ulubione",
+    "noMatchAll": "Żadne ogłoszenie nie pasuje do wszystkich filtrów",
+    "relaxHint": "Usuń jeden: każdy pokazuje, co zostanie.",
+    "relaxDrop": "Bez {{filter}}",
+    "relaxLabel": "Filtry do usunięcia",
+    "relaxDropCount": "Bez {{filter}}: {{count}} ogłoszeń"
   },
   "search": {
     "rateLimited": "Zbyt wiele wyszukiwań na rynku. Spróbuj ponownie za chwilę.",
@@ -136,6 +141,7 @@
     "ethereal": "Ethereal",
     "desecrated": "Desecrated",
     "identified": "Zidentyfikowany",
+    "anniversary": "Rocznicowy",
     "mode": "Tryb",
     "listedWithin": "Wystawione w ciągu",
     "sort": {
@@ -172,13 +178,25 @@
     "sellerPlaceholder": "Konto lub nazwa użytkownika",
     "sellerPicked": "Ten sprzedawca (wybrany z ogłoszenia)",
     "clearSeller": "Wyczyść sprzedawcę",
-    "modeLabel": "Softcore lub hardcore"
+    "modeLabel": "Softcore lub hardcore",
+    "applied": {
+      "not": "Bez {{name}}"
+    }
   },
   "controls": {
     "min": "min",
     "max": "maks",
     "minLabel": "{{label}} min",
     "maxLabel": "{{label}} maks"
+  },
+  "facets": {
+    "count": "{{label}} · {{n, number}}",
+    "price": "{{from}}–{{to}} HR",
+    "priceOpen": "{{from}}+ HR",
+    "priceUpTo": "Do {{to}} HR",
+    "priceAny": "dowolna cena",
+    "priceBars": "Ogłoszenia według ceny w HR: {{selection}}",
+    "priceClear": "Wyczyść cenę w HR"
   },
   "stats": {
     "min": "Min",
@@ -377,7 +395,8 @@
     "online": "online",
     "buyout": "kup teraz",
     "listingAge": "wiek ogłoszenia",
-    "sort": "sortowanie"
+    "sort": "sortowanie",
+    "extendedStat": "statystyka, której strona nie obsługuje"
   },
   "nameSearch": {
     "noSales": "brak sprzedaży",
@@ -388,7 +407,9 @@
     "fallbackWindow": "śr. {{window}} · {{listings}}",
     "label": "Nazwa przedmiotu",
     "placeholder": "Szukaj przedmiotów…  ( / )",
-    "clear": "Wyczyść nazwę przedmiotu"
+    "clear": "Wyczyść nazwę przedmiotu",
+    "closeMatch": "podobna nazwa",
+    "groupHint": "Wszystkie rodzaje · ustawia Typ i Bazę"
   },
   "detail": {
     "label": "Szczegóły ogłoszenia",
@@ -541,5 +562,14 @@
     "notRemoved": "Nie usunięto z ulubionych",
     "notSaved": "Nie zapisano w ulubionych",
     "refused": "projectdiablo2.com odrzuciło zmianę. Spróbuj ponownie za chwilę."
+  },
+  "palette": {
+    "openInMarket": "Szukaj na rynku",
+    "watchPrice": "Obserwuj cenę",
+    "stopWatching": "Przestań obserwować",
+    "buildsUsing": "Buildy z tym przedmiotem",
+    "copyName": "Kopiuj nazwę",
+    "nameCopied": "Skopiowano nazwę",
+    "nameNotCopied": "Nie skopiowano nazwy"
   }
 }

@@ -9,10 +9,14 @@ export {
   confirmToast,
   imageToast,
   undoToast,
+  notify,
+  runLoggedAction,
+  openLoggedListing,
   ToastLayer,
   type ToastPayload,
   type ConfirmToastOptions,
   type UndoToastOptions,
+  type NotifyOptions,
 } from './toast';
 export { setBadgeCount, getBadgeCount, useBadgeCount, type BadgeKey } from './badges';
 export { claimKeyboard, releaseKeyboard, isKeyboardClaimed } from './keyboard';

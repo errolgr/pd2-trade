@@ -5,6 +5,7 @@
     "lookupPlaceholder": "Nombre del personaje…",
     "lookupLabel": "Buscar un personaje",
     "mode": "Modo",
+    "followingShortcut": "Siguiendo ({{n}})",
     "tabs": {
       "meta": "Meta",
       "characters": "Personajes"
@@ -114,10 +115,13 @@
     "updated": "Actualizado {{time}}",
     "firstSeen": "Visto por primera vez {{time}}",
     "follow": "Seguir",
+    "followedToast": "Siguiendo a {{name}}",
+    "followedToastDescription": "Guardado en {{characters}} → {{following}}",
     "openSite": "Abrir en pd2trader.com",
     "viewingSnapshot": "Viendo <date>{{date}}</date><muted> · precios ocultos</muted>",
     "backToNow": "Volver al presente",
     "equipment": "Equipo",
+    "charms": "Charms",
     "weaponSwitch": "Cambio de arma",
     "mercTitle": "Mercenario <muted>· {{type}}</muted>",
     "paneLabel": "Vista del personaje",
@@ -219,5 +223,15 @@
     "usageCount_one": "{{formatted}} personaje",
     "usageCount_many": "{{formatted}} de personajes",
     "usageCount_other": "{{formatted}} personajes"
+  },
+  "palette": {
+    "character": "personaje",
+    "account": "cuenta",
+    "class": "clase",
+    "skillOf": "habilidad de {{className}}",
+    "hardcore": "HC",
+    "openBuild": "Abrir build",
+    "showCharacters": "Ver personajes",
+    "showMeta": "Ver en Meta"
   }
 }

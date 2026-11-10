@@ -13,7 +13,7 @@ import * as Sentry from '@sentry/react';
 import { setTelemetryUser } from '@/lib/telemetry';
 import { reportApiError } from '@/lib/error-reporting';
 import { isNetworkError } from '@/lib/network-errors';
-import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
+import { GameData, Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { MarketListingFindQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import type { MarketApi } from '@/pages/market/lib/types';
@@ -83,6 +83,8 @@ export function isExpectedApiError(error: unknown): boolean {
 
 interface Pd2WebsiteContextType extends SocialActions, OfferNotificationsApi {
   findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
+  /** A fresh copy of the selected account's stash (GET /game/stash; refreshes the stash cache). */
+  fetchStash: () => Promise<GameData>;
   listSpecificItem: (
     stashItem: GameStashItem,
     hrPrice: number,
@@ -98,6 +100,8 @@ interface Pd2WebsiteContextType extends SocialActions, OfferNotificationsApi {
   authData: AuthData;
   updateMarketListing: (hash: string, update: Record<string, any>) => Promise<MarketListingEntry>;
   updateItemByHash: (hash: string, update: any) => boolean;
+  /** The selected account's stash from PD2 (refreshes the stash cache); throws AccountMismatchError / AuthenticationError. */
+  fetchAndCacheStash: () => Promise<GameData>;
   incomingOffers: TradeOffer[];
   outgoingOffers: TradeOffer[];
   hiddenOutgoingOffers: TradeOffer[];
@@ -136,9 +140,12 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
     refreshTokenValueRef.current = settings?.pd2RefreshToken;
   }, [settings?.pd2RefreshToken]);
 
-  // Stash cache and fetch (RESTful)
+  // Socket connection: pushes, and the personal stashes PD2 only sends to the signed-in socket
+  const { isConnected, subscribe: subscribeSocket, request: requestSocket } = useSocket({ settings });
+
+  // Stash cache and fetch: shared stash over REST, personal stashes over the socket
   const { fetchAndCacheStash, findItemsByName, stashCache, CACHE_TTL, updateItemByHash, clearStashCache } =
-    useStashCache(authData, settings, handleAuthErrorRef);
+    useStashCache(authData, settings, handleAuthErrorRef, requestSocket);
 
   // Store clearStashCache in ref so handleAuthenticationError can use it
   useEffect(() => {
@@ -270,9 +277,6 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
       onAuthError: handleAuthenticationError,
     });
 
-  // Socket connection
-  const { isConnected, subscribe: subscribeSocket } = useSocket({ settings });
-
   // PD2's offer notifications (the website's bell): the offers badge
   const { offerNotifications, newAcceptedOffers, acknowledgeOfferNotifications } = useOfferNotifications({
     settings,
@@ -363,6 +367,7 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
     <Pd2WebsiteContext.Provider
       value={{
         findMatchingItems,
+        fetchStash: fetchAndCacheStash,
         listSpecificItem,
         deleteMarketListing,
         bumpAllMarketListings,
@@ -372,6 +377,7 @@ export const Pd2WebsiteProvider = ({ children }: Pd2WebsiteProviderProps) => {
         authData,
         updateMarketListing,
         updateItemByHash,
+        fetchAndCacheStash,
         deleteConversation,
         getConversations,
         getMessages,

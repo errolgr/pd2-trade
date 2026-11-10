@@ -34,7 +34,12 @@
     "loadMoreFailed": "Couldn't load more",
     "rateLimitedUntil": "Rate limited until {{time}}",
     "listings": "Listings",
-    "favorite": "Favorite"
+    "favorite": "Favorite",
+    "noMatchAll": "No listings match all these filters",
+    "relaxHint": "Drop one: each shows what's left.",
+    "relaxDrop": "Without {{filter}}",
+    "relaxLabel": "Filters to drop",
+    "relaxDropCount": "Without {{filter}}: {{count}} listings"
   },
   "search": {
     "rateLimited": "Too many market searches. Try again in a moment.",
@@ -120,6 +125,7 @@
     "ethereal": "Ethereal",
     "desecrated": "Desecrated",
     "identified": "Identified",
+    "anniversary": "Anniversary",
     "mode": "Mode",
     "listedWithin": "Listed within",
     "sort": {
@@ -156,13 +162,25 @@
     "sellerPlaceholder": "Account or username",
     "sellerPicked": "This seller (picked from a listing)",
     "clearSeller": "Clear seller",
-    "modeLabel": "Softcore or hardcore"
+    "modeLabel": "Softcore or hardcore",
+    "applied": {
+      "not": "Not {{name}}"
+    }
   },
   "controls": {
     "min": "min",
     "max": "max",
     "minLabel": "{{label}} min",
     "maxLabel": "{{label}} max"
+  },
+  "facets": {
+    "count": "{{label}} · {{n, number}}",
+    "price": "{{from}}–{{to}} HR",
+    "priceOpen": "{{from}}+ HR",
+    "priceUpTo": "Up to {{to}} HR",
+    "priceAny": "any price",
+    "priceBars": "Listings by HR price: {{selection}}",
+    "priceClear": "Clear HR price"
   },
   "stats": {
     "min": "Min",
@@ -347,7 +365,8 @@
     "online": "online",
     "buyout": "buyout",
     "listingAge": "listing age",
-    "sort": "sort"
+    "sort": "sort",
+    "extendedStat": "stat the site can't express"
   },
   "nameSearch": {
     "noSales": "no sales",
@@ -356,7 +375,9 @@
     "fallbackWindow": "{{window}} avg · {{listings}}",
     "label": "Item name",
     "placeholder": "Search items…  ( / )",
-    "clear": "Clear item name"
+    "clear": "Clear item name",
+    "closeMatch": "close match",
+    "groupHint": "Every kind · sets Type and Base"
   },
   "detail": {
     "label": "Listing detail",
@@ -495,5 +516,14 @@
     "notRemoved": "Favorite not removed",
     "notSaved": "Favorite not saved",
     "refused": "projectdiablo2.com refused the change. Try again in a moment."
+  },
+  "palette": {
+    "openInMarket": "Search the market",
+    "watchPrice": "Watch price",
+    "stopWatching": "Stop watching",
+    "buildsUsing": "Builds using it",
+    "copyName": "Copy name",
+    "nameCopied": "Name copied",
+    "nameNotCopied": "Name not copied"
   }
 }

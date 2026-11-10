@@ -39,6 +39,7 @@ vi.mock('@/lib/browser-fs', () => ({
   }),
 }));
 vi.mock('@/lib/debug-logger', () => ({ startDebugLogging: vi.fn(), stopDebugLogging: vi.fn() }));
+vi.mock('@/lib/telemetry-opt-out', () => ({ applyTelemetryOptOut: vi.fn() }));
 vi.mock('@/lib/themes', async (importOriginal) => ({
   ...(await importOriginal<typeof Themes>()),
   applyTheme: vi.fn(),
@@ -143,6 +144,37 @@ describe('OptionsProvider loading', () => {
     );
     const { result } = await renderLoaded();
     expect(result.current.settings).toMatchObject({ hotkeyModifierMarket: 'alt', hotkeyKeyMarket: 'm' });
+  });
+
+  it('gives older settings the Ctrl+Space palette hotkey unless another hotkey already uses it', async () => {
+    state.files.set('settings.json', JSON.stringify({ hotkeyKey: 'q' }));
+    const { result } = await renderLoaded();
+    expect(result.current.settings).toMatchObject({ hotkeyModifierPalette: 'ctrl', hotkeyKeyPalette: 'space' });
+    cleanup();
+
+    state.files.set('settings.json', JSON.stringify({ hotkeyModifierBuilds: 'ctrl', hotkeyKeyBuilds: 'space' }));
+    const taken = await renderLoaded();
+    expect(taken.result.current.settings.hotkeyKeyPalette).toBe('');
+    expect(taken.result.current.settings.hotkeyKeyBuilds).toBe('space');
+  });
+
+  it('starts the Horadric Sim try-on hotkey unbound, and never takes a combo the user bound elsewhere', async () => {
+    state.files.set('settings.json', JSON.stringify({ hotkeyModifierChat: 'ctrl', hotkeyKeyChat: 'j' }));
+    const { result } = await renderLoaded();
+    expect(result.current.settings).toMatchObject({
+      hotkeyModifierSimTryOn: 'ctrl',
+      hotkeyKeySimTryOn: '',
+      hotkeyKeyChat: 'j',
+      hotkeyKeyMarket: 'm',
+      hotkeyKeyPalette: 'space',
+    });
+    cleanup();
+
+    // A try-on combo counts as taken when a later-added hotkey's default is handed out
+    state.files.set('settings.json', JSON.stringify({ hotkeyModifierSimTryOn: 'ctrl', hotkeyKeySimTryOn: 'm' }));
+    const taken = await renderLoaded();
+    expect(taken.result.current.settings.hotkeyKeySimTryOn).toBe('m');
+    expect(taken.result.current.settings.hotkeyKeyMarket).toBe('');
   });
 
   it('does not rewrite a file that already has every default key', async () => {

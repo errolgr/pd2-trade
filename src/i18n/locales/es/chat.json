@@ -367,5 +367,10 @@
     "selectTitle": "Selecciona una conversación para ver los mensajes",
     "selectDescription": "Elige un chat a la izquierda.",
     "collapseTrader": "Contraer detalles del comerciante"
+  },
+  "palette": {
+    "open": "Abrir conversación",
+    "reply": "Responder",
+    "unread": "No leído"
   }
 }

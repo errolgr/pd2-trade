@@ -209,5 +209,22 @@
       "lowTitle": "{{n}} wohl geringer Wert · {{tab}}",
       "lowNote": "Prüfen-Items ohne Schlüsselwert"
     }
+  },
+  "listAtNetWorth": {
+    "menuItem": "Auf dem Markt anbieten…",
+    "alreadyListed": "Bereits angeboten",
+    "title": "Zum Vermögenspreis anbieten",
+    "loading": "Item wird in deiner Truhe gesucht…",
+    "gone": "Item verschoben oder weg — Vermögen aktualisieren",
+    "loadFailed": "Das Item konnte nicht aus deiner Truhe geladen werden.",
+    "pickItem": "Anzubietendes Item",
+    "listed": "Angeboten",
+    "allListed": "Bereits auf dem Markt angeboten.",
+    "manageListings": "Angebote verwalten",
+    "price": "Preis (HR)",
+    "note": "Notiz (optional)",
+    "list": "Anbieten",
+    "listFailed": "Das Item konnte nicht angeboten werden.",
+    "sessionExpired": "Deine PD2-Sitzung ist abgelaufen. Melde dich erneut an, um dieses Item anzubieten."
   }
 }

@@ -22,14 +22,15 @@ vi.mock('./appearance/layout', async () => {
   };
 });
 vi.mock('./account/layout', () => ({ default: () => <p>account-body</p> }));
-vi.mock('./chat/layout', () => ({ default: () => <p>chat-body</p> }));
+vi.mock('./chat/layout', () => ({ default: () => <p data-setting-key="whisperNotificationVolume">chat-body</p> }));
 vi.mock('./interface/layout', () => ({ default: () => <p>interface-body</p> }));
 vi.mock('./stats/layout', () => ({ default: () => <p>price-check-body</p> }));
+vi.mock('./market/layout', () => ({ default: () => <p>market-body</p> }));
 vi.mock('./networth/layout', () => ({ default: () => <p>net-worth-body</p> }));
 vi.mock('./hotkeys/layout', () => ({ default: () => <p>hotkeys-body</p> }));
 vi.mock('./about/layout', () => ({ default: () => <p>about-body</p> }));
 
-const SECTIONS = ['General', 'Account', 'Chat', 'Interface', 'Price Check', 'Net Worth', 'Hotkeys', 'About'];
+const SECTIONS = ['General', 'Account', 'Chat', 'Interface', 'Price Check', 'Market', 'Net Worth', 'Hotkeys', 'About'];
 
 let store: OptionsStore;
 const close = vi.fn();
@@ -132,6 +133,42 @@ describe('SettingsLayout navigation', () => {
     vi.mocked(usePanel).mockReturnValue({ close, payload: { section: 'Chat' }, payloadVersion: 3 } as never);
     view.rerender(<SettingsLayout />);
     expect(selected()).toEqual(['Chat']);
+  });
+});
+
+describe('SettingsLayout field jump', () => {
+  const row = () => screen.getByText('chat-body');
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  it('scrolls to the asked-for setting and flashes it, again on a re-open with the same field', () => {
+    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView');
+    const payload = { section: 'Chat', field: 'whisperNotificationVolume' };
+    vi.mocked(usePanel).mockReturnValue({ close, payload, payloadVersion: 1 } as never);
+    const view = renderLayout();
+    expect(selected()).toEqual(['Chat']);
+    expect(row().hasAttribute('data-highlighted')).toBe(true);
+    expect(scrollIntoView.mock.contexts).toEqual([row()]);
+
+    act(() => vi.advanceTimersByTime(1600));
+    expect(row().hasAttribute('data-highlighted')).toBe(false);
+
+    vi.mocked(usePanel).mockReturnValue({ close, payload, payloadVersion: 2 } as never);
+    view.rerender(<SettingsLayout />);
+    expect(row().hasAttribute('data-highlighted')).toBe(true);
+  });
+
+  it('only switches section when the setting is not on it', () => {
+    vi.mocked(usePanel).mockReturnValue({
+      close,
+      payload: { section: 'Chat', field: 'themeId' },
+      payloadVersion: 1,
+    } as never);
+    renderLayout();
+    expect(selected()).toEqual(['Chat']);
+    expect(row().hasAttribute('data-highlighted')).toBe(false);
   });
 });
 

@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import { listen } from '@/lib/browser-events';
 import { holdListener } from '@/lib/listener';
-import { cursorPosition, getCurrentWindow } from '@tauri-apps/api/window';
+import { cursorPosition, getCurrentWindow, type Window } from '@tauri-apps/api/window';
+import { getUiZoom } from '@/lib/ui-scale';
 import type { OverlayRect } from './types';
 
 /** Same debounce the old visibility manager used before hiding windows on focus loss. */
@@ -37,7 +38,7 @@ export function viewportRect(): OverlayRect {
   return { x: 0, y: 0, width: window.innerWidth, height: window.innerHeight };
 }
 
-/** Physical screen rect → CSS px relative to Main, given Main's outer position and scale factor. */
+/** Physical screen rect → CSS px relative to Main, given Main's outer position and physical px per CSS px. */
 export function screenToOverlayRect(
   rect: ScreenRect,
   outer: { x: number; y: number },
@@ -66,13 +67,18 @@ if (typeof window !== 'undefined') {
   );
 }
 
+/** Physical px per CSS px in Main: the monitor scale factor times the UI scale (webview zoom). */
+export async function overlayPixelRatio(win: Window = getCurrentWindow()): Promise<number> {
+  return (await win.scaleFactor()) * getUiZoom();
+}
+
 /** Current OS cursor in overlay CSS px (Tauri), else the last pointer position or the viewport center. */
 export async function getCursorPoint(): Promise<{ x: number; y: number }> {
   if (isTauri()) {
     try {
       const win = getCurrentWindow();
-      const [cursor, outer, sf] = await Promise.all([cursorPosition(), win.outerPosition(), win.scaleFactor()]);
-      return { x: (cursor.x - outer.x) / sf, y: (cursor.y - outer.y) / sf };
+      const [cursor, outer, ratio] = await Promise.all([cursorPosition(), win.outerPosition(), overlayPixelRatio(win)]);
+      return { x: (cursor.x - outer.x) / ratio, y: (cursor.y - outer.y) / ratio };
     } catch (error) {
       console.warn('[overlay] cursorPosition failed:', error);
     }
@@ -84,8 +90,8 @@ async function fetchGameRect(): Promise<OverlayRect> {
   const rect = await invoke<ScreenRect | null>('get_diablo_rect');
   if (!rect) return viewportRect();
   const win = getCurrentWindow();
-  const [outer, sf] = await Promise.all([win.outerPosition(), win.scaleFactor()]);
-  return screenToOverlayRect(gamePlayRect(rect), outer, sf);
+  const [outer, ratio] = await Promise.all([win.outerPosition(), overlayPixelRatio(win)]);
+  return screenToOverlayRect(gamePlayRect(rect), outer, ratio);
 }
 
 /**
@@ -173,10 +179,13 @@ export function useGameState(): { gameRect: OverlayRect; gameFocused: boolean } 
       holdListener(win.onMoved(refreshRect), 'window moved'),
       holdListener(win.onResized(refreshRect), 'window resized'),
     );
+    // A UI scale change resizes the viewport (CSS px) without moving or resizing the window.
+    window.addEventListener('resize', refreshRect);
 
     return () => {
       disposed = true;
       releases.forEach((release) => release());
+      window.removeEventListener('resize', refreshRect);
       clearTimeout(blurTimer);
       setRefreshing(false);
     };

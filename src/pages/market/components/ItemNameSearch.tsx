@@ -11,7 +11,9 @@ import {
   type MarketPriceItem,
   useMarketPrices,
 } from '@/pages/chat/hooks/useListingMarketPrices';
-import { itemNameOptions, type ItemNameOption } from '../lib/catalog';
+import { baseGroupMatches, type BaseGroup } from '../lib/catalog';
+import { suggestionKey as optionKey, type ItemNameSuggestion } from '../lib/name-suggestions';
+import { useItemNameSuggestions } from '../hooks/useItemNameSuggestions';
 import { Autocomplete, ClearButton } from './controls';
 import { formatHrPrice } from './ResultsList';
 import { useTranslation } from '@/i18n';
@@ -20,7 +22,18 @@ const NAME_SUGGESTIONS = 30;
 /** Prices are fetched once typing pauses this long (names show at once). */
 const PRICE_DEBOUNCE_MS = 150;
 
-const optionKey = (o: ItemNameOption) => `${o.quality}:${o.name}`;
+/** The name with the typed text highlighted (substring matches only; a typo or nickname match has none). */
+function SuggestionName({ option }: { option: ItemNameSuggestion }) {
+  const { highlight: h } = option;
+  if (!h) return <>{option.name}</>;
+  return (
+    <>
+      {option.name.slice(0, h.start)}
+      <mark className="bg-transparent font-semibold text-inherit">{option.name.slice(h.start, h.end)}</mark>
+      {option.name.slice(h.end)}
+    </>
+  );
+}
 
 /** Second line, right side: change this week and listings, the fallback window, or why there is no price. */
 function PriceDetail({ price, priced }: { price: ListingMarketPrice | null | undefined; priced: boolean }) {
@@ -42,19 +55,23 @@ function PriceDetail({ price, priced }: { price: ListingMarketPrice | null | und
 }
 
 /**
- * The market's item-name search (window top bar): suggestions as the site has them, each with its market price
- * in the search's realm, the change this week and how many listings it is based on. The filter applies once a
- * suggestion is picked; clearing the text clears it.
+ * The market's item-name search (window top bar): suggestions from the site's name list — found despite typos
+ * and by nicknames once the server's catalog search answers — each with its market price in the search's realm,
+ * the change this week and how many listings it is based on. The filter applies once a suggestion is picked;
+ * clearing the text clears it. Words for a family of items ("keys", "pgem", "ears") first offer its base group,
+ * which `onPickGroup` applies as the Type and Base filters instead of a name.
  */
 export function ItemNameSearch({
   value,
   onChange,
+  onPickGroup,
   ladder,
   hardcore,
   inputRef,
 }: {
   value: string | undefined;
   onChange: (v: string | undefined) => void;
+  onPickGroup: (group: BaseGroup) => void;
   ladder: boolean;
   hardcore: boolean;
   inputRef?: React.Ref<HTMLInputElement>;
@@ -67,21 +84,28 @@ export function ItemNameSearch({
     setShownValue(value);
     setText(value ?? '');
   }
-  const options = useMemo(() => itemNameOptions(text, NAME_SUGGESTIONS), [text]);
+  const { suggestions } = useItemNameSuggestions(text, NAME_SUGGESTIONS);
+  const options = useMemo(
+    (): ItemNameSuggestion[] => [
+      ...baseGroupMatches(text).map((group) => ({ name: group.label, quality: 'Base' as const, group })),
+      ...suggestions,
+    ],
+    [text, suggestions],
+  );
 
-  const [priceText, setPriceText] = useState(text);
+  const [priceOptions, setPriceOptions] = useState(options);
   useEffect(() => {
-    const id = window.setTimeout(() => setPriceText(text), PRICE_DEBOUNCE_MS);
+    const id = window.setTimeout(() => setPriceOptions(options), PRICE_DEBOUNCE_MS);
     return () => window.clearTimeout(id);
-  }, [text]);
+  }, [options]);
   const priceItems = useMemo(() => {
     const items: MarketPriceItem[] = [];
-    for (const o of itemNameOptions(priceText, NAME_SUGGESTIONS)) {
-      const code = namePriceCode(o.name, o.quality);
+    for (const o of priceOptions) {
+      const code = o.group ? null : namePriceCode(o.name, o.quality);
       if (code) items.push({ id: optionKey(o), code, isLadder: ladder, isHardcore: hardcore });
     }
     return items;
-  }, [priceText, ladder, hardcore]);
+  }, [priceOptions, ladder, hardcore]);
   const prices = useMarketPrices(priceItems);
 
   const { settings } = useOptions();
@@ -94,7 +118,7 @@ export function ItemNameSearch({
         aria-hidden
         className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground"
       />
-      <Autocomplete
+      <Autocomplete<ItemNameSuggestion>
         ariaLabel={t('nameSearch.label')}
         placeholder={t('nameSearch.placeholder')}
         inputRef={inputRef}
@@ -105,9 +129,20 @@ export function ItemNameSearch({
         }}
         options={options}
         optionKey={optionKey}
-        onPick={(o) => onChange(o.name)}
+        onPick={(o) => {
+          if (!o.group) return onChange(o.name);
+          setText('');
+          onPickGroup(o.group);
+        }}
         className={cn('h-7 pr-6 pl-7', value && 'text-foreground')}
         renderOption={(o) => {
+          if (o.group)
+            return (
+              <span className="flex flex-col gap-0.5 py-0.5">
+                <span className="truncate text-[13px] text-foreground">{o.name}</span>
+                <span className="truncate text-[11px] text-muted-foreground">{t('nameSearch.groupHint')}</span>
+              </span>
+            );
           const priced = !!namePriceCode(o.name, o.quality);
           const price = prices.get(optionKey(o));
           return (
@@ -119,14 +154,16 @@ export function ItemNameSearch({
                     o.quality === 'Runeword' ? 'text-q-rune' : qualityColor(o.quality),
                   )}
                 >
-                  {o.name}
+                  <SuggestionName option={o} />
                 </span>
                 <span className="shrink-0 font-semibold tabular-nums">
                   {price ? formatHrPrice(price.hr) : price === undefined && priced ? '' : '—'}
                 </span>
               </span>
               <span className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                <span className="min-w-0 flex-1 truncate">{o.slot ? `${o.quality} · ${o.slot}` : o.quality}</span>
+                <span className="min-w-0 flex-1 truncate">
+                  {[o.quality, o.slot, o.closeMatch && t('nameSearch.closeMatch')].filter(Boolean).join(' · ')}
+                </span>
                 <span className="shrink-0 tabular-nums">
                   <PriceDetail price={price}
                     priced={priced} />

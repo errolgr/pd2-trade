@@ -27,6 +27,7 @@ import {
   AuthenticationError,
   NoAccountSelectedError,
 } from '@/hooks/pd2website/usePD2Website';
+import { isNetworkError } from '@/lib/network-errors';
 import { useOptions } from '@/hooks/useOptions';
 import { CustomToastPayload, ToastActionType, GenericToastPayload } from '@/common/types/Events';
 import { shortcutFormSchema, ShortcutFormData } from './types';
@@ -34,7 +35,7 @@ import ItemSelectionList from './ItemSelectionList';
 import ListingFormFields from './ListingFormFields';
 import LoadingAndErrorStates from './LoadingAndErrorStates';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import ListedItemsTab from './ListedItemsTab';
+import MyListingsTab, { type ListingFocus } from '../listings/MyListingsTab';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { buildGetAllUserMarketListingsQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
 import { trackEvent, trackMeasurement } from '@/lib/telemetry';
@@ -84,7 +85,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   const [isMarketListingsLoading, setIsMarketListingsLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [totalListingsCount, setTotalListingsCount] = useState<number>(0);
-  const [allListings, setAllListings] = useState<MarketListingEntry[]>([]);
   const [isQueued, setIsQueued] = useState(false);
   const [queuedListingIds, setQueuedListingIds] = useState<Set<string>>(new Set());
   const [isPolling, setIsPolling] = useState(false);
@@ -105,7 +105,13 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     defaultValues: { type: 'exact', note: '', price: '', currency: 'HR' },
   });
 
-  const { close: handleClose } = usePanel<'quickList'>();
+  const { close: handleClose, payload, payloadVersion } = usePanel<'quickList'>();
+  // openPanel('quickList', { listingId, edit }) (the palette): the Manage tab, on that listing
+  const focusListing = useMemo<ListingFocus | null>(
+    () =>
+      payload?.listingId ? { listingId: payload.listingId, edit: payload.edit, version: payloadVersion } : null,
+    [payload, payloadVersion],
+  );
 
   // Complete reset function for new items
   // Note: Does not clear queuedListingIds - queued items should persist across item selections
@@ -161,13 +167,16 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     } catch (err) {
       const duration = performance.now() - startTime;
       trackMeasurement('list_item_matching_search', { duration_ms: duration }, { outcome: 'error' });
-      // Account mismatch / expired session / no account chosen are expected user-state conditions, not app bugs
-      if (
+      // Account mismatch / expired session / no account chosen are expected user-state conditions, not app bugs;
+      // PD2 unreachable (the HTTP plugin rejects with its error string) is nothing the app can fix
+      if (isNetworkError(err)) {
+        console.warn('[QuickList] Failed to find items:', err);
+      } else if (
         !(err instanceof AccountMismatchError) &&
         !(err instanceof AuthenticationError) &&
         !(err instanceof NoAccountSelectedError)
       ) {
-        console.error(err instanceof Error ? err.message : 'Failed to find items');
+        console.error('[QuickList] Failed to find items:', err);
       }
 
       // Handle account mismatch error with user-friendly message
@@ -253,27 +262,23 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     }
   }, [pd2MarketQuery, getMarketListingsForStashItems]);
 
-  // Fetch all user listings for the badge and to pass to ListedItemsTab
-  const allListingsQuery = useMemo(() => {
-    if (!authData || !settings) return null;
-    return buildGetAllUserMarketListingsQuery(
-      authData.user._id,
-      settings.mode === 'hardcore',
-      settings.ladder === 'ladder',
-      5, // Fetch first page (5 items to match ITEMS_PER_PAGE) to get both data and total count
-      0,
-    );
-  }, [authData, settings]);
+  // The listing count (tab chip, 50-listing check): one row is enough, PD2 sends the total. Keyed by the user,
+  // mode and ladder only, so other settings changes don't refetch it.
+  const userId = authData?.user?._id;
+  const hardcore = settings?.mode === 'hardcore';
+  const ladder = settings?.ladder === 'ladder';
+  const allListingsQuery = useMemo(
+    () => (userId ? buildGetAllUserMarketListingsQuery(userId, hardcore, ladder, 1, 0) : null),
+    [userId, hardcore, ladder],
+  );
 
   const fetchAllListings = useCallback(async () => {
     if (!allListingsQuery) return;
     try {
       const result = await getMarketListings(allListingsQuery);
-      setAllListings(result.data);
       setTotalListingsCount(result.total);
     } catch (err) {
       console.error('Failed to fetch all listings:', err);
-      setAllListings([]);
       setTotalListingsCount(0);
     }
   }, [allListingsQuery, getMarketListings]);
@@ -283,7 +288,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   }, [fetchAllListings]);
 
   // A listing removed anywhere (Manage tab, Ctrl+U delist, chat): drop it from the item's listings and
-  // refetch the badge count and the Manage tab's first page
+  // refetch the listing count
   useEffect(
     () =>
       subscribeListingDeleted((listingId) => {
@@ -319,6 +324,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         // Refresh listings count before checking to get the most up-to-date count
         if (allListingsQuery) {
           const listingsResult = await getMarketListings(allListingsQuery);
+          // null: a 401, re-authentication started
+          if (!listingsResult) throw new AuthenticationError('Sign in to PD2 to list this item');
           const currentTotalCount = listingsResult.total;
 
           // Check if user has reached the maximum number of listings (50)
@@ -363,7 +370,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
 
         showToast(toastPayload);
       } catch (err) {
-        console.error('[Queue] Failed to process queued listing:', err);
+        if (isNetworkError(err)) console.warn('[Queue] Failed to process queued listing:', err);
+        else if (!(err instanceof AuthenticationError)) console.error('[Queue] Failed to process queued listing:', err);
         trackMeasurement(
           'list_item_create',
           { duration_ms: performance.now() - startTime },
@@ -709,7 +717,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         { duration_ms: performance.now() - startTime },
         { outcome: 'error', source: isAlreadyListed ? undefined : 'direct' },
       );
-      console.error(err instanceof Error ? err.message : 'Failed to list/update item');
+      if (isNetworkError(err)) console.warn('[QuickList] Failed to list/update item:', err);
+      else if (!(err instanceof AuthenticationError)) console.error('[QuickList] Failed to list/update item:', err);
       setError(err instanceof Error ? err.message : t('shortcut.listUpdateFailed'));
     } finally {
       setSubmitLoading(false);
@@ -818,6 +827,9 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       setActiveTab('listed-items');
     }
   }, [item, resetAllState]);
+  useEffect(() => {
+    if (focusListing) setActiveTab('listed-items');
+  }, [focusListing]);
 
   // Render queued items view
   const renderQueuedItemsContent = () => {
@@ -1238,14 +1250,9 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           </TabsContent>
 
           <TabsContent value="listed-items"
-            className="flex-1 flex flex-col min-h-0 px-4 pt-3 pb-4">
-            <ListedItemsTab
-              onClose={handleClose}
-              initialListings={allListings}
-              initialTotalCount={totalListingsCount}
-              onTotalCountChange={setTotalListingsCount}
-              onListingsChange={setAllListings}
-            />
+            className="flex-1 flex flex-col min-h-0 px-3 pt-2.5 pb-3">
+            <MyListingsTab onTotalCountChange={setTotalListingsCount}
+              focus={focusListing} />
           </TabsContent>
 
           <TabsContent value="queued"

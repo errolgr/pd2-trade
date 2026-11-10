@@ -3,7 +3,7 @@
     "listItem": "List Item",
     "manage": "Manage",
     "queued": "Queued",
-    "mustBeInStash": "Item must be in your shared stash to list."
+    "mustBeInStash": "Item must be in your stash (shared or personal) to list."
   },
   "shortcut": {
     "findFailed": "Failed to find items",
@@ -28,7 +28,7 @@
     "noItemDescription": "Copy an item in-game (Ctrl+C) and reopen this window to list it, or select \"Manage Listings\" to view your active trades.",
     "noItemsFound": "No items found matching \"{{name}}\"",
     "whyNotFound": "Why wasn't my item found?",
-    "notFoundTooltip": "An item won't be found unless it is placed in your shared stash (not personal stash) and you have made a new game.",
+    "notFoundTooltip": "An item is found once it is in your shared stash or in the personal stash of a character in the mode picked in Settings, and you have made a new game.",
     "queueHint": "You can queue this item to be listed automatically. We'll wait for the server to sync it from your stash (usually takes a few minutes).",
     "noneMatch": "None of these match?",
     "queueModeHint": "Queue this item to wait for the new one to appear in your stash (usually takes a few minutes).",
@@ -132,7 +132,7 @@
     "noMatches": "No matches",
     "noMatchesFor": "No items found matching \"{{query}}\"",
     "noActiveTitle": "No active listings",
-    "noActiveDescription": "Items you list from your shared stash will show up here.",
+    "noActiveDescription": "Items you list from your stash will show up here.",
     "notSignedInTitle": "Not signed in",
     "notSignedInDescription": "Sign in to your PD2 account to manage your listings."
   },
@@ -168,5 +168,65 @@
     "hrPrice": "{{price}} HR",
     "listedAgo": "Listed {{time}}",
     "removing": "Removing..."
+  },
+  "autoDelist": {
+    "title": "Item left your stash",
+    "removed": "Removed the {{name}} listing: the item is no longer in your stash.",
+    "removeFailed": "{{name}} left your stash, but its listing couldn't be removed.",
+    "confirm": "{{name}} is no longer in your stash. Delist it?",
+    "confirmLookAlike": "An item like {{name}} left your stash. Delist your {{name}} listing?",
+    "pick": "Items like {{name}} left your stash. Choose which listings to remove.",
+    "delist": "Delist",
+    "keep": "Keep",
+    "choose": "Choose"
+  },
+  "myListings": {
+    "searchPlaceholder": "Search {{count}} listings…",
+    "readyListed": "bump ready · listed {{listed}}",
+    "bumpedListed": "bumped {{bumped}} · listed {{listed}}",
+    "sort": {
+      "label": "Sort listings",
+      "reverse": "Reverse order",
+      "attention": "Needs attention",
+      "bumped": "Last bumped",
+      "price": "Price",
+      "listed": "Date listed",
+      "deal": "Price vs market",
+      "name": "Name",
+      "updated": "Last updated"
+    },
+    "view": {
+      "label": "View",
+      "cards": "Cards",
+      "rows": "Compact rows"
+    },
+    "filter": {
+      "ready": "Bump ready {{count}}",
+      "offers": "Offers {{count}}"
+    },
+    "slots": "{{count}} / {{max}} slots",
+    "bumpReady_one": "Bump {{count}} ready",
+    "bumpReady_other": "Bump {{count}} ready",
+    "nothingToBump": "Nothing to bump",
+    "noneForFilter": "No listing matches this filter.",
+    "columns": {
+      "item": "Item",
+      "price": "Price",
+      "market": "Market",
+      "actions": "Actions"
+    },
+    "stats": {
+      "all": "Show all stats",
+      "less": "Show fewer stats"
+    },
+    "flags": {
+      "corrupted": "Corrupted",
+      "ethereal": "Eth",
+      "sockets": "{{count}} os"
+    }
+  },
+  "palette": {
+    "openOffer": "Open in chat",
+    "showListing": "Show in Manage"
   }
 }

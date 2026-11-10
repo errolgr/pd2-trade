@@ -34,7 +34,12 @@
     "loadMoreFailed": "Weitere konnten nicht geladen werden",
     "rateLimitedUntil": "Anfragelimit bis {{time}}",
     "listings": "Inserate",
-    "favorite": "Favorit"
+    "favorite": "Favorit",
+    "noMatchAll": "Keine Inserate passen zu allen Filtern",
+    "relaxHint": "Entferne einen: jeder zeigt, was übrig bleibt.",
+    "relaxDrop": "Ohne {{filter}}",
+    "relaxLabel": "Filter zum Entfernen",
+    "relaxDropCount": "Ohne {{filter}}: {{count}} Inserate"
   },
   "search": {
     "rateLimited": "Zu viele Marktsuchen. Versuche es gleich erneut.",
@@ -120,6 +125,7 @@
     "ethereal": "Ethereal",
     "desecrated": "Desecrated",
     "identified": "Identifiziert",
+    "anniversary": "Jubiläum",
     "mode": "Modus",
     "listedWithin": "Inseriert innerhalb",
     "sort": {
@@ -156,13 +162,25 @@
     "sellerPlaceholder": "Konto oder Nutzername",
     "sellerPicked": "Dieser Verkäufer (aus einem Inserat gewählt)",
     "clearSeller": "Verkäufer entfernen",
-    "modeLabel": "Softcore oder Hardcore"
+    "modeLabel": "Softcore oder Hardcore",
+    "applied": {
+      "not": "Nicht {{name}}"
+    }
   },
   "controls": {
     "min": "min",
     "max": "max",
     "minLabel": "{{label}} min",
     "maxLabel": "{{label}} max"
+  },
+  "facets": {
+    "count": "{{label}} · {{n, number}}",
+    "price": "{{from}}–{{to}} HR",
+    "priceOpen": "{{from}}+ HR",
+    "priceUpTo": "Bis {{to}} HR",
+    "priceAny": "beliebiger Preis",
+    "priceBars": "Inserate nach HR-Preis: {{selection}}",
+    "priceClear": "HR-Preis löschen"
   },
   "stats": {
     "min": "Min.",
@@ -347,7 +365,8 @@
     "online": "online",
     "buyout": "Sofortkauf",
     "listingAge": "Inseratalter",
-    "sort": "Sortierung"
+    "sort": "Sortierung",
+    "extendedStat": "Wert, den die Seite nicht abbilden kann"
   },
   "nameSearch": {
     "noSales": "keine Verkäufe",
@@ -356,7 +375,9 @@
     "fallbackWindow": "Ø {{window}} · {{listings}}",
     "label": "Item-Name",
     "placeholder": "Items suchen…  ( / )",
-    "clear": "Item-Name leeren"
+    "clear": "Item-Name leeren",
+    "closeMatch": "ähnlicher Name",
+    "groupHint": "Alle Sorten · setzt Typ und Basis"
   },
   "detail": {
     "label": "Inseratdetails",
@@ -495,5 +516,14 @@
     "notRemoved": "Favorit nicht entfernt",
     "notSaved": "Favorit nicht gespeichert",
     "refused": "projectdiablo2.com hat die Änderung abgelehnt. Versuche es gleich erneut."
+  },
+  "palette": {
+    "openInMarket": "Im Marktplatz suchen",
+    "watchPrice": "Preis beobachten",
+    "stopWatching": "Nicht mehr beobachten",
+    "buildsUsing": "Builds damit",
+    "copyName": "Namen kopieren",
+    "nameCopied": "Name kopiert",
+    "nameNotCopied": "Name nicht kopiert"
   }
 }

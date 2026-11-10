@@ -4,6 +4,7 @@
 
 import * as Sentry from '@sentry/react';
 import { AccountMismatchError } from '@/hooks/pd2website/usePD2Website';
+import { normalizeEndpoint } from '@/lib/sentry-grouping';
 
 /**
  * Report API errors to Sentry with proper grouping
@@ -35,15 +36,17 @@ export function reportApiError(
   // Only report 5xx errors to Sentry (server errors)
   // 4xx errors (like 404) are expected and don't need to be reported
   if (statusCodeNum && statusCodeNum >= 500 && statusCodeStr) {
+    // `/game/stash/<account>` → `/game/stash/:account` so one outage is one issue, not one per user
+    const route = normalizeEndpoint(endpoint);
     Sentry.withScope((scope) => {
       // Set fingerprint to group by status code and endpoint, not by request-specific identifiers
-      scope.setFingerprint(['api-error', serviceName, `status-${statusCodeStr}`, endpoint]);
+      scope.setFingerprint(['api-error', serviceName, `status-${statusCodeStr}`, route]);
 
       // Set generic tags for filtering
       scope.setTag('error_type', 'api_error');
       scope.setTag('service', serviceName);
       scope.setTag('status_code', statusCodeStr);
-      scope.setTag('endpoint', endpoint);
+      scope.setTag('endpoint', route);
 
       // Add additional context as tags for easy filtering (but doesn't affect grouping)
       if (additionalContext) {
@@ -66,7 +69,7 @@ export function reportApiError(
       }
 
       // Create a generic error message but preserve the original error's stack trace
-      const genericError = new Error(`${serviceName} ${statusCodeStr} error on ${endpoint}`);
+      const genericError = new Error(`${serviceName} ${statusCodeStr} error on ${route}`);
       genericError.name = 'APIError';
 
       // Preserve the original error's stack trace if available

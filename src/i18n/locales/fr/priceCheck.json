@@ -27,8 +27,10 @@
     "header": {
       "base": "Base : {{type}}",
       "type": "Type : {{type}}",
+      "group": "Groupe : {{group}}",
       "toggleSearchMode": "Cliquez pour changer de mode de recherche",
       "cycleQuality": "Cliquez pour changer de qualité",
+      "anyQuality": "Toutes",
       "defense": "Défense : <value>{{defense}}</value>",
       "appraisalNote": "Note d'évaluation : {{note}}"
     },
@@ -72,14 +74,14 @@
       "clearTitle": "Décocher toutes les stats"
     },
     "actions": {
-      "openTradeAria": "Ouvrir la recherche sur projectdiablo2.com",
-      "openTradeTooltip": "Ouvrir cette recherche sur projectdiablo2.com",
+      "openTrade": "Ouvrir la recherche sur projectdiablo2.com",
+      "more": "Plus",
       "openInMarket": "Ouvrir dans le marché",
       "list": "Vendre",
-      "listDisabled": "L'objet doit être dans votre coffre partagé pour être mis en vente.",
-      "showExpired": "Afficher expirées"
+      "listDisabled": "L'objet doit être dans votre coffre (partagé ou personnel) pour être mis en vente."
     },
     "results": {
+      "source": { "label": "Annonces à rechercher", "live": "Actives", "expired": "Expirées" },
       "matches": "Résultats : <value>{{total}}</value>",
       "showing": "· {{shown}} affichés",
       "loading": "Chargement des annonces...",
@@ -88,19 +90,49 @@
       "noListings": "Aucune annonce trouvée",
       "loosenFilters": "Essayez d'assouplir vos filtres de stats.",
       "loosenFiltersOrExpired": "Essayez d'assouplir vos filtres de stats ou activez Afficher expirées.",
+      "relax": {
+        "title": "Aucune annonce ne correspond à tous ces filtres",
+        "hint": "Retirez-en un : chacun montre ce qui reste.",
+        "ranges": "Plages de stats",
+        "corrupted": "Corrompu",
+        "notCorrupted": "Non corrompu",
+        "corruptions": "Filtre de corruption",
+        "showExpired": "Afficher expirées"
+      },
       "readyTitle": "Prêt à rechercher",
       "readyHint": "Choisissez les stats importantes, puis cliquez sur Rechercher ou appuyez sur Enter dans un champ min/max.",
       "price": "Prix",
-      "listed": "Publiée",
       "loadingMore": "Chargement...",
-      "loadMore": "Charger plus"
+      "loadMore": "Charger plus",
+      "sortPrice": "Trier par prix",
+      "sortListed": "Trier par date de mise en vente",
+      "filteredInGame": "· {{count}} en jeu",
+      "filteredOnSite": "· {{count}} sur le site",
+      "filteredOnline": "· {{count}} en ligne",
+      "noSellerMatch": "Aucun vendeur ici ne correspond au filtre vendeur.",
+      "sellerFilter": "Filtre vendeur",
+      "seller": "Vendeur",
+      "sellerAnyone": "Tous",
+      "sellerInGame": "En jeu",
+      "sellerOnSite": "Sur le site d'échange",
+      "sellerEither": "En jeu ou sur le site",
+      "age": "Âge"
     },
     "listing": {
       "copyWhisper": "Copier le message privé",
       "whisperCopied": "Message privé copié, clic droit pour coller",
-      "onlineCopyWhisper": "En ligne en jeu · cliquez pour copier le message privé",
       "seller": "Vendeur : <name>{{seller}}</name>",
-      "online": "En ligne en jeu"
+      "online": "En ligne en jeu",
+      "endedSold": "vendu après {{duration}}",
+      "endedRemoved": "retiré après {{duration}}",
+      "endedExpired": "expiré après {{duration}}",
+      "endedAt": "Terminé {{when}}",
+      "listedFor": "En vente depuis {{duration}}",
+      "onSite": "Sur le site d'échange",
+      "notOnSite": "Pas sur le site d'échange",
+      "notInGame": "Pas en jeu",
+      "inGame": "En jeu",
+      "presenceWhisper": "{{presence}} · cliquer pour copier le chuchotement"
     }
   },
   "statRow": {

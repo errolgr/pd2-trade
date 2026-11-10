@@ -17,7 +17,7 @@
     "itemNotSupported": "Objet non pris en charge ou invalide.",
     "nothingCopied": "Aucun objet n'a été copié. Survolez un objet en jeu et réessayez, ou appuyez d'abord sur Ctrl+C dessus.",
     "cannotListItem": "Impossible de mettre en vente",
-    "notInSharedStash": "Cet objet n'est pas dans votre coffre partagé et ne peut pas être mis en vente.",
+    "notInStash": "Cet objet n'est pas dans votre coffre (partagé ou personnel) et ne peut pas être mis en vente.",
     "delist": "Retirer",
     "noItemUnderCursor": "Aucun objet valide sous le curseur."
   },
@@ -34,16 +34,26 @@
     "tradeOffers_many": "{{count}} d'offres d'échange",
     "tradeOffers_other": "{{count}} offres d'échange",
     "disableOverlay": "Désactiver l'overlay",
+    "move": "Déplacer {{label}}",
+    "moveHint": "Glisser pour réordonner (ou ↑/↓)",
+    "favorite": "Favori : {{label}}",
+    "addFavorite": "Ajouter aux favoris (l’onglet)",
+    "removeFavorite": "Retirer des favoris (l’onglet)",
     "menu": {
       "chat": "Chat",
       "market": "Marché",
       "builds": "Builds",
+      "sim": "Horadric Sim",
       "netWorth": "Valeur nette",
       "stashValue": "Valeur du coffre",
       "offers": "Offres",
       "manageListings": "Gérer les annonces",
-      "settings": "Paramètres"
-    }
+      "settings": "Paramètres",
+      "notifications": "Notifications"
+    },
+    "missedNotifications_one": "{{count}} notification manquée",
+    "missedNotifications_many": "{{count}} de notifications manquées",
+    "missedNotifications_other": "{{count}} notifications manquées"
   },
   "chatTemplateForm": {
     "name": "Nom",
@@ -102,7 +112,34 @@
       "lockedTitle": "Verrouillé : le glisser ne déplace pas le minuteur. Cliquez pour déverrouiller.",
       "unlockedTitle": "Empêche le minuteur de bouger quand on le glisse."
     },
+    "direction": {
+      "up": "La liste s’ouvre vers le haut",
+      "down": "La liste s’ouvre vers le bas",
+      "upTitle": "S’ouvre vers le haut. Cliquez pour l’ouvrir vers le bas désormais.",
+      "downTitle": "S’ouvre vers le bas. Cliquez pour l’ouvrir vers le haut désormais."
+    },
     "toastTitle": "Zone corrompue",
-    "toastDescription": "{{zone}} : créez une nouvelle partie Hell (jusqu'à {{until}})"
+    "toastDescription": "{{zone}} : créez une nouvelle partie Hell (jusqu'à {{until}})",
+    "toastSoonDescription": "{{zone}} dans {{minutes}} min : créez une nouvelle partie Hell à partir de {{from}} (jusqu'à {{until}})"
+  },
+  "notificationLog": {
+    "title": "Notifications",
+    "close": "Fermer",
+    "clear": "Effacer",
+    "filters": "Filtrer les notifications",
+    "filter": {
+      "all": "Toutes",
+      "trade": "Échange",
+      "chat": "Chat",
+      "alerts": "Alertes",
+      "system": "Système"
+    },
+    "empty": "Rien pour le moment.",
+    "missed_one": "Manquée · {{count}}",
+    "missed_many": "Manquées · {{count}}",
+    "missed_other": "Manquées · {{count}}",
+    "earlier": "Plus tôt",
+    "rowHint": "Cliquez pour ouvrir · glissez à gauche ou à droite pour retirer",
+    "rowHintRemoveOnly": "Glissez à gauche ou à droite pour retirer"
   }
 }

@@ -6,8 +6,10 @@ import { DUR, EASE_OUT } from '@/lib/motion';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { facetShare } from '../lib/facets';
 import type { Tri } from '../lib/types';
 import { useTranslation } from '@/i18n';
+import { FACET_DIM, FacetHairline, FacetRowTip, FacetTip, facetFill, useFacetText } from './FacetCounts';
 
 /*
  * Dense form controls for the market filter sidebar. Everything is h-7 / text-xs so the full site filter set
@@ -18,6 +20,19 @@ import { useTranslation } from '@/i18n';
 export const ANY = '__any';
 
 export const fieldInputClass = 'h-7 rounded-md px-2 text-xs shadow-none';
+
+/**
+ * What a hovered empty-search suggestion would drop, marked in the sidebar: a Section by its title, a Field by its
+ * label, a stat row by its id. Null: nothing hovered.
+ */
+export interface FilterHighlight {
+  section?: string;
+  field?: string;
+  statId?: string;
+}
+export const FilterHighlightContext = React.createContext<FilterHighlight | null>(null);
+/** A marked filter: an inset ring and tint, so nothing moves or gets clipped. */
+export const FILTER_HIGHLIGHT_CLASS = 'rounded-md bg-primary/10 ring-1 ring-inset ring-primary/60';
 
 /**
  * Collapsible sidebar section with a count badge of its active filters. Uncontrolled (`defaultOpen`) unless
@@ -43,9 +58,15 @@ export function Section({
   const [openState, setOpenState] = useState(defaultOpen);
   const open = openProp ?? openState;
   const id = useId();
+  const highlighted = React.useContext(FilterHighlightContext)?.section === title;
   return (
     <section className="border-b border-border/60 last:border-b-0">
-      <div className="flex items-center gap-1 px-2.5 py-1.5">
+      <div
+        className={cn(
+          'flex items-center gap-1 px-2.5 py-1.5 transition-colors duration-(--dur-fast)',
+          highlighted && FILTER_HIGHLIGHT_CLASS,
+        )}
+      >
         <button
           type="button"
           aria-expanded={open}
@@ -89,8 +110,14 @@ export function Section({
 
 /** Label on the left, control on the right — one line per filter. */
 export function Field({ label, htmlFor, children }: { label: string; htmlFor?: string; children: React.ReactNode }) {
+  const highlight = React.useContext(FilterHighlightContext);
   return (
-    <div className="grid grid-cols-[88px_minmax(0,1fr)] items-center gap-2">
+    <div
+      className={cn(
+        'grid grid-cols-[88px_minmax(0,1fr)] items-center gap-2 transition-colors duration-(--dur-fast)',
+        !!label && highlight?.field === label && FILTER_HIGHLIGHT_CLASS,
+      )}
+    >
       <label htmlFor={htmlFor}
         className="truncate text-xs text-muted-foreground">
         {label}
@@ -100,6 +127,13 @@ export function Field({ label, htmlFor, children }: { label: string; htmlFor?: s
   );
 }
 
+/** A segment's facet look: hairline `share`, dimmed when it finds nothing, `text` its exact count (no facets: none). */
+export interface SegmentFacet {
+  text?: string;
+  share: number;
+  empty: boolean;
+}
+
 /** Small segmented control (the shared look of tri-states, mode switches and sort direction). */
 export function Segmented<T extends string>({
   value,
@@ -107,12 +141,15 @@ export function Segmented<T extends string>({
   onChange,
   label,
   className,
+  selectedClassName,
 }: {
   value: T;
-  options: { value: T; label: React.ReactNode; title?: string }[];
+  options: { value: T; label: React.ReactNode; title?: string; facet?: SegmentFacet }[];
   onChange: (value: T) => void;
   label: string;
   className?: string;
+  /** Extra classes for the selected option. */
+  selectedClassName?: string;
 }) {
   return (
     <div
@@ -120,32 +157,70 @@ export function Segmented<T extends string>({
       aria-label={label}
       className={cn('flex h-7 w-full rounded-md border border-input bg-background/40 p-0.5', className)}
     >
-      {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          role="radio"
-          aria-checked={value === o.value}
-          title={o.title}
-          onClick={() => onChange(o.value)}
-          className={cn(
-            'min-w-0 flex-1 truncate rounded-[5px] px-1.5 text-[11px] font-medium text-muted-foreground outline-none transition-[color,background-color] duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
-            value === o.value && 'bg-accent text-accent-foreground shadow-xs',
-          )}
-        >
-          {o.label}
-        </button>
-      ))}
+      {options.map((o) => {
+        const button = (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={value === o.value}
+            aria-label={o.facet?.text}
+            title={o.title}
+            onClick={() => onChange(o.value)}
+            className={cn(
+              'relative min-w-0 flex-1 truncate rounded-[5px] px-1.5 text-[11px] font-medium text-muted-foreground outline-none transition-[color,background-color,opacity] duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
+              value === o.value && cn('bg-accent text-accent-foreground shadow-xs', selectedClassName),
+              o.facet?.empty && value !== o.value && FACET_DIM,
+            )}
+          >
+            {o.label}
+            {o.facet && <FacetHairline share={o.facet.share}
+              inset={6} />}
+          </button>
+        );
+        // Options with a facet always get their tooltip, so they keep focus when counts come and go
+        return o.facet ? (
+          <FacetTip key={o.value}
+            text={o.facet.text}>
+            {button}
+          </FacetTip>
+        ) : (
+          button
+        );
+      })}
     </div>
   );
 }
 
-export function TriField({ label, value, onChange }: { label: string; value: Tri; onChange: (v: Tri) => void }) {
+/**
+ * Any / Yes / No; `counts` (facets) of Yes and No: hairlines as their share of both, the exact count on hover / focus.
+ */
+export function TriField({
+  label,
+  value,
+  onChange,
+  counts,
+}: {
+  label: string;
+  value: Tri;
+  onChange: (v: Tri) => void;
+  counts?: { yes?: number; no?: number };
+}) {
   const { t } = useTranslation(['market', 'common']);
-  const options: { value: Tri; label: string }[] = [
-    { value: 'any', label: t('filters.any') },
-    { value: 'yes', label: t('common:actions.yes') },
-    { value: 'no', label: t('common:actions.no') },
+  const facetText = useFacetText();
+  const total = (counts?.yes ?? 0) + (counts?.no ?? 0);
+  const facet = (text: string, count: number | undefined): SegmentFacet | undefined =>
+    counts && {
+      text: count === undefined ? undefined : facetText(text, count),
+      share: facetShare(count, total),
+      empty: count === 0,
+    };
+  const yes = t('common:actions.yes');
+  const no = t('common:actions.no');
+  const options = [
+    { value: 'any' as const, label: t('filters.any') },
+    { value: 'yes' as const, label: yes, facet: facet(yes, counts?.yes) },
+    { value: 'no' as const, label: no, facet: facet(no, counts?.no) },
   ];
   return (
     <Field label={label}>
@@ -236,7 +311,11 @@ export function RangeField({
   );
 }
 
-/** Compact Select; `anyLabel` (default "Any") adds an entry mapped to undefined, `anyLabel: null` omits it. */
+/**
+ * Compact Select; `anyLabel` (default "Any") adds an entry mapped to undefined, `anyLabel: null` omits it. An
+ * option's `count` (facets) shows in the list, not in the trigger; `depth: 1` indents it under the option above
+ * (a type group's member types).
+ */
 export function SelectField({
   label,
   value,
@@ -247,13 +326,14 @@ export function SelectField({
 }: {
   label: string;
   value: string | undefined;
-  options: { value: string; label: string }[];
+  options: { value: string; label: string; count?: number; depth?: 0 | 1 }[];
   onChange: (v: string | undefined) => void;
   anyLabel?: string | null;
   disabled?: boolean;
 }) {
   const { t } = useTranslation('market');
   const anyLabel = anyLabelProp === undefined ? t('filters.any') : anyLabelProp;
+  const peak = Math.max(0, ...options.map((o) => o.count ?? 0));
   return (
     <Field label={label}>
       <Select value={value ?? ANY}
@@ -271,15 +351,56 @@ export function SelectField({
             </SelectItem>
           )}
           {options.map((o) => (
-            <SelectItem key={o.value}
+            <FacetSelectItem
+              key={o.value}
               value={o.value}
-              className="text-xs">
-              {o.label}
-            </SelectItem>
+              label={o.label}
+              count={o.count}
+              depth={o.depth}
+              peak={peak}
+              selected={o.value === value}
+            />
           ))}
         </SelectContent>
       </Select>
     </Field>
+  );
+}
+
+/** A select option with its facet count (if any): row fill as its share of the busiest option, dimmed at 0. */
+function FacetSelectItem({
+  value,
+  label,
+  count,
+  depth,
+  peak,
+  selected,
+}: {
+  value: string;
+  label: string;
+  count: number | undefined;
+  depth: 0 | 1 | undefined;
+  peak: number;
+  selected: boolean;
+}) {
+  const facetText = useFacetText();
+  const [focused, setFocused] = useState(false);
+  const text = count === undefined ? undefined : facetText(label, count);
+  return (
+    <SelectItem
+      value={value}
+      // With a count, it is part of the option's name (Radix names options by their text alone)
+      {...(text && { 'aria-label': text, 'aria-labelledby': undefined })}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      style={facetFill(facetShare(count, peak))}
+      // The picked option stays readable even when it finds nothing
+      className={cn('text-xs', depth === 1 && 'pl-5', count === 0 && !selected && FACET_DIM)}
+      aside={text && <FacetRowTip text={text}
+        open={focused} />}
+    >
+      {label}
+    </SelectItem>
   );
 }
 

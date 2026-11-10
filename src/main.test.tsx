@@ -10,6 +10,8 @@ vi.mock('@sentry/react', () => ({
   captureConsoleIntegration: vi.fn(),
   browserTracingIntegration: vi.fn(),
   replayIntegration: vi.fn(),
+  getClient: vi.fn(),
+  getReplay: vi.fn(),
 }));
 vi.mock('@/lib/debug-logger', () => ({ initDebugLoggingFromSettings: vi.fn() }));
 vi.mock('@/lib/themes', () => ({ initTheme: vi.fn() }));
@@ -45,6 +47,7 @@ vi.mock('./overlay/registry', () => ({ PANEL_DEFS: {} }));
 vi.mock('./components/GlobalErrorHandler', () => ({ GlobalErrorHandler: () => <p>error-handler</p> }));
 vi.mock('./pages/landing/AppController', () => ({ default: () => <p>app-controller</p> }));
 vi.mock('./pages/delist/DelistHandler', () => ({ default: () => <p>delist-handler</p> }));
+vi.mock('./pages/delist/StashAutoDelistController', () => ({ default: () => <p>stash-auto-delist</p> }));
 vi.mock('./pages/net-worth/NetWorthOverlayController', () => ({ default: () => <p>net-worth-controller</p> }));
 vi.mock('./pages/corrupted-zones/CorruptedZoneTimerController', () => ({
   default: () => <p>zone-timer-controller</p>,
@@ -61,6 +64,8 @@ async function boot(path: string) {
   await act(async () => {
     await import('./main');
   });
+  // Telemetry starts after an async settings.json read (localStorage in browser mode)
+  await vi.advanceTimersByTimeAsync(0);
   return {
     text: document.getElementById('root')!.textContent,
     root: document.getElementById('root')!,
@@ -79,6 +84,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
+  localStorage.clear();
 });
 
 describe('main routing', () => {
@@ -92,7 +98,7 @@ describe('main routing', () => {
       expect(node, name).not.toBeNull();
     }
     expect(node!.textContent).toBe(
-      'error-handlerapp-controllerdelist-handlernet-worth-controllerzone-timer-controlleroverlay-root',
+      'error-handlerapp-controllerdelist-handlerstash-auto-delistnet-worth-controllerzone-timer-controlleroverlay-root',
     );
   });
 
@@ -151,6 +157,15 @@ describe('main Sentry setup', () => {
     }
   });
 
+  it('starts neither Sentry nor Faro when settings.json opts out of telemetry', async () => {
+    localStorage.setItem('fs:13/settings.json', JSON.stringify({ telemetryOptOut: true }));
+    const { Sentry } = await boot('/');
+    const { initFaro } = await import('@/lib/faro');
+    vi.advanceTimersByTime(5000);
+    expect(Sentry.init).not.toHaveBeenCalled();
+    expect(initFaro).not.toHaveBeenCalled();
+  });
+
   it('drops Tauri IPC breadcrumbs but keeps other HTTP breadcrumbs', async () => {
     const opts = (await boot('/')).sentryOptions();
     const ipc = { category: 'http', data: { url: 'http://ipc.localhost/plugin' } };
@@ -199,6 +214,7 @@ describe('main Sentry setup', () => {
     expect(send(server, new PD2ApiError('API Error: 502 Bad Gateway', 502, '/x'))).toBe(server);
     expect(send({ message: 'Failed: API Error: 500 Internal Server Error' })).toEqual({
       message: 'Failed: API Error: 500 Internal Server Error',
+      fingerprint: ['pd2-api-error', 'status-500'],
     });
   });
 });

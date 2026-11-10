@@ -1,0 +1,61 @@
+{
+  "input": {
+    "label": "Paleta poleceń",
+    "placeholder": "Szukaj przedmiotów, buildów, ustawień…",
+    "scopedPlaceholder": "Szukaj…"
+  },
+  "groups": {
+    "actions": "Akcje",
+    "items": "Przedmioty",
+    "builds": "Buildy",
+    "chat": "Czat",
+    "listings": "Oferty",
+    "settings": "Ustawienia",
+    "sim": "Horadric Sim",
+    "pinned": "Przypięte",
+    "recent": "Ostatnie"
+  },
+  "scope": {
+    "tabHint": "Tab, aby zawęzić",
+    "remove": "Przestań szukać tylko w: {{label}}"
+  },
+  "loading": "Wyszukiwanie…",
+  "signIn": {
+    "title": "Zaloguj się, aby przeszukiwać czaty i oferty"
+  },
+  "empty": {
+    "noResults": "Brak wyników dla „{{query}}”"
+  },
+  "footer": {
+    "move": "↑↓ wybór",
+    "open": "↵ otwórz",
+    "actions": "Ctrl+K akcje",
+    "scope": "Tab zawęź",
+    "unscope": "Backspace cofnij",
+    "close": "Esc zamknij"
+  },
+  "menu": {
+    "label": "Akcje: {{title}}",
+    "placeholder": "Szukaj akcji…",
+    "pin": "Przypnij do palety",
+    "unpin": "Odepnij od palety"
+  },
+  "errors": {
+    "actionFailed": "Nie udało się"
+  },
+  "actions": {
+    "market": "Rynek",
+    "chat": "Czat",
+    "offers": "Oferty wymiany",
+    "builds": "Buildy",
+    "stashValue": "Wartość skrzyni",
+    "snapshot": "Zrób migawkę majątku",
+    "myListings": "Moje oferty",
+    "settings": "Ustawienia",
+    "changelog": "Co nowego",
+    "checkUpdates": "Sprawdź aktualizacje",
+    "signIn": "Zaloguj się",
+    "signOut": "Wyloguj się",
+    "notifications": "Powiadomienia"
+  }
+}

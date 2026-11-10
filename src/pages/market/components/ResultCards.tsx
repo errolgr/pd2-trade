@@ -3,6 +3,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { motion } from 'framer-motion';
 import { DUR, EASE_OUT } from '@/lib/motion';
 import { Bell, Clock, ExternalLink, Gamepad2, Heart, MessageSquare, Shield, Sigma, Swords, X } from 'lucide-react';
+import { useSimAccess } from '@/hooks/useSimAccess';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -17,14 +18,16 @@ import type { JewelElement } from '@/pages/chat/lib/listing-art';
 import { useListingActions } from '../hooks/useListingActions';
 import { buildCardModel, modMatchesStatKey, type CardMod, type SocketGroup } from '../lib/card-model';
 import { listingAge, sellerAccount } from '../lib/listing';
+import { isAnniversaryItem } from '../lib/anniversary';
 import type { MarketApi, ScoredListing } from '../lib/types';
 import { itemNameColor } from './ItemTooltip';
 import { OfferButton, WhisperButton, iconActionClass } from './ListingActions';
-import { LoadMoreFooter, type LoadMoreState, OnlineDots, formatHrPrice } from './ResultsList';
+import { LoadMoreFooter, type LoadMoreState, OnlineDots, formatHrPrice, itemArtGlow } from './ResultsList';
 import { formatStat, statWithValue } from './stat-text';
 import { AddAllModsButton, ModMenu } from './ModMenu';
 import { EnterOnce, type EnterTracker } from './EnterOnce';
 import { SellerName } from './SellerName';
+import { MarketSimButton } from './MarketSimButton';
 import { OfferBadge } from './OfferBadge';
 import type { ListingOffers } from '../lib/listing-offers';
 import type { AlertGlow } from '../hooks/useLiveAlertGlow';
@@ -121,6 +124,12 @@ export function ResultCards({
     paddingEnd: PADDING,
     gap: GAP,
   });
+
+  // A fresh result set (new search, filter change) starts at the top; appended pages keep the position.
+  // Before the selection effect, so a kept selection still scrolls into view.
+  useEffect(() => {
+    virtualizer.scrollToOffset(0);
+  }, [enter.generation, virtualizer]);
 
   // Keep the keyboard selection in view
   const selectedIndex = selectedId ? rows.findIndex((r) => r.listing._id === selectedId) : -1;
@@ -277,6 +286,7 @@ const ResultCard = React.memo(function ResultCard({
   const { item } = listing;
   const model = useMemo(() => buildCardModel(item), [item]);
   const actions = useListingActions(listing);
+  const simAccess = useSimAccess();
   const [hovered, setHovered] = useState<number | null>(null);
 
   // Socket prices (runes, priced uniques…) through the economy service, one pseudo-listing per group
@@ -350,7 +360,7 @@ const ResultCard = React.memo(function ResultCard({
           <ListingThumb
             listing={listing}
             className="size-full border-0 bg-none shadow-none"
-            artClassName="max-h-[68px] max-w-14"
+            artClassName={cn('max-h-[68px] max-w-14', itemArtGlow(item))}
           />
         </div>
         <div className="min-w-0 flex-1">
@@ -367,7 +377,12 @@ const ResultCard = React.memo(function ResultCard({
               <span className={cn(pill, 'border-border/70 text-muted-foreground')}>{`${item.socket_count}os`}</span>
             )}
             {item.corrupted && <span className={cn(pill, 'border-border/70 text-q-corrupted')}>Corrupted</span>}
-            {item.is_ethereal && <span className={cn(pill, 'border-border/70 text-muted-foreground')}>Ethereal</span>}
+            {item.is_ethereal && (
+              <span className={cn(pill, 'border-q-normal bg-q-normal text-background')}>Ethereal</span>
+            )}
+            {isAnniversaryItem(item) && (
+              <span className={cn(pill, 'border-q-unique/50 text-q-unique')}>Anniversary</span>
+            )}
             {item.item_level > 0 && (
               <span className={cn(pill, 'border-border/70 text-muted-foreground')}>{`ilvl ${item.item_level}`}</span>
             )}
@@ -549,6 +564,8 @@ const ResultCard = React.memo(function ResultCard({
           >
             <ExternalLink className="size-3.5" />
           </Button>
+          {simAccess && !archived && <MarketSimButton access={simAccess}
+            listingId={listing._id} />}
           {!archived && <WhisperButton actions={actions}
             dense />}
           {!archived && (

@@ -17,7 +17,7 @@
     "itemNotSupported": "Przedmiot nie jest obsługiwany lub jest nieprawidłowy.",
     "nothingCopied": "Nie skopiowano żadnego przedmiotu. Najedź kursorem na przedmiot w grze i spróbuj ponownie albo najpierw naciśnij na nim Ctrl+C.",
     "cannotListItem": "Nie można wystawić przedmiotu",
-    "notInSharedStash": "Tego przedmiotu nie ma w twojej wspólnej skrzyni, więc nie można go wystawić.",
+    "notInStash": "Tego przedmiotu nie ma w twojej skrzyni (wspólnej ani osobistej), więc nie można go wystawić.",
     "delist": "Wycofaj",
     "noItemUnderCursor": "Nie znaleziono prawidłowego przedmiotu pod kursorem."
   },
@@ -36,16 +36,27 @@
     "tradeOffers_many": "{{count}} ofert handlu",
     "tradeOffers_other": "{{count}} oferty handlu",
     "disableOverlay": "Wyłącz nakładkę",
+    "move": "Przenieś {{label}}",
+    "moveHint": "Przeciągnij, aby zmienić kolejność (lub ↑/↓)",
+    "favorite": "Ulubione: {{label}}",
+    "addFavorite": "Dodaj do ulubionych (karta)",
+    "removeFavorite": "Usuń z ulubionych (karta)",
     "menu": {
       "chat": "Czat",
       "market": "Przeglądarka rynku",
       "builds": "Buildy",
+      "sim": "Horadric Sim",
       "netWorth": "Majątek",
       "stashValue": "Wartość skrzyni",
       "offers": "Oferty",
       "manageListings": "Zarządzaj ogłoszeniami",
-      "settings": "Ustawienia"
-    }
+      "settings": "Ustawienia",
+      "notifications": "Powiadomienia"
+    },
+    "missedNotifications_one": "{{count}} pominięte powiadomienie",
+    "missedNotifications_few": "{{count}} pominięte powiadomienia",
+    "missedNotifications_many": "{{count}} pominiętych powiadomień",
+    "missedNotifications_other": "{{count}} pominiętego powiadomienia"
   },
   "chatTemplateForm": {
     "name": "Nazwa",
@@ -105,7 +116,35 @@
       "lockedTitle": "Zablokowany: przeciąganie nie przesuwa licznika. Kliknij, aby odblokować.",
       "unlockedTitle": "Nie pozwól, by licznik przesuwał się przy przeciąganiu."
     },
+    "direction": {
+      "up": "Lista otwiera się w górę",
+      "down": "Lista otwiera się w dół",
+      "upTitle": "Otwiera się w górę. Kliknij, aby od teraz otwierała się w dół.",
+      "downTitle": "Otwiera się w dół. Kliknij, aby od teraz otwierała się w górę."
+    },
     "toastTitle": "Skażona strefa",
-    "toastDescription": "{{zone}}: utwórz nową grę Hell (do {{until}})"
+    "toastDescription": "{{zone}}: utwórz nową grę Hell (do {{until}})",
+    "toastSoonDescription": "{{zone}} za {{minutes}} min: utwórz nową grę Hell od {{from}} (do {{until}})"
+  },
+  "notificationLog": {
+    "title": "Powiadomienia",
+    "close": "Zamknij",
+    "clear": "Wyczyść",
+    "filters": "Filtruj powiadomienia",
+    "filter": {
+      "all": "Wszystkie",
+      "trade": "Handel",
+      "chat": "Czat",
+      "alerts": "Alerty",
+      "system": "System"
+    },
+    "empty": "Na razie nic tu nie ma.",
+    "missed_one": "Pominięte · {{count}}",
+    "missed_few": "Pominięte · {{count}}",
+    "missed_many": "Pominięte · {{count}}",
+    "missed_other": "Pominięte · {{count}}",
+    "earlier": "Wcześniejsze",
+    "rowHint": "Kliknij, aby otworzyć · przesuń w lewo lub prawo, aby usunąć",
+    "rowHintRemoveOnly": "Przesuń w lewo lub prawo, aby usunąć"
   }
 }

@@ -5,6 +5,7 @@
     "lookupPlaceholder": "Имя персонажа…",
     "lookupLabel": "Найти персонажа",
     "mode": "Режим",
+    "followingShortcut": "Отслеживаемые ({{n}})",
     "tabs": {
       "meta": "Мета",
       "characters": "Персонажи"
@@ -118,10 +119,13 @@
     "updated": "Обновлено {{time}}",
     "firstSeen": "Впервые замечен {{time}}",
     "follow": "Отслеживать",
+    "followedToast": "Вы отслеживаете {{name}}",
+    "followedToastDescription": "Сохранено в {{characters}} → {{following}}",
     "openSite": "Открыть на pd2trader.com",
     "viewingSnapshot": "Просмотр <date>{{date}}</date><muted> · цены скрыты</muted>",
     "backToNow": "К текущему",
     "equipment": "Экипировка",
+    "charms": "Чармы",
     "weaponSwitch": "Второй комплект оружия",
     "mercTitle": "Наёмник <muted>· {{type}}</muted>",
     "paneLabel": "Персонаж",
@@ -229,5 +233,15 @@
     "usageCount_few": "{{formatted}} персонажа",
     "usageCount_many": "{{formatted}} персонажей",
     "usageCount_other": "{{formatted}} персонажа"
+  },
+  "palette": {
+    "character": "персонаж",
+    "account": "аккаунт",
+    "class": "класс",
+    "skillOf": "навык: {{className}}",
+    "hardcore": "ХК",
+    "openBuild": "Открыть билд",
+    "showCharacters": "Показать персонажей",
+    "showMeta": "Показать в Мете"
   }
 }

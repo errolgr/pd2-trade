@@ -8,7 +8,17 @@ import type { SnapshotResponse, ValuationLine } from '@/lib/networth-api';
 import type { GenericToastPayload } from '@/common/types/Events';
 import NetWorthOverlayController from './NetWorthOverlayController';
 
-vi.mock('@/overlay', () => ({ showToast: vi.fn(), useOverlay: vi.fn() }));
+// notify() logs and toasts when asked: the toast half goes through the showToast mock
+vi.mock('@/overlay', () => {
+  const showToast = vi.fn();
+  return {
+    showToast,
+    notify: vi.fn((_kind: string, payload: unknown, { toast }: { toast: boolean }) => {
+      if (toast) showToast(payload);
+    }),
+    useOverlay: vi.fn(),
+  };
+});
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/hooks/useNetWorth', () => ({ useNetWorth: vi.fn() }));
 

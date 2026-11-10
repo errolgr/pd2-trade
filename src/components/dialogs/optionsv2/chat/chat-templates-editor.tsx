@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useChatTemplates } from '@/hooks/useChatTemplates';
 import { listItem, springSnappy } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import { SETTING_HIGHLIGHT } from '../settings-ui';
 import { MacroTemplate } from '@/pages/quick-list/components/MacroManagerSheet';
 import { Trans, useTranslation } from '@/i18n';
 
@@ -23,7 +24,13 @@ export function ChatTemplatesEditor() {
   const [editing, setEditing] = useState<string | null>(null);
 
   return (
-    <div className="flex flex-col gap-3 px-4 py-3.5">
+    <div
+      data-setting-key="chatTemplates"
+      className={cn(
+        'flex flex-col gap-3 px-4 py-3.5 transition-[background-color,box-shadow] duration-(--dur-med) ease-out data-[highlighted]:ring-inset',
+        SETTING_HIGHLIGHT,
+      )}
+    >
       <p className="text-[13px] leading-relaxed text-muted-foreground">
         <Trans
           t={t}

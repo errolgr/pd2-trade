@@ -5,6 +5,7 @@
     "lookupPlaceholder": "角色名…",
     "lookupLabel": "查找角色",
     "mode": "模式",
+    "followingShortcut": "关注 ({{n}})",
     "tabs": {
       "meta": "主流",
       "characters": "角色"
@@ -106,10 +107,13 @@
     "updated": "更新于 {{time}}",
     "firstSeen": "首次发现于 {{time}}",
     "follow": "关注",
+    "followedToast": "已关注 {{name}}",
+    "followedToastDescription": "已保存到 {{characters}} → {{following}}",
     "openSite": "在 pd2trader.com 打开",
     "viewingSnapshot": "正在查看 <date>{{date}}</date><muted> · 价格已隐藏</muted>",
     "backToNow": "回到当前",
     "equipment": "装备",
+    "charms": "护符",
     "weaponSwitch": "武器切换",
     "mercTitle": "佣兵 <muted>· {{type}}</muted>",
     "paneLabel": "角色视图",
@@ -199,5 +203,15 @@
     "lv": "Lv {{level}}",
     "skillLevel": "· {{level}} 级",
     "usageCount_other": "{{formatted}} 个角色"
+  },
+  "palette": {
+    "character": "角色",
+    "account": "账号",
+    "class": "职业",
+    "skillOf": "{{className}}技能",
+    "hardcore": "专家",
+    "openBuild": "打开配装",
+    "showCharacters": "查看角色",
+    "showMeta": "在主流中查看"
   }
 }

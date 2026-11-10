@@ -6,7 +6,7 @@ import { useOptions } from '@/hooks/useOptions';
 import { useNetWorth } from '@/hooks/useNetWorth';
 import { useWealthRank } from '@/hooks/useWealthRank';
 import { usePanel, useOverlay } from '@/overlay';
-import { screenToOverlayRect } from '@/overlay/game';
+import { overlayPixelRatio, screenToOverlayRect } from '@/overlay/game';
 import { loadPanelRect } from '@/overlay/layout-storage';
 import { cn } from '@/lib/utils';
 import { AnimatedNumber, useChangeFlash } from '@/pages/currency/components/AnimatedNumber';
@@ -18,7 +18,7 @@ import {
   panelBesideTicker,
   tickerPosition,
 } from './overlay';
-import { useChatDockOffset } from '@/pages/chat/chat-dock';
+import { chatDockLayout, chatDockRect, useChatDockOffset } from '@/pages/chat/chat-dock';
 import { overlayViewport, useDragToMove } from '@/overlay/useDragToMove';
 import { currentLocale, useTranslation } from '@/i18n';
 
@@ -33,8 +33,8 @@ async function legacyTickerOrigin(position: { x: number; y: number }): Promise<{
   if (!isTauri()) return position;
   try {
     const win = getCurrentWindow();
-    const [outer, scaleFactor] = await Promise.all([win.outerPosition(), win.scaleFactor()]);
-    const { x, y } = screenToOverlayRect({ ...position, width: 0, height: 0 }, outer, scaleFactor);
+    const [outer, ratio] = await Promise.all([win.outerPosition(), overlayPixelRatio(win)]);
+    const { x, y } = screenToOverlayRect({ ...position, width: 0, height: 0 }, outer, ratio);
     return { x, y };
   } catch (error) {
     console.warn('[NetWorthTicker] Could not convert the saved ticker position:', error);
@@ -62,7 +62,9 @@ const NetWorthTicker: React.FC = () => {
     if (anchor !== 'custom') updateSettings({ netWorthTickerAnchor: 'custom' });
   });
   // 'above-chat' follows the chat dock as it is dragged along the edge
+  // 'above-chat' follows the chat dock as it is dragged along the edge or grows/shrinks with its favorites
   const dockOffset = useChatDockOffset();
+  const dockButtons = chatDockLayout(settings).favorites.length;
 
   // Re-evaluate freshness every 30s
   useEffect(() => {
@@ -116,7 +118,10 @@ const NetWorthTicker: React.FC = () => {
       }
     }
     if (anchor === 'custom' && migrationRef.current === 'running') return;
-    const origin = anchor === 'custom' ? rectRef.current : tickerPosition(anchor, pillSize, gameRect, dockOffset);
+    const origin =
+      anchor === 'custom'
+        ? rectRef.current
+        : tickerPosition(anchor, pillSize, gameRect, chatDockRect(gameRect, dockOffset, dockButtons));
     const next = { ...clampToArea({ ...origin, ...pillSize }, overlayViewport()), ...pillSize };
     const current = rectRef.current;
     if (
@@ -127,7 +132,18 @@ const NetWorthTicker: React.FC = () => {
     ) {
       setRect(next);
     }
-  }, [anchor, gameRect, dockOffset, pillSize, setRect, legacyPosition, updateSettings, migrated, drag.dragging]);
+  }, [
+    anchor,
+    gameRect,
+    dockOffset,
+    dockButtons,
+    pillSize,
+    setRect,
+    legacyPosition,
+    updateSettings,
+    migrated,
+    drag.dragging,
+  ]);
 
   const onClick = () => {
     if (drag.consumeDragClick()) return;

@@ -3,7 +3,7 @@
     "listItem": "Vendre",
     "manage": "Gérer",
     "queued": "En attente",
-    "mustBeInStash": "L'objet doit être dans votre coffre partagé pour être mis en vente."
+    "mustBeInStash": "L'objet doit être dans votre coffre (partagé ou personnel) pour être mis en vente."
   },
   "shortcut": {
     "findFailed": "Impossible de trouver les objets",
@@ -28,7 +28,7 @@
     "noItemDescription": "Copiez un objet en jeu (Ctrl+C) et rouvrez cette fenêtre pour le mettre en vente, ou sélectionnez « Gérer les annonces » pour voir vos échanges actifs.",
     "noItemsFound": "Aucun objet ne correspond à « {{name}} »",
     "whyNotFound": "Pourquoi mon objet est-il introuvable ?",
-    "notFoundTooltip": "Un objet n'est trouvé que s'il est placé dans votre coffre partagé (pas le coffre personnel) et que vous avez créé une nouvelle partie.",
+    "notFoundTooltip": "Un objet est trouvé dès qu'il se trouve dans votre coffre partagé ou dans le coffre personnel d'un personnage du mode choisi dans les Paramètres, et que vous avez créé une nouvelle partie.",
     "queueHint": "Vous pouvez mettre cet objet en attente pour qu'il soit mis en vente automatiquement. Nous attendrons que le serveur le synchronise depuis votre coffre (quelques minutes en général).",
     "noneMatch": "Aucun ne correspond ?",
     "queueModeHint": "Mettez cet objet en attente jusqu'à ce que le nouveau apparaisse dans votre coffre (quelques minutes en général).",
@@ -135,7 +135,7 @@
     "noMatches": "Aucun résultat",
     "noMatchesFor": "Aucun objet ne correspond à « {{query}} »",
     "noActiveTitle": "Aucune annonce active",
-    "noActiveDescription": "Les objets que vous mettez en vente depuis votre coffre partagé apparaîtront ici.",
+    "noActiveDescription": "Les objets que vous mettez en vente depuis votre coffre apparaîtront ici.",
     "notSignedInTitle": "Non connecté",
     "notSignedInDescription": "Connectez-vous à votre compte PD2 pour gérer vos annonces."
   },
@@ -172,5 +172,66 @@
     "hrPrice": "{{price}} HR",
     "listedAgo": "Publiée {{time}}",
     "removing": "Retrait..."
+  },
+  "autoDelist": {
+    "title": "Objet sorti du coffre",
+    "removed": "Annonce {{name}} retirée : l'objet n'est plus dans votre coffre.",
+    "removeFailed": "{{name}} a quitté votre coffre, mais son annonce n'a pas pu être retirée.",
+    "confirm": "{{name}} n'est plus dans votre coffre. Retirer l'annonce ?",
+    "confirmLookAlike": "Un objet comme {{name}} a quitté votre coffre. Retirer votre annonce {{name}} ?",
+    "pick": "Des objets comme {{name}} ont quitté votre coffre. Choisissez les annonces à retirer.",
+    "delist": "Retirer",
+    "keep": "Garder",
+    "choose": "Choisir"
+  },
+  "myListings": {
+    "searchPlaceholder": "Rechercher parmi {{count}} annonces…",
+    "readyListed": "remontée prête · en ligne {{listed}}",
+    "bumpedListed": "remonté {{bumped}} · en ligne {{listed}}",
+    "sort": {
+      "label": "Trier les annonces",
+      "reverse": "Inverser l'ordre",
+      "attention": "À traiter",
+      "bumped": "Dernière remontée",
+      "price": "Prix",
+      "listed": "Date de mise en ligne",
+      "deal": "Prix vs marché",
+      "name": "Nom",
+      "updated": "Dernière mise à jour"
+    },
+    "view": {
+      "label": "Affichage",
+      "cards": "Cartes",
+      "rows": "Lignes compactes"
+    },
+    "filter": {
+      "ready": "Remontée prête {{count}}",
+      "offers": "Offres {{count}}"
+    },
+    "slots": "{{count}} / {{max}} emplacements",
+    "bumpReady_one": "Remonter {{count}} annonce prête",
+    "bumpReady_many": "Remonter {{count}} d'annonces prêtes",
+    "bumpReady_other": "Remonter {{count}} annonces prêtes",
+    "nothingToBump": "Rien à remonter",
+    "noneForFilter": "Aucune annonce ne correspond à ce filtre.",
+    "columns": {
+      "item": "Objet",
+      "price": "Prix",
+      "market": "Marché",
+      "actions": "Actions"
+    },
+    "stats": {
+      "all": "Afficher toutes les stats",
+      "less": "Afficher moins de stats"
+    },
+    "flags": {
+      "corrupted": "Corrompu",
+      "ethereal": "Éth",
+      "sockets": "{{count}} ch."
+    }
+  },
+  "palette": {
+    "openOffer": "Ouvrir dans le chat",
+    "showListing": "Afficher dans Gérer"
   }
 }

@@ -233,5 +233,22 @@
       "lowTitle": "{{n}} prawdop. niskiej wartości · {{tab}}",
       "lowNote": "Sprawdź przedmioty bez kluczowej statystyki"
     }
+  },
+  "listAtNetWorth": {
+    "menuItem": "Wystaw na rynku…",
+    "alreadyListed": "Już wystawiony",
+    "title": "Wystaw po cenie z Majątku",
+    "loading": "Szukam przedmiotu w skrzyni…",
+    "gone": "Przedmiot przeniesiony lub zniknął — odśwież Majątek",
+    "loadFailed": "Nie udało się wczytać przedmiotu ze skrzyni.",
+    "pickItem": "Przedmiot do wystawienia",
+    "listed": "Wystawiony",
+    "allListed": "Już wystawiony na rynku.",
+    "manageListings": "Zarządzaj ofertami",
+    "price": "Cena (HR)",
+    "note": "Notatka (opcjonalnie)",
+    "list": "Wystaw",
+    "listFailed": "Nie udało się wystawić przedmiotu.",
+    "sessionExpired": "Twoja sesja PD2 wygasła. Zaloguj się ponownie, aby wystawić ten przedmiot."
   }
 }

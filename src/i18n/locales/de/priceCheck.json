@@ -27,8 +27,10 @@
     "header": {
       "base": "Basis: {{type}}",
       "type": "Typ: {{type}}",
+      "group": "Gruppe: {{group}}",
       "toggleSearchMode": "Klicken, um den Suchmodus zu wechseln",
       "cycleQuality": "Klicken, um die Qualität zu wechseln",
+      "anyQuality": "Alle",
       "defense": "Verteidigung: <value>{{defense}}</value>",
       "appraisalNote": "Bewertungshinweis: {{note}}"
     },
@@ -69,14 +71,14 @@
       "clearTitle": "Alle Werte abwählen"
     },
     "actions": {
-      "openTradeAria": "Suche auf projectdiablo2.com öffnen",
-      "openTradeTooltip": "Diese Suche auf projectdiablo2.com öffnen",
+      "openTrade": "Suche auf projectdiablo2.com öffnen",
+      "more": "Mehr",
       "openInMarket": "Im Markt öffnen",
       "list": "Inserieren",
-      "listDisabled": "Das Item muss zum Inserieren in deiner geteilten Truhe liegen.",
-      "showExpired": "Abgelaufene zeigen"
+      "listDisabled": "Das Item muss zum Inserieren in deiner Truhe (geteilt oder persönlich) liegen."
     },
     "results": {
+      "source": { "label": "Zu durchsuchende Inserate", "live": "Aktiv", "expired": "Abgelaufen" },
       "matches": "Treffer: <value>{{total}}</value>",
       "showing": "· {{shown}} angezeigt",
       "loading": "Marktinserate werden geladen...",
@@ -85,19 +87,49 @@
       "noListings": "Keine Inserate gefunden",
       "loosenFilters": "Lockere deine Wertefilter.",
       "loosenFiltersOrExpired": "Lockere deine Wertefilter oder aktiviere „Abgelaufene zeigen“.",
+      "relax": {
+        "title": "Keine Inserate passen zu allen Filtern",
+        "hint": "Entferne einen: jeder zeigt, was übrig bleibt.",
+        "ranges": "Wertebereiche",
+        "corrupted": "Korrumpiert",
+        "notCorrupted": "Nicht korrumpiert",
+        "corruptions": "Korrumpierungsfilter",
+        "showExpired": "Abgelaufene zeigen"
+      },
       "readyTitle": "Bereit zur Suche",
       "readyHint": "Wähle die wichtigen Werte und klicke auf Suchen oder drücke Enter in einem Min/Max-Feld.",
       "price": "Preis",
-      "listed": "Inseriert",
       "loadingMore": "Weitere werden geladen...",
-      "loadMore": "Mehr laden"
+      "loadMore": "Mehr laden",
+      "sortPrice": "Nach Preis sortieren",
+      "sortListed": "Nach Einstelldatum sortieren",
+      "filteredInGame": "· {{count}} im Spiel",
+      "filteredOnSite": "· {{count}} auf der Seite",
+      "filteredOnline": "· {{count}} online",
+      "noSellerMatch": "Kein Verkäufer hier passt zum Verkäuferfilter.",
+      "sellerFilter": "Verkäuferfilter",
+      "seller": "Verkäufer",
+      "sellerAnyone": "Alle",
+      "sellerInGame": "Im Spiel",
+      "sellerOnSite": "Auf der Handelsseite",
+      "sellerEither": "Im Spiel oder auf der Seite",
+      "age": "Alter"
     },
     "listing": {
       "copyWhisper": "Flüstern kopieren",
       "whisperCopied": "Flüstern kopiert, Rechtsklick zum Einfügen",
-      "onlineCopyWhisper": "Online im Spiel · klicken, um Flüstern zu kopieren",
       "seller": "Verkäufer: <name>{{seller}}</name>",
-      "online": "Online im Spiel"
+      "online": "Online im Spiel",
+      "endedSold": "verkauft nach {{duration}}",
+      "endedRemoved": "entfernt nach {{duration}}",
+      "endedExpired": "abgelaufen nach {{duration}}",
+      "endedAt": "Beendet {{when}}",
+      "listedFor": "Inseriert seit {{duration}}",
+      "onSite": "Auf der Handelsseite",
+      "notOnSite": "Nicht auf der Handelsseite",
+      "notInGame": "Nicht im Spiel",
+      "inGame": "Im Spiel",
+      "presenceWhisper": "{{presence}} · klicken, um das Flüstern zu kopieren"
     }
   },
   "statRow": {

@@ -3,33 +3,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormMessage } from '@/components/ui/form';
 import React from 'react';
-import { ISettings, NetWorthTickerAnchor, useOptions } from '@/hooks/useOptions';
+import { ISettings, useOptions } from '@/hooks/useOptions';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SettingsGroup, SettingsHint, SettingsLink, SettingsRow, SettingsSkeleton } from '../settings-ui';
+import { AUTO_SNAPSHOT_OPTIONS, optionLabel, TICKER_ANCHOR_OPTIONS } from '../setting-options';
 import { PublicProfileGroup } from './public-profile';
 import { Trans, useTranslation } from '@/i18n';
-
-const AUTO_SNAPSHOT_OPTIONS = [
-  { value: '0', labelKey: 'networth.autoSnapshotOptions.off' },
-  { value: '5', labelKey: 'networth.autoSnapshotOptions.every5' },
-  { value: '10', labelKey: 'networth.autoSnapshotOptions.every10' },
-  { value: '15', labelKey: 'networth.autoSnapshotOptions.every15' },
-  { value: '30', labelKey: 'networth.autoSnapshotOptions.every30' },
-] as const;
-
-/** Ticker positions (net worth ticker, corrupted zone timer). */
-export const TICKER_ANCHOR_OPTIONS: { value: NetWorthTickerAnchor; labelKey: string }[] = [
-  { value: 'top-left', labelKey: 'tickerAnchor.topLeft' },
-  { value: 'top-center', labelKey: 'tickerAnchor.topCenter' },
-  { value: 'top-right', labelKey: 'tickerAnchor.topRight' },
-  { value: 'bottom-left', labelKey: 'tickerAnchor.bottomLeft' },
-  { value: 'bottom-right', labelKey: 'tickerAnchor.bottomRight' },
-  { value: 'above-chat', labelKey: 'tickerAnchor.aboveChat' },
-  { value: 'custom', labelKey: 'tickerAnchor.custom' },
-];
 
 export const tickerAnchorSchema = z.enum([
   'top-left',
@@ -120,6 +102,7 @@ export function NetWorthForm() {
             name="netWorthTrackingEnabled"
             render={({ field }) => (
               <SettingsRow
+                settingKey="netWorthTrackingEnabled"
                 label={t('networth.history.tracking.label')}
                 description={t('networth.history.tracking.description')}
                 control={
@@ -138,6 +121,7 @@ export function NetWorthForm() {
             name="netWorthAutoSnapshotMinutes"
             render={({ field }) => (
               <SettingsRow
+                settingKey="netWorthAutoSnapshotMinutes"
                 label={t('networth.history.autoSnapshot.label')}
                 description={t('networth.history.autoSnapshot.description')}
                 control={
@@ -152,7 +136,7 @@ export function NetWorthForm() {
                       {AUTO_SNAPSHOT_OPTIONS.map((option) => (
                         <SelectItem key={option.value}
                           value={option.value}>
-                          {t(option.labelKey)}
+                          {optionLabel(t, option)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -173,6 +157,7 @@ export function NetWorthForm() {
             name="netWorthTickerEnabled"
             render={({ field }) => (
               <SettingsRow
+                settingKey="netWorthTickerEnabled"
                 label={t('networth.ticker.enabled.label')}
                 description={t('networth.ticker.enabled.description')}
                 control={
@@ -191,6 +176,7 @@ export function NetWorthForm() {
             name="netWorthTickerAnchor"
             render={({ field }) => (
               <SettingsRow
+                settingKey="netWorthTickerAnchor"
                 label={t('networth.ticker.position.label')}
                 description={t('networth.ticker.position.description')}
                 control={
@@ -221,6 +207,7 @@ export function NetWorthForm() {
             name="netWorthTickerOpacity"
             render={({ field }) => (
               <SettingsRow
+                settingKey="netWorthTickerOpacity"
                 label={
                   <Trans
                     t={t}
@@ -264,6 +251,7 @@ export function NetWorthForm() {
             name="netWorthToastThresholdHr"
             render={({ field }) => (
               <SettingsRow
+                settingKey="netWorthToastThresholdHr"
                 label={t('networth.toastThreshold.label')}
                 description={
                   <Trans

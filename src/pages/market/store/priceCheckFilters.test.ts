@@ -1,17 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import type { ItemType as PD2Item } from '@/assets/itemFuzzySearch';
 import type { Item } from '@/pages/price-check/lib/interfaces';
-import { marketQueryToFilters, priceCheckToMarketFilters, type PriceCheckSearch } from './priceCheckFilters';
+import type { MarketFilters } from '@/pages/market/lib/types';
+import {
+  marketQueryToFilters,
+  priceCheckMarketSearch,
+  priceCheckToMarketFilters,
+  type PriceCheckSearch,
+} from './priceCheckFilters';
 
-const stripIds = (filters: ReturnType<typeof marketQueryToFilters>) =>
+const stripIds = (filters: Partial<MarketFilters>) =>
   filters.stats?.map(({ id, ...rest }) => {
     expect(id).toEqual(expect.any(String));
     return rest;
   });
 
+const read = (query: Record<string, unknown>, archive = false) => marketQueryToFilters(query, archive).filters;
+
 describe('marketQueryToFilters', () => {
   it('reads every price-check query field back into filters', () => {
-    const filters = marketQueryToFilters(
+    const filters = read(
       {
         is_hardcore: true,
         is_ladder: false,
@@ -53,12 +61,15 @@ describe('marketQueryToFilters', () => {
     ]);
   });
 
-  it('expands combined rows into real modifiers and fixes unprefixed names', () => {
-    const filters = marketQueryToFilters(
+  // Listings carry these lines under these names; renaming or splitting them found nothing (ED) or only items
+  // rolling four separate resists / attributes (All Resistances, All Attributes)
+  it('keeps Enhanced Damage, All Resistances and All Attributes as the single modifiers listings carry', () => {
+    const filters = read(
       {
         'item.modifiers': {
           $all: [
             { $elemMatch: { name: 'all_resist', 'values.0': { $gte: 15 } } },
+            { $elemMatch: { name: 'all_attributes', 'values.0': { $gte: 5 } } },
             { $elemMatch: { name: 'maxdamage_percent', 'values.0': { $gte: 200, $lte: 250 } } },
           ],
         },
@@ -67,32 +78,94 @@ describe('marketQueryToFilters', () => {
     );
     expect(filters).toMatchObject({ source: 'archive', maxAgeDays: 14 });
     expect(stripIds(filters)).toEqual([
-      { kind: 'mod', key: 'fireresist', min: 15, enabled: true },
-      { kind: 'mod', key: 'lightresist', min: 15, enabled: true },
-      { kind: 'mod', key: 'coldresist', min: 15, enabled: true },
-      { kind: 'mod', key: 'poisonresist', min: 15, enabled: true },
-      { kind: 'mod', key: 'item_maxdamage_percent', min: 200, max: 250, enabled: true },
+      { kind: 'mod', key: 'all_resist', min: 15, enabled: true },
+      { kind: 'mod', key: 'all_attributes', min: 5, enabled: true },
+      { kind: 'mod', key: 'maxdamage_percent', min: 200, max: 250, enabled: true },
     ]);
   });
 
+  it('writes skill-parameterised, multi-value and damage rows in the service key grammar', () => {
+    const { filters, gaps } = marketQueryToFilters(
+      {
+        'item.modifiers': {
+          $all: [
+            // Chance to cast: skill in values.1, level rolled in values.0
+            { $elemMatch: { name: 'item_skillongethit', 'values.1': 44, 'values.0': { $gte: 15 } } },
+            // A skill known by several ids (an aura and its proc)
+            { $elemMatch: { name: 'item_aura', 'values.0': { $in: [98, 123] }, 'values.1': { $gte: 5 } } },
+            { $elemMatch: { name: 'item_charged_skill', 'values.1': { $in: [36, 522] } } },
+            // An unparameterised roll in values.2
+            { $elemMatch: { name: 'item_splashonhit', 'values.2': { $gte: 50 } } },
+            // One elemental damage line: min in values.0, max rolled in values.1
+            {
+              $elemMatch: {
+                name: { $in: ['firedam', 'firemindam'] },
+                'values.0': { $gte: 4 },
+                'values.1': { $gte: 14, $lte: 20 },
+              },
+            },
+            { $elemMatch: { name: { $in: ['colddam', 'coldmindam'] }, 'values.1': { $gte: 10 } } },
+          ],
+        },
+      },
+      false,
+    );
+    expect(gaps).toEqual([]);
+    expect(stripIds(filters)).toEqual([
+      { kind: 'mod', key: 'item_skillongethit{*,44}[0]', min: 15, enabled: true },
+      { kind: 'mod', key: 'item_aura{98|123}', min: 5, enabled: true },
+      { kind: 'mod', key: 'item_charged_skill{*,36|522}', enabled: true },
+      { kind: 'mod', key: 'item_splashonhit[2]', min: 50, enabled: true },
+      { kind: 'mod', key: 'firedam|firemindam{4..}', min: 14, max: 20, enabled: true },
+      { kind: 'mod', key: 'colddam|coldmindam[1]', min: 10, enabled: true },
+    ]);
+  });
+
+  it('reports a skill matched by its label as a gap', () => {
+    const { gaps } = marketQueryToFilters(
+      {
+        'item.modifiers': {
+          $all: [
+            { $elemMatch: { name: 'item_aura', label: { $regex: '^Level \\d+ Foo Aura' }, 'values.1': { $gte: 3 } } },
+          ],
+        },
+      },
+      false,
+    );
+    expect(gaps).toEqual(['label']);
+  });
+
   it('reads the item name regex as the exact name and charm bases as their type', () => {
-    expect(marketQueryToFilters({ 'item.name': { $regex: 'Spirit', $options: 'i' } }, false).itemName).toBe('Spirit');
+    expect(read({ 'item.name': { $regex: 'Spirit', $options: 'i' } }).itemName).toBe('Spirit');
     expect(
-      marketQueryToFilters(
-        { 'item.base.type_code': { $in: ['scha', 'mcha', 'lcha', 'torc'] }, 'item.base_code': 'cm3' },
-        false,
-      ),
+      read({ 'item.base.type_code': { $in: ['scha', 'mcha', 'lcha', 'torc'] }, 'item.base_code': 'cm3' }),
     ).toMatchObject({ typeCode: 'lcha', baseCode: 'cm3' });
   });
 
-  it('reads a grouped type ($in) as its Type option', () => {
-    expect(marketQueryToFilters({ 'item.base.type_code': { $in: ['h2h', 'h2h2'] } }, false).typeCode).toBe(
-      '{"$in": ["h2h", "h2h2"]}',
-    );
+  it('reads a grouped type or base ($in) as its catalog option', () => {
+    expect(read({ 'item.base.type_code': { $in: ['h2h', 'h2h2'] } }).typeCode).toBe('{"$in": ["h2h", "h2h2"]}');
+    expect(read({ 'item.base_code': { $in: ['glw', 'glws'] } }).baseCode).toBe('{"$in": ["glw", "glws"]}');
+  });
+
+  it("reads a type group's members ($in, any order) as the group code, not its first member's type", () => {
+    expect(read({ 'item.base.type_code': { $in: ['bow', 'abow'] } }).typeCode).toBe('group:bows');
+    expect(read({ 'item.base.type_code': { $in: ['circ', 'helm', 'pelt', 'phlm'] } }).typeCode).toBe('group:helms');
+    // A subset of a group isn't the group
+    expect(read({ 'item.base.type_code': { $in: ['shie', 'ashd'] } }).typeCode).toBe('shie');
+  });
+
+  it('reads several qualities ($in, the price check\'s "Any") as a multi-rarity filter', () => {
+    expect(read({ 'item.quality.name': { $in: ['Normal', 'Superior', 'Magic', 'Rare', 'Crafted'] } }).rarity).toEqual([
+      'Normal',
+      'Superior',
+      'Magic',
+      'Rare',
+      'Crafted',
+    ]);
   });
 
   it('leaves out an unknown quality and absent fields', () => {
-    const filters = marketQueryToFilters({ 'item.quality.name': 'Weird' }, false);
+    const filters = read({ 'item.quality.name': 'Weird' });
     expect(filters.rarity).toBeUndefined();
     expect(filters.corrupted).toBeUndefined();
     expect(filters.stats).toEqual([]);
@@ -160,6 +233,21 @@ describe('priceCheckToMarketFilters', () => {
     expect(priceCheckToMarketFilters(search({ archive: true }))).toMatchObject({ source: 'archive', maxAgeDays: 14 });
   });
 
+  it('searches a runeword as a Runeword, whatever its base quality', () => {
+    const spirit: Item = {
+      name: 'Spirit',
+      quality: 'Normal',
+      type: 'Monarch',
+      isRuneword: true,
+      runeword: 'Spirit',
+      iLevel: 80,
+      stats: [],
+    };
+    const { filters, gaps } = priceCheckMarketSearch(search({ item: spirit, selected: new Set(), filters: {} }));
+    expect(filters).toMatchObject({ itemName: 'Spirit', rarity: ['Runeword'] });
+    expect(gaps).toEqual([]);
+  });
+
   it('sends selected pseudo rows as pseudo filters, not PD2 modifiers', () => {
     const selected = new Set(['id:105', 'pseudo:pseudo_total_res', 'pseudo:pseudo_fire_res']);
     const filters = priceCheckToMarketFilters(
@@ -177,5 +265,16 @@ describe('priceCheckToMarketFilters', () => {
       { kind: 'pseudo', key: 'pseudo_total_res', min: 80, enabled: true },
       { kind: 'pseudo', key: 'pseudo_fire_res', min: 30, max: 45, enabled: true },
     ]);
+  });
+
+  it('searches the type group of a rare in search mode 2', () => {
+    const bow: Item = { name: 'Grim Fletch', quality: 'Rare', type: 'Ceremonial Bow', iLevel: 80, stats: [] };
+    const matchedItemType = { typeLabel: 'Amazon Bow', typeValue: 'abow', bases: [] };
+    const at = (searchMode: number) =>
+      priceCheckToMarketFilters(search({ item: bow, selected: new Set(), filters: {}, searchMode, matchedItemType }));
+    expect(at(1)).toMatchObject({ typeCode: 'abow' });
+    expect(at(1).baseCode).toBeUndefined();
+    expect(at(2)).toMatchObject({ typeCode: 'group:bows' });
+    expect(at(2).baseCode).toBeUndefined();
   });
 });

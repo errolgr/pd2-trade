@@ -1,5 +1,17 @@
 import * as React from 'react';
-import { ArrowRight, Info } from 'lucide-react';
+import {
+  ArrowRight,
+  Info,
+  Keyboard,
+  LayoutPanelTop,
+  MessageSquare,
+  Search,
+  SlidersHorizontal,
+  Store,
+  TrendingUp,
+  UserRound,
+  type LucideIcon,
+} from 'lucide-react';
 import { FormDescription, FormItem, FormLabel } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -15,9 +27,30 @@ export type SettingsSectionId =
   | 'Chat'
   | 'Interface'
   | 'Price Check'
+  | 'Market'
   | 'Net Worth'
   | 'Hotkeys'
   | 'About';
+
+/** The sections in sidebar order, with their nav label and icon. */
+export const SETTINGS_SECTIONS: readonly { id: SettingsSectionId; titleKey: string; icon: LucideIcon }[] = [
+  { id: 'General', titleKey: 'settings:nav.general', icon: SlidersHorizontal },
+  { id: 'Account', titleKey: 'settings:nav.account', icon: UserRound },
+  { id: 'Chat', titleKey: 'settings:nav.chat', icon: MessageSquare },
+  { id: 'Interface', titleKey: 'settings:nav.interface', icon: LayoutPanelTop },
+  { id: 'Price Check', titleKey: 'settings:nav.priceCheck', icon: Search },
+  { id: 'Market', titleKey: 'settings:nav.market', icon: Store },
+  { id: 'Net Worth', titleKey: 'settings:nav.netWorth', icon: TrendingUp },
+  { id: 'Hotkeys', titleKey: 'settings:nav.hotkeys', icon: Keyboard },
+  { id: 'About', titleKey: 'settings:nav.about', icon: Info },
+];
+
+/**
+ * The flash on the setting openPanel('settings', { field }) jumps to: the settings window finds the element by its
+ * `data-setting-key` and sets `data-highlighted` on it for a moment. SettingsRow applies it for `settingKey`.
+ */
+export const SETTING_HIGHLIGHT =
+  'data-[highlighted]:bg-primary/10 data-[highlighted]:ring-2 data-[highlighted]:ring-primary/60';
 
 /** Lets a form jump to another settings section (e.g. "configured under Hotkeys"). */
 export const SettingsNavContext = React.createContext<((section: SettingsSectionId) => void) | null>(null);
@@ -95,6 +128,8 @@ interface SettingsRowProps {
   className?: string;
   /** Extra classes for the label (rarely needed). */
   labelClassName?: string;
+  /** The ISettings key this row edits: openPanel('settings', { field }) scrolls to it and flashes it. */
+  settingKey?: string;
 }
 
 /**
@@ -110,6 +145,7 @@ export function SettingsRow({
   disabled,
   className,
   labelClassName,
+  settingKey,
 }: SettingsRowProps) {
   const stacked = layout === 'stacked';
   const labelBase = 'text-sm font-medium leading-snug text-foreground group-data-[disabled]/row:text-muted-foreground';
@@ -117,9 +153,11 @@ export function SettingsRow({
   return (
     <FormItem
       data-disabled={disabled || undefined}
+      data-setting-key={settingKey}
       className={cn(
-        'group/row flex flex-col gap-3 px-4 py-3.5 transition-colors duration-(--dur-fast) ease-out hover:bg-accent/25',
-        'data-[disabled]:hover:bg-transparent',
+        'group/row flex flex-col gap-3 px-4 py-3.5 transition-[color,background-color,box-shadow] duration-(--dur-fast) ease-out hover:bg-accent/25',
+        'data-[disabled]:hover:bg-transparent data-[highlighted]:ring-inset',
+        SETTING_HIGHLIGHT,
         className,
       )}
     >

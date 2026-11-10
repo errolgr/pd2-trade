@@ -221,5 +221,22 @@
       "lowTitle": "{{n}} probablemente de poco valor · {{tab}}",
       "lowNote": "Revisa los objetos sin estadística clave"
     }
+  },
+  "listAtNetWorth": {
+    "menuItem": "Publicar en el mercado…",
+    "alreadyListed": "Ya publicado",
+    "title": "Publicar al precio de Patrimonio",
+    "loading": "Buscando el objeto en tu alijo…",
+    "gone": "Objeto movido o ya no está — actualiza Patrimonio",
+    "loadFailed": "No se pudo cargar el objeto de tu alijo.",
+    "pickItem": "Objeto a publicar",
+    "listed": "Publicado",
+    "allListed": "Ya está publicado en el mercado.",
+    "manageListings": "Gestionar publicaciones",
+    "price": "Precio (HR)",
+    "note": "Nota (opcional)",
+    "list": "Publicar",
+    "listFailed": "No se pudo publicar el objeto.",
+    "sessionExpired": "Tu sesión de PD2 ha caducado. Inicia sesión de nuevo para publicar este objeto."
   }
 }

@@ -7,6 +7,11 @@ import { useInView } from 'react-intersection-observer';
 import { useOptions } from '@/hooks/useOptions';
 import { ItemsProvider } from '@/hooks/useItems';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { clearListingPresenceCache } from '@/hooks/useListingPresence';
+import { MarketBackendError, searchMarketListings, type MarketSearchPage } from '@/lib/market-search-api';
+import type * as MarketSearchApi from '@/lib/market-search-api';
+import { reportApiError } from '@/lib/error-reporting';
+import type { ListingPresence, MarketFilters, ScoredListing } from '@/pages/market/lib/types';
 import { allItems } from '@/assets/items';
 import { openUrl } from '@/lib/browser-opener';
 import { writeText } from '@/lib/browser-clipboard';
@@ -27,11 +32,16 @@ import type {
 import type { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import type { RareAppraisal } from '@/lib/rare-appraisal-api';
 import { useRareAppraisal, type RareAppraisalState } from '../hooks/useRareAppraisal';
-import type { Item } from '../lib/interfaces';
+import type { Item, Stat } from '../lib/interfaces';
 import ItemOverlayWidget from './ItemOverlayWidget';
 
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
+vi.mock('@/lib/market-search-api', async (importOriginal) => ({
+  ...(await importOriginal<typeof MarketSearchApi>()),
+  searchMarketListings: vi.fn(),
+}));
+vi.mock('@/lib/error-reporting', () => ({ reportApiError: vi.fn() }));
 vi.mock('../hooks/useRareAppraisal', () => ({ useRareAppraisal: vi.fn() }));
 vi.mock('../hooks/useEconomyData', () => ({
   useEconomyData: () => ({
@@ -60,6 +70,8 @@ vi.mock('../../quick-list/components/ItemStatsDisplay', () => ({
     <div data-testid="listing-stats">{stashItem?.name}</div>
   ),
 }));
+// The Simulator popover has its own tests (SimulatorButton.test.tsx).
+vi.mock('./SimulatorButton', () => ({ SimulatorButton: () => null }));
 
 // happy-dom's WAAPI rejects cancelled animations as unhandled errors; finish motion instantly instead.
 beforeAll(() => {
@@ -151,6 +163,19 @@ const page = (data: MarketListingEntry[], total = data.length, fetched = data.le
   fetched,
 });
 
+/** A market service page of these listings; `rest` adds the service's per-row fields (status, lifetime). */
+const servicePage = (
+  data: MarketListingEntry[],
+  total = data.length,
+  fetched = data.length,
+  rest: Partial<Omit<ScoredListing, 'listing'>> = {},
+): MarketSearchPage => ({
+  items: data.map((l) => ({ listing: l, pseudo: {}, score: null, value: null, ...rest })),
+  total,
+  totalExact: true,
+  fetched,
+});
+
 // ---------------------------------------------------------------- mock state
 
 let settings: Record<string, unknown>;
@@ -159,6 +184,8 @@ let rareState: RareAppraisalState;
 let inView: boolean;
 const getMarketListings = vi.fn<(query: MarketListingQuery) => Promise<MarketListingResult>>();
 const getMarketListingsArchive = vi.fn<(query: MarketListingQuery) => Promise<MarketListingResult>>();
+const searchListings = vi.mocked(searchMarketListings);
+const getListingPresence = vi.fn<(ids: string[]) => Promise<Map<string, ListingPresence>>>();
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] });
@@ -173,13 +200,22 @@ beforeEach(() => {
   inView = false;
   getMarketListings.mockReset().mockResolvedValue(page([]));
   getMarketListingsArchive.mockReset().mockResolvedValue(page([]));
+  searchListings.mockReset().mockResolvedValue(servicePage([]));
+  getListingPresence.mockReset().mockResolvedValue(new Map());
+  vi.mocked(reportApiError).mockReset();
+  clearListingPresenceCache();
 
   // Hook mocks expose only what the widget reads; the real context values carry many more members.
   vi.mocked(useOptions).mockImplementation(
     () => ({ settings, isLoading: settingsLoading }) as unknown as ReturnType<typeof useOptions>,
   );
   vi.mocked(usePd2Website).mockImplementation(
-    () => ({ getMarketListings, getMarketListingsArchive }) as unknown as ReturnType<typeof usePd2Website>,
+    () =>
+      ({
+        getMarketListings,
+        getMarketListingsArchive,
+        marketApi: { getListingPresence },
+      }) as unknown as ReturnType<typeof usePd2Website>,
   );
   vi.mocked(useRareAppraisal).mockImplementation(() => rareState);
   vi.mocked(useInView).mockImplementation(() => ({ ref: () => {}, inView }) as unknown as ReturnType<typeof useInView>);
@@ -214,6 +250,11 @@ const statCheckbox = (name: string) =>
   screen.getByText(name).closest('label')!.querySelector('[role="checkbox"]') as HTMLElement;
 const searchButton = () => screen.getByRole('button', { name: /^Search$/ });
 const lastQuery = (fn = getMarketListings) => fn.mock.calls[fn.mock.calls.length - 1][0];
+/** The listed searches on the market service (an empty search's relaxation counts ask for one row, aside). */
+const realSearches = () => searchListings.mock.calls.filter(([, opts]) => opts.limit !== 1);
+/** The filters and page of the last listed market service search. */
+const lastFilters = (): MarketFilters => realSearches()[realSearches().length - 1][0];
+const lastPage = () => realSearches()[realSearches().length - 1][1].page;
 
 // ---------------------------------------------------------------- tests
 
@@ -235,11 +276,11 @@ describe('ItemOverlayWidget header', () => {
     expect(within(h1).getByText('Runeword')).not.toBeNull();
   });
 
-  it('lets a rare cycle the searched quality through every other base quality and back', async () => {
+  it('lets a rare cycle the searched quality through Any, every other base quality and back', async () => {
     renderWidget(rareRing());
     const toggle = screen.getByTitle('Click to cycle quality');
     expect(toggle.textContent).toBe('Rare');
-    for (const next of ['Normal', 'Superior', 'Magic', 'Crafted', 'Rare']) {
+    for (const next of ['Any', 'Normal', 'Superior', 'Magic', 'Crafted', 'Rare']) {
       fireEvent.click(toggle);
       // the outgoing label animates out, so wait until only the new one remains
       await waitFor(() => expect(screen.getByTitle('Click to cycle quality').textContent).toBe(next));
@@ -248,10 +289,19 @@ describe('ItemOverlayWidget header', () => {
 
   it('the cycled quality is what the market search asks for', async () => {
     renderWidget(rareRing());
+    fireEvent.click(screen.getByTitle('Click to cycle quality')); // -> Any
     fireEvent.click(screen.getByTitle('Click to cycle quality')); // -> Normal
     fireEvent.click(searchButton());
-    await waitFor(() => expect(getMarketListings).toHaveBeenCalled());
-    expect(lastQuery()['item.quality.name']).toBe('Normal');
+    await waitFor(() => expect(searchListings).toHaveBeenCalled());
+    expect(lastFilters().rarity).toEqual(['Normal']);
+  });
+
+  it('"Any" searches every base quality, so rares and crafted come back together', async () => {
+    renderWidget(rareRing());
+    fireEvent.click(screen.getByTitle('Click to cycle quality')); // -> Any
+    fireEvent.click(searchButton());
+    await waitFor(() => expect(searchListings).toHaveBeenCalled());
+    expect(lastFilters().rarity).toEqual(['Normal', 'Superior', 'Magic', 'Rare', 'Crafted']);
   });
 
   it('uniques have no quality/search-mode toggles', () => {
@@ -260,16 +310,13 @@ describe('ItemOverlayWidget header', () => {
     expect(screen.queryByTitle('Click to toggle search mode')).toBeNull();
   });
 
-  it('Close, Settings and the trade-site button do what they say', async () => {
+  it('Close and Settings do what they say', () => {
     const { onClose } = renderWidget(rareRing());
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(onClose).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
     expect(overlay.openPanel).toHaveBeenCalledWith('settings');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Open search on projectdiablo2.com' }));
-    expect(vi.mocked(openUrl).mock.calls[0][0]).toMatch(/^https:\/\/(www\.)?projectdiablo2\.com\//);
   });
 });
 
@@ -372,10 +419,12 @@ describe('ItemOverlayWidget unique price pill', () => {
     expect(within(popover).getByText('Corr 6')).not.toBeNull();
 
     fireEvent.click(within(popover).getByText('Corr 2'));
-    await waitFor(() => expect(getMarketListingsArchive).toHaveBeenCalled());
-    const q = lastQuery(getMarketListingsArchive);
-    expect(q['item.corruptions']).toEqual({ $all: ['item_corr_2'] });
-    expect(q['item.corrupted']).toBe(true);
+    await waitFor(() => expect(searchListings).toHaveBeenCalled());
+    const f = lastFilters();
+    expect(f.stats).toEqual([expect.objectContaining({ kind: 'corruption', key: 'item_corr_2' })]);
+    expect(f.corrupted).toBe('yes');
+    expect(f.status).toEqual(['sold', 'removed', 'expired']);
+    expect(getMarketListingsArchive).not.toHaveBeenCalled();
     expect(getMarketListings).not.toHaveBeenCalled();
   });
 
@@ -421,8 +470,10 @@ describe('ItemOverlayWidget stat selection', () => {
     expect(statCheckbox('+20% Faster Cast Rate').getAttribute('aria-checked')).toBe('true');
     expect(screen.queryByText('Clear ranges')).toBeNull();
     fireEvent.click(searchButton());
-    await waitFor(() => expect(getMarketListings).toHaveBeenCalledTimes(1));
-    expect(JSON.stringify(lastQuery())).toContain('{"$elemMatch":{"name":"item_fastercastrate"}}');
+    await waitFor(() => expect(searchListings).toHaveBeenCalledTimes(1));
+    expect(lastFilters().stats.map(({ id: _id, ...row }) => row)).toEqual([
+      { kind: 'mod', key: 'item_fastercastrate', enabled: true },
+    ]);
   });
 
   it('edited min/max values are what the search filters on', async () => {
@@ -431,21 +482,21 @@ describe('ItemOverlayWidget stat selection', () => {
     fireEvent.change(screen.getByLabelText('% Faster Cast Rate minimum'), { target: { value: '15' } });
     fireEvent.change(screen.getByLabelText('% Faster Cast Rate maximum'), { target: { value: '' } });
     fireEvent.click(searchButton());
-    await waitFor(() => expect(getMarketListings).toHaveBeenCalledTimes(1));
-    expect(JSON.stringify(lastQuery())).toContain(
-      '{"$elemMatch":{"name":"item_fastercastrate","values.0":{"$gte":15}}}',
-    );
+    await waitFor(() => expect(searchListings).toHaveBeenCalledTimes(1));
+    expect(lastFilters().stats.map(({ id: _id, ...row }) => row)).toEqual([
+      { kind: 'mod', key: 'item_fastercastrate', min: 15, enabled: true },
+    ]);
   });
 
   it('Enter in a range input runs the search', async () => {
     renderWidget(rareRing());
     fireEvent.click(statCheckbox('+20% Faster Cast Rate'));
     fireEvent.keyDown(screen.getByLabelText('% Faster Cast Rate minimum'), { key: 'Enter' });
-    await waitFor(() => expect(getMarketListings).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(searchListings).toHaveBeenCalledTimes(1));
   });
 
   it('a new item clears the previous selection and results', async () => {
-    getMarketListings.mockResolvedValue(page([listing()], 1));
+    searchListings.mockResolvedValue(servicePage([listing()], 1));
     const { rerenderItem } = renderWidget(rareRing());
     fireEvent.click(statCheckbox('+20% Faster Cast Rate'));
     fireEvent.click(searchButton());
@@ -495,35 +546,37 @@ describe('ItemOverlayWidget market search', () => {
   it('starts with an idle hint and no request', () => {
     renderWidget(rareRing());
     expect(screen.getByText('Ready to search')).not.toBeNull();
-    expect(getMarketListings).not.toHaveBeenCalled();
+    expect(searchListings).not.toHaveBeenCalled();
   });
 
   it('shows a loading state, then the listings with match counts', async () => {
-    const { promise, resolve } = Promise.withResolvers<MarketListingResult>();
-    getMarketListings.mockReturnValue(promise);
+    const { promise, resolve } = Promise.withResolvers<MarketSearchPage>();
+    searchListings.mockReturnValue(promise);
     renderWidget(rareRing());
     fireEvent.click(searchButton());
     expect(await screen.findByText('Loading market listings...')).not.toBeNull();
     expect(screen.queryByText('Ready to search')).toBeNull();
 
-    await act(async () => resolve(page([listing({ hr_price: 2 }), listing({ hr_price: 0, price: 'offer me' })], 57)));
+    await act(async () =>
+      resolve(servicePage([listing({ hr_price: 2 }), listing({ hr_price: 0, price: 'offer me' })], 57)),
+    );
     expect(await screen.findByText('2 HR')).not.toBeNull();
     expect(screen.getByText('offer me')).not.toBeNull();
     expect(screen.getByText('57')).not.toBeNull();
     expect(screen.getByText('· showing 2')).not.toBeNull();
     expect(screen.queryByText('Loading market listings...')).toBeNull();
 
-    const q = lastQuery();
-    expect(q.$limit).toBe(20);
-    expect(q.$skip).toBe(0);
-    expect(q.is_ladder).toBe(true);
-    expect(q.is_hardcore).toBe(false);
+    expect(searchListings.mock.calls[0][1]).toEqual({ page: 0, limit: 20 });
+    expect(lastFilters()).toMatchObject({ source: 'live', maxAgeDays: 3, ladder: true, hardcore: false });
+    expect(lastFilters()).not.toHaveProperty('status');
+    // Every search goes to the market service; PD2 only stands in for it
+    expect(getMarketListings).not.toHaveBeenCalled();
   });
 
   it('truncates long free-text prices and shows "-" when there is no price', async () => {
     const note = 'x'.repeat(50);
-    getMarketListings.mockResolvedValue(
-      page([listing({ hr_price: 0, price: note }), listing({ hr_price: 0, price: '' })]),
+    searchListings.mockResolvedValue(
+      servicePage([listing({ hr_price: 0, price: note }), listing({ hr_price: 0, price: '' })]),
     );
     renderWidget(rareRing());
     fireEvent.click(searchButton());
@@ -532,8 +585,8 @@ describe('ItemOverlayWidget market search', () => {
   });
 
   it('shows listing badges for ethereal, corrupted and socketed items', async () => {
-    getMarketListings.mockResolvedValue(
-      page([listing({ item: { name: 'x', is_ethereal: true, socket_count: 3, corruptions: ['c'] } })]),
+    searchListings.mockResolvedValue(
+      servicePage([listing({ item: { name: 'x', is_ethereal: true, socket_count: 3, corruptions: ['c'] } })]),
     );
     renderWidget(rareRing());
     fireEvent.click(searchButton());
@@ -543,27 +596,205 @@ describe('ItemOverlayWidget market search', () => {
     expect(within(row).getByText('3')).not.toBeNull();
   });
 
-  it('shows a no-results state that suggests Show Expired only when it is off', async () => {
+  it('sorts from the column headers: a new column is descending, the same one again flips it', async () => {
+    searchListings.mockResolvedValue(servicePage([listing()]));
     renderWidget(rareRing());
     fireEvent.click(searchButton());
-    expect(await screen.findByText('No listings found')).not.toBeNull();
-    expect(screen.getByText('Try loosening your stat filters or turn on Show Expired.')).not.toBeNull();
+    await screen.findByText('1.5 HR');
+    expect(lastFilters().sort).toEqual({ by: 'bumped', dir: 'desc' });
 
-    fireEvent.click(screen.getByRole('switch'));
-    expect(screen.getByText('Try loosening your stat filters.')).not.toBeNull();
+    fireEvent.click(screen.getByTitle('Sort by price'));
+    await waitFor(() => expect(lastFilters().sort).toEqual({ by: 'price', dir: 'desc' }));
+    expect(lastPage()).toBe(0);
+    fireEvent.click(screen.getByTitle('Sort by price'));
+    await waitFor(() => expect(lastFilters().sort).toEqual({ by: 'price', dir: 'asc' }));
+    fireEvent.click(screen.getByTitle('Sort by listing date'));
+    await waitFor(() => expect(lastFilters().sort).toEqual({ by: 'bumped', dir: 'desc' }));
   });
 
-  it('Show Expired routes the search to the archive', async () => {
+  it('a cheapest-first search that PD2 answers sorts by HR price and leaves out unpriced listings', async () => {
+    searchListings.mockResolvedValue(servicePage([listing()]));
     renderWidget(rareRing());
-    fireEvent.click(screen.getByRole('switch'));
     fireEvent.click(searchButton());
-    await waitFor(() => expect(getMarketListingsArchive).toHaveBeenCalledTimes(1));
-    expect(getMarketListings).not.toHaveBeenCalled();
+    await screen.findByText('1.5 HR');
+    fireEvent.click(screen.getByTitle('Sort by price'));
+    await waitFor(() => expect(lastFilters().sort.by).toBe('price'));
+
+    searchListings.mockRejectedValueOnce(new MarketBackendError('down', 'unavailable', 503));
+    getMarketListings.mockResolvedValueOnce(page([listing({ hr_price: 2 })]));
+    fireEvent.click(screen.getByTitle('Sort by price'));
+    expect(await screen.findByText('2 HR')).not.toBeNull();
+    expect(lastQuery()).toMatchObject({ $sort: { hr_price: 1 }, hr_price: { $gt: 0 } });
+  });
+
+  it('the seller menu keeps sellers in game, on the site, or either; the count says how many', async () => {
+    const now = new Date().toISOString();
+    const old = '2026-10-01T00:00:00.000Z';
+    searchListings.mockResolvedValue(
+      servicePage([
+        listing({ _id: 'g', hr_price: 1, user_last_ingame: now, user_last_online: old }),
+        listing({ _id: 's', hr_price: 2, user_last_ingame: old, user_last_online: now }),
+        listing({ _id: 'o', hr_price: 3, user_last_ingame: old, user_last_online: old }),
+      ]),
+    );
+    renderWidget(rareRing());
+    fireEvent.click(searchButton());
+    await screen.findByText('3 HR');
+    const shown = () => ['1 HR', '2 HR', '3 HR'].filter((p) => screen.queryByText(p));
+
+    const pick = (name: string) => {
+      fireEvent.click(screen.getByRole('button', { name: 'Seller filter' }));
+      fireEvent.click(screen.getByRole('menuitemradio', { name }));
+    };
+
+    pick('In game');
+    expect(shown()).toEqual(['1 HR']);
+    expect(screen.getByText('· 1 in game')).not.toBeNull();
+
+    pick('In game or on trade site');
+    expect(shown()).toEqual(['1 HR', '2 HR']);
+    expect(screen.getByText('· 2 online')).not.toBeNull();
+
+    pick('On the trade site');
+    expect(shown()).toEqual(['2 HR']);
+    expect(screen.getByText('· 1 on site')).not.toBeNull();
+
+    pick('Anyone');
+    expect(shown()).toEqual(['1 HR', '2 HR', '3 HR']);
+    // Filtering never searches again
+    expect(searchListings).toHaveBeenCalledTimes(1);
+  });
+
+  it('a search that finds nothing shows each filter with what dropping it finds; one click drops it', async () => {
+    // The real search (a page of 20) finds nothing; the counts (one row) depend on what they leave out
+    searchListings.mockImplementation(async (f, opts) => {
+      if (opts.limit !== 1) return servicePage([]);
+      const fcr = f.stats.some((s) => s.key === 'item_fastercastrate');
+      const anyQuality = f.rarity.length > 1;
+      return servicePage([], !fcr ? 7 : anyQuality ? 3 : 0);
+    });
+    renderWidget(rareRing());
+    fireEvent.click(statCheckbox('+20% Faster Cast Rate'));
+    fireEvent.click(searchButton());
+
+    expect(await screen.findByText('No listings match all these filters')).not.toBeNull();
+    const chips = () => within(screen.getByRole('list', { name: 'Filters to drop' })).getAllByRole('button');
+    // Every relaxation as a chip, in order (ranges, stats, base, quality), named with its count once it landed
+    await waitFor(() =>
+      expect(chips().map((b) => b.getAttribute('aria-label'))).toEqual([
+        'Without Stat ranges: 0 listings',
+        'Without +20% Faster Cast Rate: 7 listings',
+        'Without Ring: 0 listings',
+        'Without Rare: 3 listings',
+      ]),
+    );
+    const fcrChip = () => screen.getByRole('button', { name: 'Without +20% Faster Cast Rate: 7 listings' });
+    expect(screen.getByRole('button', { name: 'Show expired' })).not.toBeNull();
+    // Counting asked one row per relaxation, never re-running the listed search
+    expect(realSearches()).toHaveLength(1);
+
+    // Hovering a chip rings the row it would drop (the chip repeats the row's text: find the row by its label)
+    const fcrRow = () =>
+      screen
+        .getAllByText('+20% Faster Cast Rate')
+        .map((e) => e.closest('label'))
+        .find((l): l is HTMLLabelElement => !!l)!;
+    expect(fcrRow().className).not.toMatch(/ring-primary/);
+    fireEvent.mouseEnter(fcrChip());
+    expect(fcrRow().className).toMatch(/ring-primary/);
+    fireEvent.mouseLeave(fcrChip());
+    expect(fcrRow().className).not.toMatch(/ring-primary/);
+
+    fireEvent.click(fcrChip());
+    await waitFor(() => expect(realSearches()).toHaveLength(2));
+    expect(realSearches()[1][0].stats).toEqual([]);
+    expect(fcrRow().querySelector('[role="checkbox"]')!.getAttribute('aria-checked')).toBe('false');
+  });
+
+  it('Expired searches every ended listing (sold, removed, expired) on the market service', async () => {
+    renderWidget(rareRing());
+    fireEvent.click(screen.getByRole('radio', { name: 'Expired' }));
+    expect(searchListings).not.toHaveBeenCalled();
+    fireEvent.click(searchButton());
+    await waitFor(() => expect(searchListings).toHaveBeenCalledTimes(1));
+    expect(lastFilters()).toMatchObject({ source: 'archive', maxAgeDays: 14, status: ['sold', 'removed', 'expired'] });
+    expect(getMarketListingsArchive).not.toHaveBeenCalled();
+  });
+
+  it('switching between Live and Expired after a search searches again', async () => {
+    renderWidget(rareRing());
+    fireEvent.click(searchButton());
+    await waitFor(() => expect(realSearches()).toHaveLength(1));
+    expect(lastFilters().source).not.toBe('archive');
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Expired' }));
+    await waitFor(() => expect(realSearches()).toHaveLength(2));
+    expect(lastFilters()).toMatchObject({ source: 'archive' });
+    expect(screen.getByRole('radio', { name: 'Expired' }).getAttribute('aria-checked')).toBe('true');
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Live' }));
+    await waitFor(() => expect(realSearches()).toHaveLength(3));
+    expect(lastFilters().source).not.toBe('archive');
+  });
+
+  it('says how long each ended listing was up and how it ended', async () => {
+    searchListings.mockResolvedValue(
+      servicePage([listing({ hr_price: 4 })], 1, 1, {
+        status: 'sold',
+        listedAt: '2026-10-14T12:00:00.000Z',
+        endedAt: '2026-10-16T12:00:00.000Z',
+        durationSeconds: 2 * 86400,
+      }),
+    );
+    renderWidget(rareRing());
+    fireEvent.click(screen.getByRole('radio', { name: 'Expired' }));
+    fireEvent.click(searchButton());
+    const row = (await screen.findByText('4 HR')).closest('tr')!;
+    const ended = within(row).getByText('sold after 2 days');
+    expect(ended.getAttribute('title')).toBe('Ended 2 days ago');
+  });
+
+  it('asks PD2 for the page when the market service fails, and reports the failure', async () => {
+    const outage = new MarketBackendError('The market service answered 503.', 'unavailable', 503);
+    searchListings.mockRejectedValueOnce(outage);
+    getMarketListings.mockResolvedValueOnce(page([listing({ hr_price: 5 })]));
+    renderWidget(rareRing());
+    fireEvent.click(searchButton());
+
+    expect(await screen.findByText('5 HR')).not.toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(lastQuery()).toMatchObject({ $skip: 0, $limit: 20, 'item.quality.name': 'Rare' });
+    expect(reportApiError).toHaveBeenCalledWith(
+      outage,
+      'market-service',
+      '/api/market/search',
+      503,
+      expect.objectContaining({ fallback: 'pd2' }),
+    );
+  });
+
+  it('sends only searches the market service cannot express to PD2 (a skill matched by its line)', async () => {
+    // A skill missing from the skill tables: PD2 matches it by the modifier label, the service can't
+    // BH exports such lines without a stat id
+    const zorbo = { name: '15% Chance to cast level 20 Zorbo Blast on attack' } as Stat;
+    renderWidget(rareRing({ stats: [FCR, zorbo] }));
+    fireEvent.click(statCheckbox('15% Chance to cast level 20 Zorbo Blast on attack'));
+    fireEvent.click(searchButton());
+    await waitFor(() => expect(getMarketListings).toHaveBeenCalledTimes(1));
+    expect(JSON.stringify(lastQuery())).toContain('"label"');
+    expect(searchListings).not.toHaveBeenCalled();
+
+    // Without that row the next search is the service's again
+    fireEvent.click(statCheckbox('15% Chance to cast level 20 Zorbo Blast on attack'));
+    fireEvent.click(searchButton());
+    await waitFor(() => expect(searchListings).toHaveBeenCalledTimes(1));
   });
 
   it('shows the error with a Retry that searches again', async () => {
+    // The service is down and PD2, standing in, fails too
+    searchListings.mockRejectedValueOnce(new MarketBackendError('down', 'unavailable', 503));
     getMarketListings.mockRejectedValueOnce(new Error('Rate limited'));
-    getMarketListings.mockResolvedValueOnce(page([listing({ hr_price: 7 })]));
+    searchListings.mockResolvedValueOnce(servicePage([listing({ hr_price: 7 })]));
     renderWidget(rareRing());
     fireEvent.click(searchButton());
 
@@ -582,14 +813,14 @@ describe('ItemOverlayWidget market search', () => {
     renderWidget(rareRing());
     fireEvent.click(searchButton());
     await act(async () => {});
-    expect(getMarketListings).not.toHaveBeenCalled();
+    expect(searchListings).not.toHaveBeenCalled();
   });
 
   it('loads the next page when the end of the list scrolls into view, skipping duplicates', async () => {
     const first = Array.from({ length: 20 }, (_, i) => listing({ _id: `p1-${i}`, hr_price: i + 1 }));
-    getMarketListings.mockResolvedValueOnce(page(first, 25));
-    getMarketListings.mockResolvedValueOnce(
-      page([listing({ _id: 'p1-0', hr_price: 1 }), listing({ _id: 'p2-0', hr_price: 99 })], 25),
+    searchListings.mockResolvedValueOnce(servicePage(first, 25));
+    searchListings.mockResolvedValueOnce(
+      servicePage([listing({ _id: 'p1-0', hr_price: 1 }), listing({ _id: 'p2-0', hr_price: 99 })], 25),
     );
     const item = rareRing();
     const { rerenderItem } = renderWidget(item);
@@ -599,7 +830,7 @@ describe('ItemOverlayWidget market search', () => {
     inView = true;
     rerenderItem(item);
     expect(await screen.findByText('99 HR')).not.toBeNull();
-    expect(lastQuery().$skip).toBe(20);
+    expect(lastPage()).toBe(1);
     expect(screen.getAllByRole('row')).toHaveLength(1 + 21); // header + 20 + one new (duplicate dropped)
     // a short page means there is nothing more to load
     expect(screen.queryByText('Load more')).toBeNull();
@@ -608,8 +839,8 @@ describe('ItemOverlayWidget market search', () => {
   it('keeps Load more when a full page of rows held an item-less listing', async () => {
     // PD2 sent 20 rows; the one without an item was dropped before reaching the widget
     const first = Array.from({ length: 19 }, (_, i) => listing({ _id: `p1-${i}`, hr_price: i + 1 }));
-    getMarketListings.mockResolvedValueOnce(page(first, 30, 20));
-    getMarketListings.mockResolvedValueOnce(page([listing({ _id: 'p2-0', hr_price: 99 })], 30));
+    searchListings.mockResolvedValueOnce(servicePage(first, 30, 20));
+    searchListings.mockResolvedValueOnce(servicePage([listing({ _id: 'p2-0', hr_price: 99 })], 30));
     const item = rareRing();
     const { rerenderItem } = renderWidget(item);
     fireEvent.click(searchButton());
@@ -619,13 +850,13 @@ describe('ItemOverlayWidget market search', () => {
     inView = true;
     rerenderItem(item);
     expect(await screen.findByText('99 HR')).not.toBeNull();
-    expect(lastQuery().$skip).toBe(20);
+    expect(lastPage()).toBe(1);
   });
 
   it('after scrolling, a new search starts from the first page with the edited filters', async () => {
     const first = Array.from({ length: 20 }, (_, i) => listing({ _id: `a${i}`, hr_price: i + 1 }));
-    getMarketListings.mockResolvedValueOnce(page(first, 23));
-    getMarketListings.mockResolvedValueOnce(page([listing({ _id: 'a20', hr_price: 21 })], 23));
+    searchListings.mockResolvedValueOnce(servicePage(first, 23));
+    searchListings.mockResolvedValueOnce(servicePage([listing({ _id: 'a20', hr_price: 21 })], 23));
     const item = rareRing();
     const { rerenderItem } = renderWidget(item);
     fireEvent.click(statCheckbox('+30% Better Chance of Getting Magic Items'));
@@ -637,50 +868,47 @@ describe('ItemOverlayWidget market search', () => {
     inView = false;
     rerenderItem(item);
 
-    // Editing the range or Show Expired fetches nothing until Search
+    // Editing the range fetches nothing until Search
     const min = screen.getByLabelText('% Better Chance of Getting Magic Items minimum');
     fireEvent.change(min, { target: { value: '1' } });
-    fireEvent.click(screen.getByRole('switch'));
-    fireEvent.click(screen.getByRole('switch'));
     await act(async () => {});
-    expect(getMarketListings).toHaveBeenCalledTimes(2);
+    expect(searchListings).toHaveBeenCalledTimes(2);
 
-    getMarketListings.mockResolvedValueOnce(page([listing({ _id: 'b0', hr_price: 77 })], 1));
+    searchListings.mockResolvedValueOnce(servicePage([listing({ _id: 'b0', hr_price: 77 })], 1));
     fireEvent.click(searchButton());
     expect(await screen.findByText('77 HR')).not.toBeNull();
-    const q = lastQuery();
-    expect(q.$skip).toBe(0);
-    expect(JSON.stringify(q)).toContain('{"name":"item_magicbonus","values.0":{"$gte":1,"$lte":');
+    expect(lastPage()).toBe(0);
+    expect(lastFilters().stats).toEqual([expect.objectContaining({ key: 'item_magicbonus', min: 1 })]);
     expect(screen.getAllByRole('row')).toHaveLength(1 + 1);
   });
 
   it('drops a page that arrives after a newer search started', async () => {
     const first = Array.from({ length: 20 }, (_, i) => listing({ _id: `a${i}` }));
-    getMarketListings.mockResolvedValueOnce(page(first, 40));
-    const late = Promise.withResolvers<MarketListingResult>();
-    getMarketListings.mockReturnValueOnce(late.promise);
+    searchListings.mockResolvedValueOnce(servicePage(first, 40));
+    const late = Promise.withResolvers<MarketSearchPage>();
+    searchListings.mockReturnValueOnce(late.promise);
     const item = rareRing();
     const { rerenderItem } = renderWidget(item);
     fireEvent.click(searchButton());
     expect(await screen.findByText('Load more')).not.toBeNull();
     inView = true;
     rerenderItem(item);
-    await waitFor(() => expect(getMarketListings).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(searchListings).toHaveBeenCalledTimes(2));
     inView = false;
     rerenderItem(item);
 
-    getMarketListings.mockResolvedValueOnce(page([listing({ _id: 'b0', hr_price: 77 })], 1));
+    searchListings.mockResolvedValueOnce(servicePage([listing({ _id: 'b0', hr_price: 77 })], 1));
     fireEvent.click(searchButton());
     expect(await screen.findByText('77 HR')).not.toBeNull();
-    await act(async () => late.resolve(page([listing({ _id: 'a20', hr_price: 66 })], 40)));
+    await act(async () => late.resolve(servicePage([listing({ _id: 'a20', hr_price: 66 })], 40)));
     expect(screen.queryByText('66 HR')).toBeNull();
     expect(screen.getAllByRole('row')).toHaveLength(1 + 1);
   });
 
   it('copies a whisper to the seller of an online listing', async () => {
     vi.mocked(writeText).mockResolvedValue(undefined);
-    getMarketListings.mockResolvedValue(
-      page([
+    searchListings.mockResolvedValue(
+      servicePage([
         listing({
           hr_price: 3,
           user_last_ingame: '2026-10-18T11:58:00Z',
@@ -701,23 +929,73 @@ describe('ItemOverlayWidget market search', () => {
       expect(writeText).toHaveBeenCalledWith("/w *IngameAcc Hi, I'm interested in your Doom Coil listed for 3 HR"),
     );
   });
+
+  it("pops in the sellers' current presence from PD2 after the rows render, in the same order", async () => {
+    settings.pd2Token = 'token';
+    const lookup = Promise.withResolvers<Map<string, ListingPresence>>();
+    getListingPresence.mockReturnValue(lookup.promise);
+    searchListings.mockResolvedValue(
+      servicePage([
+        listing({ _id: 'a', hr_price: 1, user_last_ingame: '2026-10-18T09:00:00Z' }),
+        listing({ _id: 'b', hr_price: 2, user_last_ingame: '2026-10-18T09:00:00Z' }),
+      ]),
+    );
+    renderWidget(rareRing());
+    fireEvent.click(searchButton());
+
+    // Rows show before PD2 answered, with the stored (stale) presence: nobody online
+    expect(await screen.findByText('2 HR')).not.toBeNull();
+    expect(screen.queryByRole('button', { name: 'Copy whisper' })).toBeNull();
+    expect(getListingPresence).toHaveBeenCalledWith(['a', 'b']);
+
+    await act(async () =>
+      lookup.resolve(new Map([['b', { user_last_online: null, user_last_ingame: '2026-10-18T11:59:00Z' }]])),
+    );
+    const rows = screen.getAllByRole('row').slice(1);
+    expect(rows.map((r) => within(r).getByText(/HR$/).textContent)).toEqual(['1 HR', '2 HR']);
+    expect(within(rows[1]).getByRole('button', { name: 'Copy whisper' })).not.toBeNull();
+    expect(within(rows[0]).queryByRole('button', { name: 'Copy whisper' })).toBeNull();
+  });
 });
 
-describe('ItemOverlayWidget listing to quick-list', () => {
-  it('List is disabled for items outside the shared stash', () => {
+describe('ItemOverlayWidget ⋯ menu', () => {
+  const openMore = async () => {
+    await act(async () => {
+      fireEvent.pointerDown(screen.getByRole('button', { name: 'More' }), {
+        button: 0,
+        ctrlKey: false,
+        pointerType: 'mouse',
+      });
+    });
+    return screen.getByRole('menu');
+  };
+
+  it('greys out List with the reason for items outside a stash, and lists nothing', async () => {
     renderWidget(rareRing());
-    expect((screen.getByRole('button', { name: /List$/ }) as HTMLButtonElement).disabled).toBe(true);
+    const menu = await openMore();
+    const list = within(menu).getByRole('menuitem', { name: 'List' });
+    expect(list.getAttribute('aria-disabled')).toBe('true');
+    expect(within(menu).getByText('Item must be in your stash (shared or personal) to list.')).not.toBeNull();
+    fireEvent.click(list);
+    expect(overlay.openPanel).not.toHaveBeenCalledWith('quickList', expect.anything(), expect.anything());
   });
 
-  it('opens the quick-list panel at the cursor with the encoded item for stash items', () => {
+  it('List opens the quick-list panel at the cursor with the encoded item for stash items', async () => {
     const item = rareRing({ location: 'Stash' });
     renderWidget(item);
-    const list = screen.getByRole('button', { name: /List$/ }) as HTMLButtonElement;
-    if (list.disabled) throw new Error('expected stash item to be listable');
-    fireEvent.click(list);
+    const menu = await openMore();
+    expect(within(menu).queryByText('Item must be in your stash (shared or personal) to list.')).toBeNull();
+    fireEvent.click(within(menu).getByRole('menuitem', { name: 'List' }));
     expect(overlay.openPanel).toHaveBeenCalledWith('quickList', { item: expect.any(String) }, { placement: 'cursor' });
     const { item: encoded } = vi.mocked(overlay.openPanel).mock.calls[0][1] as { item: string };
     expect(JSON.parse(decodeURIComponent(escape(atob(encoded))))).toEqual(item);
+  });
+
+  it('opens the same search on projectdiablo2.com, whether or not the item can be listed', async () => {
+    renderWidget(rareRing());
+    const menu = await openMore();
+    fireEvent.click(within(menu).getByRole('menuitem', { name: 'Open search on projectdiablo2.com' }));
+    expect(vi.mocked(openUrl).mock.calls[0][0]).toMatch(/^https:\/\/(www\.)?projectdiablo2\.com\//);
   });
 });
 
@@ -779,8 +1057,8 @@ describe('ItemOverlayWidget rare appraisal', () => {
     // only starred stats are pre-selected
     expect(screen.queryByLabelText('% Better Chance of Getting Magic Items minimum')).toBeNull();
 
-    await waitFor(() => expect(getMarketListings).toHaveBeenCalledTimes(1));
-    expect(JSON.stringify(lastQuery())).toContain('{"name":"item_fastercastrate","values.0":{"$gte":20}}');
+    await waitFor(() => expect(searchListings).toHaveBeenCalledTimes(1));
+    expect(lastFilters().stats).toEqual([expect.objectContaining({ key: 'item_fastercastrate', min: 20 })]);
   });
 
   it('other verdicts pre-select but wait for the user to search', async () => {
@@ -791,7 +1069,7 @@ describe('ItemOverlayWidget rare appraisal', () => {
     renderWidget(rareRing());
     expect(screen.getByLabelText('% Faster Cast Rate minimum')).not.toBeNull();
     await act(async () => {});
-    expect(getMarketListings).not.toHaveBeenCalled();
+    expect(searchListings).not.toHaveBeenCalled();
   });
 
   it('shows the server reason when there is no appraisal', () => {
@@ -825,12 +1103,39 @@ describe('ItemOverlayWidget extra header behaviour', () => {
     await waitFor(() => expect(screen.getByTitle('Click to toggle search mode').textContent).toBe('Type: Jewelry'));
 
     fireEvent.click(searchButton());
-    await waitFor(() => expect(getMarketListings).toHaveBeenCalled());
-    expect(JSON.stringify(lastQuery())).toContain('amul');
-    expect(JSON.stringify(lastQuery())).not.toContain('"rin"');
+    await waitFor(() => expect(searchListings).toHaveBeenCalled());
+    expect(JSON.stringify(lastFilters())).toContain('amul');
+    expect(lastFilters().baseCode).toBeUndefined();
 
     fireEvent.click(screen.getByTitle('Click to toggle search mode'));
     await waitFor(() => expect(screen.getByTitle('Click to toggle search mode').textContent).toBe('Base: Ring'));
+  });
+
+  it("cycles a rare bow's base → type → type group → base, searching the group's members", async () => {
+    renderWidget(rareRing({ name: 'Grim Fletch', type: 'Ceremonial Bow' }));
+    const mode = () => screen.getByTitle('Click to toggle search mode');
+    expect(mode().textContent).toBe('Base: Ceremonial Bow');
+    fireEvent.click(mode());
+    await waitFor(() => expect(mode().textContent).toBe('Type: Amazon Bow'));
+    fireEvent.click(mode());
+    await waitFor(() => expect(mode().textContent).toBe('Group: Bows'));
+
+    fireEvent.click(searchButton());
+    await waitFor(() => expect(searchListings).toHaveBeenCalled());
+    expect(lastFilters()).toMatchObject({ typeCode: 'group:bows' });
+    expect(lastFilters().baseCode).toBeUndefined();
+
+    fireEvent.click(mode());
+    await waitFor(() => expect(mode().textContent).toBe('Base: Ceremonial Bow'));
+  });
+
+  it('toggles a rare without a type group (Sorceress Orb) between base and type only', async () => {
+    renderWidget(rareRing({ name: 'Doom Eye', type: 'Eagle Orb' }));
+    const mode = () => screen.getByTitle('Click to toggle search mode');
+    fireEvent.click(mode());
+    await waitFor(() => expect(mode().textContent).toBe('Type: Sorceress Orb'));
+    fireEvent.click(mode());
+    await waitFor(() => expect(mode().textContent).toBe('Base: Eagle Orb'));
   });
 
   it('Net Worth opens the currency panel', () => {
@@ -866,14 +1171,14 @@ describe('ItemOverlayWidget extra header behaviour', () => {
       itemName: 'Harlequin Crest',
       corruptionPrices: [
         {
-          corruptionKey: ['item_tohit_percent'],
+          corruptionKey: ['tohit'],
           corruptionName: 'Tohit Percent',
           averagePrice: 5,
           medianPrice: 5.5,
           sampleCount: 8,
           socketPrices: [{ socketCount: 1, averagePrice: 6, medianPrice: 6.25, sampleCount: 3 }],
         },
-        { corruptionKey: ['item_maxhp'], corruptionName: 'Maxhp', averagePrice: 4, medianPrice: 4, sampleCount: 2 },
+        { corruptionKey: ['maxhp'], corruptionName: 'Maxhp', averagePrice: 4, medianPrice: 4, sampleCount: 2 },
       ],
     });
     // stat 360 carries the cube corruption key: 3 = attack rating %
@@ -893,10 +1198,10 @@ describe('ItemOverlayWidget extra header behaviour', () => {
     // socket breakdown: picking a socket count filters on exactly that many sockets
     fireEvent.mouseEnter(within(own).getByText('Tohit Percent').closest('[role="button"]')!.parentElement!);
     fireEvent.click(await screen.findByText(/1 Socket$/));
-    await waitFor(() => expect(getMarketListings).toHaveBeenCalled());
-    const q = lastQuery();
-    expect(q['item.socket_count']).toEqual({ $gte: 1, $lte: 1 });
-    expect(q['item.corruptions']).toEqual({ $all: ['item_tohit_percent'] });
+    await waitFor(() => expect(searchListings).toHaveBeenCalled());
+    const f = lastFilters();
+    expect(f).toMatchObject({ socketsMin: 1, socketsMax: 1 });
+    expect(f.stats).toContainEqual(expect.objectContaining({ kind: 'corruption', key: 'tohit' }));
   });
 });
 
@@ -925,10 +1230,8 @@ describe('ItemOverlayWidget sockets and ethereal rows', () => {
     expect((screen.getByLabelText('Sockets minimum') as HTMLInputElement).value).toBe('2');
     fireEvent.click(statCheckbox('Ethereal'));
     fireEvent.click(searchButton());
-    await waitFor(() => expect(getMarketListings).toHaveBeenCalled());
-    const q = lastQuery();
-    expect(q['item.socket_count']).toEqual({ $gte: 2, $lte: 2 });
-    expect(q['item.is_ethereal']).toBe(true);
+    await waitFor(() => expect(searchListings).toHaveBeenCalled());
+    expect(lastFilters()).toMatchObject({ socketsMin: 2, socketsMax: 2, ethereal: 'yes' });
   });
 
   it('offers the Corrupted filter on rare rings', () => {

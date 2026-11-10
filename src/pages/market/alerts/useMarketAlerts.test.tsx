@@ -31,7 +31,16 @@ const h = vi.hoisted(() => ({
 vi.mock('@/hooks/useOptions', () => ({ useOptions: () => ({ settings: h.settings, isLoading: false }) }));
 vi.mock('@/hooks/useOAuth', () => ({ useOAuth: () => ({ refreshTokens: h.refreshTokens }) }));
 vi.mock('@/hooks/useSocketNotifications', () => ({ playNotificationSound: vi.fn() }));
-vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
+// notify() logs and toasts when asked: the toast half goes through the showToast mock
+vi.mock('@/overlay', () => {
+  const showToast = vi.fn();
+  return {
+    showToast,
+    notify: vi.fn((_kind: string, payload: unknown, { toast }: { toast: boolean }) => {
+      if (toast) showToast(payload);
+    }),
+  };
+});
 vi.mock('@/hooks/useSignIn', () => ({ useSignIn: () => ({ openSignIn: h.openSignIn, isOpen: false }) }));
 vi.mock('@/lib/browser-fs', () => ({
   BaseDirectory: { AppConfig: 13 },
