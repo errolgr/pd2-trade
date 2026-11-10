@@ -75,7 +75,6 @@
     },
     "actions": {
       "openTrade": "Abrir búsqueda en projectdiablo2.com",
-      "more": "Más",
       "openInMarket": "Abrir en el mercado",
       "list": "Anunciar",
       "listDisabled": "El objeto debe estar en tu alijo (compartido o personal) para anunciarlo."

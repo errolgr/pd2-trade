@@ -72,7 +72,6 @@
     },
     "actions": {
       "openTrade": "Open search on projectdiablo2.com",
-      "more": "More",
       "openInMarket": "Open in market",
       "list": "List",
       "listDisabled": "Item must be in your stash (shared or personal) to list."

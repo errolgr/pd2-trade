@@ -958,43 +958,35 @@ describe('ItemOverlayWidget market search', () => {
   });
 });
 
-describe('ItemOverlayWidget ⋯ menu', () => {
-  const openMore = async () => {
-    await act(async () => {
-      fireEvent.pointerDown(screen.getByRole('button', { name: 'More' }), {
-        button: 0,
-        ctrlKey: false,
-        pointerType: 'mouse',
-      });
-    });
-    return screen.getByRole('menu');
-  };
+describe('ItemOverlayWidget secondary actions', () => {
+  const LIST_DISABLED = 'Item must be in your stash (shared or personal) to list.';
 
   it('greys out List with the reason for items outside a stash, and lists nothing', async () => {
     renderWidget(rareRing());
-    const menu = await openMore();
-    const list = within(menu).getByRole('menuitem', { name: 'List' });
+    const list = screen.getByRole('button', { name: 'List' });
     expect(list.getAttribute('aria-disabled')).toBe('true');
-    expect(within(menu).getByText('Item must be in your stash (shared or personal) to list.')).not.toBeNull();
+    await act(async () => {
+      fireEvent.focus(list);
+    });
+    expect((await screen.findByRole('tooltip')).textContent).toContain(LIST_DISABLED);
     fireEvent.click(list);
     expect(overlay.openPanel).not.toHaveBeenCalledWith('quickList', expect.anything(), expect.anything());
   });
 
-  it('List opens the quick-list panel at the cursor with the encoded item for stash items', async () => {
+  it('List opens the quick-list panel at the cursor with the encoded item for stash items', () => {
     const item = rareRing({ location: 'Stash' });
     renderWidget(item);
-    const menu = await openMore();
-    expect(within(menu).queryByText('Item must be in your stash (shared or personal) to list.')).toBeNull();
-    fireEvent.click(within(menu).getByRole('menuitem', { name: 'List' }));
+    const list = screen.getByRole('button', { name: 'List' });
+    expect(list.getAttribute('aria-disabled')).toBe('false');
+    fireEvent.click(list);
     expect(overlay.openPanel).toHaveBeenCalledWith('quickList', { item: expect.any(String) }, { placement: 'cursor' });
     const { item: encoded } = vi.mocked(overlay.openPanel).mock.calls[0][1] as { item: string };
     expect(JSON.parse(decodeURIComponent(escape(atob(encoded))))).toEqual(item);
   });
 
-  it('opens the same search on projectdiablo2.com, whether or not the item can be listed', async () => {
+  it('opens the same search on projectdiablo2.com, whether or not the item can be listed', () => {
     renderWidget(rareRing());
-    const menu = await openMore();
-    fireEvent.click(within(menu).getByRole('menuitem', { name: 'Open search on projectdiablo2.com' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open search on projectdiablo2.com' }));
     expect(vi.mocked(openUrl).mock.calls[0][0]).toMatch(/^https:\/\/(www\.)?projectdiablo2\.com\//);
   });
 });

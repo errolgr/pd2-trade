@@ -24,7 +24,6 @@ import {
   ListPlus,
   Loader2,
   LuggageIcon,
-  MoreHorizontal,
   Repeat2,
   RotateCw,
   SearchIcon,
@@ -79,13 +78,6 @@ import { imageToast, showToast, useOverlay } from '@/overlay';
 import { getSeasonById, getSeasonDateConfig } from '@/lib/seasons';
 import { basisLabel, DEFAULT_PRICE_WINDOW_HOURS, priceWindowNote, windowLabel } from '@/lib/price-window';
 import { ButtonGroup } from '@/components/ui/button-group';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { itemTypes } from '@/common/item-types';
 import { ItemQuality } from '@/common/types/Item';
 import { trackEvent, trackMeasurement } from '@/lib/telemetry';
@@ -1707,46 +1699,45 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                   </TooltipTrigger>
                   <TooltipContent side="top">{t('overlay.actions.openInMarket')}</TooltipContent>
                 </Tooltip>
-                {/* Less used actions: listing the item, the same search on projectdiablo2.com */}
-                <DropdownMenu>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          aria-label={t('overlay.actions.more')}
-                          className="cursor-pointer border-l border-primary-foreground/15 px-3 data-[state=open]:bg-primary/80"
-                        >
-                          <MoreHorizontal />
-                        </Button>
-                      </DropdownMenuTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent side="top">{t('overlay.actions.more')}</TooltipContent>
-                  </Tooltip>
-                  <DropdownMenuContent align="start"
-                    side="bottom"
-                    className="min-w-60">
-                    <DropdownMenuItem className="cursor-pointer"
-                      disabled={!canList}
-                      onSelect={openListWindow}>
-                      <ListPlus />
-                      {t('overlay.actions.list')}
-                    </DropdownMenuItem>
-                    {!canList && (
-                      <p className="max-w-60 px-2 pb-1.5 pl-8 text-xs text-muted-foreground">
-                        {t('overlay.actions.listDisabled')}
-                      </p>
-                    )}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="cursor-pointer"
-                      onSelect={openTradeUrl}>
-                      <SquareArrowOutUpRight />
-                      {t('overlay.actions.openTrade')}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </ButtonGroup>
 
-              <SimulatorButton item={item} />
+              {/* Secondary actions: the same search on projectdiablo2.com, listing the item */}
+              <ButtonGroup>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      aria-label={t('overlay.actions.openTrade')}
+                      className="cursor-pointer px-3 text-muted-foreground hover:text-foreground"
+                      onClick={openTradeUrl}
+                    >
+                      <SquareArrowOutUpRight />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">{t('overlay.actions.openTrade')}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    {/* aria-disabled, not disabled: the tooltip still explains why listing is off */}
+                    <Button
+                      variant="outline"
+                      aria-label={t('overlay.actions.list')}
+                      aria-disabled={!canList}
+                      className="cursor-pointer px-3 text-muted-foreground hover:text-foreground aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:bg-background/60 aria-disabled:hover:text-muted-foreground"
+                      onClick={canList ? openListWindow : undefined}
+                    >
+                      <ListPlus />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top"
+                    className={canList ? undefined : 'max-w-60'}>
+                    {canList ? t('overlay.actions.list') : t('overlay.actions.listDisabled')}
+                  </TooltipContent>
+                </Tooltip>
+              </ButtonGroup>
+
+              <SimulatorButton item={item}
+                className="ml-auto" />
             </div>
 
             {/* Results bar: which listings the search covers (picking one searches again), then what it found */}
