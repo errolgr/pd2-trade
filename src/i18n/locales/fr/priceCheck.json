@@ -75,7 +75,6 @@
     },
     "actions": {
       "openTrade": "Ouvrir la recherche sur projectdiablo2.com",
-      "more": "Plus",
       "openInMarket": "Ouvrir dans le marché",
       "list": "Vendre",
       "listDisabled": "L'objet doit être dans votre coffre (partagé ou personnel) pour être mis en vente."

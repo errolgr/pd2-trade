@@ -75,7 +75,6 @@
     },
     "actions": {
       "openTrade": "Abrir busca no projectdiablo2.com",
-      "more": "Mais",
       "openInMarket": "Abrir no mercado",
       "list": "Anunciar",
       "listDisabled": "O item precisa estar no seu baú (compartilhado ou pessoal) para ser anunciado."
