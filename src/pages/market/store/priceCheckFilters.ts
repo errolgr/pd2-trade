@@ -16,6 +16,7 @@ import { PSEUDO_KEY_PREFIX } from '@/pages/price-check/lib/utils';
 import { findBaseOption, findTypeOption } from '@/pages/market/lib/catalog';
 import { typeGroupForMembers } from '@/pages/market/lib/type-groups';
 import { defaultFilters, mergeFilters } from '@/pages/market/lib/defaults';
+import { DAMAGE_KEY, MAX_DAMAGE_NAMES, MIN_DAMAGE_NAMES } from '@/pages/market/lib/stats';
 import type { MarketFilters, MarketListingStatus, Rarity, StatFilter } from '@/pages/market/lib/types';
 
 export interface PriceCheckSearch {
@@ -58,11 +59,14 @@ const CHARM_TYPE_BY_BASE: Record<string, string> = { cm1: 'scha', cm2: 'mcha', c
 
 type ElemMatch = Record<string, unknown> & { name: string | { $in: string[] } };
 
-/** Market browser keys of the physical min/max damage modifiers (stat-options `a|b` alternatives). */
-const PHYSICAL_DAMAGE_KEYS = [
-  'min_damage|mindamage|secondary_mindamage|item_throw_mindamage',
-  'max_damage|maxdamage|secondary_maxdamage|item_throw_maxdamage',
-];
+/** Which physical damage line an `$elemMatch` selects (its names all min-damage or all max-damage names). */
+function physicalSide(match: ElemMatch): 'min' | 'max' | null {
+  if (typeof match.name === 'string') return null;
+  const names = match.name.$in;
+  if (names.every((n) => MIN_DAMAGE_NAMES.includes(n))) return 'min';
+  if (names.every((n) => MAX_DAMAGE_NAMES.includes(n))) return 'max';
+  return null;
+}
 
 /** `value[key]` when value is an object (query fragments are loosely typed). */
 function prop(value: unknown, key: string): unknown {
@@ -81,6 +85,14 @@ function readRange(value: unknown): { min?: number; max?: number } {
 /** A value the key grammar can pin: a non-negative integer of at most 6 digits. */
 const isSlotNumber = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v) && v >= 0 && v < 1e6;
 
+/** A bounded value as a `{…}` slot (`4..`, `4..9`, `..9`, `4`); null when unbounded or not slot numbers. */
+function rangeSlot(value: unknown): string | null {
+  const { min, max } = readRange(value);
+  const ends = [min, max].filter((end) => end !== undefined);
+  if (ends.length === 0 || !ends.every(isSlotNumber)) return null;
+  return min === max ? String(min) : `${min ?? ''}..${max ?? ''}`;
+}
+
 /** How many leading `values` a price-check `$elemMatch` constrains (skill, level, chance / charges). */
 const QUERY_SLOTS = 3;
 
@@ -93,10 +105,10 @@ const QUERY_SLOTS = 3;
  * row keeps the rest, which is broader than the PD2 query.
  */
 function statRows(match: ElemMatch, gaps: Set<MarketFilterGap>): Omit<StatFilter, 'id'>[] {
-  if (typeof match.name !== 'string') {
-    const alternatives = match.name.$in;
-    const physical = PHYSICAL_DAMAGE_KEYS.find((k) => alternatives.every((n) => k.split('|').includes(n)));
-    if (physical) return [{ kind: 'mod', key: physical, ...readRange(match['values.0']), enabled: true }];
+  const side = physicalSide(match);
+  if (side) {
+    const key = (side === 'min' ? MIN_DAMAGE_NAMES : MAX_DAMAGE_NAMES).join('|');
+    return [{ kind: 'mod', key, ...readRange(match['values.0']), enabled: true }];
   }
   if ('label' in match) gaps.add('label');
   // The PD2 query's own modifier names: the service indexes the same ones. Enhanced Damage is `maxdamage_percent`
@@ -112,9 +124,8 @@ function statRows(match: ElemMatch, gaps: Set<MarketFilterGap>): Omit<StatFilter
     const anyOf = prop(v, '$in');
     if (isSlotNumber(v)) return String(v);
     if (Array.isArray(anyOf) && anyOf.length > 0 && anyOf.every(isSlotNumber)) return anyOf.join('|');
-    const { min, max } = readRange(v);
-    const ends = [min, max].filter((end) => end !== undefined);
-    if (ends.length > 0 && ends.every(isSlotNumber)) return min === max ? String(min) : `${min ?? ''}..${max ?? ''}`;
+    const range = rangeSlot(v);
+    if (range !== null) return range;
     gaps.add('slot-value');
     return '*';
   });
@@ -124,6 +135,29 @@ function statRows(match: ElemMatch, gaps: Set<MarketFilterGap>): Omit<StatFilter
   const index = rollIndex !== null && rollIndex !== slots.length ? `[${rollIndex}]` : '';
   const key = `${names.join('|')}${slots.length > 0 ? `{${slots.join(',')}}` : ''}${index}`;
   return [{ kind: 'mod', key, ...(rollIndex === null ? {} : readRange(values[rollIndex])), enabled: true }];
+}
+
+/**
+ * The physical damage pair's `$elemMatch`es (min-damage and max-damage lines) → one `damage` row, like an
+ * elemental pair's `firedam|firemindam{4..}`: the min line's bounds pin slot 0, the max line's are the row's.
+ */
+function damageRow(min: ElemMatch, max: ElemMatch, gaps: Set<MarketFilterGap>): Omit<StatFilter, 'id'> {
+  const pinned = Object.keys(readRange(min['values.0'])).length > 0;
+  const slot = rangeSlot(min['values.0']);
+  if (pinned && slot === null) gaps.add('slot-value');
+  const key = slot === null ? DAMAGE_KEY : `${DAMAGE_KEY}{${slot}}`;
+  return { kind: 'mod', key, ...readRange(max['values.0']), enabled: true };
+}
+
+/** The query's `$elemMatch`es → stat rows; a physical min + max damage pair becomes one `damage` row. */
+function modifierRows(matches: ElemMatch[], gaps: Set<MarketFilterGap>): Omit<StatFilter, 'id'>[] {
+  const minAt = matches.findIndex((m) => physicalSide(m) === 'min');
+  const maxAt = matches.findIndex((m) => physicalSide(m) === 'max');
+  const paired = minAt >= 0 && maxAt >= 0;
+  return matches.flatMap((match, i) => {
+    if (!paired || (i !== minAt && i !== maxAt)) return statRows(match, gaps);
+    return i === Math.min(minAt, maxAt) ? [damageRow(matches[minAt], matches[maxAt], gaps)] : [];
+  });
 }
 
 /** Market filters read from a price-check PD2 market query, and the parts of it they can't express. */
@@ -195,7 +229,7 @@ export function marketQueryToFilters(query: Record<string, unknown>, archive: bo
   const corruptionRows: Omit<StatFilter, 'id'>[] = Array.isArray(corruptions)
     ? corruptions.flatMap((key) => (typeof key === 'string' ? [{ kind: 'corruption', key, enabled: true }] : []))
     : [];
-  out.stats = [...matches.flatMap((match) => statRows(match, gaps)), ...corruptionRows].map((row) => ({
+  out.stats = [...modifierRows(matches, gaps), ...corruptionRows].map((row) => ({
     ...row,
     id: crypto.randomUUID(),
   }));

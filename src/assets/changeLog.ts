@@ -1,4 +1,9 @@
 export const changeLog = {
+  '0.11.2': [
+    '🆕 Market browser: filter on flat physical damage as one stat, "Adds X-Y Damage" (search "flat damage" or "adds damage"), like fire or cold damage',
+    '✨ Price check: Open in market keeps a physical damage line as one "Adds X-Y Damage" filter instead of separate minimum and maximum damage rows',
+    '✨ Market browser: listings show +minimum and +maximum damage as one "Adds X-Y Damage" line, as the game does',
+  ],
   '0.11.1': [
     '🆕 Market browser: the Type filter groups class items under their family. Pick Bows, Spears, Javelins, Helms or Shields to search every type in it at once (Bows finds Amazon Bows too; Helms includes Barbarian Helms, Druid Pelts and Circlets; Shields includes Paladin Shields and Shrunken Heads), or pick one type under it as before',
     '🆕 Price check: the base / type switch in the header has a third step for those items. A Ceremonial Bow goes Ceremonial Bow → Amazon Bow → Bows, so a class bow is compared with every bow',
