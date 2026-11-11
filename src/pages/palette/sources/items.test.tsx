@@ -16,7 +16,7 @@ vi.mock('@/overlay', () => ({ showToast: vi.fn(), usePanel: () => ({ visible: fa
 vi.mock('@/pages/chat/hooks/useListingMarketPrices', () => ({ useMarketPrices: () => new Map() }));
 vi.mock('@/pages/market/store/useMarketStore', async (importOriginal) => ({
   ...(await importOriginal<typeof MarketStoreModule>()),
-  useMarketStore: () => ({ savedSearches: [], syncStatus: 'signedOut' }),
+  useMarketStore: () => ({ savedSearches: [] }),
 }));
 
 const HARLEQUIN = { baseCode: 'harlequin_crest', name: 'Harlequin Crest', quality: 'Unique' };
@@ -112,12 +112,12 @@ describe('useItemsSource', () => {
     expect(mergeFilters(base, payload.filters)).toEqual({ ...base, itemName: 'Harlequin Crest' });
   });
 
-  it('offers Builds using it for uniques, sets and runewords only; Watch only when it can save', async () => {
+  it('offers Watch, and Builds using it for uniques, sets and runewords only', async () => {
     const { result } = mount(input({ query: 'enigma' }));
     const enigma = result.current.items.find((i) => i.ref.title === 'Enigma');
-    expect(enigma?.actions?.map((a) => a.id)).toEqual(['builds', 'copy']);
+    expect(enigma?.actions?.map((a) => a.id)).toEqual(['watch', 'builds', 'copy']);
     const ctx = context();
-    await enigma?.actions?.[0].run(ctx);
+    await enigma?.actions?.[1].run(ctx);
     expect(ctx.openPanel).toHaveBeenCalledWith('builds', {
       tab: 'meta',
       filters: { mode: 'softcore', items: ['rw:enigma'] },

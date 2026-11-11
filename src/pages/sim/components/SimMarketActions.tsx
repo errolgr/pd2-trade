@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Bell, Eye, Loader2, Store } from 'lucide-react';
+import { Bell, Eye, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tip } from '@/components/ui/tooltip';
 import { useOptions } from '@/hooks/useOptions';
@@ -13,7 +13,7 @@ import { formatHrPrice } from '@/pages/market/components/ResultsList';
 import { useSearchDefaults } from '@/pages/market/hooks/useSearchDefaults';
 import { defaultFilters, mergeFilters, upgradeFilters } from '@/pages/market/lib/defaults';
 import type { MarketFilters } from '@/pages/market/lib/types';
-import { isPendingSearch, type MarketStore, useMarketStore } from '@/pages/market/store/useMarketStore';
+import { type MarketStore, useMarketStore } from '@/pages/market/store/useMarketStore';
 
 /**
  * The market search for a card item the website links to the market (`marketQuery`: its unique / set item page):
@@ -34,8 +34,8 @@ export function watchSimItem(store: MarketStore, item: SimItemRef, filters: Mark
   const { watching, saved } = findWatch(store.savedSearches, filters);
   if (watching) return;
   if (!store.alertsEnabled) store.setAlertsEnabled(true);
-  if (saved && !isPendingSearch(saved)) store.setSearchAlert(saved.id, true);
-  else if (!saved) store.saveSearch(simWatchName(item), filters, true);
+  if (saved) store.setSearchWatching(saved.id, true);
+  else store.saveSearch(simWatchName(item), filters, true);
 }
 
 const priceQuality = (quality: string | null): 'Unique' | 'Set' | null => {
@@ -86,7 +86,7 @@ export function SimMarketActions({ item, priceHint }: { item: SimItemRef; priceH
   }, [item, hardcore, ladder, searchDefaults]);
   const query = simMarketFilters(item);
   if (!query || !filters) return null;
-  const { watching, busy, disabled, signedOut } = watchState(store, filters);
+  const { watching, disabled } = watchState(store, filters);
 
   return (
     <div className="flex shrink-0 items-center gap-1.5">
@@ -102,16 +102,8 @@ export function SimMarketActions({ item, priceHint }: { item: SimItemRef; priceH
           Market
         </Button>
       </Tip>
-      {/* The span carries the hint while the button is disabled (signed out, already watching) */}
-      <Tip
-        label={
-          signedOut
-            ? 'Sign in to watch the market'
-            : watching
-              ? `Watching: ${watching.name}`
-              : `Get an alert for every new ${item.name} listing`
-        }
-      >
+      {/* The span carries the hint while the button is disabled (already watching) */}
+      <Tip label={watching ? `Watching: ${watching.name}` : `Get an alert for every new ${item.name} listing`}>
         <span tabIndex={disabled || watching ? 0 : undefined}
           className="inline-flex">
           <Button
@@ -122,13 +114,7 @@ export function SimMarketActions({ item, priceHint }: { item: SimItemRef; priceH
             disabled={disabled || !!watching}
             onClick={() => watchSimItem(store, item, filters)}
           >
-            {busy ? (
-              <Loader2 className="size-3 animate-spin" />
-            ) : watching ? (
-              <Bell className="size-3" />
-            ) : (
-              <Eye className="size-3" />
-            )}
+            {watching ? <Bell className="size-3" /> : <Eye className="size-3" />}
             {watching ? 'Watching' : 'Watch'}
           </Button>
         </span>

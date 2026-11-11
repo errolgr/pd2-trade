@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import moment from 'moment';
-import { Bell, BellOff, Bookmark, Check, LogIn, Pencil, Play, Plus, RotateCw, Trash2, X } from 'lucide-react';
+import { Bell, BellOff, Bookmark, Check, Pencil, Play, Plus, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,9 +8,8 @@ import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tip } from '@/components/ui/tooltip';
 import { showToast, undoToast } from '@/overlay';
-import { useSignIn } from '@/hooks/useSignIn';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
-import { type MarketStore, retrySavedSearchSync } from '@/pages/market/store/useMarketStore';
+import { type MarketStore, MAX_WATCHED_SEARCHES } from '@/pages/market/store/useMarketStore';
 import { findTypeOption } from '../lib/catalog';
 import { groupOf, orBlockNumbers } from '../lib/stat-groups';
 import { filterName } from './stat-text';
@@ -59,13 +58,7 @@ export interface SavedSearchesProps {
 export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
   const { t } = useTranslation(['market', 'common']);
   const [name, setName] = useState('');
-  const { openSignIn } = useSignIn();
-  const alerting = store.savedSearches.filter((s) => s.alert).length;
-  const synced = store.syncStatus === 'ready';
-  // Opening the tab retries a failed load right away
-  useEffect(() => {
-    retrySavedSearchSync();
-  }, []);
+  const alerting = store.savedSearches.filter((s) => s.watching).length;
 
   const save = (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,10 +81,10 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
   };
 
   const toggleAlert = (search: SavedSearch, on: boolean) => {
-    if (!store.setSearchAlert(search.id, on)) {
+    if (!store.setSearchWatching(search.id, on)) {
       showToast({
         title: t('saved.tooManyTitle'),
-        description: t('saved.tooManyDescription', { count: store.limits.maxAlerting }),
+        description: t('saved.tooManyDescription', { count: MAX_WATCHED_SEARCHES }),
         variant: 'warning',
       });
     }
@@ -109,24 +102,16 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
           onChange={(e) => setName(e.target.value)}
           className={cn(fieldInputClass, 'flex-1')}
         />
-        {/* The span takes hover/focus while Save is disabled, so the tooltip still says why */}
-        <Tip label={synced ? undefined : t('saved.needsSync')}>
-          <span
-            tabIndex={synced ? undefined : 0}
-            className="inline-flex rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-          >
-            <Button type="submit"
-              size="sm"
-              className="h-7 px-2.5 text-xs"
-              disabled={!name.trim() || !synced}>
-              <Plus className="size-3.5" />
-              {t('common:actions.save')}
-            </Button>
-          </span>
-        </Tip>
+        <Button type="submit"
+          size="sm"
+          className="h-7 px-2.5 text-xs"
+          disabled={!name.trim()}>
+          <Plus className="size-3.5" />
+          {t('common:actions.save')}
+        </Button>
       </form>
       <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-1.5 text-[11px] text-muted-foreground">
-        <span>{t('saved.alertingSummary', { alerting, max: store.limits.maxAlerting })}</span>
+        <span>{t('saved.alertingSummary', { alerting, max: MAX_WATCHED_SEARCHES })}</span>
         <label className="flex items-center gap-1.5">
           {t('saved.alerts')}
           <Switch
@@ -137,49 +122,7 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
           />
         </label>
       </div>
-      {store.syncStatus === 'signedOut' ? (
-        <EmptyState
-          className="m-4"
-          icon={<Bookmark />}
-          title={t('saved.signInTitle')}
-          description={t('saved.signInDescription')}
-        />
-      ) : store.syncStatus === 'unauthorized' ? (
-        <EmptyState
-          className="m-4"
-          icon={<Bookmark />}
-          title={t('saved.reauthTitle')}
-          description={t('saved.reauthDescription')}
-          action={
-            <Button size="sm"
-              className="h-7 px-2.5 text-xs"
-              onClick={openSignIn}>
-              <LogIn className="size-3.5" />
-              {t('common:actions.signIn')}
-            </Button>
-          }
-        />
-      ) : store.syncStatus === 'loading' && store.savedSearches.length === 0 ? (
-        <EmptyState className="m-4"
-          icon={<Bookmark />}
-          title={t('saved.loading')} />
-      ) : store.syncStatus === 'error' && store.savedSearches.length === 0 ? (
-        <EmptyState
-          className="m-4"
-          icon={<Bookmark />}
-          title={t('saved.loadFailedTitle')}
-          description={t('saved.loadFailedDescription')}
-          action={
-            <Button size="sm"
-              variant="outline"
-              className="h-7 px-2.5 text-xs"
-              onClick={retrySavedSearchSync}>
-              <RotateCw className="size-3.5" />
-              {t('saved.retryNow')}
-            </Button>
-          }
-        />
-      ) : store.savedSearches.length === 0 ? (
+      {store.savedSearches.length === 0 ? (
         <EmptyState
           className="m-4"
           icon={<Bookmark />}
@@ -318,13 +261,13 @@ function SavedRow({
       )}
       <Tip label={alertsEnabled ? t('saved.toastNewMatches') : t('saved.alertsOff')}>
         <label className="flex shrink-0 items-center gap-1">
-          {search.alert && alertsEnabled ? (
+          {search.watching && alertsEnabled ? (
             <Bell className="size-3.5 text-primary" />
           ) : (
             <BellOff className="size-3.5 text-muted-foreground" />
           )}
           <Switch
-            checked={search.alert}
+            checked={search.watching}
             onCheckedChange={onAlert}
             aria-label={t('saved.alertsFor', { name: search.name })}
             className="scale-75"

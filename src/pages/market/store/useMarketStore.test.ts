@@ -2,29 +2,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { exists, readTextFile, writeTextFile } from '@/lib/browser-fs';
 import { showToast } from '@/overlay';
 import type { MarketFilters, SavedSearch } from '@/pages/market/lib/types';
+import { listServerSavedSearches, type ServerSavedSearch } from '@/pages/market/alerts/market-api';
+import type * as MarketApi from '@/pages/market/alerts/market-api';
 import {
-  createSavedSearch,
-  deleteSavedSearch,
-  listSavedSearches,
-  SavedSearchApiError,
-  updateSavedSearch,
-} from '@/pages/market/alerts/saved-search-api';
-import type * as SavedSearchApi from '@/pages/market/alerts/saved-search-api';
-import {
-  EMPTY_LOCAL_PREFS,
+  defaultSearchName,
+  EMPTY_MARKET_PREFS,
   getMarketPrefs,
-  isPendingSearch,
+  importServerSavedSearches,
   loadMarketPrefs,
   MARKET_PREFS_FILENAME,
   marketStoreActions as actions,
+  MAX_SAVED_SEARCHES,
+  MAX_WATCHED_SEARCHES,
+  mergeServerSavedSearches,
   parseMarketPrefs,
-  refuseSavedSearchToken,
   resetMarketPrefs,
-  retrySavedSearchSync,
-  SYNC_RETRY_BASE_MS,
-  SYNC_RETRY_MAX_MS,
-  syncSavedSearches,
-  uploadLegacySearches,
 } from './useMarketStore';
 
 vi.mock('@/lib/browser-fs', () => ({
@@ -35,12 +27,9 @@ vi.mock('@/lib/browser-fs', () => ({
   writeTextFile: vi.fn(async () => {}),
 }));
 vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
-vi.mock('@/pages/market/alerts/saved-search-api', async (importOriginal) => ({
-  ...(await importOriginal<typeof SavedSearchApi>()),
-  listSavedSearches: vi.fn(),
-  createSavedSearch: vi.fn(),
-  updateSavedSearch: vi.fn(),
-  deleteSavedSearch: vi.fn(),
+vi.mock('@/pages/market/alerts/market-api', async (importOriginal) => ({
+  ...(await importOriginal<typeof MarketApi>()),
+  listServerSavedSearches: vi.fn(),
 }));
 
 const flush = () => vi.advanceTimersByTimeAsync(0);
@@ -51,7 +40,16 @@ const written = () =>
     .map(([, text]) => JSON.parse(String(text)));
 
 const filters = (itemName: string) => ({ source: 'live', itemName, stats: [] }) as unknown as MarketFilters;
-const server = (id: string, over: Partial<SavedSearch> = {}): SavedSearch => ({
+const saved = (id: string, over: Partial<SavedSearch> = {}): SavedSearch => ({
+  id,
+  name: id.toUpperCase(),
+  filters: filters(id),
+  watching: false,
+  createdAt: '2026-10-21T00:00:00Z',
+  updatedAt: '2026-10-21T00:00:00Z',
+  ...over,
+});
+const server = (id: string, over: Partial<ServerSavedSearch> = {}): ServerSavedSearch => ({
   id,
   name: id.toUpperCase(),
   filters: filters(id),
@@ -59,19 +57,11 @@ const server = (id: string, over: Partial<SavedSearch> = {}): SavedSearch => ({
   createdAt: '2026-10-21T00:00:00Z',
   ...over,
 });
-const LIMITS = { maxSearches: 25, maxAlerting: 10 };
-const api409 = () => new SavedSearchApiError('Alert limit reached (10)', 409);
 
 async function loadFrom(file: unknown) {
   vi.mocked(exists).mockResolvedValue(true);
   vi.mocked(readTextFile).mockResolvedValue(JSON.stringify(file));
   await loadMarketPrefs();
-  await flush();
-}
-
-async function signIn(items: SavedSearch[] = []) {
-  vi.mocked(listSavedSearches).mockResolvedValue({ items, limits: LIMITS });
-  syncSavedSearches('tok');
   await flush();
 }
 
@@ -82,10 +72,7 @@ beforeEach(() => {
   vi.mocked(readTextFile).mockReset();
   vi.mocked(exists).mockResolvedValue(false);
   vi.mocked(showToast).mockClear();
-  vi.mocked(listSavedSearches).mockReset();
-  vi.mocked(createSavedSearch).mockReset();
-  vi.mocked(updateSavedSearch).mockReset();
-  vi.mocked(deleteSavedSearch).mockReset();
+  vi.mocked(listServerSavedSearches).mockReset();
   vi.spyOn(console, 'warn').mockImplementation(() => {});
 });
 
@@ -96,24 +83,34 @@ afterEach(() => {
 
 describe('local preferences (market-prefs.json)', () => {
   it('falls back to the empty state on a broken file', () => {
-    expect(parseMarketPrefs('{oops')).toEqual(EMPTY_LOCAL_PREFS);
-    expect(parseMarketPrefs('null')).toEqual(EMPTY_LOCAL_PREFS);
+    expect(parseMarketPrefs('{oops')).toEqual(EMPTY_MARKET_PREFS);
+    expect(parseMarketPrefs('null')).toEqual(EMPTY_MARKET_PREFS);
   });
 
   it('shows cards unless the user picked rows', () => {
-    expect(EMPTY_LOCAL_PREFS.viewMode).toBe('cards');
+    expect(EMPTY_MARKET_PREFS.viewMode).toBe('cards');
     expect(parseMarketPrefs('{}').viewMode).toBe('cards');
     expect(parseMarketPrefs(JSON.stringify({ viewMode: 'bogus' })).viewMode).toBe('cards');
     expect(parseMarketPrefs(JSON.stringify({ viewMode: 'rows' })).viewMode).toBe('rows');
   });
 
-  it('reads presets, last search, switches and the legacy saved searches (stat weights of old files are dropped)', () => {
+  it('reads presets, last search, switches and saved searches (stat weights of old files are dropped)', () => {
     const prefs = parseMarketPrefs(
       JSON.stringify({
         savedSearches: [
           { id: 's1', name: 'Shako', filters: filters('Harlequin Crest'), alert: true, createdAt: 'x' },
           { id: 's2', name: 'broken' },
+          {
+            id: 's3',
+            name: 'Spirit',
+            filters: filters('Spirit'),
+            watching: false,
+            createdAt: 'a',
+            updatedAt: 'b',
+            lastSeenBumpedAt: '2026-10-21T08:00:00Z',
+          },
         ],
+        savedSearchesImported: true,
         userPresets: [{ id: 'p1', name: 'Mine', builtIn: true, stats: [{ kind: 'mod', key: 'item_fastercastrate' }] }],
         lastFilters: filters('Spirit'),
         statWeights: { item_fastercastrate: 2 },
@@ -121,10 +118,32 @@ describe('local preferences (market-prefs.json)', () => {
         viewMode: 'cards',
       }),
     );
-    expect(prefs.legacySavedSearches.map((s) => s.id)).toEqual(['s1']);
+    // Files from before Watch was local say `alert`
+    expect(prefs.savedSearches).toEqual([
+      { id: 's1', name: 'Shako', filters: filters('Harlequin Crest'), watching: true, createdAt: 'x', updatedAt: 'x' },
+      {
+        id: 's3',
+        name: 'Spirit',
+        filters: filters('Spirit'),
+        watching: false,
+        createdAt: 'a',
+        updatedAt: 'b',
+        lastSeenBumpedAt: '2026-10-21T08:00:00Z',
+      },
+    ]);
+    expect(prefs.savedSearchesImported).toBe(true);
     expect(prefs.userPresets).toMatchObject([{ id: 'p1', builtIn: false }]);
     expect(prefs).toMatchObject({ lastFilters: { itemName: 'Spirit' }, alertsEnabled: false, viewMode: 'cards' });
     expect(prefs).not.toHaveProperty('statWeights');
+  });
+
+  it('reads searches saved before corruption rows as corruption rows', () => {
+    const legacy = { ...filters('c'), corruptions: ['item_numsockets'] };
+    const [search] = parseMarketPrefs(
+      JSON.stringify({ savedSearches: [{ id: 'c', name: 'c', filters: legacy, watching: false, createdAt: 'x' }] }),
+    ).savedSearches;
+    expect(search.filters).not.toHaveProperty('corruptions');
+    expect(search.filters.stats).toMatchObject([{ kind: 'corruption', key: 'item_numsockets', enabled: true }]);
   });
 
   it('replays changes made before the file was read over it', async () => {
@@ -173,358 +192,129 @@ describe('local preferences (market-prefs.json)', () => {
   });
 });
 
-describe('server saved searches', () => {
-  it('lists them on sign-in and clears them on sign-out', async () => {
+describe('saved searches (local)', () => {
+  it('saves, renames, watches and deletes, writing each change to the file', async () => {
     await loadFrom({});
-    expect(getMarketPrefs().syncStatus).toBe('signedOut');
-    await signIn([server('a'), server('b')]);
-    expect(getMarketPrefs()).toMatchObject({ syncStatus: 'ready', limits: LIMITS });
-    expect(getMarketPrefs().savedSearches.map((s) => s.id)).toEqual(['a', 'b']);
+    const shako = actions.saveSearch(undefined, { ...filters('Harlequin Crest'), hardcore: false, ladder: true });
+    expect(shako).toMatchObject({ name: 'Harlequin Crest · SC L', watching: false });
+    const spirit = actions.saveSearch('  Spirit  ', filters('Spirit'), true)!;
+    await flush();
+    expect(written().at(-1).savedSearches).toMatchObject([
+      { id: spirit.id, name: 'Spirit', watching: true },
+      { id: shako!.id, watching: false },
+    ]);
 
-    syncSavedSearches(null);
-    expect(getMarketPrefs()).toMatchObject({ syncStatus: 'signedOut', savedSearches: [] });
+    actions.renameSearch(shako!.id, ' Cheap Shako ');
+    expect(actions.setSearchWatching(shako!.id, true)).toBe(true);
+    await flush();
+    expect(written().at(-1).savedSearches[1]).toMatchObject({ name: 'Cheap Shako', watching: true });
+
+    expect(actions.removeSearch(spirit.id)).toEqual(spirit);
+    await flush();
+    expect(written().at(-1).savedSearches.map((s: SavedSearch) => s.id)).toEqual([shako!.id]);
   });
 
-  it('reads searches saved before corruption rows as corruption rows', async () => {
-    await loadFrom({});
-    const legacy = server('c', { filters: { ...filters('c'), corruptions: ['item_numsockets'] } as MarketFilters });
-    await signIn([legacy]);
-    const [search] = getMarketPrefs().savedSearches;
-    expect(search.filters).not.toHaveProperty('corruptions');
-    expect(search.filters.stats).toMatchObject([{ kind: 'corruption', key: 'item_numsockets', enabled: true }]);
-  });
-
-  it('retries a failed list with backoff while the same token is signed in', async () => {
-    await loadFrom({});
-    vi.mocked(listSavedSearches)
-      .mockRejectedValueOnce(new Error('offline'))
-      .mockRejectedValueOnce(new Error('offline'))
-      .mockResolvedValue({ items: [server('a')], limits: LIMITS });
-    syncSavedSearches('tok');
-    await flush();
-    expect(getMarketPrefs().syncStatus).toBe('error');
-    // Same token again (any re-render) does not restart it; the backoff does
-    syncSavedSearches('tok');
-    expect(listSavedSearches).toHaveBeenCalledTimes(1);
-
-    await vi.advanceTimersByTimeAsync(SYNC_RETRY_BASE_MS * 1.5);
-    expect(listSavedSearches).toHaveBeenCalledTimes(2);
-    expect(getMarketPrefs().syncStatus).toBe('error');
-    await vi.advanceTimersByTimeAsync(SYNC_RETRY_BASE_MS * 2 * 1.5);
-    expect(listSavedSearches).toHaveBeenCalledTimes(3);
-    expect(getMarketPrefs()).toMatchObject({ syncStatus: 'ready', savedSearches: [{ id: 'a' }] });
-  });
-
-  it('retries right away when asked (panel shown, Retry), and stops retrying when signed out', async () => {
-    await loadFrom({});
-    vi.mocked(listSavedSearches)
-      .mockRejectedValueOnce(new Error('offline'))
-      .mockResolvedValue({ items: [], limits: LIMITS });
-    syncSavedSearches('tok');
-    await flush();
-    retrySavedSearchSync();
-    expect(getMarketPrefs().syncStatus).toBe('loading');
-    await flush();
-    expect(getMarketPrefs().syncStatus).toBe('ready');
-
-    vi.mocked(listSavedSearches).mockReset().mockRejectedValue(new Error('offline'));
-    syncSavedSearches(null);
-    syncSavedSearches('tok2');
-    await flush();
-    syncSavedSearches(null);
-    await vi.advanceTimersByTimeAsync(SYNC_RETRY_MAX_MS * 2);
-    expect(listSavedSearches).toHaveBeenCalledTimes(1);
-  });
-
-  it('never retries a list the server refused (401): unauthorized, owner told once, no more requests', async () => {
-    await loadFrom({});
-    const onUnauthorized = vi.fn();
-    vi.mocked(listSavedSearches).mockRejectedValue(new SavedSearchApiError('Unauthorized', 401));
-    syncSavedSearches('tok', onUnauthorized);
-    await flush();
-    expect(getMarketPrefs().syncStatus).toBe('unauthorized');
-    expect(onUnauthorized).toHaveBeenCalledTimes(1);
-
-    // Neither the backoff nor the panel / Retry send anything with the refused token
-    retrySavedSearchSync();
-    await vi.advanceTimersByTimeAsync(SYNC_RETRY_MAX_MS * 10);
-    expect(listSavedSearches).toHaveBeenCalledTimes(1);
-    // Edits are refused locally instead of being sent
-    expect(actions.saveSearch('x', filters('x'))).toBeNull();
-    expect(createSavedSearch).not.toHaveBeenCalled();
-
-    // A remounted owner hears about it right away; a new token starts over
-    const remounted = vi.fn();
-    syncSavedSearches('tok', remounted);
-    expect(remounted).toHaveBeenCalledTimes(1);
-    vi.mocked(listSavedSearches).mockResolvedValue({ items: [server('a')], limits: LIMITS });
-    syncSavedSearches('tok2');
-    await flush();
-    expect(listSavedSearches).toHaveBeenLastCalledWith('tok2');
-    expect(getMarketPrefs()).toMatchObject({ syncStatus: 'ready', savedSearches: [{ id: 'a' }] });
-  });
-
-  it('waits out a 429 Retry-After before listing again', async () => {
-    await loadFrom({});
-    vi.mocked(listSavedSearches)
-      .mockRejectedValueOnce(new SavedSearchApiError('Too Many Requests', 429, 90_000))
-      .mockResolvedValue({ items: [], limits: LIMITS });
-    syncSavedSearches('tok');
-    await flush();
-    expect(getMarketPrefs().syncStatus).toBe('error');
-    await vi.advanceTimersByTimeAsync(89_999);
-    expect(listSavedSearches).toHaveBeenCalledTimes(1);
-    await vi.advanceTimersByTimeAsync(1);
-    expect(listSavedSearches).toHaveBeenCalledTimes(2);
-    expect(getMarketPrefs().syncStatus).toBe('ready');
-  });
-
-  it('an edit refused with a 401 marks the session unauthorized; so does a 401 on the alert stream', async () => {
-    await loadFrom({});
-    const onUnauthorized = vi.fn();
-    vi.mocked(listSavedSearches).mockResolvedValue({ items: [server('a'), server('b')], limits: LIMITS });
-    syncSavedSearches('tok', onUnauthorized);
-    await flush();
-    vi.mocked(updateSavedSearch).mockRejectedValue(new SavedSearchApiError('Unauthorized', 401));
-    actions.renameSearch('a', 'renamed');
-    await flush();
-    expect(getMarketPrefs().syncStatus).toBe('unauthorized');
-    expect(onUnauthorized).toHaveBeenCalledTimes(1);
-    expect(getMarketPrefs().savedSearches.find((s) => s.id === 'a')?.name).toBe('A');
-    actions.renameSearch('b', 'renamed');
-    expect(updateSavedSearch).toHaveBeenCalledTimes(1);
-
-    syncSavedSearches(null);
-    const stream = vi.fn();
-    await signIn([server('a')]);
-    syncSavedSearches('tok', stream);
-    refuseSavedSearchToken('other');
-    expect(getMarketPrefs().syncStatus).toBe('ready');
-    refuseSavedSearchToken('tok');
-    expect(getMarketPrefs().syncStatus).toBe('unauthorized');
-    expect(stream).toHaveBeenCalledTimes(1);
-  });
-
-  it('refuses to save until the list is in (no duplicates of searches it has not seen)', async () => {
-    await loadFrom({});
-    vi.mocked(listSavedSearches).mockRejectedValue(new Error('offline'));
-    syncSavedSearches('tok');
-    await flush();
-    expect(actions.saveSearch('x', filters('x'), true)).toBeNull();
-    expect(createSavedSearch).not.toHaveBeenCalled();
-    expect(showToast).toHaveBeenCalledWith(expect.objectContaining({ variant: 'warning' }));
-  });
-
-  it('shows a new search right away and swaps in the server copy', async () => {
-    await loadFrom({});
-    await signIn([server('a')]);
-    let resolve!: (s: SavedSearch) => void;
-    vi.mocked(createSavedSearch).mockReturnValue(new Promise((r) => (resolve = r)));
-    const pending = actions.saveSearch(undefined, filters('x'), true)!;
-    expect(isPendingSearch(pending)).toBe(true);
-    expect(createSavedSearch).toHaveBeenCalledWith('tok', { name: undefined, filters: filters('x'), alert: true });
-    expect(getMarketPrefs().savedSearches.map((s) => s.id)).toEqual([pending.id, 'a']);
-
-    resolve(server('x', { alert: true, name: 'Harlequin Crest · SC Ladder' }));
-    await flush();
-    expect(getMarketPrefs().savedSearches.map((s) => s.id)).toEqual(['x', 'a']);
-  });
-
-  it('rolls back a refused create and toasts why', async () => {
-    await loadFrom({});
-    await signIn();
-    vi.mocked(createSavedSearch).mockRejectedValue(api409());
-    actions.saveSearch('Mine', filters('x'), true);
-    await flush();
-    expect(getMarketPrefs().savedSearches).toEqual([]);
-    expect(showToast).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Limit reached', description: 'Alert limit reached (10)', variant: 'error' }),
-    );
-  });
-
-  it('refuses locally over the caps and when signed out', async () => {
-    await loadFrom({});
-    expect(actions.saveSearch('x', filters('x'))).toBeNull();
-    expect(createSavedSearch).not.toHaveBeenCalled();
-
-    await signIn(Array.from({ length: 10 }, (_, i) => server(`s${i}`, { alert: true })));
-    expect(actions.saveSearch('x', filters('x'), true)).toBeNull();
-    vi.mocked(updateSavedSearch).mockResolvedValue(server('s0'));
-    expect(actions.setSearchAlert('s0', false)).toBe(true);
-    expect(actions.setSearchAlert('s0', true)).toBe(true);
-  });
-
-  it('toggles the alert optimistically and restores it when the server refuses', async () => {
-    await loadFrom({});
-    await signIn([server('a')]);
-    vi.mocked(updateSavedSearch).mockRejectedValue(api409());
-    expect(actions.setSearchAlert('a', true)).toBe(true);
-    expect(getMarketPrefs().savedSearches[0].alert).toBe(true);
-    await flush();
-    expect(updateSavedSearch).toHaveBeenCalledWith('tok', 'a', { alert: true });
-    expect(getMarketPrefs().savedSearches[0].alert).toBe(false);
-    expect(showToast).toHaveBeenCalledWith(expect.objectContaining({ variant: 'error' }));
-  });
-
-  it('renames, deletes and restores (Undo saves it again)', async () => {
-    await loadFrom({});
-    await signIn([server('a'), server('b')]);
-    vi.mocked(updateSavedSearch).mockResolvedValue(server('a', { name: 'B' }));
-    actions.renameSearch('a', '  B ');
-    actions.renameSearch('a', '   ');
-    expect(updateSavedSearch).toHaveBeenCalledTimes(1);
-    await flush();
-    expect(getMarketPrefs().savedSearches[0].name).toBe('B');
-
-    vi.mocked(deleteSavedSearch).mockResolvedValue({ deleted: true, id: 'a' });
-    const removed = actions.removeSearch('a')!;
-    expect(getMarketPrefs().savedSearches.map((s) => s.id)).toEqual(['b']);
-    vi.mocked(createSavedSearch).mockResolvedValue(server('a2', { name: 'B' }));
+  it('restores a deleted search where it was, watched again when the cap allows', async () => {
+    await loadFrom({
+      savedSearches: [saved('c', { createdAt: '2026-10-23T00:00:00Z' }), saved('b', { watching: true, createdAt: '2026-10-22T00:00:00Z' }), saved('a')],
+    });
+    const removed = actions.removeSearch('b')!;
     actions.restoreSearch(removed);
-    await flush();
-    expect(createSavedSearch).toHaveBeenLastCalledWith('tok', { name: 'B', filters: removed.filters, alert: false });
-    expect(getMarketPrefs().savedSearches.map((s) => s.id)).toEqual(['a2', 'b']);
+    expect(getMarketPrefs().savedSearches.map((s) => [s.id, s.watching])).toEqual([
+      ['c', false],
+      ['b', true],
+      ['a', false],
+    ]);
+    // Twice is a no-op
+    actions.restoreSearch(removed);
+    expect(getMarketPrefs().savedSearches).toHaveLength(3);
   });
 
-  it('puts a search back when its delete fails', async () => {
-    await loadFrom({});
-    await signIn([server('a'), server('b')]);
-    vi.mocked(deleteSavedSearch).mockRejectedValue(new Error('offline'));
-    actions.removeSearch('b');
-    await flush();
-    expect(getMarketPrefs().savedSearches.map((s) => s.id)).toEqual(['a', 'b']);
+  it('refuses over the caps (25 saved, 10 watched), saying why', async () => {
+    await loadFrom({
+      savedSearches: Array.from({ length: MAX_WATCHED_SEARCHES }, (_, i) => saved(`w${i}`, { watching: true })),
+    });
+    expect(actions.saveSearch('more', filters('more'), true)).toBeNull();
+    expect(showToast).toHaveBeenLastCalledWith(expect.objectContaining({ title: 'Too many watches' }));
+    const plain = actions.saveSearch('plain', filters('plain'))!;
+    expect(actions.setSearchWatching(plain.id, true)).toBe(false);
+
+    for (let i = getMarketPrefs().savedSearches.length; i < MAX_SAVED_SEARCHES; i++) actions.saveSearch(`s${i}`, filters(`s${i}`));
+    expect(actions.saveSearch('one too many', filters('x'))).toBeNull();
+    expect(showToast).toHaveBeenLastCalledWith(expect.objectContaining({ title: 'Too many saved searches' }));
+    expect(getMarketPrefs().savedSearches).toHaveLength(MAX_SAVED_SEARCHES);
   });
 
-  it('ignores answers meant for an earlier sign-in', async () => {
-    await loadFrom({});
-    await signIn([server('a')]);
-    let resolve!: (s: SavedSearch) => void;
-    vi.mocked(createSavedSearch).mockReturnValue(new Promise((r) => (resolve = r)));
-    actions.saveSearch('x', filters('x'));
-    syncSavedSearches(null);
-    resolve(server('x'));
+  it('keeps the newest bump a watch has seen', async () => {
+    await loadFrom({ savedSearches: [saved('a', { watching: true })] });
+    actions.markSearchSeen('a', '2026-10-21T08:10:00Z');
+    actions.markSearchSeen('a', '2026-10-21T08:00:00Z');
+    actions.markSearchSeen('a', 'not a date');
     await flush();
-    expect(getMarketPrefs().savedSearches).toEqual([]);
+    expect(getMarketPrefs().savedSearches[0].lastSeenBumpedAt).toBe('2026-10-21T08:10:00Z');
+    expect(written().at(-1).savedSearches[0].lastSeenBumpedAt).toBe('2026-10-21T08:10:00Z');
+  });
+
+  it('names a search from its filters when it has no name', () => {
+    const base = { ...filters(''), hardcore: true, ladder: false, rarity: [] } as unknown as MarketFilters;
+    expect(defaultSearchName(base)).toBe('Any item · HC NL');
+    expect(defaultSearchName({ ...base, rarity: ['Runeword'], hrMax: 2, hrMaxExclusive: true })).toBe(
+      'RW · < 2 HR · HC NL',
+    );
+    expect(defaultSearchName({ ...base, rarity: ['Unique'], baseCode: 'uap' })).toBe('Unique uap · HC NL');
   });
 });
 
-describe('migration of local saved searches', () => {
-  const legacy = (id: string, createdAt: string, alert = false): SavedSearch => ({
-    id,
-    name: id,
-    filters: filters(id),
-    alert,
-    createdAt,
-  });
-
-  it('uploads them oldest first on sign-in, then drops them from the file', async () => {
-    await loadFrom({
-      savedSearches: [legacy('new', '2026-10-21T02:00:00Z', true), legacy('old', '2026-10-21T01:00:00Z')],
-      viewMode: 'cards',
-    });
-    vi.mocked(createSavedSearch).mockImplementation(async (_t, body) => server(body.name!));
-    await signIn([server('old'), server('new')]);
-
-    expect(vi.mocked(createSavedSearch).mock.calls.map(([, body]) => [body.name, body.alert])).toEqual([
-      ['old', false],
-      ['new', true],
+describe('import from pd2trader.com (deprecated saved searches)', () => {
+  it('adds the server searches it does not have, within the caps', () => {
+    const local = [saved('l1', { watching: true }), saved('dup', { name: 'Same', createdAt: '2026-10-25T00:00:00Z' })];
+    const merged = mergeServerSavedSearches(local, [
+      server('l1'),
+      server('other-id', { name: 'Same', filters: filters('dup') }),
+      server('n1', { alert: true, createdAt: '2026-10-24T00:00:00Z' }),
+      server('n2', { name: '  ', createdAt: '2026-10-20T00:00:00Z' }),
     ]);
-    expect(getMarketPrefs().legacySavedSearches).toEqual([]);
-    expect(written().at(-1)).toMatchObject({ savedSearches: [], viewMode: 'cards' });
-    expect(showToast).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
+    expect(merged.map((s) => [s.id, s.name, s.watching])).toEqual([
+      ['dup', 'Same', false],
+      ['n1', 'N1', true],
+      ['l1', 'L1', true],
+      ['n2', 'n2 · SC NL', false],
+    ]);
 
-    // Uploaded once: the next sign-in does not upload again
-    vi.mocked(createSavedSearch).mockClear();
-    syncSavedSearches(null);
-    await signIn();
-    expect(createSavedSearch).not.toHaveBeenCalled();
-  });
-
-  it('keeps an alert over the cap as a plain search, drops invalid ones and the rest past the search cap', async () => {
-    const settle = vi.fn();
-    const create = vi
-      .fn()
-      .mockRejectedValueOnce(api409()) // a: alert over the cap
-      .mockResolvedValueOnce({}) // a again, without the alert
-      .mockRejectedValueOnce(new SavedSearchApiError('filters.stats[0].key is invalid', 400)) // b
-      .mockRejectedValueOnce(new SavedSearchApiError('Saved-search limit reached (25)', 409)); // c
-    const result = await uploadLegacySearches(
-      [
-        legacy('a', '2026-10-21T01:00:00Z', true),
-        legacy('b', '2026-10-21T02:00:00Z'),
-        legacy('c', '2026-10-21T03:00:00Z'),
-        legacy('d', '2026-10-21T04:00:00Z'),
-      ],
-      { create, settle },
+    const fullWatch = Array.from({ length: MAX_WATCHED_SEARCHES }, (_, i) => saved(`w${i}`, { watching: true }));
+    expect(mergeServerSavedSearches(fullWatch, [server('x', { alert: true })]).find((s) => s.id === 'x')?.watching).toBe(
+      false,
     );
-    expect(create.mock.calls[1][0]).toMatchObject({ name: 'a', alert: false });
-    expect(result).toEqual({ remaining: [], uploaded: 1, dropped: 3 });
-    expect(settle.mock.calls.map(([s]) => s.id)).toEqual(['a', 'b', 'c', 'd']);
+    const full = Array.from({ length: MAX_SAVED_SEARCHES }, (_, i) => saved(`s${i}`));
+    expect(mergeServerSavedSearches(full, [server('x')])).toHaveLength(MAX_SAVED_SEARCHES);
   });
 
-  it('keeps the rest for next time when the server is unreachable', async () => {
-    const create = vi.fn().mockResolvedValueOnce({}).mockRejectedValueOnce(new Error('offline'));
-    const b = legacy('b', '2026-10-21T02:00:00Z');
-    const settle = vi.fn();
-    const result = await uploadLegacySearches([legacy('a', '2026-10-21T01:00:00Z'), b], { create, settle });
-    expect(result).toEqual({ remaining: [b], uploaded: 1, dropped: 0 });
-    expect(settle.mock.calls.map(([s]) => s.id)).toEqual(['a']);
+  it('imports once: marks the file and never asks the server again', async () => {
+    await loadFrom({ savedSearches: [saved('local')] });
+    vi.mocked(listServerSavedSearches).mockResolvedValue([server('srv', { alert: true, createdAt: '2026-10-22T00:00:00Z' })]);
+    await importServerSavedSearches('tok');
+    await flush();
+    expect(listServerSavedSearches).toHaveBeenCalledExactlyOnceWith('tok');
+    expect(written().at(-1)).toMatchObject({
+      savedSearchesImported: true,
+      savedSearches: [{ id: 'srv', watching: true }, { id: 'local' }],
+    });
+    await importServerSavedSearches('tok2');
+    expect(listServerSavedSearches).toHaveBeenCalledTimes(1);
   });
 
-  it('persists each upload at once, so a sign-out mid-way never uploads one twice', async () => {
-    await loadFrom({
-      savedSearches: [
-        legacy('a', '2026-10-21T01:00:00Z'),
-        legacy('b', '2026-10-21T02:00:00Z'),
-        legacy('c', '2026-10-21T03:00:00Z'),
-      ],
-    });
-    let finishB!: () => void;
-    vi.mocked(createSavedSearch).mockImplementation(async (_t, body) => {
-      if (body.name === 'b') await new Promise<void>((r) => (finishB = r));
-      return server(body.name!);
-    });
-    vi.mocked(listSavedSearches).mockResolvedValue({ items: [], limits: LIMITS });
-    syncSavedSearches('tok');
-    await flush();
-    // a is on the server and gone from the file; b is uploading when the user signs out
-    expect(
-      written()
-        .at(-1)
-        .savedSearches.map((s: SavedSearch) => s.id),
-    ).toEqual(['b', 'c']);
-    syncSavedSearches(null);
-    finishB();
-    await flush();
-    // b finished (persisted although the session ended); c was not started
-    expect(
-      written()
-        .at(-1)
-        .savedSearches.map((s: SavedSearch) => s.id),
-    ).toEqual(['c']);
-    expect(vi.mocked(createSavedSearch).mock.calls.map(([, body]) => body.name)).toEqual(['a', 'b']);
+  it('leaves everything as it was when the server fails (retried by the next call), one import at a time', async () => {
+    await loadFrom({ savedSearches: [saved('local')] });
+    vi.mocked(listServerSavedSearches).mockRejectedValueOnce(new Error('offline'));
+    await importServerSavedSearches('tok');
+    expect(getMarketPrefs()).toMatchObject({ savedSearchesImported: false, savedSearches: [{ id: 'local' }] });
+    expect(written()).toEqual([]);
 
-    await signIn();
-    expect(vi.mocked(createSavedSearch).mock.calls.map(([, body]) => body.name)).toEqual(['a', 'b', 'c']);
-    expect(getMarketPrefs().legacySavedSearches).toEqual([]);
-  });
-
-  it('runs one upload at a time: a quick re-sign-in waits instead of uploading the same searches', async () => {
-    await loadFrom({ savedSearches: [legacy('a', '2026-10-21T01:00:00Z')] });
-    let finishA!: () => void;
-    vi.mocked(createSavedSearch).mockImplementation(async (_t, body) => {
-      await new Promise<void>((r) => (finishA = r));
-      return server(body.name!);
-    });
-    vi.mocked(listSavedSearches).mockResolvedValue({ items: [], limits: LIMITS });
-    syncSavedSearches('tok');
-    await flush();
-    syncSavedSearches('tok2');
-    await flush();
-    expect(createSavedSearch).toHaveBeenCalledTimes(1);
-    finishA();
-    await flush();
-    expect(createSavedSearch).toHaveBeenCalledTimes(1);
-    expect(getMarketPrefs()).toMatchObject({ legacySavedSearches: [], syncStatus: 'ready' });
+    vi.mocked(listServerSavedSearches).mockResolvedValue([server('srv')]);
+    const first = importServerSavedSearches('tok');
+    expect(importServerSavedSearches('tok')).toBe(first);
+    await first;
+    expect(listServerSavedSearches).toHaveBeenCalledTimes(2);
+    expect(getMarketPrefs().savedSearchesImported).toBe(true);
   });
 });

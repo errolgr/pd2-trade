@@ -7,7 +7,7 @@ import { installUpdateAndRelaunch } from '@/lib/updater';
 import { ToastActionType } from '@/common/types/Events';
 import { ToastLayer, confirmToast, setToastBridge, showToast, undoToast } from './toast';
 import { intentToast } from '@/hooks/useOverlayIntents';
-import { fetchMarketListing } from '@/pages/market/alerts/saved-search-api';
+import { fetchMarketListing } from '@/pages/market/alerts/market-api';
 import { listing, mod } from '@/pages/market/lib/test-utils';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
@@ -17,7 +17,7 @@ vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(() => false), invoke: vi
 vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
 vi.mock('@/lib/updater', () => ({ installUpdateAndRelaunch: vi.fn() }));
 vi.mock('@/lib/themes', () => ({ useThemeMode: () => 'dark' }));
-vi.mock('@/pages/market/alerts/saved-search-api', () => ({ fetchMarketListing: vi.fn() }));
+vi.mock('@/pages/market/alerts/market-api', () => ({ fetchMarketListing: vi.fn() }));
 vi.mock('@/hooks/pd2website/usePD2Website', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/pd2website/usePD2Website')>()),
   usePd2Website: vi.fn(),

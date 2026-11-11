@@ -1,7 +1,7 @@
 /**
  * Horadric Sim → overlay intents (`GET /api/overlay/intents/stream`): the website pushes "open this report /
  * planner" and "your sim finished" to the signed-in overlay. Server-Sent Events read with fetch (`EventSource`
- * cannot send the Bearer token), the same way as the saved-search alert stream, whose parser and backoff it reuses.
+ * cannot send the Bearer token), the same way as the market watch stream, whose parser and backoff it reuses.
  * The server replays undelivered intents on connect (finished/failed/cancelled sims 24 h, open requests 5 min) with
  * `replay: true`, so there is no catch-up request.
  */

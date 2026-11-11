@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.11.2': [
+    '✨ Market Watch works without signing in. Saved searches and watches are kept on this PC (the ones you had on pd2trader.com come over once when you sign in), and every watch catches up on listings bumped while the overlay was closed',
+  ],
   '0.11.1': [
     '🆕 Market browser: the Type filter groups class items under their family. Pick Bows, Spears, Javelins, Helms or Shields to search every type in it at once (Bows finds Amazon Bows too; Helms includes Barbarian Helms, Druid Pelts and Circlets; Shields includes Paladin Shields and Shrunken Heads), or pick one type under it as before',
     '🆕 Price check: the base / type switch in the header has a third step for those items. A Ceremonial Bow goes Ceremonial Bow → Amazon Bow → Bows, so a class bow is compared with every bow',
