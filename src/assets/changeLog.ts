@@ -1,5 +1,6 @@
 export const changeLog = {
   '0.11.2': [
+    '🆕 Market browser: Total Elemental Damage pseudo stat, the average of every Adds X-Y fire, cold and lightning line added up (Adds 6-36 fire + 4-114 lightning = 80)',
     '🆕 Market browser: filter on flat physical damage as one stat, "Adds X-Y Damage" (search "flat damage" or "adds damage"), like fire or cold damage',
     '✨ Price check: Open in market keeps a physical damage line as one "Adds X-Y Damage" filter instead of separate minimum and maximum damage rows',
     '✨ Market browser: listings show +minimum and +maximum damage as one "Adds X-Y Damage" line, as the game does',

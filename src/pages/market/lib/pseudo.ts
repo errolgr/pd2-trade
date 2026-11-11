@@ -43,6 +43,27 @@ const MANA_PER_ENERGY = 2;
 const ELEMENTS = ['fire', 'cold', 'ltng', 'pois', 'mag'] as const;
 
 /**
+ * Average added damage of one element, (min + max) / 2, as the trade sites sum "Adds X-Y" lines. PD2 sends the
+ * line as `firedam [min, max]` (cold: `[min, max, chill frames]`); `firemindam [min, max]` is the same pair under
+ * another name, and lone `firemindam [min]` / `firemaxdam [max]` lines add to each end.
+ */
+function addedDamage(mods: Modifier[], element: 'fire' | 'cold' | 'light'): number {
+  let pairs = 0;
+  let lo = 0;
+  let hi = 0;
+  for (const mod of mods) {
+    if (mod.name !== `${element}dam` && mod.name !== `${element}mindam` && mod.name !== `${element}maxdam`) continue;
+    const first = mod.values?.[0];
+    if (typeof first !== 'number') continue;
+    const second = mod.name === `${element}maxdam` ? undefined : mod.values?.[1];
+    if (typeof second === 'number') pairs += (first + second) / 2;
+    else if (mod.name === `${element}maxdam`) hi += first;
+    else lo += first;
+  }
+  return pairs + (lo + hi) / 2;
+}
+
+/**
  * Computed stats over a listing's modifiers, the same definitions the market service filters and sorts on
  * (computed here for favorites and deep links). Every compute returns 0 when the item has none of the inputs.
  */
@@ -148,6 +169,12 @@ export const PSEUDO_STATS: PseudoDef[] = [
     label: '+{X}% Total Enhanced Damage',
     group: 'Pseudo',
     compute: (m) => sum(m, 'maxdamage_percent'),
+  },
+  {
+    id: 'pseudo_elemental_damage',
+    label: '+{X} Total Elemental Damage (average added fire + cold + lightning)',
+    group: 'Pseudo',
+    compute: (m) => addedDamage(m, 'fire') + addedDamage(m, 'cold') + addedDamage(m, 'light'),
   },
   {
     id: 'pseudo_life_leech',
