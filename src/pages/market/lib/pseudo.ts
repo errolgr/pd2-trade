@@ -150,6 +150,12 @@ export const PSEUDO_STATS: PseudoDef[] = [
     compute: (m) => sum(m, 'maxdamage_percent'),
   },
   {
+    id: 'pseudo_flat_damage',
+    label: '+{X} Total Flat Damage (Minimum + Maximum)',
+    group: 'Pseudo',
+    compute: (m) => sum(m, 'min_damage') + sum(m, 'max_damage'),
+  },
+  {
     id: 'pseudo_life_leech',
     label: '+{X}% Total Life Stolen per Hit',
     group: 'Pseudo',

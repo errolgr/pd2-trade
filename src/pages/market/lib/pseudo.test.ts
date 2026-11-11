@@ -64,4 +64,9 @@ describe('computePseudo', () => {
     expect(p.pseudo_skill_damage).toBe(9);
     expect(p.pseudo_enemy_res).toBe(7);
   });
+
+  it('flat damage adds the minimum and maximum damage lines', () => {
+    expect(pseudo(mod('min_damage', 9), mod('max_damage', 15), mod('max_damage', 3)).pseudo_flat_damage).toBe(27);
+    expect(pseudo(mod('maxdamage_percent', 40, 40), mod('firedam', 10, 20)).pseudo_flat_damage).toBe(0);
+  });
 });
