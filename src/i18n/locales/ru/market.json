@@ -135,6 +135,8 @@
     "type": "Тип",
     "base": "Основа",
     "pickTypeFirst": "Сначала выберите тип",
+    "searchOptions": "Поиск…",
+    "noOptions": "Ничего не найдено",
     "class": "Класс",
     "corrupted": "Corrupted",
     "sockets": "Сокеты",
