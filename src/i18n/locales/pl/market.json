@@ -135,6 +135,8 @@
     "type": "Typ",
     "base": "Baza",
     "pickTypeFirst": "Najpierw wybierz typ",
+    "searchOptions": "Szukaj…",
+    "noOptions": "Brak wyników",
     "class": "Klasa",
     "corrupted": "Corrupted",
     "sockets": "Gniazda",

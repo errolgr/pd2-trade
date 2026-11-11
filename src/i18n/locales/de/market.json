@@ -119,6 +119,8 @@
     "type": "Typ",
     "base": "Basis",
     "pickTypeFirst": "Wähle zuerst einen Typ",
+    "searchOptions": "Suchen…",
+    "noOptions": "Keine Treffer",
     "class": "Klasse",
     "corrupted": "Corrupted",
     "sockets": "Sockel",

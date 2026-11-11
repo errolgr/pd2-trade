@@ -127,6 +127,8 @@
     "type": "Type",
     "base": "Base",
     "pickTypeFirst": "Choisissez d'abord un type",
+    "searchOptions": "Rechercher…",
+    "noOptions": "Aucun résultat",
     "class": "Classe",
     "corrupted": "Corrupted",
     "sockets": "Sockets",
