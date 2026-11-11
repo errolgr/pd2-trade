@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Tip } from '@/components/ui/tooltip';
 import type { ItemDetail, Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { coveringPseudos, modStatValue, modToStatKey, modsAsFilters } from '../lib/mod-keys';
 import { computePseudo } from '../lib/pseudo';
@@ -72,22 +73,23 @@ export function ModMenu({
   return (
     <DropdownMenu open={open}
       onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <div
-          tabIndex={0}
-          title={t('modMenu.title')}
-          onContextMenu={(e) => {
-            e.preventDefault();
-            setOpen(true);
-          }}
-          className={cn(
-            'cursor-pointer outline-none hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring/60 data-[state=open]:bg-muted/60',
-            className,
-          )}
-        >
-          {children}
-        </div>
-      </DropdownMenuTrigger>
+      <Tip label={t('modMenu.title')}>
+        <DropdownMenuTrigger asChild>
+          <div
+            tabIndex={0}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setOpen(true);
+            }}
+            className={cn(
+              'cursor-pointer outline-none hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring/60 data-[state=open]:bg-muted/60',
+              className,
+            )}
+          >
+            {children}
+          </div>
+        </DropdownMenuTrigger>
+      </Tip>
       <DropdownMenuContent
         align="start"
         className="w-72 origin-(--radix-dropdown-menu-content-transform-origin) text-xs"
@@ -171,18 +173,19 @@ export function AddAllModsButton({
   const rows = modsAsFilters(item.modifiers ?? [], actions.fill);
   if (rows.length === 0) return null;
   return (
-    <button
-      type="button"
-      className={className}
-      title={t('modMenu.addAllTitle', { count: rows.length })}
-      aria-label={t('modMenu.addAllLabel')}
-      onClick={(e) => {
-        e.stopPropagation();
-        actions.addFilters(rows);
-      }}
-    >
-      <ListFilter className="size-3" />
-      {label}
-    </button>
+    <Tip label={t('modMenu.addAllTitle', { count: rows.length })}>
+      <button
+        type="button"
+        className={className}
+        aria-label={t('modMenu.addAllLabel')}
+        onClick={(e) => {
+          e.stopPropagation();
+          actions.addFilters(rows);
+        }}
+      >
+        <ListFilter className="size-3" />
+        {label}
+      </button>
+    </Tip>
   );
 }

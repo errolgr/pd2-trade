@@ -4,6 +4,7 @@ import { ArrowRight, History, Skull } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useReducedMotionSafe } from '@/lib/motion';
 import { Button } from '@/components/ui/button';
+import { Tip } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
 import {
@@ -197,75 +198,76 @@ function FeedEntry({
   const d = entry.diff;
   return (
     <li>
-      <button
-        type="button"
-        aria-pressed={selected}
-        title={latest ? t('timeline.currentBuild') : t('timeline.showBuildAtTime')}
-        onClick={() => onSelect(latest || selected ? null : entry.id)}
-        className={cn(
-          'relative w-full px-3 py-2 text-left text-xs outline-none transition-colors duration-(--dur-fast) hover:bg-accent/40 focus-visible:bg-accent/50',
-          selected && 'bg-primary/10 before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-primary',
-        )}
-      >
-        <div className="flex items-center gap-2">
-          <span className="font-medium text-foreground">{fmtDateTime(entry.takenAt)}</span>
-          {latest && <span className="text-[10px] text-muted-foreground uppercase">{t('timeline.now')}</span>}
-          {d?.gearValueDelta != null && (
-            <span className={cn('ml-auto tabular-nums', d.gearValueDelta > 0 ? 'text-success' : 'text-destructive')}>
-              {d.gearValueDelta > 0 ? '+' : '−'}
-              {t('character.hr', { value: fmtHr(Math.abs(d.gearValueDelta)) })}
-            </span>
+      <Tip label={latest ? t('timeline.currentBuild') : t('timeline.showBuildAtTime')}>
+        <button
+          type="button"
+          aria-pressed={selected}
+          onClick={() => onSelect(latest || selected ? null : entry.id)}
+          className={cn(
+            'relative w-full px-3 py-2 text-left text-xs outline-none transition-colors duration-(--dur-fast) hover:bg-accent/40 focus-visible:bg-accent/50',
+            selected && 'bg-primary/10 before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-primary',
           )}
-        </div>
-        {!d ? (
-          <p className="text-muted-foreground">{t('timeline.firstSeenAtLevel', { level: entry.level })}</p>
-        ) : (
-          <ul className="mt-0.5 space-y-px text-muted-foreground">
-            {d.level && (
-              <li>
-                {t('timeline.levelFrom', { level: d.level.from })} <ArrowRight className="inline size-3" />{' '}
-                <span className="text-foreground">{d.level.to}</span>
-              </li>
+        >
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-foreground">{fmtDateTime(entry.takenAt)}</span>
+            {latest && <span className="text-[10px] text-muted-foreground uppercase">{t('timeline.now')}</span>}
+            {d?.gearValueDelta != null && (
+              <span className={cn('ml-auto tabular-nums', d.gearValueDelta > 0 ? 'text-success' : 'text-destructive')}>
+                {d.gearValueDelta > 0 ? '+' : '−'}
+                {t('character.hr', { value: fmtHr(Math.abs(d.gearValueDelta)) })}
+              </span>
             )}
-            {d.died && hardcore && (
-              <li className="flex items-center gap-1 text-destructive">
-                <Skull className="size-3" /> {t('timeline.died')}
-              </li>
-            )}
-            {d.items.map((c) => (
-              <li key={`${c.merc ? 'm' : 'c'}:${c.slot}`}>
-                <span className="text-muted-foreground/80">
-                  {c.merc ? t('timeline.mercSlot', { slot: c.slot }) : t('timeline.slot', { slot: c.slot })}
-                </span>{' '}
-                {c.removed && (
-                  <span className="line-through decoration-muted-foreground/60 opacity-70">
-                    <ItemName item={c.removed} />
+          </div>
+          {!d ? (
+            <p className="text-muted-foreground">{t('timeline.firstSeenAtLevel', { level: entry.level })}</p>
+          ) : (
+            <ul className="mt-0.5 space-y-px text-muted-foreground">
+              {d.level && (
+                <li>
+                  {t('timeline.levelFrom', { level: d.level.from })} <ArrowRight className="inline size-3" />{' '}
+                  <span className="text-foreground">{d.level.to}</span>
+                </li>
+              )}
+              {d.died && hardcore && (
+                <li className="flex items-center gap-1 text-destructive">
+                  <Skull className="size-3" /> {t('timeline.died')}
+                </li>
+              )}
+              {d.items.map((c) => (
+                <li key={`${c.merc ? 'm' : 'c'}:${c.slot}`}>
+                  <span className="text-muted-foreground/80">
+                    {c.merc ? t('timeline.mercSlot', { slot: c.slot }) : t('timeline.slot', { slot: c.slot })}
+                  </span>{' '}
+                  {c.removed && (
+                    <span className="line-through decoration-muted-foreground/60 opacity-70">
+                      <ItemName item={c.removed} />
+                    </span>
+                  )}
+                  {c.removed && c.added && <ArrowRight className="mx-1 inline size-3" />}
+                  {c.added ? <ItemName item={c.added} /> : <span className="italic"> {t('timeline.removed')}</span>}
+                </li>
+              ))}
+              {d.merc && (
+                <li>
+                  {t('timeline.mercFrom', { merc: d.merc.from ?? t('timeline.none') })}{' '}
+                  <ArrowRight className="inline size-3" />{' '}
+                  <span className="text-foreground">{d.merc.to ?? t('timeline.none')}</span>
+                </li>
+              )}
+              {d.skills.slice(0, 6).map((s) => (
+                <li key={s.name}>
+                  {s.name}{' '}
+                  <span className="tabular-nums">
+                    {s.from} <ArrowRight className="inline size-3" />{' '}
+                    <span className={s.to > s.from ? 'text-success' : 'text-destructive'}>{s.to}</span>
                   </span>
-                )}
-                {c.removed && c.added && <ArrowRight className="mx-1 inline size-3" />}
-                {c.added ? <ItemName item={c.added} /> : <span className="italic"> {t('timeline.removed')}</span>}
-              </li>
-            ))}
-            {d.merc && (
-              <li>
-                {t('timeline.mercFrom', { merc: d.merc.from ?? t('timeline.none') })}{' '}
-                <ArrowRight className="inline size-3" />{' '}
-                <span className="text-foreground">{d.merc.to ?? t('timeline.none')}</span>
-              </li>
-            )}
-            {d.skills.slice(0, 6).map((s) => (
-              <li key={s.name}>
-                {s.name}{' '}
-                <span className="tabular-nums">
-                  {s.from} <ArrowRight className="inline size-3" />{' '}
-                  <span className={s.to > s.from ? 'text-success' : 'text-destructive'}>{s.to}</span>
-                </span>
-              </li>
-            ))}
-            {d.skills.length > 6 && <li>{t('timeline.moreSkillChanges', { count: d.skills.length - 6 })}</li>}
-          </ul>
-        )}
-      </button>
+                </li>
+              ))}
+              {d.skills.length > 6 && <li>{t('timeline.moreSkillChanges', { count: d.skills.length - 6 })}</li>}
+            </ul>
+          )}
+        </button>
+      </Tip>
     </li>
   );
 }

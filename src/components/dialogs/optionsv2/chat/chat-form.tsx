@@ -20,6 +20,7 @@ import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import { CHAT_TIMING_OPTIONS, optionLabel } from '../setting-options';
 import { ChatTemplatesEditor } from './chat-templates-editor';
 import { Trans, useTranslation } from '@/i18n';
+import { Tip } from '@/components/ui/tooltip';
 
 const TOAST_TYPES = [
   { id: 'whispers', labelKey: 'chat.toastTypes.whispers' },
@@ -585,15 +586,16 @@ function PlaceholderHint({
       <span>{intro}</span>
       <span className="flex flex-wrap gap-1.5">
         {tokens.map((token) => (
-          <button
-            key={token}
-            type="button"
-            title={t('chat.templates.insertToken', { token })}
-            onClick={() => onInsert(token)}
-            className="rounded-sm border border-border/70 bg-muted/60 px-1.5 py-0.5 font-mono text-[11px] text-foreground/80 outline-none transition-[color,background-color,border-color,transform] duration-(--dur-fast) ease-out hover:border-primary/60 hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-95"
-          >
-            {token}
-          </button>
+          <Tip key={token}
+            label={t('chat.templates.insertToken', { token })}>
+            <button
+              type="button"
+              onClick={() => onInsert(token)}
+              className="rounded-sm border border-border/70 bg-muted/60 px-1.5 py-0.5 font-mono text-[11px] text-foreground/80 outline-none transition-[color,background-color,border-color,transform] duration-(--dur-fast) ease-out hover:border-primary/60 hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-95"
+            >
+              {token}
+            </button>
+          </Tip>
         ))}
       </span>
       {asks.length > 0 && (

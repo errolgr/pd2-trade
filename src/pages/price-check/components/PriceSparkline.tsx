@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { fetchPriceHistory, type PriceHistoryPoint } from '@/pages/currency/lib/price-api';
 import { cn } from '@/lib/utils';
+import { Tip } from '@/components/ui/tooltip';
 import { useTranslation } from '@/i18n';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -106,13 +107,12 @@ export function PriceSparkline({ query }: { query: SparklineQuery }) {
           vectorEffect="non-scaling-stroke"
         />
       </svg>
-      <span
-        className={cn('shrink-0 text-xs font-semibold tabular-nums', up ? 'text-success' : 'text-destructive')}
-        title={`${first.toFixed(2)} → ${last.toFixed(2)} HR`}
-      >
-        {up ? '+' : ''}
-        {changePercent.toFixed(1)}%
-      </span>
+      <Tip label={`${first.toFixed(2)} → ${last.toFixed(2)} HR`}>
+        <span className={cn('shrink-0 text-xs font-semibold tabular-nums', up ? 'text-success' : 'text-destructive')}>
+          {up ? '+' : ''}
+          {changePercent.toFixed(1)}%
+        </span>
+      </Tip>
     </div>
   );
 }

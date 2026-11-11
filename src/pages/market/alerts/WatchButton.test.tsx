@@ -141,7 +141,10 @@ describe('WatchButton', () => {
     await act(async () => syncSavedSearches('tok'));
     await settle();
     expect((button() as HTMLButtonElement).disabled).toBe(true);
-    expect(button().getAttribute('title')).toMatch(/couldn't be loaded/);
+    act(() => {
+      fireEvent.focus(button().parentElement!);
+    });
+    expect(screen.getByRole('tooltip').textContent).toMatch(/couldn't be loaded/);
     fireEvent.click(button());
     expect(createSavedSearch).not.toHaveBeenCalled();
 

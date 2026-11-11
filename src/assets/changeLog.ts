@@ -5,6 +5,7 @@ export const changeLog = {
     '✨ Price check: List and "Open search on projectdiablo2.com" are back as buttons next to Search instead of in the ⋯ menu (List says why when the item isn\'t in a stash), and Sim sits on the right',
     '✨ Market browser: the Type, Base, Class and Listed within dropdowns have a search box. Type part of a name to narrow the list, then arrow keys and Enter to pick (searching a family like "bows" keeps all its types)',
     '🔧 Price check: +skill lines the game names differently from the trade site (Raise Skeleton Warrior, Iron Golem, Summon Ravens, Enchant Fire, Claw and Dagger Mastery, One/Two Handed Weapon Mastery) are no longer shown as Unknown and are searched by their skill',
+    "🔧 Hover hints across the overlay now use the overlay's own tooltips instead of the system ones, which could show up behind or outside the overlay",
   ],
   '0.11.0': [
     '🆕 Notification log: every whisper, offer, alert and sim result you missed in one place. A button on the chat dock lights up when something is waiting',

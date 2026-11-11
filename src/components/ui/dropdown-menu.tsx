@@ -17,10 +17,14 @@ function DropdownMenuPortal({ ...props }: React.ComponentProps<typeof DropdownMe
     {...props} />;
 }
 
-function DropdownMenuTrigger({ ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
-  return <DropdownMenuPrimitive.Trigger data-slot="dropdown-menu-trigger"
-    {...props} />;
-}
+// forwardRef: a wrapping Tip/TooltipTrigger asChild needs the trigger's DOM node (React 18 drops refs on plain functions)
+const DropdownMenuTrigger = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Trigger>
+>((props, ref) => <DropdownMenuPrimitive.Trigger ref={ref}
+  data-slot="dropdown-menu-trigger"
+  {...props} />);
+DropdownMenuTrigger.displayName = 'DropdownMenuTrigger';
 
 function DropdownMenuContent({
   className,

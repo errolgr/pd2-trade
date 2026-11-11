@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { PseudoOption } from '@/pages/price-check/lib/pseudo-fold';
 import { useTranslation } from '@/i18n';
+import { Tip } from '@/components/ui/tooltip';
 
 /**
  * The Σ chip on a resist row (or a folded Σ row): a menu of the totals the row feeds. Picking one folds the rows
@@ -30,35 +31,36 @@ export function PseudoChip({
   const { t } = useTranslation('priceCheck');
   return (
     <DropdownMenu modal={false}>
-      <DropdownMenuTrigger asChild>
-        <motion.button
-          type="button"
-          aria-label={active ? t('pseudoChip.changeOrUnfold') : t('pseudoChip.searchTotalAria')}
-          title={active ? t('pseudoChip.changeOrUnfold') : t('pseudoChip.searchTotalTitle')}
-          // Inside the row's <label>: keep the click from toggling the row's checkbox
-          onClick={(e) => e.stopPropagation()}
-          whileHover={{ scale: 1.08 }}
-          whileTap={{ scale: 0.9 }}
-          transition={springSnappy}
-          className={cn(
-            'inline-flex size-5 shrink-0 items-center justify-center rounded-md border outline-none',
-            'transition-[background-color,border-color,color,box-shadow] duration-(--dur-fast)',
-            'focus-visible:ring-2 focus-visible:ring-ring/60',
-            active
-              ? 'border-info/60 bg-info/15 text-info shadow-[0_0_10px_-2px_var(--color-info)]'
-              : 'border-border/80 text-muted-foreground hover:border-info/50 hover:text-info',
-          )}
-        >
-          <motion.span
-            className="flex"
-            initial={false}
-            animate={{ rotate: active ? 360 : 0 }}
-            transition={{ type: 'spring', stiffness: 220, damping: 18 }}
+      <Tip label={active ? t('pseudoChip.changeOrUnfold') : t('pseudoChip.searchTotalTitle')}>
+        <DropdownMenuTrigger asChild>
+          <motion.button
+            type="button"
+            aria-label={active ? t('pseudoChip.changeOrUnfold') : t('pseudoChip.searchTotalAria')}
+            // Inside the row's <label>: keep the click from toggling the row's checkbox
+            onClick={(e) => e.stopPropagation()}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.9 }}
+            transition={springSnappy}
+            className={cn(
+              'inline-flex size-5 shrink-0 items-center justify-center rounded-md border outline-none',
+              'transition-[background-color,border-color,color,box-shadow] duration-(--dur-fast)',
+              'focus-visible:ring-2 focus-visible:ring-ring/60',
+              active
+                ? 'border-info/60 bg-info/15 text-info shadow-[0_0_10px_-2px_var(--color-info)]'
+                : 'border-border/80 text-muted-foreground hover:border-info/50 hover:text-info',
+            )}
           >
-            <Sigma className="size-3" />
-          </motion.span>
-        </motion.button>
-      </DropdownMenuTrigger>
+            <motion.span
+              className="flex"
+              initial={false}
+              animate={{ rotate: active ? 360 : 0 }}
+              transition={{ type: 'spring', stiffness: 220, damping: 18 }}
+            >
+              <Sigma className="size-3" />
+            </motion.span>
+          </motion.button>
+        </DropdownMenuTrigger>
+      </Tip>
       <DropdownMenuContent align="start"
         className="min-w-56">
         <DropdownMenuLabel className="text-[11px] font-normal text-muted-foreground">

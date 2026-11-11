@@ -25,11 +25,12 @@ import { EmptyState } from '@/pages/currency/components/StatePanel';
 import { t as tGlobal, useTranslation } from '@/i18n';
 import { listItem, listStagger, popIn } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import { Tip } from '@/components/ui/tooltip';
 import { useChatListings } from '../hooks/useChatListings';
 import { useKnownPresence } from '../hooks/useTraderProfile';
 import type { InboxFilter, InboxThread } from '../lib/inbox';
 import { findMarketLinks } from '../lib/market-links';
-import { ChatAvatar, CountBadge, ReadReceipt, segmentedClass, segmentItemClass, Tip } from './chat-parts';
+import { ChatAvatar, CountBadge, ReadReceipt, segmentedClass, segmentItemClass } from './chat-parts';
 import { ListingThumb } from './ListingCard';
 import { offerStatus } from './ThreadDeals';
 
@@ -320,22 +321,23 @@ export function ConversationList({
                         {linked ? latest.text.replace(/^📦 /, '') : latest.text}
                       </span>
                       {offer && (
-                        <span
-                          title={offer.isIncoming ? t('list.theirOpenOffer') : t('list.yourOpenOffer')}
-                          className={cn(
-                            'flex max-w-20 shrink-0 items-center gap-0.5 rounded-full px-1.5 text-[10px] font-semibold leading-4 tabular-nums',
-                            offer.isIncoming ? 'bg-success/15 text-success' : 'bg-info/15 text-info',
-                          )}
-                        >
-                          {offer.isIncoming ? (
-                            <ArrowUpRight aria-hidden
-                              className="size-2.5 shrink-0" />
-                          ) : (
-                            <ArrowDownLeft aria-hidden
-                              className="size-2.5 shrink-0" />
-                          )}
-                          <span className="truncate">{offer.price ?? t('deals.offer')}</span>
-                        </span>
+                        <Tip label={offer.isIncoming ? t('list.theirOpenOffer') : t('list.yourOpenOffer')}>
+                          <span
+                            className={cn(
+                              'flex max-w-20 shrink-0 items-center gap-0.5 rounded-full px-1.5 text-[10px] font-semibold leading-4 tabular-nums',
+                              offer.isIncoming ? 'bg-success/15 text-success' : 'bg-info/15 text-info',
+                            )}
+                          >
+                            {offer.isIncoming ? (
+                              <ArrowUpRight aria-hidden
+                                className="size-2.5 shrink-0" />
+                            ) : (
+                              <ArrowDownLeft aria-hidden
+                                className="size-2.5 shrink-0" />
+                            )}
+                            <span className="truncate">{offer.price ?? t('deals.offer')}</span>
+                          </span>
+                        </Tip>
                       )}
                       {unread && (
                         <CountBadge
@@ -371,8 +373,9 @@ export function ConversationList({
                 initial="hidden"
                 animate="visible"
                 exit="exit">
-                <CountBadge count={unreadTotal}
-                  title={t('list.unread', { count: unreadTotal })} />
+                <Tip label={t('list.unread', { count: unreadTotal })}>
+                  <CountBadge count={unreadTotal} />
+                </Tip>
               </motion.span>
             )}
           </AnimatePresence>
@@ -439,14 +442,15 @@ export function ConversationList({
               {t(labelKey)}
             </ToggleGroupItem>
           ))}
-          <ToggleGroupItem
-            value="archived"
-            aria-label={t('list.archived')}
-            title={t('list.archivedChats')}
-            className={cn('h-6 max-w-9 text-xs', segmentItemClass)}
-          >
-            <Archive className="size-3.5" />
-          </ToggleGroupItem>
+          <Tip label={t('list.archivedChats')}>
+            <ToggleGroupItem
+              value="archived"
+              aria-label={t('list.archived')}
+              className={cn('h-6 max-w-9 text-xs', segmentItemClass)}
+            >
+              <Archive className="size-3.5" />
+            </ToggleGroupItem>
+          </Tip>
         </ToggleGroup>
       </div>
       <div className="mx-3 h-px shrink-0 bg-linear-to-r from-transparent via-border to-transparent" />

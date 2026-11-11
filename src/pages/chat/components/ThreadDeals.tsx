@@ -33,12 +33,12 @@ import { fillTemplate } from '@/lib/message-templates';
 import type { TradeOutcome, WhisperPerson, WhisperTrade } from '@/lib/whisper-history';
 import { confirmToast, showToast } from '@/overlay';
 import { cn } from '@/lib/utils';
+import { Tip } from '@/components/ui/tooltip';
 import { useChatListings } from '../hooks/useChatListings';
 import { type ListingMarketPrice, useListingMarketPrices } from '../hooks/useListingMarketPrices';
 import { shortAgo } from '../hooks/useTraderProfile';
 import { useDelist } from '@/pages/delist/DelistHandler';
 import { ListingDetails, ListingThumb } from './ListingCard';
-import { Tip } from './chat-parts';
 import type { ReplyChannel } from './Composer';
 
 /** A trade whisper's outcome is the status chip of its event row in the conversation. */

@@ -213,7 +213,7 @@ describe('MacroManagerSheet', () => {
     stored = [{ label: 'A', text: '1' }];
     const onApply = vi.fn();
     render(<Harness onApply={onApply} />);
-    fireEvent.click(screen.getByTitle('Use this macro'));
+    fireEvent.click(screen.getByRole('button', { name: /→/ }));
     expect(onApply.mock.calls).toEqual([[{ label: 'A', text: '1' }]]);
   });
 });

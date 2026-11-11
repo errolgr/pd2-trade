@@ -27,6 +27,7 @@ import { PANEL_DEFS } from './overlay/registry';
 import PrimitivesGallery from './pages/dev/PrimitivesGallery';
 import { SignInWindowPage } from './pages/sign-in/SignInPage';
 import { SignInProvider } from './hooks/useSignIn';
+import { TooltipProvider } from './components/ui/tooltip';
 
 // Apply the cached theme and UI scale before the first render (no flash of the defaults)
 initTheme();
@@ -77,31 +78,34 @@ const AppRoot: React.FC = () => (
 // The native sign-in window (src-tauri commands::open_sign_in_window): only its view, Main runs the sign-in
 const signInWindow = new URLSearchParams(window.location.search).get('window') === 'sign-in';
 
+// One TooltipProvider for every surface (panels, settings, toasts): shared delay, instant hand-off between hints
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-  signInWindow ? (
-    <SignInWindowPage />
-  ) : (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/"
-          element={<AppRoot />} />
-        {/* Browser mode: open straight into the market or builds panel (see overlay/browser-launch.ts) */}
-        <Route path="/market"
-          element={<AppRoot />} />
-        <Route path="/builds"
-          element={<AppRoot />} />
-        {/* Dev-only primitives gallery (screenshot harness); tree-shaken from production builds */}
-        {process.env.NODE_ENV !== 'production' && (
-          <Route
-            path="/dev/gallery"
-            element={
-              <OptionsProvider>
-                <PrimitivesGallery />
-              </OptionsProvider>
-            }
-          />
-        )}
-      </Routes>
-    </BrowserRouter>
-  ),
+  <TooltipProvider delayDuration={300}>
+    {signInWindow ? (
+      <SignInWindowPage />
+    ) : (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/"
+            element={<AppRoot />} />
+          {/* Browser mode: open straight into the market or builds panel (see overlay/browser-launch.ts) */}
+          <Route path="/market"
+            element={<AppRoot />} />
+          <Route path="/builds"
+            element={<AppRoot />} />
+          {/* Dev-only primitives gallery (screenshot harness); tree-shaken from production builds */}
+          {process.env.NODE_ENV !== 'production' && (
+            <Route
+              path="/dev/gallery"
+              element={
+                <OptionsProvider>
+                  <PrimitivesGallery />
+                </OptionsProvider>
+              }
+            />
+          )}
+        </Routes>
+      </BrowserRouter>
+    )}
+  </TooltipProvider>,
 );

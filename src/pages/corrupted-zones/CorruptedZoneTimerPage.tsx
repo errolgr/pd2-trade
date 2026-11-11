@@ -4,6 +4,7 @@ import { useOptions } from '@/hooks/useOptions';
 import { usePanel, useOverlay } from '@/overlay';
 import { overlayViewport, useDragToMove } from '@/overlay/useDragToMove';
 import { cn } from '@/lib/utils';
+import { Tip } from '@/components/ui/tooltip';
 import {
   corruptedZoneAt,
   corruptedZoneSchedule,
@@ -247,47 +248,48 @@ const CorruptedZoneTimer: React.FC = () => {
       className={cn('inline-flex flex-col gap-1', align, listAbove && 'flex-col-reverse')}
     >
       {/* No transforms/shadows here: the panel is sized to this box, so it must not grow on hover. */}
-      <button
-        ref={pillRef}
-        type="button"
-        data-interactive="true"
-        onClick={() => {
-          if (drag.consumeDragClick()) return;
-          if (!expanded) setListAbove(restingUp);
-          setExpanded((open) => !open);
-        }}
-        {...(locked ? {} : dragHandlers)}
-        aria-expanded={expanded}
-        className={cn(
-          'pointer-events-auto flex cursor-pointer select-none border border-q-corrupted-zone/45 bg-surface text-xs font-medium text-surface-foreground shadow-[inset_0_0_12px_-4px_var(--q-corrupted-zone)] outline-none backdrop-blur-md transition-[background-color,border-color] duration-(--dur-fast) ease-out hover:border-q-corrupted-zone/80 hover:bg-surface-elevated focus-visible:border-q-corrupted-zone active:bg-muted',
-          vertical
-            ? 'w-44 flex-col gap-1 rounded-lg px-2.5 py-1.5 text-left'
-            : 'h-7 items-center gap-2 whitespace-nowrap rounded-full pl-3 pr-2',
-        )}
-        title={t(locked ? 'corruptedZones.pillTitleLocked' : 'corruptedZones.pillTitle', { title })}
-      >
-        {vertical ? (
-          <>
-            <span className="flex items-start gap-2">
+      <Tip label={t(locked ? 'corruptedZones.pillTitleLocked' : 'corruptedZones.pillTitle', { title })}>
+        <button
+          ref={pillRef}
+          type="button"
+          data-interactive="true"
+          onClick={() => {
+            if (drag.consumeDragClick()) return;
+            if (!expanded) setListAbove(restingUp);
+            setExpanded((open) => !open);
+          }}
+          {...(locked ? {} : dragHandlers)}
+          aria-expanded={expanded}
+          className={cn(
+            'pointer-events-auto flex cursor-pointer select-none border border-q-corrupted-zone/45 bg-surface text-xs font-medium text-surface-foreground shadow-[inset_0_0_12px_-4px_var(--q-corrupted-zone)] outline-none backdrop-blur-md transition-[background-color,border-color] duration-(--dur-fast) ease-out hover:border-q-corrupted-zone/80 hover:bg-surface-elevated focus-visible:border-q-corrupted-zone active:bg-muted',
+            vertical
+              ? 'w-44 flex-col gap-1 rounded-lg px-2.5 py-1.5 text-left'
+              : 'h-7 items-center gap-2 whitespace-nowrap rounded-full pl-3 pr-2',
+          )}
+        >
+          {vertical ? (
+            <>
+              <span className="flex items-start gap-2">
+                {dot}
+                {zone}
+              </span>
+              <span className="flex items-center justify-between gap-2 pl-4">
+                {countdown}
+                {chevron}
+              </span>
+            </>
+          ) : (
+            <>
               {dot}
               {zone}
-            </span>
-            <span className="flex items-center justify-between gap-2 pl-4">
+              <span aria-hidden
+                className="h-3 w-px bg-border" />
               {countdown}
               {chevron}
-            </span>
-          </>
-        ) : (
-          <>
-            {dot}
-            {zone}
-            <span aria-hidden
-              className="h-3 w-px bg-border" />
-            {countdown}
-            {chevron}
-          </>
-        )}
-      </button>
+            </>
+          )}
+        </button>
+      </Tip>
       {expanded && (
         <div
           data-interactive="true"
@@ -314,29 +316,31 @@ const CorruptedZoneTimer: React.FC = () => {
             ))}
           </ol>
           <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-1.5">
-            <button
-              type="button"
-              aria-pressed={locked}
-              onClick={() => updateSettings({ corruptedZoneTimerLocked: !locked })}
-              title={t(locked ? 'corruptedZones.lock.lockedTitle' : 'corruptedZones.lock.unlockedTitle')}
-              className={cn(footerButton, locked && 'text-q-corrupted-zone')}
-            >
-              {locked ? <Lock aria-hidden
-                className="size-3" /> : <LockOpen aria-hidden
-                  className="size-3" />}
-              {t('corruptedZones.lock.label')}
-            </button>
-            <button
-              type="button"
-              onClick={flipDirection}
-              aria-label={t(listAbove ? 'corruptedZones.direction.up' : 'corruptedZones.direction.down')}
-              title={t(listAbove ? 'corruptedZones.direction.upTitle' : 'corruptedZones.direction.downTitle')}
-              className={cn(footerButton, listDirection && 'text-q-corrupted-zone')}
-            >
-              {listAbove ? <ArrowUp aria-hidden
-                className="size-3" /> : <ArrowDown aria-hidden
-                  className="size-3" />}
-            </button>
+            <Tip label={t(locked ? 'corruptedZones.lock.lockedTitle' : 'corruptedZones.lock.unlockedTitle')}>
+              <button
+                type="button"
+                aria-pressed={locked}
+                onClick={() => updateSettings({ corruptedZoneTimerLocked: !locked })}
+                className={cn(footerButton, locked && 'text-q-corrupted-zone')}
+              >
+                {locked ? <Lock aria-hidden
+                  className="size-3" /> : <LockOpen aria-hidden
+                    className="size-3" />}
+                {t('corruptedZones.lock.label')}
+              </button>
+            </Tip>
+            <Tip label={t(listAbove ? 'corruptedZones.direction.upTitle' : 'corruptedZones.direction.downTitle')}>
+              <button
+                type="button"
+                onClick={flipDirection}
+                aria-label={t(listAbove ? 'corruptedZones.direction.up' : 'corruptedZones.direction.down')}
+                className={cn(footerButton, listDirection && 'text-q-corrupted-zone')}
+              >
+                {listAbove ? <ArrowUp aria-hidden
+                  className="size-3" /> : <ArrowDown aria-hidden
+                    className="size-3" />}
+              </button>
+            </Tip>
           </div>
         </div>
       )}

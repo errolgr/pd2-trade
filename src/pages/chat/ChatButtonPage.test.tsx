@@ -58,6 +58,9 @@ afterEach(() => {
   act(() => resetNotificationLog());
 });
 
+/** The tab (its favorite buttons and the menu caret). */
+const dockTab = () => screen.getByRole('button', { name: 'More' }).parentElement!;
+
 describe('ChatButtonPage', () => {
   it('shows the unread chat badge count', async () => {
     render(<ChatButtonPage />);
@@ -95,7 +98,10 @@ describe('ChatButtonPage', () => {
     act(() => void logNotification({ kind: 'offer', title: 'New Offer', description: 'Bob: 2 Ist' }, { missed: true }));
     expect(logButton()?.getAttribute('aria-label')).toBe('1 missed notification');
     expect(logButton()?.className).toContain('text-warning');
-    expect(logButton()?.getAttribute('title')).toBe('Bob: 2 Ist');
+    act(() => {
+      fireEvent.focus(logButton()!);
+    });
+    expect(screen.getByRole('tooltip').textContent).toBe('Bob: 2 Ist');
 
     fireEvent.click(logButton()!);
     expect(overlay.openPanel).toHaveBeenCalledWith('notifications', undefined, expect.anything());
@@ -156,7 +162,7 @@ describe('ChatButtonPage', () => {
 
   it('slides along the edge when dragged, saves the spot on release, and the drag does not click', () => {
     render(<ChatButtonPage />);
-    const tab = screen.getByTitle('Drag to move');
+    const tab = dockTab();
     const dock = () => tab.closest<HTMLElement>('.absolute.right-0')!;
     expect(dock().style.top).toBe('953px');
 
@@ -181,7 +187,7 @@ describe('ChatButtonPage', () => {
   it('holds the favorites from settings, growing upward from its spot, and saves favorite changes', () => {
     settings = { chatDockFavorites: ['chat', 'offers', 'settings'] };
     render(<ChatButtonPage />);
-    const dock = () => screen.getByTitle('Drag to move').closest<HTMLElement>('.absolute.right-0')!;
+    const dock = () => dockTab().closest<HTMLElement>('.absolute.right-0')!;
     // A third button adds a tab width (43px) above the default 118px tab: 43x161, same 9px above the bottom
     expect(dock().style.height).toBe('161px');
     expect(dock().style.top).toBe(`${953 - 43}px`);
@@ -199,7 +205,7 @@ describe('ChatButtonPage', () => {
       chatDockFavorites: ['bogus', 'offers', 'settings'],
     };
     render(<ChatButtonPage />);
-    const tab = screen.getByTitle('Drag to move');
+    const tab = dockTab();
     expect(Array.from(tab.querySelectorAll('button')).map((b) => b.getAttribute('aria-label'))).toEqual([
       'Settings',
       'Offers',

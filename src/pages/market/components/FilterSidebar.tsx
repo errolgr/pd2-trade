@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tip } from '@/components/ui/tooltip';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -228,16 +229,17 @@ export function FilterSidebar({
             { value: 'archive', label: t('filters.source.archive'), title: t('filters.source.archiveTitle') },
           ]}
         />
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 shrink-0 gap-1 px-2 text-xs text-muted-foreground"
-          onClick={onReset}
-          title={t('filters.clearAll')}
-        >
-          <RotateCcw className="size-3.5" />
-          {t('common:actions.clear')}
-        </Button>
+        <Tip label={t('filters.clearAll')}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 shrink-0 gap-1 px-2 text-xs text-muted-foreground"
+            onClick={onReset}
+          >
+            <RotateCcw className="size-3.5" />
+            {t('common:actions.clear')}
+          </Button>
+        </Tip>
       </div>
       <ScrollArea className="min-h-0 flex-1 [&_[data-radix-scroll-area-viewport]>div]:!block">
         <Section
@@ -245,15 +247,16 @@ export function FilterSidebar({
           active={f.stats.filter((s) => s.enabled).length}
           actions={
             f.stats.length > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 shrink-0 px-1.5 text-[11px] text-muted-foreground hover:text-destructive"
-                onClick={() => set({ stats: [] })}
-                title={t('filters.clearStats')}
-              >
-                {t('common:actions.clear')}
-              </Button>
+              <Tip label={t('filters.clearStats')}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 shrink-0 px-1.5 text-[11px] text-muted-foreground hover:text-destructive"
+                  onClick={() => set({ stats: [] })}
+                >
+                  {t('common:actions.clear')}
+                </Button>
+              </Tip>
             )
           }
         >
@@ -397,15 +400,16 @@ export function FilterSidebar({
             <Field label="">
               <span className="inline-flex h-6 max-w-full items-center gap-1 rounded-full border border-primary/40 bg-primary/10 pl-2 pr-0.5 text-[11px] text-primary">
                 <span className="truncate">{t('filters.sort.stat', { stat: statName(f.sort.key) })}</span>
-                <button
-                  type="button"
-                  aria-label={t('filters.sort.stopStat')}
-                  title={t('filters.sort.stopStat')}
-                  onClick={() => set({ sort: { ...defaults.sort } })}
-                  className="inline-flex size-5 shrink-0 items-center justify-center rounded-full hover:bg-primary/20"
-                >
-                  <X className="size-3" />
-                </button>
+                <Tip label={t('filters.sort.stopStat')}>
+                  <button
+                    type="button"
+                    aria-label={t('filters.sort.stopStat')}
+                    onClick={() => set({ sort: { ...defaults.sort } })}
+                    className="inline-flex size-5 shrink-0 items-center justify-center rounded-full hover:bg-primary/20"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </Tip>
               </span>
             </Field>
           )}
@@ -546,15 +550,16 @@ function SellerInput({
   const { t } = useTranslation('market');
   return (
     <div className="relative">
-      <Input
-        id="market-seller"
-        placeholder={t('filters.sellerPlaceholder')}
-        maxLength={MAX_SELLER_NAME}
-        value={name ?? ''}
-        onChange={(e) => onChange(undefined, e.target.value.slice(0, MAX_SELLER_NAME) || undefined)}
-        title={userId ? t('filters.sellerPicked') : undefined}
-        className={cn(fieldInputClass, 'pr-6', userId && 'border-primary/50')}
-      />
+      <Tip label={userId ? t('filters.sellerPicked') : undefined}>
+        <Input
+          id="market-seller"
+          placeholder={t('filters.sellerPlaceholder')}
+          maxLength={MAX_SELLER_NAME}
+          value={name ?? ''}
+          onChange={(e) => onChange(undefined, e.target.value.slice(0, MAX_SELLER_NAME) || undefined)}
+          className={cn(fieldInputClass, 'pr-6', userId && 'border-primary/50')}
+        />
+      </Tip>
       {(name || userId) && (
         <ClearButton label={t('filters.clearSeller')}
           onClick={() => onChange(undefined, undefined)} />

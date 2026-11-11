@@ -2,6 +2,7 @@ import React from 'react';
 import { ChevronRight, Store, User as UserIcon } from 'lucide-react';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { ListingThumb, nameColor } from '@/pages/chat/components/ListingCard';
 import type { TraderPresence } from '@/pages/chat/hooks/useTraderProfile';
@@ -116,9 +117,9 @@ export function SellerCard({
               {seller.presenceText}
             </span>
             {seller.accountCreatedAt !== null && (
-              <span title={new Date(seller.accountCreatedAt).toLocaleDateString(currentLocale())}>
-                {t('seller.joined', { ago: seller.accountAgeText })}
-              </span>
+              <Tip label={new Date(seller.accountCreatedAt).toLocaleDateString(currentLocale())}>
+                <span>{t('seller.joined', { ago: seller.accountAgeText })}</span>
+              </Tip>
             )}
           </div>
         </div>

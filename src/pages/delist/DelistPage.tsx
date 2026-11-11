@@ -11,6 +11,7 @@ import { countChip, itemCard } from '@/pages/quick-list/components/styles';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 import { cn } from '@/lib/utils';
+import { Tip } from '@/components/ui/tooltip';
 import { listItem, listStagger } from '@/lib/motion';
 import { showToast, usePanel } from '@/overlay';
 import { useTranslation } from '@/i18n';
@@ -127,13 +128,12 @@ export const DelistPage: React.FC = () => {
                           ) : null}
                           {listing.price && <span className="truncate">{listing.price}</span>}
                           {listing.created_at && (
-                            <span
-                              className="ml-auto flex shrink-0 items-center gap-1"
-                              title={moment(listing.created_at).format('LLL')}
-                            >
-                              <Clock className="size-3" />
-                              {t('delist.listedAgo', { time: moment(listing.created_at).fromNow() })}
-                            </span>
+                            <Tip label={moment(listing.created_at).format('LLL')}>
+                              <span className="ml-auto flex shrink-0 items-center gap-1">
+                                <Clock className="size-3" />
+                                {t('delist.listedAgo', { time: moment(listing.created_at).fromNow() })}
+                              </span>
+                            </Tip>
                           )}
                         </div>
                       </div>

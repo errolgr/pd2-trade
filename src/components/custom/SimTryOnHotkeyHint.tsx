@@ -1,6 +1,7 @@
 import { Keyboard } from 'lucide-react';
 import { useOptions, type ISettings } from '@/hooks/useOptions';
 import { cn } from '@/lib/utils';
+import { Tip } from '@/components/ui/tooltip';
 import { useOverlay } from '@/overlay';
 import { formatHotkey } from '@/pages/palette/lib/hotkey';
 
@@ -23,20 +24,21 @@ export function SimTryOnHotkeyHint({ onOpen, className }: { onOpen?: () => void;
   const { openPanel } = useOverlay();
   const bound = simTryOnHotkey(settings) !== null;
   return (
-    <button
-      type="button"
-      onClick={() => {
-        openPanel('settings', { section: 'Hotkeys', field: 'hotkeyKeySimTryOn' });
-        onOpen?.();
-      }}
-      title={bound ? 'Change the try-on hotkey' : 'Set a hotkey that tries the hovered item on your character'}
-      className={cn(
-        'inline-flex cursor-pointer items-center gap-1 rounded text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline',
-        className,
-      )}
-    >
-      <Keyboard className="size-3.5 shrink-0" />
-      {simTryOnHotkeyText(settings)}
-    </button>
+    <Tip label={bound ? 'Change the try-on hotkey' : 'Set a hotkey that tries the hovered item on your character'}>
+      <button
+        type="button"
+        onClick={() => {
+          openPanel('settings', { section: 'Hotkeys', field: 'hotkeyKeySimTryOn' });
+          onOpen?.();
+        }}
+        className={cn(
+          'inline-flex cursor-pointer items-center gap-1 rounded text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline',
+          className,
+        )}
+      >
+        <Keyboard className="size-3.5 shrink-0" />
+        {simTryOnHotkeyText(settings)}
+      </button>
+    </Tip>
   );
 }

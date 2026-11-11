@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tip } from '@/components/ui/tooltip';
 import { showToast, undoToast } from '@/overlay';
 import { useSignIn } from '@/hooks/useSignIn';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
@@ -108,16 +109,21 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
           onChange={(e) => setName(e.target.value)}
           className={cn(fieldInputClass, 'flex-1')}
         />
-        <Button
-          type="submit"
-          size="sm"
-          className="h-7 px-2.5 text-xs"
-          disabled={!name.trim() || !synced}
-          title={synced ? undefined : t('saved.needsSync')}
-        >
-          <Plus className="size-3.5" />
-          {t('common:actions.save')}
-        </Button>
+        {/* The span takes hover/focus while Save is disabled, so the tooltip still says why */}
+        <Tip label={synced ? undefined : t('saved.needsSync')}>
+          <span
+            tabIndex={synced ? undefined : 0}
+            className="inline-flex rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+          >
+            <Button type="submit"
+              size="sm"
+              className="h-7 px-2.5 text-xs"
+              disabled={!name.trim() || !synced}>
+              <Plus className="size-3.5" />
+              {t('common:actions.save')}
+            </Button>
+          </span>
+        </Tip>
       </form>
       <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-1.5 text-[11px] text-muted-foreground">
         <span>{t('saved.alertingSummary', { alerting, max: store.limits.maxAlerting })}</span>
@@ -310,22 +316,21 @@ function SavedRow({
           <Pencil className="size-3.5" />
         </Button>
       )}
-      <label
-        className="flex shrink-0 items-center gap-1"
-        title={alertsEnabled ? t('saved.toastNewMatches') : t('saved.alertsOff')}
-      >
-        {search.alert && alertsEnabled ? (
-          <Bell className="size-3.5 text-primary" />
-        ) : (
-          <BellOff className="size-3.5 text-muted-foreground" />
-        )}
-        <Switch
-          checked={search.alert}
-          onCheckedChange={onAlert}
-          aria-label={t('saved.alertsFor', { name: search.name })}
-          className="scale-75"
-        />
-      </label>
+      <Tip label={alertsEnabled ? t('saved.toastNewMatches') : t('saved.alertsOff')}>
+        <label className="flex shrink-0 items-center gap-1">
+          {search.alert && alertsEnabled ? (
+            <Bell className="size-3.5 text-primary" />
+          ) : (
+            <BellOff className="size-3.5 text-muted-foreground" />
+          )}
+          <Switch
+            checked={search.alert}
+            onCheckedChange={onAlert}
+            aria-label={t('saved.alertsFor', { name: search.name })}
+            className="scale-75"
+          />
+        </label>
+      </Tip>
       <Button
         variant="ghost"
         size="sm"

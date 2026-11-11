@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import React from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetchPriceHistory, type PriceHistoryPoint, type PriceHistoryResponse } from '@/pages/currency/lib/price-api';
 import { PriceSparkline, type SparklineQuery } from './PriceSparkline';
@@ -55,7 +55,8 @@ describe('PriceSparkline', () => {
     expect(svg.getAttribute('aria-label')).toBe('Price over the last 3 days with sales: 2.00 to 2.50 HR');
     const change = screen.getByText('+25.0%');
     expect(change.className).toContain('text-success');
-    expect(change.getAttribute('title')).toBe('2.00 → 2.50 HR');
+    fireEvent.focus(change);
+    expect((await screen.findByRole('tooltip')).textContent).toBe('2.00 → 2.50 HR');
   });
 
   it('shows a negative change in red without a plus', async () => {
@@ -119,7 +120,9 @@ describe('PriceSparkline', () => {
   });
 
   it('retries a failed lookup on the next open', async () => {
-    vi.mocked(fetchPriceHistory).mockResolvedValueOnce(null).mockResolvedValueOnce(response([1, 3]));
+    vi.mocked(fetchPriceHistory)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(response([1, 3]));
     const q = query();
     const first = render(<PriceSparkline query={q} />);
     await screen.findByText('Not enough sales in the last 30 days for a trend.');

@@ -4,7 +4,7 @@ import { useInView } from 'react-intersection-observer';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, MotionConfig, animate, motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tip, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { useAvailableUpdate } from '@/hooks/useAvailableUpdate';
 import { installUpdateAndRelaunch } from '@/lib/updater';
@@ -1101,13 +1101,14 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     <span className="inline-flex items-center gap-1">
       {basisLabel(requestedWindow)}
       {windowNote && (
-        <span
-          title={windowNote.title}
-          aria-label={windowNote.title}
-          className="cursor-help rounded-sm border border-border px-1 text-[9px] font-medium leading-[13px] tracking-wider text-muted-foreground"
-        >
-          {windowNote.label}
-        </span>
+        <Tip label={windowNote.title}>
+          <span
+            aria-label={windowNote.title}
+            className="cursor-help rounded-sm border border-border px-1 text-[9px] font-medium leading-[13px] tracking-wider text-muted-foreground"
+          >
+            {windowNote.label}
+          </span>
+        </Tip>
       )}
     </span>
   );
@@ -1412,10 +1413,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               </div>
             )}
             {appraisalNoteText && (
-              <span className="text-[11px] text-muted-foreground/70"
-                title={appraisalNoteText.title}>
-                {t('overlay.header.appraisalNote', { note: appraisalNoteText.text })}
-              </span>
+              <Tip label={appraisalNoteText.title}>
+                <span className="text-[11px] text-muted-foreground/70">
+                  {t('overlay.header.appraisalNote', { note: appraisalNoteText.text })}
+                </span>
+              </Tip>
             )}
 
             {/* Average Price Information for Unique Items - Compact */}
@@ -1623,25 +1625,27 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                         {hasAnyRange && (
                           <>
                             <span aria-hidden>·</span>
-                            <button
-                              type="button"
-                              onClick={clearAllRanges}
-                              title={t('overlay.stats.clearRangesTitle')}
-                              className="rounded-sm underline-offset-2 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
-                            >
-                              {t('overlay.stats.clearRanges')}
-                            </button>
+                            <Tip label={t('overlay.stats.clearRangesTitle')}>
+                              <button
+                                type="button"
+                                onClick={clearAllRanges}
+                                className="rounded-sm underline-offset-2 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
+                              >
+                                {t('overlay.stats.clearRanges')}
+                              </button>
+                            </Tip>
                           </>
                         )}
                         <span aria-hidden>·</span>
-                        <button
-                          type="button"
-                          onClick={clearSelectedStats}
-                          title={t('overlay.stats.clearTitle')}
-                          className="rounded-sm underline-offset-2 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
-                        >
-                          {t('common:actions.clear')}
-                        </button>
+                        <Tip label={t('overlay.stats.clearTitle')}>
+                          <button
+                            type="button"
+                            onClick={clearSelectedStats}
+                            className="rounded-sm underline-offset-2 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
+                          >
+                            {t('common:actions.clear')}
+                          </button>
+                        </Tip>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -2058,32 +2062,33 @@ function HeaderToggle({
   children: React.ReactNode;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      className={cn(
-        'group/toggle inline-flex cursor-pointer items-center gap-1 overflow-hidden rounded-md px-1.5 py-0.5 outline-none transition-[background-color,color,filter] duration-(--dur-fast) hover:bg-accent/60 hover:brightness-125 focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-[0.98]',
-        className,
-        marked && FILTER_HIGHLIGHT_CLASS,
-      )}
-      style={{ fontFamily: 'DiabloFont' }}
-    >
-      <AnimatePresence mode="popLayout"
-        initial={false}>
-        <motion.span
-          key={String(children)}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: DUR.med, ease: EASE_OUT }}
-        >
-          {children}
-        </motion.span>
-      </AnimatePresence>
-      <Repeat2 aria-hidden
-        className="size-3.5 opacity-40 transition-opacity group-hover/toggle:opacity-90" />
-    </button>
+    <Tip label={title}>
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          'group/toggle inline-flex cursor-pointer items-center gap-1 overflow-hidden rounded-md px-1.5 py-0.5 outline-none transition-[background-color,color,filter] duration-(--dur-fast) hover:bg-accent/60 hover:brightness-125 focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-[0.98]',
+          className,
+          marked && FILTER_HIGHLIGHT_CLASS,
+        )}
+        style={{ fontFamily: 'DiabloFont' }}
+      >
+        <AnimatePresence mode="popLayout"
+          initial={false}>
+          <motion.span
+            key={String(children)}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: DUR.med, ease: EASE_OUT }}
+          >
+            {children}
+          </motion.span>
+        </AnimatePresence>
+        <Repeat2 aria-hidden
+          className="size-3.5 opacity-40 transition-opacity group-hover/toggle:opacity-90" />
+      </button>
+    </Tip>
   );
 }
 
@@ -2224,43 +2229,35 @@ function CorruptionRow({
     </span>
   );
 
+  // One hint for the whole row: a truncated name leads it in full.
+  const searchTitle = t('overlay.corruptions.searchTitle');
   const row = (
-    <div
-      role="button"
-      tabIndex={-1}
-      className={cn(
-        'group/corr -mx-1.5 flex w-[calc(100%+0.75rem)] min-w-0 cursor-pointer items-center justify-between gap-2 rounded-md px-1.5 py-1 text-xs outline-none transition-colors duration-(--dur-fast) focus-visible:ring-2 focus-visible:ring-ring/60',
-        selected ? 'bg-glow/12 ring-1 ring-inset ring-glow/50' : 'hover:bg-accent/60',
-      )}
-      onClick={(e) => {
-        e.stopPropagation();
-        onSelect();
-      }}
-      title={t('overlay.corruptions.searchTitle')}
-    >
-      <div className="min-w-0 flex-1 overflow-hidden">
-        {isTruncated ? (
-          <Tooltip>
-            <TooltipTrigger asChild>{nameElement}</TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">{name}</p>
-            </TooltipContent>
-          </Tooltip>
+    <Tip label={isTruncated ? `${name}\n${searchTitle}` : searchTitle}>
+      <div
+        role="button"
+        tabIndex={-1}
+        className={cn(
+          'group/corr -mx-1.5 flex w-[calc(100%+0.75rem)] min-w-0 cursor-pointer items-center justify-between gap-2 rounded-md px-1.5 py-1 text-xs outline-none transition-colors duration-(--dur-fast) focus-visible:ring-2 focus-visible:ring-ring/60',
+          selected ? 'bg-glow/12 ring-1 ring-inset ring-glow/50' : 'hover:bg-accent/60',
+        )}
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelect();
+        }}
+      >
+        <div className="min-w-0 flex-1 overflow-hidden">{nameElement}</div>
+        {price ? (
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="text-[10px] tabular-nums text-muted-foreground">({price.sampleCount})</span>
+            <span className="font-semibold tabular-nums text-foreground">{price.medianPrice.toFixed(2)} HR</span>
+            {hasSocketPrices && <ChevronRight aria-hidden
+              className="-mr-0.5 size-3 text-muted-foreground" />}
+          </div>
         ) : (
-          nameElement
+          <span className="shrink-0 text-[10px] text-muted-foreground">{t('overlay.corruptions.noPriceData')}</span>
         )}
       </div>
-      {price ? (
-        <div className="flex shrink-0 items-center gap-2">
-          <span className="text-[10px] tabular-nums text-muted-foreground">({price.sampleCount})</span>
-          <span className="font-semibold tabular-nums text-foreground">{price.medianPrice.toFixed(2)} HR</span>
-          {hasSocketPrices && <ChevronRight aria-hidden
-            className="-mr-0.5 size-3 text-muted-foreground" />}
-        </div>
-      ) : (
-        <span className="shrink-0 text-[10px] text-muted-foreground">{t('overlay.corruptions.noPriceData')}</span>
-      )}
-    </div>
+    </Tip>
   );
 
   if (!price || !hasSocketPrices) return row;
@@ -2280,25 +2277,26 @@ function CorruptionRow({
           <div className="mb-2 text-xs font-semibold">{t('overlay.corruptions.socketPrices', { name })}</div>
           <div className="space-y-0.5">
             {socketPrices.map((socketPrice, socketIdx) => (
-              <div
-                key={socketIdx}
-                role="button"
-                tabIndex={-1}
-                className="-mx-2 flex cursor-pointer items-center justify-between rounded-md px-2 py-1 text-xs outline-none transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring/60"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSocketSelect(socketPrice.socketCount);
-                }}
-                title={t('overlay.corruptions.filterBySocket')}
-              >
-                <span className="text-muted-foreground">
-                  {t('overlay.sockets', { count: socketPrice.socketCount })}
-                </span>
-                <div className="flex shrink-0 items-center gap-2">
-                  <span className="text-[10px] tabular-nums text-muted-foreground">({socketPrice.sampleCount})</span>
-                  <span className="font-semibold tabular-nums">{socketPrice.medianPrice.toFixed(2)} HR</span>
+              <Tip key={socketIdx}
+                label={t('overlay.corruptions.filterBySocket')}>
+                <div
+                  role="button"
+                  tabIndex={-1}
+                  className="-mx-2 flex cursor-pointer items-center justify-between rounded-md px-2 py-1 text-xs outline-none transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring/60"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSocketSelect(socketPrice.socketCount);
+                  }}
+                >
+                  <span className="text-muted-foreground">
+                    {t('overlay.sockets', { count: socketPrice.socketCount })}
+                  </span>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="text-[10px] tabular-nums text-muted-foreground">({socketPrice.sampleCount})</span>
+                    <span className="font-semibold tabular-nums">{socketPrice.medianPrice.toFixed(2)} HR</span>
+                  </div>
                 </div>
-              </div>
+              </Tip>
             ))}
           </div>
         </div>
@@ -2353,19 +2351,20 @@ function SortHeader({
 }) {
   const Arrow = dir === 'desc' ? ChevronDown : ChevronUp;
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      className={cn(
-        'cursor-pointer inline-flex items-center gap-0.5 rounded-sm py-0.5 uppercase tracking-[0.12em] outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
-        active && 'font-semibold text-foreground',
-      )}
-    >
-      {label}
-      {active && <Arrow aria-hidden
-        className="size-3" />}
-    </button>
+    <Tip label={title}>
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          'cursor-pointer inline-flex items-center gap-0.5 rounded-sm py-0.5 uppercase tracking-[0.12em] outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
+          active && 'font-semibold text-foreground',
+        )}
+      >
+        {label}
+        {active && <Arrow aria-hidden
+          className="size-3" />}
+      </button>
+    </Tip>
   );
 }
 
@@ -2406,20 +2405,21 @@ function SellerFilterMenu({ filter, onChange }: { filter: SellerFilter; onChange
   return (
     <Popover open={open}
       onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          aria-label={t('overlay.results.sellerFilter')}
-          title={t('overlay.results.sellerFilter')}
-          className={cn(
-            'cursor-pointer flex h-4 w-5 flex-none items-center justify-center rounded-full outline-none transition-shadow duration-(--dur-fast) hover:ring-1 hover:ring-border focus-visible:ring-2 focus-visible:ring-ring/60',
-            filtered && 'ring-1 ring-foreground/30',
-          )}
-        >
-          <PresenceMark inGame={filter.inGame}
-            onSite={filter.onSite} />
-        </button>
-      </PopoverTrigger>
+      <Tip label={t('overlay.results.sellerFilter')}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            aria-label={t('overlay.results.sellerFilter')}
+            className={cn(
+              'cursor-pointer flex h-4 w-5 flex-none items-center justify-center rounded-full outline-none transition-shadow duration-(--dur-fast) hover:ring-1 hover:ring-border focus-visible:ring-2 focus-visible:ring-ring/60',
+              filtered && 'ring-1 ring-foreground/30',
+            )}
+          >
+            <PresenceMark inGame={filter.inGame}
+              onSite={filter.onSite} />
+          </button>
+        </PopoverTrigger>
+      </Tip>
       <PopoverContent align="end"
         className="w-52 p-1">
         <div role="menu"
@@ -2620,12 +2620,11 @@ const ListingRow = ({ row, idx }: { row: ScoredListing; idx: number }) => {
           </td>
 
           {/* Listed Column: bump age; for ended listings how long they were up ("sold after 2 days") */}
-          <td
-            className="whitespace-nowrap rounded-r-md px-2 py-1 text-right text-xs tabular-nums text-muted-foreground"
-            title={listedTitle}
-          >
-            {ended && upFor ? t(ENDED_KEYS[ended], { duration: upFor }) : listingAge(listing) || '-'}
-          </td>
+          <Tip label={listedTitle}>
+            <td className="whitespace-nowrap rounded-r-md px-2 py-1 text-right text-xs tabular-nums text-muted-foreground">
+              {ended && upFor ? t(ENDED_KEYS[ended], { duration: upFor }) : listingAge(listing) || '-'}
+            </td>
+          </Tip>
         </tr>
       </PopoverTrigger>
 
@@ -2654,10 +2653,12 @@ const ListingRow = ({ row, idx }: { row: ScoredListing; idx: number }) => {
                   components={{ name: <span className="text-foreground" /> }}
                 />
               </span>
+              {/* The popover is pointer-events-none (no hover hint possible): the dot is labelled instead. */}
               {online && (
                 <div
+                  role="img"
+                  aria-label={t('overlay.listing.online')}
                   className="size-2 rounded-full bg-success ring-2 ring-success/25"
-                  title={t('overlay.listing.online')}
                 />
               )}
             </div>

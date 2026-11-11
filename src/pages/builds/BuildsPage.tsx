@@ -4,7 +4,7 @@ import { Search, Star, Trophy } from 'lucide-react';
 import { fadeIn, springSnappy } from '@/lib/motion';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import { Tip, TooltipProvider } from '@/components/ui/tooltip';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 import { usePanel, useOverlay } from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
@@ -187,17 +187,18 @@ const BuildsPage: React.FC = () => {
                     ]}
                   />
                   {followedCount > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 gap-1 px-2 text-xs text-muted-foreground"
-                      title={t('page.followingShortcut', { n: followedCount })}
-                      aria-label={t('page.followingShortcut', { n: followedCount })}
-                      onClick={showFollowing}
-                    >
-                      <Star className="size-3.5 fill-q-gold text-q-gold" />
-                      <span className="tabular-nums">{followedCount}</span>
-                    </Button>
+                    <Tip label={t('page.followingShortcut', { n: followedCount })}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 gap-1 px-2 text-xs text-muted-foreground"
+                        aria-label={t('page.followingShortcut', { n: followedCount })}
+                        onClick={showFollowing}
+                      >
+                        <Star className="size-3.5 fill-q-gold text-q-gold" />
+                        <span className="tabular-nums">{followedCount}</span>
+                      </Button>
+                    </Tip>
                   )}
                   <Tabs
                     value={character ? '' : tab}

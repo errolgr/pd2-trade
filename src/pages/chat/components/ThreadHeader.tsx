@@ -29,9 +29,10 @@ import {
 import { useTranslation } from '@/i18n';
 import { openUrl } from '@/lib/browser-opener';
 import { cn } from '@/lib/utils';
+import { Tip } from '@/components/ui/tooltip';
 import { useOverlay } from '@/overlay';
 import type { TraderPresence } from '../hooks/useTraderProfile';
-import { characterUrl, ChatAvatar, profileUrl, Tip } from './chat-parts';
+import { characterUrl, ChatAvatar, profileUrl } from './chat-parts';
 
 const iconButtonClass = cn(
   buttonVariants({ variant: 'ghost', size: 'icon' }),
@@ -91,15 +92,16 @@ export function ThreadHeader({
     <div className="relative flex h-16 shrink-0 items-center justify-between gap-2 border-b border-border/70 bg-linear-to-b from-card/80 to-card/30 px-3">
       <div className="flex min-w-0 items-center gap-2.5">
         {onBack && (
-          <button
-            type="button"
-            aria-label={t('header.back')}
-            title={t('header.backHint')}
-            onClick={onBack}
-            className={cn(iconButtonClass, '-ml-1')}
-          >
-            <ArrowLeft className="size-4" />
-          </button>
+          <Tip label={t('header.backHint')}>
+            <button
+              type="button"
+              aria-label={t('header.back')}
+              onClick={onBack}
+              className={cn(iconButtonClass, '-ml-1')}
+            >
+              <ArrowLeft className="size-4" />
+            </button>
+          </Tip>
         )}
         <button
           type="button"
@@ -154,22 +156,20 @@ export function ThreadHeader({
               </>
             )}
             {account && (
-              <span
-                className="ml-0.5 flex min-w-0 items-center gap-1 rounded-full border border-border/70 bg-background/50 px-1.5 py-px"
-                title={t('header.inGameAccount')}
-              >
-                <Gamepad2 aria-hidden
-                  className="size-3 shrink-0" />
-                <span className="truncate font-medium text-foreground/85">{account}</span>
-              </span>
+              <Tip label={t('header.inGameAccount')}>
+                <span className="ml-0.5 flex min-w-0 items-center gap-1 rounded-full border border-border/70 bg-background/50 px-1.5 py-px">
+                  <Gamepad2 aria-hidden
+                    className="size-3 shrink-0" />
+                  <span className="truncate font-medium text-foreground/85">{account}</span>
+                </span>
+              </Tip>
             )}
             {inGameOnly && (
-              <span
-                className="shrink-0 rounded-sm bg-muted px-1 text-[10px] font-medium uppercase tracking-wide"
-                title={t('header.inGameOnlyHint')}
-              >
-                {t('header.inGameOnly')}
-              </span>
+              <Tip label={t('header.inGameOnlyHint')}>
+                <span className="shrink-0 rounded-sm bg-muted px-1 text-[10px] font-medium uppercase tracking-wide">
+                  {t('header.inGameOnly')}
+                </span>
+              </Tip>
             )}
           </p>
         </div>

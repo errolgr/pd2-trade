@@ -13,10 +13,14 @@ function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
     {...props} />;
 }
 
-function SheetTrigger({ ...props }: React.ComponentProps<typeof SheetPrimitive.Trigger>) {
-  return <SheetPrimitive.Trigger data-slot="sheet-trigger"
-    {...props} />;
-}
+// forwardRef: a wrapping Tip/TooltipTrigger asChild needs the trigger's DOM node (React 18 drops refs on plain functions)
+const SheetTrigger = React.forwardRef<
+  React.ElementRef<typeof SheetPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof SheetPrimitive.Trigger>
+>((props, ref) => <SheetPrimitive.Trigger ref={ref}
+  data-slot="sheet-trigger"
+  {...props} />);
+SheetTrigger.displayName = 'SheetTrigger';
 
 function SheetClose({ ...props }: React.ComponentProps<typeof SheetPrimitive.Close>) {
   return <SheetPrimitive.Close data-slot="sheet-close"

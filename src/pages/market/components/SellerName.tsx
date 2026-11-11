@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { Tip } from '@/components/ui/tooltip';
 import { useTranslation } from '@/i18n';
 
 /**
@@ -17,20 +18,21 @@ export function SellerName({
 }) {
   const { t } = useTranslation('market');
   return (
-    <button
-      type="button"
-      title={t('seller.openTrader')}
-      onClick={(e) => {
-        e.stopPropagation();
-        onOpen();
-      }}
-      onKeyDown={(e) => e.stopPropagation()}
-      className={cn(
-        'min-w-0 cursor-pointer truncate rounded-sm text-left underline-offset-2 outline-none hover:underline focus-visible:underline focus-visible:ring-1 focus-visible:ring-ring',
-        className,
-      )}
-    >
-      {children}
-    </button>
+    <Tip label={t('seller.openTrader')}>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpen();
+        }}
+        onKeyDown={(e) => e.stopPropagation()}
+        className={cn(
+          'min-w-0 cursor-pointer truncate rounded-sm text-left underline-offset-2 outline-none hover:underline focus-visible:underline focus-visible:ring-1 focus-visible:ring-ring',
+          className,
+        )}
+      >
+        {children}
+      </button>
+    </Tip>
   );
 }

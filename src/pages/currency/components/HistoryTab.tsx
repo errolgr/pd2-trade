@@ -22,7 +22,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tip, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -192,20 +192,21 @@ export function HistoryTab(props: HistoryTabProps) {
                   <Loader2 className="size-4 animate-spin text-muted-foreground" />
                 </motion.span>
               ) : rangeChange !== null ? (
-                <motion.span
-                  key={`change-${range}`}
-                  variants={fadeInUp}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                  className={cn(
-                    'rounded-full px-2 py-0.5 text-xs font-medium tabular-nums',
-                    deltaPillClass(rangeChange),
-                  )}
-                  title={t('history.rangeChange')}
-                >
-                  {formatSignedHr(rangeChange)}
-                </motion.span>
+                <Tip key={`change-${range}`}
+                  label={t('history.rangeChange')}>
+                  <motion.span
+                    variants={fadeInUp}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    className={cn(
+                      'rounded-full px-2 py-0.5 text-xs font-medium tabular-nums',
+                      deltaPillClass(rangeChange),
+                    )}
+                  >
+                    {formatSignedHr(rangeChange)}
+                  </motion.span>
+                </Tip>
               ) : null}
             </AnimatePresence>
           </div>
@@ -689,7 +690,6 @@ function SnapshotsSection({ token, owner, points }: { token: string; owner: NetW
                     size="icon"
                     variant="ghost"
                     className="size-7 text-muted-foreground hover:text-foreground"
-                    title={t('history.snapshots.compareWithPrevious')}
                     aria-label={t('history.snapshots.compareWithPrevious')}
                     disabled={!prev || !p.hasHoldings || !prev.hasHoldings}
                     onClick={() => prev && setSelected([prev.snapshotId, p.snapshotId])}

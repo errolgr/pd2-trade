@@ -36,6 +36,7 @@ import { Trans, useTranslation } from '@/i18n';
 import { CHAT_TEMPLATE_TOKENS, fillTemplate, templatePlaceholders } from '@/lib/message-templates';
 import { fadeInUp } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import { Tip } from '@/components/ui/tooltip';
 import { undoToast, useOverlay } from '@/overlay';
 import { useChatListings } from '../hooks/useChatListings';
 import {
@@ -50,7 +51,7 @@ import {
 import { findMarketLinks, listingMessageUrl, spaceOutLinks } from '../lib/market-links';
 import { ListingCard, listingIconBoxClass, listingPillClass } from './ListingCard';
 import { ListingPicker } from './ListingPicker';
-import { segmentedClass, segmentItemClass, Tip } from './chat-parts';
+import { segmentedClass, segmentItemClass } from './chat-parts';
 import { TemplateFill } from './TemplateFill';
 
 /** The offer message templates from Settings → Chat, offered by the "/" menu after the user's own templates. */
@@ -620,64 +621,67 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
                         i === activeIndex && 'opacity-100',
                       )}
                     >
-                      <button
-                        type="button"
-                        tabIndex={-1}
-                        aria-label={t('composer.editNamed', { name: tpl.label })}
-                        title={t('composer.editShortcut')}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setForm(tpl.source);
-                        }}
-                        className={rowAction}
-                      >
-                        <Pencil />
-                      </button>
-                      {tpl.source.kind === 'custom' && (
+                      <Tip label={t('composer.editShortcut')}>
                         <button
                           type="button"
                           tabIndex={-1}
-                          aria-label={t('composer.deleteNamed', { name: tpl.label })}
-                          title={t('composer.deleteShortcut')}
+                          aria-label={t('composer.editNamed', { name: tpl.label })}
                           onMouseDown={(e) => e.preventDefault()}
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (tpl.source.kind === 'custom') deleteTemplate(tpl.source.id);
+                            setForm(tpl.source);
                           }}
-                          className={cn(rowAction, 'hover:bg-destructive/15 hover:text-destructive')}
+                          className={rowAction}
                         >
-                          <Trash2 />
+                          <Pencil />
                         </button>
+                      </Tip>
+                      {tpl.source.kind === 'custom' && (
+                        <Tip label={t('composer.deleteShortcut')}>
+                          <button
+                            type="button"
+                            tabIndex={-1}
+                            aria-label={t('composer.deleteNamed', { name: tpl.label })}
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (tpl.source.kind === 'custom') deleteTemplate(tpl.source.id);
+                            }}
+                            className={cn(rowAction, 'hover:bg-destructive/15 hover:text-destructive')}
+                          >
+                            <Trash2 />
+                          </button>
+                        </Tip>
                       )}
                     </div>
                     {/* Mouse shortcuts for Ctrl+S / Ctrl+E / Ctrl+D (the keyboard stays in the message) */}
                     <div className="flex shrink-0 items-center gap-0.5">
-                      <button
-                        type="button"
-                        tabIndex={-1}
-                        aria-label={
-                          tpl.favorite
-                            ? t('composer.unstarNamed', { name: tpl.label })
-                            : t('composer.starNamed', { name: tpl.label })
-                        }
-                        aria-pressed={tpl.favorite}
-                        title={tpl.favorite ? t('composer.unstarShortcut') : t('composer.starShortcut')}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleFavorite(tpl);
-                        }}
-                        className={cn(
-                          rowAction,
-                          'transition-[color,background-color,opacity]',
-                          tpl.favorite
-                            ? 'text-warning'
-                            : cn('opacity-0 group-hover/template:opacity-100', i === activeIndex && 'opacity-100'),
-                        )}
-                      >
-                        <Star className={cn(tpl.favorite && 'fill-current')} />
-                      </button>
+                      <Tip label={tpl.favorite ? t('composer.unstarShortcut') : t('composer.starShortcut')}>
+                        <button
+                          type="button"
+                          tabIndex={-1}
+                          aria-label={
+                            tpl.favorite
+                              ? t('composer.unstarNamed', { name: tpl.label })
+                              : t('composer.starNamed', { name: tpl.label })
+                          }
+                          aria-pressed={tpl.favorite}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite(tpl);
+                          }}
+                          className={cn(
+                            rowAction,
+                            'transition-[color,background-color,opacity]',
+                            tpl.favorite
+                              ? 'text-warning'
+                              : cn('opacity-0 group-hover/template:opacity-100', i === activeIndex && 'opacity-100'),
+                          )}
+                        >
+                          <Star className={cn(tpl.favorite && 'fill-current')} />
+                        </button>
+                      </Tip>
                     </div>
                   </li>
                 ))}
@@ -789,17 +793,18 @@ export const Composer = forwardRef<ComposerHandle, ComposerProps>(function Compo
               Unpinning is only done by unstarring the template (in the "/" menu or Settings). */}
           {favorites.length > 0 ? (
             favorites.map((tpl) => (
-              <button
-                key={tpl.key}
-                type="button"
-                title={tpl.text}
-                // Keep the draft's caret/selection: the chip inserts where the user was typing
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => pickTemplate(tpl)}
-                className="shrink-0 whitespace-nowrap rounded-full border border-border/70 bg-background/50 px-2.5 py-0.5 text-xs text-muted-foreground outline-none transition-[border-color,background-color,color] duration-(--dur-fast) hover:border-primary/40 hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-[0.97]"
-              >
-                {tpl.label}
-              </button>
+              <Tip key={tpl.key}
+                label={tpl.text}>
+                <button
+                  type="button"
+                  // Keep the draft's caret/selection: the chip inserts where the user was typing
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => pickTemplate(tpl)}
+                  className="shrink-0 whitespace-nowrap rounded-full border border-border/70 bg-background/50 px-2.5 py-0.5 text-xs text-muted-foreground outline-none transition-[border-color,background-color,color] duration-(--dur-fast) hover:border-primary/40 hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-[0.97]"
+                >
+                  {tpl.label}
+                </button>
+              </Tip>
             ))
           ) : (
             <span className="shrink-0 whitespace-nowrap text-[11px] text-muted-foreground/80">

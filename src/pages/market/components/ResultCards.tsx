@@ -8,7 +8,7 @@ import { isUserOnlineIngame } from '@/lib/user-online-status';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tip, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ListingThumb } from '@/pages/chat/components/ListingCard';
 import { useListingMarketPrices } from '@/pages/chat/hooks/useListingMarketPrices';
 import { DealBadge } from '@/pages/market/enrich/DealBadge';
@@ -340,18 +340,19 @@ const ResultCard = React.memo(function ResultCard({
             {pin.searchName ? t('cards.fromAlertNamed', { name: pin.searchName }) : t('cards.fromAlert')}
             <span className="text-muted-foreground">{t('cards.notInResults')}</span>
           </span>
-          <button
-            type="button"
-            aria-label={t('cards.dismissAlert')}
-            title={t('cards.dismiss')}
-            onClick={(e) => {
-              e.stopPropagation();
-              pin.onDismiss();
-            }}
-            className="inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-primary/15 hover:text-foreground"
-          >
-            <X className="size-3" />
-          </button>
+          <Tip label={t('cards.dismiss')}>
+            <button
+              type="button"
+              aria-label={t('cards.dismissAlert')}
+              onClick={(e) => {
+                e.stopPropagation();
+                pin.onDismiss();
+              }}
+              className="inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-primary/15 hover:text-foreground"
+            >
+              <X className="size-3" />
+            </button>
+          </Tip>
         </div>
       )}
       {/* 1. Header */}
@@ -364,12 +365,11 @@ const ResultCard = React.memo(function ResultCard({
           />
         </div>
         <div className="min-w-0 flex-1">
-          <h3
-            className={cn('truncate text-sm font-bold uppercase tracking-[0.08em]', itemNameColor(item))}
-            title={item.name}
-          >
-            {item.name}
-          </h3>
+          <Tip label={item.name}>
+            <h3 className={cn('truncate text-sm font-bold uppercase tracking-[0.08em]', itemNameColor(item))}>
+              {item.name}
+            </h3>
+          </Tip>
           {subtitle && <div className="truncate text-xs text-muted-foreground">{subtitle}</div>}
           <div className="mt-1.5 flex flex-wrap gap-1">
             {quality && <span className={cn(pill, 'border-border/70', itemNameColor(item))}>{quality}</span>}
@@ -397,20 +397,22 @@ const ResultCard = React.memo(function ResultCard({
           </div>
         </div>
         <div className="flex max-w-[40%] shrink-0 flex-col items-end gap-1 text-right">
-          <span
-            className={cn(
-              'max-w-full truncate font-bold tabular-nums',
-              price ? 'text-xl text-foreground' : 'text-sm text-foreground',
-            )}
-            title={listing.price || undefined}
-          >
-            {price ?? (listing.price || t('cards.noPrice'))}
-          </span>
-          {price && listing.price && (
-            <span className="max-w-full truncate text-[11px] text-muted-foreground"
-              title={listing.price}>
-              {t('cards.note', { note: listing.price })}
+          <Tip label={listing.price || undefined}>
+            <span
+              className={cn(
+                'max-w-full truncate font-bold tabular-nums',
+                price ? 'text-xl text-foreground' : 'text-sm text-foreground',
+              )}
+            >
+              {price ?? (listing.price || t('cards.noPrice'))}
             </span>
+          </Tip>
+          {price && listing.price && (
+            <Tip label={listing.price}>
+              <span className="max-w-full truncate text-[11px] text-muted-foreground">
+                {t('cards.note', { note: listing.price })}
+              </span>
+            </Tip>
           )}
           <DealBadge deal={deal} />
           <OfferBadge offers={offers} />
@@ -464,14 +466,13 @@ const ResultCard = React.memo(function ResultCard({
           {pseudoKeys.length > 0 && (
             <div className="flex flex-wrap gap-1 px-1.5 pt-1">
               {pseudoKeys.map((key) => (
-                <span
-                  key={key}
-                  title={statWithValue(key, row.pseudo[key] ?? 0)}
-                  className="inline-flex h-5 items-center gap-0.5 rounded-sm bg-muted/60 px-1.5 text-[11px] tabular-nums text-muted-foreground"
-                >
-                  <Sigma className="size-3" />
-                  {statWithValue(key, row.pseudo[key] ?? 0, { short: true })}
-                </span>
+                <Tip key={key}
+                  label={statWithValue(key, row.pseudo[key] ?? 0)}>
+                  <span className="inline-flex h-5 items-center gap-0.5 rounded-sm bg-muted/60 px-1.5 text-[11px] tabular-nums text-muted-foreground">
+                    <Sigma className="size-3" />
+                    {statWithValue(key, row.pseudo[key] ?? 0, { short: true })}
+                  </span>
+                </Tip>
               ))}
             </div>
           )}
@@ -508,62 +509,65 @@ const ResultCard = React.memo(function ResultCard({
               <>
                 <span aria-hidden
                   className="h-3 w-px bg-border" />
-                <span
-                  className="inline-flex min-w-0 items-center gap-1 text-muted-foreground"
-                  title={t('cards.inGameAs', { character: item.character_id })}
-                >
-                  <Gamepad2
-                    className={cn('size-3 shrink-0', isUserOnlineIngame(listing.user_last_ingame) && 'text-success')}
-                  />
-                  <span className="truncate">{item.character_id}</span>
-                </span>
+                <Tip label={t('cards.inGameAs', { character: item.character_id })}>
+                  <span className="inline-flex min-w-0 items-center gap-1 text-muted-foreground">
+                    <Gamepad2
+                      className={cn('size-3 shrink-0', isUserOnlineIngame(listing.user_last_ingame) && 'text-success')}
+                    />
+                    <span className="truncate">{item.character_id}</span>
+                  </span>
+                </Tip>
               </>
             )}
           </span>
           {/* When / where */}
           <span className="inline-flex items-center gap-2 text-[11px] text-muted-foreground">
-            <span className="inline-flex items-center gap-1 tabular-nums"
-              title={t('filters.sort.bumpedTitle')}>
-              <Clock className="size-3" />
-              {listingAge(listing)}
-            </span>
+            <Tip label={t('filters.sort.bumpedTitle')}>
+              <span className="inline-flex items-center gap-1 tabular-nums">
+                <Clock className="size-3" />
+                {listingAge(listing)}
+              </span>
+            </Tip>
             <span className="rounded border border-border/60 px-1.5 py-px text-[10px] font-medium uppercase tracking-wide">
               {`${listing.is_hardcore ? 'HC' : 'SC'} · ${listing.is_ladder ? 'Ladder' : 'Non-ladder'}`}
             </span>
           </span>
         </span>
         <span className="flex shrink-0 items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(iconActionClass, favorite && 'text-destructive hover:text-destructive')}
-            aria-pressed={favorite}
-            aria-label={favorite ? t('cards.unfavoriteHotkey') : t('cards.favoriteHotkey')}
-            title={favorite ? t('cards.unfavoriteHotkey') : t('cards.favoriteHotkey')}
-            onClick={() => onToggleFavorite(listing)}
-          >
-            <HeartPop favorite={favorite} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={iconActionClass}
-            aria-label={t('actions.messageSeller')}
-            title={t('actions.messageSeller')}
-            onClick={actions.openDm}
-          >
-            <MessageSquare className="size-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={iconActionClass}
-            aria-label={t('drawer.openOnSite')}
-            title={t('drawer.openOnSite')}
-            onClick={actions.openWebsite}
-          >
-            <ExternalLink className="size-3.5" />
-          </Button>
+          <Tip label={favorite ? t('cards.unfavoriteHotkey') : t('cards.favoriteHotkey')}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(iconActionClass, favorite && 'text-destructive hover:text-destructive')}
+              aria-pressed={favorite}
+              aria-label={favorite ? t('cards.unfavoriteHotkey') : t('cards.favoriteHotkey')}
+              onClick={() => onToggleFavorite(listing)}
+            >
+              <HeartPop favorite={favorite} />
+            </Button>
+          </Tip>
+          <Tip label={t('actions.messageSeller')}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={iconActionClass}
+              aria-label={t('actions.messageSeller')}
+              onClick={actions.openDm}
+            >
+              <MessageSquare className="size-3.5" />
+            </Button>
+          </Tip>
+          <Tip label={t('drawer.openOnSite')}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={iconActionClass}
+              aria-label={t('drawer.openOnSite')}
+              onClick={actions.openWebsite}
+            >
+              <ExternalLink className="size-3.5" />
+            </Button>
+          </Tip>
           {simAccess && !archived && <MarketSimButton access={simAccess}
             listingId={listing._id} />}
           {!archived && <WhisperButton actions={actions}
@@ -774,21 +778,22 @@ function SocketSection({
         </span>
         <span className="flex items-center gap-1">
           {socketGroups.map((g, socket) => (
-            <span
-              key={socket}
-              onMouseEnter={() => onHover(g)}
-              className={cn(
-                'flex size-6 items-center justify-center rounded-full border bg-muted/30 transition-[border-color,transform] duration-(--dur-fast) ease-out motion-safe:hover:scale-110',
-                hovered === g ? 'border-foreground/50' : 'border-border',
-              )}
-              title={groups[g].name}
-            >
-              <ListingThumb
-                listing={groupListings[g]}
-                className="size-full rounded-full border-0 bg-none shadow-none"
-                artClassName="max-h-[18px] max-w-[18px]"
-              />
-            </span>
+            <Tip key={socket}
+              label={groups[g].name}>
+              <span
+                onMouseEnter={() => onHover(g)}
+                className={cn(
+                  'flex size-6 items-center justify-center rounded-full border bg-muted/30 transition-[border-color,transform] duration-(--dur-fast) ease-out motion-safe:hover:scale-110',
+                  hovered === g ? 'border-foreground/50' : 'border-border',
+                )}
+              >
+                <ListingThumb
+                  listing={groupListings[g]}
+                  className="size-full rounded-full border-0 bg-none shadow-none"
+                  artClassName="max-h-[18px] max-w-[18px]"
+                />
+              </span>
+            </Tip>
           ))}
           {Array.from({ length: emptySockets }, (_, i) => (
             <span key={`empty-${i}`}
