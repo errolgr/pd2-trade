@@ -1,6 +1,6 @@
 import { statTemplate } from '@/pages/price-check/lib/tooltip-lines';
 import { corruptionOption } from '../lib/catalog';
-import { isCorruption, isPseudo, parseStatKey, type StatChoice, statLabel } from '../lib/stats';
+import { isCorruption, isDamagePair, isPseudo, parseStatKey, type StatChoice, statLabel } from '../lib/stats';
 import type { StatFilter } from '../lib/types';
 
 /*
@@ -9,7 +9,8 @@ import type { StatFilter } from '../lib/types';
  * these so no raw `{X}` reaches the screen.
  */
 
-const PLACEHOLDER = /[+-]?\{X\}%?/g;
+/** `{X}` (with its sign/percent), or a pair's `{X}-{Y}` ("Adds {X}-{Y} Damage"). */
+const PLACEHOLDER = /[+-]?\{X\}(?:-\{Y\})?%?/g;
 
 /** Number shown for a score/stat total: integers stay integers, else one decimal. */
 export const formatStat = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
@@ -48,7 +49,7 @@ const BARE_SKILL_TAB =
  */
 export function itemStatText(key: string): string {
   const { names, pins } = parseStatKey(key);
-  if (names.length === 1 && pins.length === 0) {
+  if (names.length === 1 && pins.length === 0 && !isDamagePair(names)) {
     const line = statTemplate(names[0]);
     if (line) return line;
   }
@@ -72,7 +73,7 @@ export function itemStatText(key: string): string {
       text = label.replace(/\s*\(Oskill\)$/, '');
       break;
   }
-  return text.replace(/\{X\}/g, '#').replace(/# %/g, '#%');
+  return text.replace(/\{[XY]\}/g, '#').replace(/# %/g, '#%');
 }
 
 /** A stat picker entry as the item shows it (see `itemStatText`); pseudo stats as their template. */
@@ -94,13 +95,15 @@ const shorten = (text: string) =>
 
 /**
  * The template with `value` filled in: "+29% Total Fire Resistance"; `short` for chips ("+29% Total Fire Res").
- * Labels without a placeholder get the value appended.
+ * A pair's value is its max ("Adds #-14 Damage"). Labels without a placeholder get the value appended.
  */
 export function statWithValue(key: string, value: number, { short = false }: { short?: boolean } = {}): string {
   const label = statLabel(key);
   const shown = formatStat(value);
   let text: string;
-  if (label.includes('{X}')) {
+  if (label.includes('{X}-{Y}')) {
+    text = label.replace('{X}-{Y}', `#-${shown}`);
+  } else if (label.includes('{X}')) {
     // A negative total in a "+{X}" template reads "-5", not "+-5"
     text = label.replace(/([+-]?)\{X\}/, (_, sign: string) => (value < 0 ? shown : `${sign}${shown}`));
     text = text.replace(PLACEHOLDER, '');
