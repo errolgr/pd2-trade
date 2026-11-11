@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, ClipboardCheck, FlaskConical, Loader2, LogIn, PackageCheck, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tip } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SimCharacterPicker } from '@/components/custom/SimCharacterPicker';
 import { SIM_WAITLIST_POPOVER_CLASS, SimWaitlist } from '@/components/custom/SimWaitlist';
@@ -81,17 +82,18 @@ export function SimulatorButton({ item, className }: { item: PriceCheckItem; cla
           if (next) dismissCallout();
         }}
       >
-        <PopoverTrigger asChild>
-          <Button
-            variant="ghost"
-            title={access.canUse ? simTryOnHotkeyText(settings) : undefined}
-            className="cursor-pointer border border-primary/70 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
-          >
-            <FlaskConical />
-            Sim
-            <span className="rounded-full bg-primary/20 px-1.5 py-px text-[10px] font-bold tracking-wider">BETA</span>
-          </Button>
-        </PopoverTrigger>
+        <Tip label={access.canUse ? simTryOnHotkeyText(settings) : undefined}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              className="cursor-pointer border border-primary/70 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
+            >
+              <FlaskConical />
+              Sim
+              <span className="rounded-full bg-primary/20 px-1.5 py-px text-[10px] font-bold tracking-wider">BETA</span>
+            </Button>
+          </PopoverTrigger>
+        </Tip>
         {!access.canUse ? (
           <PopoverContent side="top"
             align="end"

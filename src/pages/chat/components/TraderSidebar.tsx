@@ -27,6 +27,7 @@ import { writeText } from '@/lib/browser-clipboard';
 import { openUrl } from '@/lib/browser-opener';
 import { showToast, useOverlay } from '@/overlay';
 import { cn } from '@/lib/utils';
+import { Tip } from '@/components/ui/tooltip';
 import { whisperTarget } from '@/lib/whisper-history';
 import { type ChatListingState, useChatListings } from '../hooks/useChatListings';
 import { type ListingMarketPrice, useListingMarketPrices } from '../hooks/useListingMarketPrices';
@@ -34,7 +35,7 @@ import { presenceLabel, shortAgo, type TraderProfile } from '../hooks/useTraderP
 import type { InboxThread } from '../lib/inbox';
 import { ListingDetails, ListingThumb, marketDelta, nameColor } from './ListingCard';
 import { dealStatusLabel, OfferHoverCard, offerStatus, STATUS_CLASS } from './ThreadDeals';
-import { characterUrl, ChatAvatar, marketUrl, profileUrl, Tip } from './chat-parts';
+import { characterUrl, ChatAvatar, marketUrl, profileUrl } from './chat-parts';
 
 /** Their listings shown in the grid; the rest are behind "N more" (their market on the website). */
 const MARKET_GRID_LIMIT = 8;
@@ -583,9 +584,9 @@ export function TraderSidebar({
                 {lastWhisper > 0 && (
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-muted-foreground">{t('trader.lastWhisper')}</span>
-                    <span title={moment(lastWhisper).format('ddd, MMM D YYYY · h:mm A')}>
-                      {shortAgo(lastWhisper, now)}
-                    </span>
+                    <Tip label={moment(lastWhisper).format('ddd, MMM D YYYY · h:mm A')}>
+                      <span>{shortAgo(lastWhisper, now)}</span>
+                    </Tip>
                   </div>
                 )}
                 {thread.people.map((person) => (

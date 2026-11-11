@@ -48,5 +48,37 @@ export default [
         { object: 'Promise', property: 'withResolvers', message: 'Needs Chromium 119; older WebView2 runtimes lack it. Use new Promise().' },
       ],
     },
-  }
+  },
+  {
+    // A DOM `title` (or SVG <title>) is a native OS tooltip: drawn by the WebView, it can land behind or outside the
+    // overlay and ignores the theme. Use <Tip label=…> from '@/components/ui/tooltip'.
+    files: ["src/**/*.tsx"],
+    rules: {
+      'react/forbid-dom-props': [
+        'error',
+        { forbid: [{ propName: 'title', message: 'Native tooltip: use <Tip label=…> from @/components/ui/tooltip.' }] },
+      ],
+      'react/forbid-component-props': [
+        'error',
+        {
+          forbid: [
+            {
+              propName: 'title',
+              // Components that pass `title` through to their DOM element (heading-style `title` props elsewhere are fine)
+              disallowedFor: ['Button', 'Input', 'Textarea', 'Badge', 'Toggle', 'ToggleGroupItem', 'TabsTrigger', 'CountBadge'],
+              message: 'Lands on the DOM as a native tooltip: use <Tip label=…> from @/components/ui/tooltip.',
+            },
+          ],
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        { selector: "JSXOpeningElement[name.name='title']", message: 'SVG <title> is a native tooltip: use <Tip label=…>.' },
+        {
+          selector: "JSXOpeningElement[name.object.name='motion'] > JSXAttribute[name.name='title']",
+          message: 'Native tooltip: use <Tip label=…> from @/components/ui/tooltip.',
+        },
+      ],
+    },
+  },
 ];

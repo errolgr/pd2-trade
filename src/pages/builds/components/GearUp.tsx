@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { AlertCircle, Check, CircleDashed, Info, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tip } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   type CharacterDetail,
@@ -183,10 +184,9 @@ function TopItems({ query, worn }: { query: BuildsQuery<ShoppingListResponse>; w
           <div className="mt-1 flex items-center justify-between gap-2 border-t border-border/50 px-3 pt-2 pb-1 text-xs">
             {missingCount > 0 ? (
               <>
-                <span className="text-muted-foreground"
-                  title={t('gearUp.missingCoreTitle', { share: CORE_SHARE })}>
-                  {t('gearUp.missingCore', { count: missingCount })}
-                </span>
+                <Tip label={t('gearUp.missingCoreTitle', { share: CORE_SHARE })}>
+                  <span className="text-muted-foreground">{t('gearUp.missingCore', { count: missingCount })}</span>
+                </Tip>
                 <span className="font-semibold text-q-gold tabular-nums">
                   {missing > 0 ? t('gearUp.approxHr', { value: fmtHr(missing) }) : t('gearUp.unpriced')}
                 </span>
@@ -236,10 +236,10 @@ function PeerSkills({ query, detail }: { query: BuildsQuery<UsageResponse>; deta
                   <Check className="size-3.5 shrink-0 text-success"
                     aria-label={t('gearUp.maxedHere')} />
                 ) : (
-                  <AlertCircle className="size-3.5 shrink-0 text-warning"
-                    aria-label={t('gearUp.notMaxedHere')}>
-                    <title>{t('gearUp.notMaxedOnCharacter')}</title>
-                  </AlertCircle>
+                  <Tip label={t('gearUp.notMaxedOnCharacter')}>
+                    <AlertCircle className="size-3.5 shrink-0 text-warning"
+                      aria-label={t('gearUp.notMaxedHere')} />
+                  </Tip>
                 )}
               </li>
             );

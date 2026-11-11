@@ -196,9 +196,10 @@ describe('StatRow', () => {
     expect(screen.queryByLabelText('Ethereal minimum')).toBeNull();
   });
 
-  it('flags corrupted stats with an asterisk', () => {
+  it('flags corrupted stats with an asterisk', async () => {
     renderRow({ stat: { ...FCR, corrupted: true } });
-    expect(screen.getByTitle('Corrupted stat').textContent).toBe('*');
+    fireEvent.focus(screen.getByText('*'));
+    expect((await screen.findByRole('tooltip')).textContent).toBe('Corrupted stat');
   });
 
   describe('corrupted tri-state filter', () => {
@@ -254,10 +255,11 @@ describe('StatRow', () => {
       corrupted: false,
     };
 
-    it('shows stars for a key stat with the multiplier in the tooltip', () => {
+    it('shows stars for a key stat with the multiplier in the tooltip', async () => {
       renderRow({ stat: FCR, rare: { ...base, stars: 2, multiplier: 2.5 } });
       const stars = screen.getByText('★★');
-      expect(stars.getAttribute('title')).toContain('×2.5');
+      fireEvent.focus(stars);
+      expect((await screen.findByRole('tooltip')).textContent).toContain('×2.5');
     });
 
     it('shows "valuable from N" when the stat is below its key threshold', () => {

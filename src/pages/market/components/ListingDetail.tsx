@@ -4,6 +4,7 @@ import { ExternalLink, Heart, MessageSquare, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tip } from '@/components/ui/tooltip';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { DealBadge } from '@/pages/market/enrich/DealBadge';
 import { PriceHistoryMini } from '@/pages/market/enrich/PriceHistoryMini';
@@ -71,17 +72,18 @@ export function ListingDetail({
           item={listing.item}
           className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
         />
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn('size-7 p-0', favorite && 'text-destructive')}
-          aria-pressed={favorite}
-          aria-label={favorite ? t('detail.unfavorite') : t('detail.favorite')}
-          title={favorite ? t('detail.unfavorite') : t('detail.favorite')}
-          onClick={() => onToggleFavorite(listing)}
-        >
-          <Heart className={cn('size-4', favorite && 'fill-current')} />
-        </Button>
+        <Tip label={favorite ? t('detail.unfavorite') : t('detail.favorite')}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn('size-7 p-0', favorite && 'text-destructive')}
+            aria-pressed={favorite}
+            aria-label={favorite ? t('detail.unfavorite') : t('detail.favorite')}
+            onClick={() => onToggleFavorite(listing)}
+          >
+            <Heart className={cn('size-4', favorite && 'fill-current')} />
+          </Button>
+        </Tip>
         <Button variant="ghost"
           size="sm"
           className="size-7 p-0"
@@ -98,13 +100,12 @@ export function ListingDetail({
           {pseudoKeys.length > 0 && (
             <div className="grid grid-cols-2 gap-1">
               {pseudoKeys.map((key) => (
-                <div
-                  key={key}
-                  title={statWithValue(key, row.pseudo[key] ?? 0)}
-                  className="truncate rounded-md bg-info/10 px-2 py-0.5 text-[11px] tabular-nums text-info"
-                >
-                  {statWithValue(key, row.pseudo[key] ?? 0, { short: true })}
-                </div>
+                <Tip key={key}
+                  label={statWithValue(key, row.pseudo[key] ?? 0)}>
+                  <div className="truncate rounded-md bg-info/10 px-2 py-0.5 text-[11px] tabular-nums text-info">
+                    {statWithValue(key, row.pseudo[key] ?? 0, { short: true })}
+                  </div>
+                </Tip>
               ))}
             </div>
           )}
@@ -119,13 +120,14 @@ export function ListingDetail({
             {listing.price && (
               <p className="mt-1 whitespace-pre-wrap break-words text-xs text-foreground/90">{listing.price}</p>
             )}
-            <div className="mt-1 text-[11px] text-muted-foreground"
-              title={moment(listing.bumped_at).format('LLL')}>
-              {t('detail.bumpedListed', {
-                bumped: moment(listing.bumped_at).fromNow(),
-                listed: moment(listing.created_at).fromNow(),
-              })}
-            </div>
+            <Tip label={moment(listing.bumped_at).format('LLL')}>
+              <div className="mt-1 text-[11px] text-muted-foreground">
+                {t('detail.bumpedListed', {
+                  bumped: moment(listing.bumped_at).fromNow(),
+                  listed: moment(listing.created_at).fromNow(),
+                })}
+              </div>
+            </Tip>
             {showPriceHistory && <PriceHistoryMini listing={listing} />}
           </div>
 

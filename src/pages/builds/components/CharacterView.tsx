@@ -3,6 +3,7 @@ import { ArrowLeft, ExternalLink, Gem, History, Repeat, SearchX, Skull, Star, Sw
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tip } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
 import { HoverPopover } from '@/components/custom/hover-popover';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
@@ -173,16 +174,17 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
         className="relative flex shrink-0 items-center gap-3 border-b border-border/60 px-3 py-2.5"
         style={{ backgroundImage: `linear-gradient(90deg, ${meta.color}1f, transparent 45%)` }}
       >
-        <Button
-          variant="ghost"
-          size="sm"
-          className="size-8 p-0"
-          aria-label={t('common:actions.back')}
-          title={t('common:actions.back')}
-          onClick={onBack}
-        >
-          <ArrowLeft className="size-4" />
-        </Button>
+        <Tip label={t('common:actions.back')}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="size-8 p-0"
+            aria-label={t('common:actions.back')}
+            onClick={onBack}
+          >
+            <ArrowLeft className="size-4" />
+          </Button>
+        </Tip>
         <ClassEmblem className={detail.className}
           size={44} />
         <div className="min-w-0">
@@ -226,12 +228,12 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
             </div>
           </div>
           <div className="text-right text-[11px] text-muted-foreground">
-            <div title={fmtDateTime(detail.lastUpdated)}>
-              {t('character.updated', { time: timeAgo(detail.lastUpdated) })}
-            </div>
-            <div title={fmtDateTime(detail.firstSeenAt)}>
-              {t('character.firstSeen', { time: timeAgo(detail.firstSeenAt) })}
-            </div>
+            <Tip label={fmtDateTime(detail.lastUpdated)}>
+              <div>{t('character.updated', { time: timeAgo(detail.lastUpdated) })}</div>
+            </Tip>
+            <Tip label={fmtDateTime(detail.firstSeenAt)}>
+              <div>{t('character.firstSeen', { time: timeAgo(detail.firstSeenAt) })}</div>
+            </Tip>
           </div>
           <Button
             variant={followed ? 'secondary' : 'outline'}
@@ -257,16 +259,17 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
             <Star className={cn('size-3.5', followed && 'fill-q-gold text-q-gold')} />
             {followed ? t('characters.following') : t('character.follow')}
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="size-8 p-0"
-            aria-label={t('character.openSite')}
-            title={t('character.openSite')}
-            onClick={() => void openUrl(characterSiteUrl(detail.name))}
-          >
-            <ExternalLink className="size-4" />
-          </Button>
+          <Tip label={t('character.openSite')}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="size-8 p-0"
+              aria-label={t('character.openSite')}
+              onClick={() => void openUrl(characterSiteUrl(detail.name))}
+            >
+              <ExternalLink className="size-4" />
+            </Button>
+          </Tip>
         </div>
       </div>
 
@@ -302,16 +305,17 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
             bodyClassName="py-3"
             action={
               hasSwitch && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 gap-1 px-1.5 text-[11px] text-muted-foreground"
-                  aria-pressed={weaponSet === 1}
-                  title={t('character.weaponSwitch')}
-                  onClick={() => setWeaponSet(weaponSet ? 0 : 1)}
-                >
-                  <Repeat className="size-3" /> {weaponSet ? 'II' : 'I'}
-                </Button>
+                <Tip label={t('character.weaponSwitch')}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 gap-1 px-1.5 text-[11px] text-muted-foreground"
+                    aria-pressed={weaponSet === 1}
+                    onClick={() => setWeaponSet(weaponSet ? 0 : 1)}
+                  >
+                    <Repeat className="size-3" /> {weaponSet ? 'II' : 'I'}
+                  </Button>
+                </Tip>
               )
             }
           >
@@ -487,18 +491,14 @@ function DollCell({ cell, item, merc }: { cell: DollCellDef; item: DollItem | un
               size={iconSize}
               className="border-0 bg-transparent" />
             {item.ethereal && (
-              <span
-                className="absolute top-0.5 left-1 text-[9px] font-semibold text-muted-foreground"
-                title={t('character.ethereal')}
-              >
-                E
-              </span>
+              <Tip label={t('character.ethereal')}>
+                <span className="absolute top-0.5 left-1 text-[9px] font-semibold text-muted-foreground">E</span>
+              </Tip>
             )}
             {item.corrupted && (
-              <span
-                className="absolute top-1 right-1 size-1.5 rounded-full bg-q-corrupted"
-                title={t('character.corrupted')}
-              />
+              <Tip label={t('character.corrupted')}>
+                <span className="absolute top-1 right-1 size-1.5 rounded-full bg-q-corrupted" />
+              </Tip>
             )}
             {item.priceHr != null && (
               <span className="absolute right-0.5 bottom-0.5 rounded-sm bg-background/80 px-1 text-[9px] leading-tight font-medium text-q-gold tabular-nums">

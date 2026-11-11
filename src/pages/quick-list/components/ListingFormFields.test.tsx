@@ -139,7 +139,7 @@ describe('note macros', () => {
     render(<Harness />);
     await openSheet();
     await act(async () => {
-      fireEvent.click(screen.getByTitle('Use this macro'));
+      fireEvent.click(screen.getByRole('button', { name: /→/ }));
     });
     expect(noteInput().value).toBe('WTS Harlequin Crest fast');
     expect(screen.queryByText('Note Macros')).toBeNull();
@@ -152,7 +152,7 @@ describe('note macros', () => {
     render(<Harness />);
     await openSheet();
     await act(async () => {
-      fireEvent.click(screen.getByTitle('Use this macro'));
+      fireEvent.click(screen.getByRole('button', { name: /→/ }));
     });
     expect(noteInput().value).toBe('');
     const os = screen.getByPlaceholderText('os');
@@ -170,7 +170,7 @@ describe('note macros', () => {
       allowQueue />);
     await openSheet();
     await act(async () => {
-      fireEvent.click(screen.getByTitle('Use this macro'));
+      fireEvent.click(screen.getByRole('button', { name: /→/ }));
     });
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /Apply/ }));
@@ -184,13 +184,13 @@ describe('note macros', () => {
     fireEvent.change(noteInput(), { target: { value: 'keep' } });
     await openSheet();
     await act(async () => {
-      fireEvent.click(screen.getByTitle('Use this macro'));
+      fireEvent.click(screen.getByRole('button', { name: /→/ }));
     });
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     });
     expect(screen.queryByPlaceholderText('os')).toBeNull();
-    expect(screen.queryByTitle('Use this macro')).not.toBeNull();
+    expect(screen.queryByRole('button', { name: /→/ })).not.toBeNull();
     expect(noteInput().value).toBe('keep');
     expect(formRef.current!.getValues('note')).toBe('keep');
   });

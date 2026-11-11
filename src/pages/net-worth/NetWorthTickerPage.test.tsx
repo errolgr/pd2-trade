@@ -61,7 +61,15 @@ function session(overrides: Partial<SessionSummary>): SessionSummary {
 }
 
 function pill(): HTMLButtonElement {
-  return screen.getByTitle('Net worth — click for details, drag to move') as HTMLButtonElement;
+  return screen.getByRole('button') as HTMLButtonElement;
+}
+
+/** The pill's tooltip text, shown when it gets keyboard focus. */
+function pillTip(): string {
+  act(() => {
+    fireEvent.focus(pill());
+  });
+  return screen.getByRole('tooltip').textContent ?? '';
 }
 
 function dot(): HTMLElement {
@@ -179,7 +187,9 @@ describe('NetWorthTicker freshness dot', () => {
   it('is green while the last snapshot is within the auto-snapshot interval plus a minute', () => {
     render(<NetWorthTickerPage />);
     expect(dot().className).toContain('bg-success');
-    expect(dot().title).toBe(`Last snapshot ${new Date(NOW - 60_000).toLocaleTimeString()}`);
+    expect(pillTip()).toBe(
+      `Net worth — click for details, drag to move\nLast snapshot ${new Date(NOW - 60_000).toLocaleTimeString()}`,
+    );
   });
 
   it('turns amber once the snapshot is overdue, re-checked every 30 seconds', () => {
@@ -204,14 +214,14 @@ describe('NetWorthTicker freshness dot', () => {
     netWorth = { ...netWorth, lastSnapshotAt: null };
     render(<NetWorthTickerPage />);
     expect(dot().className).toContain('bg-warning');
-    expect(dot().title).toBe('No snapshot yet');
+    expect(pillTip()).toBe('Net worth — click for details, drag to move\nNo snapshot yet');
   });
 
   it.each(['error', 'signed-out'] as const)('is red when the status is %s', (status) => {
     netWorth = { ...netWorth, status };
     render(<NetWorthTickerPage />);
     expect(dot().className).toContain('bg-destructive');
-    expect(dot().title).toBe('Snapshot failed');
+    expect(pillTip()).toBe('Net worth — click for details, drag to move\nSnapshot failed');
   });
 
   it('pulses while loading', () => {

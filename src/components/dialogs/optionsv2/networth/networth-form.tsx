@@ -12,6 +12,7 @@ import { SettingsGroup, SettingsHint, SettingsLink, SettingsRow, SettingsSkeleto
 import { AUTO_SNAPSHOT_OPTIONS, optionLabel, TICKER_ANCHOR_OPTIONS } from '../setting-options';
 import { PublicProfileGroup } from './public-profile';
 import { Trans, useTranslation } from '@/i18n';
+import { Tip } from '@/components/ui/tooltip';
 
 export const tickerAnchorSchema = z.enum([
   'top-left',
@@ -228,14 +229,15 @@ export function NetWorthForm() {
                         onValueChange={(value) => field.onChange(value[0])}
                       />
                     </FormControl>
-                    <span
-                      aria-hidden
-                      title={t('networth.ticker.preview')}
-                      style={{ opacity: field.value / 100 }}
-                      className="rounded-md border border-border bg-surface px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-surface-foreground shadow-xs transition-opacity duration-(--dur-fast)"
-                    >
-                      <span className="text-q-gold">HR</span>
-                    </span>
+                    <Tip label={t('networth.ticker.preview')}>
+                      <span
+                        aria-hidden
+                        style={{ opacity: field.value / 100 }}
+                        className="rounded-md border border-border bg-surface px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-surface-foreground shadow-xs transition-opacity duration-(--dur-fast)"
+                      >
+                        <span className="text-q-gold">HR</span>
+                      </span>
+                    </Tip>
                   </div>
                 }
               >

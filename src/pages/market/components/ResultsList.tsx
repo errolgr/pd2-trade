@@ -4,6 +4,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { Heart, Loader2, Sigma } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tip } from '@/components/ui/tooltip';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
 import { ListingThumb } from '@/pages/chat/components/ListingCard';
 import { DealBadge } from '@/pages/market/enrich/DealBadge';
@@ -81,19 +82,24 @@ export function LoadMoreFooter({ loading, error, retryAt, onRetry }: LoadMoreSta
   return (
     <div role="status"
       className="flex items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground">
-      <span title={error}>{t('results.loadMoreFailed')}</span>
+      <Tip label={error}>
+        <span>{t('results.loadMoreFailed')}</span>
+      </Tip>
       <span aria-hidden>·</span>
-      <button
-        type="button"
-        disabled={waiting}
-        title={
+      <Tip
+        label={
           waiting && retryAt !== null ? t('results.rateLimitedUntil', { time: moment(retryAt).format('LT') }) : error
         }
-        onClick={onRetry}
-        className="rounded-sm font-medium text-primary underline-offset-2 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring/60 disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline"
       >
-        {t('common:actions.retry')}
-      </button>
+        <button
+          type="button"
+          aria-disabled={waiting}
+          onClick={waiting ? undefined : onRetry}
+          className="rounded-sm font-medium text-primary underline-offset-2 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring/60 aria-disabled:cursor-not-allowed aria-disabled:text-muted-foreground aria-disabled:no-underline"
+        >
+          {t('common:actions.retry')}
+        </button>
+      </Tip>
     </div>
   );
 }
@@ -104,18 +110,19 @@ export function OnlineDots({ listing, className }: { listing: MarketListingEntry
   const game = isUserOnlineIngame(listing.user_last_ingame);
   const { t } = useTranslation('market');
   return (
-    <span
-      className={cn('inline-flex items-center gap-0.5', className)}
-      title={t('presence.dots', {
+    <Tip
+      label={t('presence.dots', {
         site: site ? t('presence.siteOnline') : t('presence.siteOffline'),
         game: game ? t('presence.inGame') : t('presence.notInGame'),
       })}
     >
-      <span className={cn('size-1.5 rounded-full', site ? 'bg-info' : 'bg-muted-foreground/35')} />
-      <span
-        className={cn('size-1.5 rounded-full', game ? 'bg-success ring-2 ring-success/25' : 'bg-muted-foreground/35')}
-      />
-    </span>
+      <span className={cn('inline-flex items-center gap-0.5', className)}>
+        <span className={cn('size-1.5 rounded-full', site ? 'bg-info' : 'bg-muted-foreground/35')} />
+        <span
+          className={cn('size-1.5 rounded-full', game ? 'bg-success ring-2 ring-success/25' : 'bg-muted-foreground/35')}
+        />
+      </span>
+    </Tip>
   );
 }
 
@@ -289,21 +296,19 @@ const ResultRow = React.memo(function ResultRow({
           <OfferBadge offers={offers}
             compact />
         </div>
-        <div className="truncate text-[11px] leading-4 text-muted-foreground"
-          title={summary}>
-          {summary || '\u00a0'}
-        </div>
+        <Tip label={summary}>
+          <div className="truncate text-[11px] leading-4 text-muted-foreground">{summary || '\u00a0'}</div>
+        </Tip>
         {pseudoKeys.length > 0 && (
           <div className="flex min-w-0 gap-1 overflow-hidden">
             {pseudoKeys.map((key) => (
-              <span
-                key={key}
-                title={statWithValue(key, row.pseudo[key] ?? 0)}
-                className="inline-flex h-4 max-w-40 shrink-0 items-center gap-0.5 rounded-sm bg-info/10 px-1 text-[10px] tabular-nums text-info"
-              >
-                <Sigma className="size-2.5 shrink-0" />
-                <span className="truncate">{statWithValue(key, row.pseudo[key] ?? 0, { short: true })}</span>
-              </span>
+              <Tip key={key}
+                label={statWithValue(key, row.pseudo[key] ?? 0)}>
+                <span className="inline-flex h-4 max-w-40 shrink-0 items-center gap-0.5 rounded-sm bg-info/10 px-1 text-[10px] tabular-nums text-info">
+                  <Sigma className="size-2.5 shrink-0" />
+                  <span className="truncate">{statWithValue(key, row.pseudo[key] ?? 0, { short: true })}</span>
+                </span>
+              </Tip>
             ))}
           </div>
         )}
@@ -313,18 +318,21 @@ const ResultRow = React.memo(function ResultRow({
         <div className="flex min-w-0 max-w-full items-center gap-1.5">
           <DealBadge deal={deal}
             compact />
-          <span
-            className={cn('truncate text-xs font-semibold tabular-nums', price ? 'text-q-gold' : 'text-foreground/85')}
-            title={listing.price || undefined}
-          >
-            {price ?? (listing.price || '—')}
-          </span>
+          <Tip label={listing.price || undefined}>
+            <span
+              className={cn(
+                'truncate text-xs font-semibold tabular-nums',
+                price ? 'text-q-gold' : 'text-foreground/85',
+              )}
+            >
+              {price ?? (listing.price || '—')}
+            </span>
+          </Tip>
         </div>
         {price && listing.price && (
-          <span className="max-w-full truncate text-[10px] text-muted-foreground"
-            title={listing.price}>
-            {listing.price}
-          </span>
+          <Tip label={listing.price}>
+            <span className="max-w-full truncate text-[10px] text-muted-foreground">{listing.price}</span>
+          </Tip>
         )}
         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
           {listing.user?.username && (

@@ -84,14 +84,15 @@ describe('RareAppraisalPill', () => {
     expect(container.textContent).not.toContain('–');
   });
 
-  it('adds a hardcore caveat tooltip only in hardcore mode', () => {
-    const { container, unmount } = renderPill();
-    expect(container.querySelector('[title^="Hardcore"]')).toBeNull();
+  it('adds a hardcore caveat tooltip only in hardcore mode', async () => {
+    const { unmount } = renderPill();
+    fireEvent.focus(screen.getByText('top 8%').closest('.group')!);
+    expect(screen.queryByRole('tooltip')).toBeNull();
     unmount();
 
-    const hc = renderPill({ hardcore: true });
-    const pill = hc.container.querySelector('[title^="Hardcore"]');
-    expect(pill?.getAttribute('title')).toContain('price model and stars from softcore data');
+    renderPill({ hardcore: true });
+    fireEvent.focus(screen.getByText('top 8%').closest('.group')!);
+    expect((await screen.findByRole('tooltip')).textContent).toContain('price model and stars from softcore data');
   });
 
   it('hovering opens the detail popover with the item title and slot', () => {

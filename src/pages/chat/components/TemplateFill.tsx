@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/i18n';
 import { fillTemplate } from '@/lib/message-templates';
+import { Tip } from '@/components/ui/tooltip';
 
 /** Answers given to template placeholders this session, by name: offered again next time ({game}, {pw}...). */
 const rememberedAnswers = new Map<string, string>();
@@ -93,13 +94,14 @@ export function TemplateFill({ label, template, placeholders, vars, onInsert, on
 
       {/* Preview and actions on one line */}
       <div className="flex items-center gap-2">
-        <p
-          aria-label={t('templateFill.preview')}
-          title={preview}
-          className="min-w-0 flex-1 truncate rounded-md bg-muted/40 px-2 py-1 text-xs text-foreground/90"
-        >
-          {preview}
-        </p>
+        <Tip label={preview}>
+          <p
+            aria-label={t('templateFill.preview')}
+            className="min-w-0 flex-1 truncate rounded-md bg-muted/40 px-2 py-1 text-xs text-foreground/90"
+          >
+            {preview}
+          </p>
+        </Tip>
         <Button type="submit"
           size="sm"
           className="h-7 px-2.5 text-xs">

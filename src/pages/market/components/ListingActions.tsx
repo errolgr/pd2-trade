@@ -11,6 +11,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Tip } from '@/components/ui/tooltip';
 import { showToast } from '@/overlay';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { ListingActions } from '../hooks/useListingActions';
@@ -18,7 +19,7 @@ import type { MarketApi } from '../lib/types';
 import { NumberInput, fieldInputClass } from './controls';
 import { useTranslation } from '@/i18n';
 
-/** Icon-only action button (tooltip via title). */
+/** Icon-only action button (wrap it in a Tip for its hint). */
 export const iconActionClass = 'size-7 p-0 text-muted-foreground hover:text-foreground';
 
 /**
@@ -158,28 +159,30 @@ export function WhisperButton({ actions, dense = false }: { actions: ListingActi
   const variant = dense ? 'outline' : 'secondary';
   return (
     <div className="flex min-w-0">
-      <Button
-        variant={variant}
-        size="sm"
-        className={cn('flex-1 rounded-r-none text-xs', dense ? 'h-7 px-2.5' : 'h-8')}
-        title={t('whisper.copyTitle')}
-        onClick={() => void copyWhisper()}
-      >
-        <Copy className="size-3.5" />
-        {t('whisper.button')}
-      </Button>
+      <Tip label={t('whisper.copyTitle')}>
+        <Button
+          variant={variant}
+          size="sm"
+          className={cn('flex-1 rounded-r-none text-xs', dense ? 'h-7 px-2.5' : 'h-8')}
+          onClick={() => void copyWhisper()}
+        >
+          <Copy className="size-3.5" />
+          {t('whisper.button')}
+        </Button>
+      </Tip>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant={variant}
-            size="sm"
-            className={cn('rounded-l-none border-l-0 p-0', dense ? 'h-7 w-5' : 'h-8 w-6 border-l border-border/60')}
-            aria-label={t('whisper.withTemplate')}
-            title={t('whisper.withTemplate')}
-          >
-            <ChevronDown className="size-3" />
-          </Button>
-        </DropdownMenuTrigger>
+        <Tip label={t('whisper.withTemplate')}>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant={variant}
+              size="sm"
+              className={cn('rounded-l-none border-l-0 p-0', dense ? 'h-7 w-5' : 'h-8 w-6 border-l border-border/60')}
+              aria-label={t('whisper.withTemplate')}
+            >
+              <ChevronDown className="size-3" />
+            </Button>
+          </DropdownMenuTrigger>
+        </Tip>
         <DropdownMenuContent align="end"
           className="w-60">
           <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">

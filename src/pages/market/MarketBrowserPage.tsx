@@ -6,7 +6,7 @@ import { DUR, EASE_OUT, fadeIn, slideInRight, springSnappy } from '@/lib/motion'
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import { Tip, TooltipProvider } from '@/components/ui/tooltip';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
 import { showToast, usePanel } from '@/overlay';
@@ -461,24 +461,25 @@ const MarketBrowserPage: React.FC = () => {
                     </TabsList>
                   </Tabs>
                   {/* Kept in place (hidden) on Saved so the tabs don't jump sideways when switching. */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={cn('size-7 p-0', tab === 'saved' && 'invisible')}
-                    aria-label={t('common:actions.refresh')}
-                    aria-hidden={tab === 'saved' || undefined}
-                    tabIndex={tab === 'saved' ? -1 : undefined}
-                    title={t('common:actions.refresh')}
-                    onClick={() => (tab === 'favorites' ? void favorites.reload() : search.refresh())}
-                  >
-                    <RefreshCw
-                      className={cn(
-                        'size-3.5',
-                        (tab === 'favorites' ? favorites.status === 'loading' : search.status === 'loading') &&
-                          'animate-spin',
-                      )}
-                    />
-                  </Button>
+                  <Tip label={t('common:actions.refresh')}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn('size-7 p-0', tab === 'saved' && 'invisible')}
+                      aria-label={t('common:actions.refresh')}
+                      aria-hidden={tab === 'saved' || undefined}
+                      tabIndex={tab === 'saved' ? -1 : undefined}
+                      onClick={() => (tab === 'favorites' ? void favorites.reload() : search.refresh())}
+                    >
+                      <RefreshCw
+                        className={cn(
+                          'size-3.5',
+                          (tab === 'favorites' ? favorites.status === 'loading' : search.status === 'loading') &&
+                            'animate-spin',
+                        )}
+                      />
+                    </Button>
+                  </Tip>
                 </>
               }
             />
@@ -679,29 +680,30 @@ function ViewModeToggle({ value, onChange }: { value: MarketViewMode; onChange: 
       className="flex h-6 shrink-0 rounded-md border border-input bg-background/40 p-0.5"
     >
       {options.map((o) => (
-        <button
-          key={o.mode}
-          type="button"
-          role="radio"
-          aria-checked={value === o.mode}
-          aria-label={o.label}
-          title={o.label}
-          onClick={() => onChange(o.mode)}
-          className={cn(
-            'relative inline-flex w-6 items-center justify-center rounded-[4px] text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
-            value === o.mode && 'text-accent-foreground',
-          )}
-        >
-          {value === o.mode && (
-            <motion.span
-              layoutId="market-view-active"
-              transition={springSnappy}
-              aria-hidden
-              className="absolute inset-0 rounded-[4px] bg-accent shadow-xs"
-            />
-          )}
-          <span className="relative">{o.icon}</span>
-        </button>
+        <Tip key={o.mode}
+          label={o.label}>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={value === o.mode}
+            aria-label={o.label}
+            onClick={() => onChange(o.mode)}
+            className={cn(
+              'relative inline-flex w-6 items-center justify-center rounded-[4px] text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
+              value === o.mode && 'text-accent-foreground',
+            )}
+          >
+            {value === o.mode && (
+              <motion.span
+                layoutId="market-view-active"
+                transition={springSnappy}
+                aria-hidden
+                className="absolute inset-0 rounded-[4px] bg-accent shadow-xs"
+              />
+            )}
+            <span className="relative">{o.icon}</span>
+          </button>
+        </Tip>
       ))}
     </div>
   );

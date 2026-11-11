@@ -246,7 +246,10 @@ function rows() {
   return list ? (within(list).queryAllByRole('listitem') as HTMLElement[]) : [];
 }
 const rowFor = (name: string) => rows().find((r) => r.textContent?.includes(name))! as HTMLElement;
-const headerUnread = () => screen.queryByTitle(/unread$/)?.textContent ?? null;
+/** The unread count badge beside the list's "Messages" heading. */
+const headerUnread = () =>
+  screen.queryByRole('heading', { name: 'Messages' })?.parentElement?.querySelector('span.rounded-full')?.textContent ??
+  null;
 const lastEmittedUnread = () =>
   vi
     .mocked(setBadgeCount)

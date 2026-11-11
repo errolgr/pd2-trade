@@ -9,6 +9,7 @@ import { usePanel, useOverlay } from '@/overlay';
 import { overlayPixelRatio, screenToOverlayRect } from '@/overlay/game';
 import { loadPanelRect } from '@/overlay/layout-storage';
 import { cn } from '@/lib/utils';
+import { Tip } from '@/components/ui/tooltip';
 import { AnimatedNumber, useChangeFlash } from '@/pages/currency/components/AnimatedNumber';
 import {
   clampToArea,
@@ -174,61 +175,62 @@ const NetWorthTicker: React.FC = () => {
     <MotionConfig reducedMotion="user">
       <div className="inline-block">
         {/* No transforms/shadows here: the panel is sized to this pill's box, so it must not grow on hover. */}
-        <button
-          ref={pillRef}
-          type="button"
-          onClick={onClick}
-          {...drag.handlers}
-          style={{ opacity: (settings.netWorthTickerOpacity ?? 90) / 100 }}
-          className="group flex h-7 cursor-pointer select-none items-center gap-2 whitespace-nowrap rounded-full border border-border bg-surface pl-3 pr-2.5 text-xs font-medium text-surface-foreground outline-none backdrop-blur-md transition-[background-color,border-color] duration-(--dur-fast) ease-out hover:border-ring/60 hover:bg-surface-elevated focus-visible:border-ring active:bg-muted"
-          title={t('ticker.title')}
-        >
-          <span
-            className={cn(
-              'text-sm font-semibold tabular-nums transition-colors duration-(--dur-slow)',
-              flash === 'up' && 'text-success',
-              flash === 'down' && 'text-destructive',
-            )}
+        {/* One tooltip for the pill and its freshness dot (nested tooltips would fight over hover). */}
+        <Tip label={`${t('ticker.title')}\n${dotTitle}`}>
+          <button
+            ref={pillRef}
+            type="button"
+            onClick={onClick}
+            {...drag.handlers}
+            style={{ opacity: (settings.netWorthTickerOpacity ?? 90) / 100 }}
+            className="group flex h-7 cursor-pointer select-none items-center gap-2 whitespace-nowrap rounded-full border border-border bg-surface pl-3 pr-2.5 text-xs font-medium text-surface-foreground outline-none backdrop-blur-md transition-[background-color,border-color] duration-(--dur-fast) ease-out hover:border-ring/60 hover:bg-surface-elevated focus-visible:border-ring active:bg-muted"
           >
-            {total !== null ? <AnimatedNumber value={total}
-              format={formatHr} /> : status === 'loading' ? '…' : '—'}{' '}
-            <span className="text-[11px] font-medium text-muted-foreground">HR</span>
-          </span>
-          {sessionDelta !== null && (
-            <>
-              <span aria-hidden
-                className="h-3 w-px bg-border" />
-              <span className={cn('tabular-nums', sessionDelta >= 0 ? 'text-success' : 'text-destructive')}>
-                <span className="text-[10px]">{sessionDelta >= 0 ? '▲' : '▼'}</span> {formatSignedHr(sessionDelta)}{' '}
-                <span className="font-normal opacity-80">{t('ticker.session')}</span>
-              </span>
-            </>
-          )}
-          {currentSession?.isOpen && (
-            <>
-              <span aria-hidden
-                className="h-3 w-px bg-border" />
-              <span className="tabular-nums text-muted-foreground">
-                <span className="text-surface-foreground/90">{formatHr(currentSession.hrPerHour)}</span> HR/h
-              </span>
-            </>
-          )}
-          {wealthRank && (
-            <>
-              <span aria-hidden
-                className="h-3 w-px bg-border" />
-              <span className="tabular-nums text-muted-foreground">{wealthRank}</span>
-            </>
-          )}
-          <span
-            className={cn(
-              'ml-0.5 size-2 shrink-0 rounded-full ring-[3px] transition-colors duration-(--dur-med)',
-              dotClass,
-              status === 'loading' && 'motion-safe:animate-pulse',
+            <span
+              className={cn(
+                'text-sm font-semibold tabular-nums transition-colors duration-(--dur-slow)',
+                flash === 'up' && 'text-success',
+                flash === 'down' && 'text-destructive',
+              )}
+            >
+              {total !== null ? <AnimatedNumber value={total}
+                format={formatHr} /> : status === 'loading' ? '…' : '—'}{' '}
+              <span className="text-[11px] font-medium text-muted-foreground">HR</span>
+            </span>
+            {sessionDelta !== null && (
+              <>
+                <span aria-hidden
+                  className="h-3 w-px bg-border" />
+                <span className={cn('tabular-nums', sessionDelta >= 0 ? 'text-success' : 'text-destructive')}>
+                  <span className="text-[10px]">{sessionDelta >= 0 ? '▲' : '▼'}</span> {formatSignedHr(sessionDelta)}{' '}
+                  <span className="font-normal opacity-80">{t('ticker.session')}</span>
+                </span>
+              </>
             )}
-            title={dotTitle}
-          />
-        </button>
+            {currentSession?.isOpen && (
+              <>
+                <span aria-hidden
+                  className="h-3 w-px bg-border" />
+                <span className="tabular-nums text-muted-foreground">
+                  <span className="text-surface-foreground/90">{formatHr(currentSession.hrPerHour)}</span> HR/h
+                </span>
+              </>
+            )}
+            {wealthRank && (
+              <>
+                <span aria-hidden
+                  className="h-3 w-px bg-border" />
+                <span className="tabular-nums text-muted-foreground">{wealthRank}</span>
+              </>
+            )}
+            <span
+              className={cn(
+                'ml-0.5 size-2 shrink-0 rounded-full ring-[3px] transition-colors duration-(--dur-med)',
+                dotClass,
+                status === 'loading' && 'motion-safe:animate-pulse',
+              )}
+            />
+          </button>
+        </Tip>
       </div>
     </MotionConfig>
   );

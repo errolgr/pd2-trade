@@ -18,6 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Tip } from '@/components/ui/tooltip';
 import { CORRUPTION_OPTIONS, corruptionOption } from '../lib/catalog';
 import { newStatFilter } from '../lib/defaults';
 import { MAX_OR_BLOCKS, compactBlocks, groupOf, moveToGroup, orBlockNumbers, type StatGroup } from '../lib/stat-groups';
@@ -64,12 +65,11 @@ function StatNumber({
 function CorruptionBadge() {
   const { t } = useTranslation('market');
   return (
-    <span
-      title={t('stats.cubeCorruption')}
-      className="shrink-0 rounded-sm border border-q-corrupted/40 bg-q-corrupted/10 px-1 text-[9px] leading-4 font-semibold tracking-wide text-q-corrupted uppercase"
-    >
-      {t('stats.corrBadge')}
-    </span>
+    <Tip label={t('stats.cubeCorruption')}>
+      <span className="shrink-0 rounded-sm border border-q-corrupted/40 bg-q-corrupted/10 px-1 text-[9px] leading-4 font-semibold tracking-wide text-q-corrupted uppercase">
+        {t('stats.corrBadge')}
+      </span>
+    </Tip>
   );
 }
 
@@ -287,15 +287,16 @@ export function StatFilters({
           className="absolute inset-y-0 left-0 w-0.5 bg-q-corrupted" />}
         <div className="relative space-y-1 py-1 pr-0.5 pl-1">
           <div className="flex min-w-0 items-center gap-1">
-            <span
-              aria-hidden
-              title={tr('stats.dragHint')}
-              data-stat-grip={s.id}
-              className="inline-flex h-5 w-3 shrink-0 cursor-grab touch-none items-center justify-center text-muted-foreground/60 transition-colors duration-(--dur-fast) hover:text-foreground active:cursor-grabbing"
-              {...gripHandlers(s, name)}
-            >
-              <GripVertical className="size-3" />
-            </span>
+            <Tip label={tr('stats.dragHint')}>
+              <span
+                aria-hidden
+                data-stat-grip={s.id}
+                className="inline-flex h-5 w-3 shrink-0 cursor-grab touch-none items-center justify-center text-muted-foreground/60 transition-colors duration-(--dur-fast) hover:text-foreground active:cursor-grabbing"
+                {...gripHandlers(s, name)}
+              >
+                <GripVertical className="size-3" />
+              </span>
+            </Tip>
             <Checkbox
               checked={s.enabled}
               aria-label={s.enabled ? tr('stats.disable', { name }) : tr('stats.enable', { name })}
@@ -305,10 +306,9 @@ export function StatFilters({
             {s.kind === 'pseudo' && <Sigma className="size-3 shrink-0 text-info"
               aria-label={tr('stats.pseudoStat')} />}
             {corruption && <CorruptionBadge />}
-            <span className="min-w-0 flex-1 truncate text-xs"
-              title={name}>
-              {name}
-            </span>
+            <Tip label={name}>
+              <span className="min-w-0 flex-1 truncate text-xs">{name}</span>
+            </Tip>
             <GroupMenu
               name={name}
               group={groupOf(s)}
@@ -316,15 +316,16 @@ export function StatFilters({
               canOpenBlock={canOpenBlock(s)}
               onMove={(target) => move(s.id, target)}
             />
-            <button
-              type="button"
-              aria-label={tr('stats.removeName', { name })}
-              title={tr('common:actions.remove')}
-              onClick={() => onChange(compactBlocks(stats.filter((x) => x.id !== s.id)))}
-              className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-destructive/15 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/60"
-            >
-              <X className="size-3.5" />
-            </button>
+            <Tip label={tr('common:actions.remove')}>
+              <button
+                type="button"
+                aria-label={tr('stats.removeName', { name })}
+                onClick={() => onChange(compactBlocks(stats.filter((x) => x.id !== s.id)))}
+                className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-destructive/15 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/60"
+              >
+                <X className="size-3.5" />
+              </button>
+            </Tip>
           </div>
           {bounded ? (
             <div className="grid grid-cols-2 gap-1 pr-7 pl-9">
@@ -426,12 +427,11 @@ export function StatFilters({
               ) : (
                 <span className="size-3 shrink-0" />
               )}
-              <span
-                className={cn('min-w-0 flex-1 truncate', isCorruption(choice) && 'text-q-corrupted')}
-                title={choiceText(choice)}
-              >
-                {choiceText(choice)}
-              </span>
+              <Tip label={choiceText(choice)}>
+                <span className={cn('min-w-0 flex-1 truncate', isCorruption(choice) && 'text-q-corrupted')}>
+                  {choiceText(choice)}
+                </span>
+              </Tip>
               {/* The tab already says pseudo / corruption; mods keep their group */}
               {!isPseudo(choice) && !isCorruption(choice) && (
                 <span className="shrink-0 text-[10px] text-muted-foreground">{choice.group}</span>
@@ -605,19 +605,20 @@ function GroupMenu({
   ];
   return (
     <DropdownMenu modal={false}>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label={t('stats.groups.rowLabel', { name, description })}
-          title={t('stats.groups.badgeHint')}
-          className="shrink-0 rounded outline-none transition-[filter] duration-(--dur-fast) hover:brightness-125 focus-visible:ring-2 focus-visible:ring-ring/60"
-        >
-          <GroupBadge
-            group={group}
-            text={group === 'and' ? 'AND' : group === 'not' ? 'NOT' : blocks.length > 1 ? `OR ${group}` : 'OR'}
-          />
-        </button>
-      </DropdownMenuTrigger>
+      <Tip label={t('stats.groups.badgeHint')}>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            aria-label={t('stats.groups.rowLabel', { name, description })}
+            className="shrink-0 rounded outline-none transition-[filter] duration-(--dur-fast) hover:brightness-125 focus-visible:ring-2 focus-visible:ring-ring/60"
+          >
+            <GroupBadge
+              group={group}
+              text={group === 'and' ? 'AND' : group === 'not' ? 'NOT' : blocks.length > 1 ? `OR ${group}` : 'OR'}
+            />
+          </button>
+        </DropdownMenuTrigger>
+      </Tip>
       <DropdownMenuContent align="end"
         className="min-w-44">
         <DropdownMenuLabel className="text-xs">{t('stats.groups.moveTo')}</DropdownMenuLabel>
@@ -683,21 +684,22 @@ function PresetMenu({
     >
       <span className="min-w-0 flex-1 truncate">{presetName(p)}</span>
       <span className="text-[10px] text-muted-foreground">{p.stats.length}</span>
-      <button
-        type="button"
-        tabIndex={-1}
-        aria-label={t('presets.deleteLabel', { name: presetName(p) })}
-        title={t('presets.deleteTitle')}
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onRemove(p);
-        }}
-        className="inline-flex size-6 items-center justify-center rounded-sm text-muted-foreground/70 transition-colors hover:bg-destructive/15 hover:text-destructive group-data-[highlighted]:text-muted-foreground"
-      >
-        <Trash2 className="size-3" />
-      </button>
+      <Tip label={t('presets.deleteTitle')}>
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-label={t('presets.deleteLabel', { name: presetName(p) })}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onRemove(p);
+          }}
+          className="inline-flex size-6 items-center justify-center rounded-sm text-muted-foreground/70 transition-colors hover:bg-destructive/15 hover:text-destructive group-data-[highlighted]:text-muted-foreground"
+        >
+          <Trash2 className="size-3" />
+        </button>
+      </Tip>
     </DropdownMenuItem>
   );
   const sectionLabel = 'text-[10px] uppercase tracking-wider text-muted-foreground';
@@ -760,18 +762,17 @@ function SavePresetButton({ disabled, onSave }: { disabled: boolean; onSave: (na
   return (
     <Popover open={open}
       onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={disabled}
-          className="size-7 p-0"
-          aria-label={t('presets.save')}
-          title={t('presets.save')}
-        >
-          <BookmarkPlus className="size-3.5" />
-        </Button>
-      </PopoverTrigger>
+      <Tip label={t('presets.save')}>
+        <PopoverTrigger asChild>
+          <Button variant="outline"
+            size="sm"
+            disabled={disabled}
+            className="size-7 p-0"
+            aria-label={t('presets.save')}>
+            <BookmarkPlus className="size-3.5" />
+          </Button>
+        </PopoverTrigger>
+      </Tip>
       <PopoverContent align="end"
         className="w-60 p-2">
         <form

@@ -30,6 +30,7 @@ import {
   useNotificationLog,
 } from '@/lib/notification-log';
 import { cn } from '@/lib/utils';
+import { Tip } from '@/components/ui/tooltip';
 import { openLoggedListing, runLoggedAction, usePanel } from '@/overlay';
 import { timeAgo } from '@/pages/chat/components/ChatPeek';
 
@@ -225,6 +226,8 @@ function Row({
 
   // Removed right away: the row is already slid out and faded, the exit collapses it
   const remove = () => removeNotification(entry.id);
+  // One tooltip per row: the full description (truncated in the row) above the gesture hint
+  const hint = openable ? t('notificationLog.rowHint') : t('notificationLog.rowHintRemoveOnly');
 
   return (
     <motion.li
@@ -232,53 +235,52 @@ function Row({
       exit={{ height: 0, opacity: 0, transition: { duration: 0.16 } }}
       className="relative overflow-hidden rounded-md"
     >
-      <motion.div
-        drag="x"
-        dragDirectionLock
-        dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={0.9}
-        style={{ x, opacity }}
-        onDragStart={() => {
-          dragged.current = true;
-        }}
-        onDragEnd={(_, info) => {
-          window.setTimeout(() => (dragged.current = false));
-          const distance = Math.abs(info.offset.x);
-          if (distance > SWIPE_PX || (distance > FLICK_MIN_PX && Math.abs(info.velocity.x) > SWIPE_VELOCITY)) remove();
-        }}
-        role={openable ? 'button' : undefined}
-        tabIndex={0}
-        aria-label={entry.description ? `${entry.title}: ${entry.description}` : entry.title}
-        title={openable ? t('notificationLog.rowHint') : t('notificationLog.rowHintRemoveOnly')}
-        onClick={() => {
-          if (!dragged.current && openable) onOpen(entry);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && openable) onOpen(entry);
-          else if (e.key === 'Delete' || e.key === 'Backspace') remove();
-        }}
-        className={cn(
-          'grid touch-pan-y select-none grid-cols-[0.875rem_minmax(0,1fr)_auto] items-start gap-x-2 rounded-md px-2 py-1 outline-none hover:bg-accent/50 focus-visible:bg-accent/50',
-          openable ? 'cursor-pointer' : 'cursor-grab',
-        )}
-      >
-        <Icon className={cn('mt-px size-3.5', entry.tone ? TONE_CLASS[entry.tone] : className)} />
-        <div className="min-w-0">
-          <p className="truncate text-[13px] leading-4 font-medium">
-            {entry.title}
-            {entry.count > 1 && (
-              <span className="ml-1.5 text-xs font-normal tabular-nums text-muted-foreground">×{entry.count}</span>
-            )}
-          </p>
-          {entry.description && (
-            <p className="truncate text-xs leading-4 text-muted-foreground"
-              title={entry.description}>
-              {entry.description}
-            </p>
+      <Tip label={entry.description ? `${entry.description}\n${hint}` : hint}>
+        <motion.div
+          drag="x"
+          dragDirectionLock
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.9}
+          style={{ x, opacity }}
+          onDragStart={() => {
+            dragged.current = true;
+          }}
+          onDragEnd={(_, info) => {
+            window.setTimeout(() => (dragged.current = false));
+            const distance = Math.abs(info.offset.x);
+            if (distance > SWIPE_PX || (distance > FLICK_MIN_PX && Math.abs(info.velocity.x) > SWIPE_VELOCITY))
+              remove();
+          }}
+          role={openable ? 'button' : undefined}
+          tabIndex={0}
+          aria-label={entry.description ? `${entry.title}: ${entry.description}` : entry.title}
+          onClick={() => {
+            if (!dragged.current && openable) onOpen(entry);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && openable) onOpen(entry);
+            else if (e.key === 'Delete' || e.key === 'Backspace') remove();
+          }}
+          className={cn(
+            'grid touch-pan-y select-none grid-cols-[0.875rem_minmax(0,1fr)_auto] items-start gap-x-2 rounded-md px-2 py-1 outline-none hover:bg-accent/50 focus-visible:bg-accent/50',
+            openable ? 'cursor-pointer' : 'cursor-grab',
           )}
-        </div>
-        <span className="text-[11px] leading-4 tabular-nums text-muted-foreground">{timeAgo(entry.at, now)}</span>
-      </motion.div>
+        >
+          <Icon className={cn('mt-px size-3.5', entry.tone ? TONE_CLASS[entry.tone] : className)} />
+          <div className="min-w-0">
+            <p className="truncate text-[13px] leading-4 font-medium">
+              {entry.title}
+              {entry.count > 1 && (
+                <span className="ml-1.5 text-xs font-normal tabular-nums text-muted-foreground">×{entry.count}</span>
+              )}
+            </p>
+            {entry.description && (
+              <p className="truncate text-xs leading-4 text-muted-foreground">{entry.description}</p>
+            )}
+          </div>
+          <span className="text-[11px] leading-4 tabular-nums text-muted-foreground">{timeAgo(entry.at, now)}</span>
+        </motion.div>
+      </Tip>
     </motion.li>
   );
 }

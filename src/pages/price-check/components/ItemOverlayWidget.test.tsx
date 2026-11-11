@@ -249,6 +249,11 @@ function renderWidget(item: Item, onClose = vi.fn()) {
 const statCheckbox = (name: string) =>
   screen.getByText(name).closest('label')!.querySelector('[role="checkbox"]') as HTMLElement;
 const searchButton = () => screen.getByRole('button', { name: /^Search$/ });
+/** The rare header's toggles, by their (changing) visible text: the hint is a tooltip, not a title. */
+const QUALITY_TOGGLE = /^((Any|Normal|Superior|Magic|Crafted|Rare)\s*)+$/;
+const MODE_TOGGLE = /^((Base|Type|Group): .+)+$/;
+const qualityToggle = () => screen.getByRole('button', { name: QUALITY_TOGGLE });
+const modeToggle = () => screen.getByRole('button', { name: MODE_TOGGLE });
 const lastQuery = (fn = getMarketListings) => fn.mock.calls[fn.mock.calls.length - 1][0];
 /** The listed searches on the market service (an empty search's relaxation counts ask for one row, aside). */
 const realSearches = () => searchListings.mock.calls.filter(([, opts]) => opts.limit !== 1);
@@ -278,19 +283,19 @@ describe('ItemOverlayWidget header', () => {
 
   it('lets a rare cycle the searched quality through Any, every other base quality and back', async () => {
     renderWidget(rareRing());
-    const toggle = screen.getByTitle('Click to cycle quality');
+    const toggle = qualityToggle();
     expect(toggle.textContent).toBe('Rare');
     for (const next of ['Any', 'Normal', 'Superior', 'Magic', 'Crafted', 'Rare']) {
       fireEvent.click(toggle);
       // the outgoing label animates out, so wait until only the new one remains
-      await waitFor(() => expect(screen.getByTitle('Click to cycle quality').textContent).toBe(next));
+      await waitFor(() => expect(qualityToggle().textContent).toBe(next));
     }
   });
 
   it('the cycled quality is what the market search asks for', async () => {
     renderWidget(rareRing());
-    fireEvent.click(screen.getByTitle('Click to cycle quality')); // -> Any
-    fireEvent.click(screen.getByTitle('Click to cycle quality')); // -> Normal
+    fireEvent.click(qualityToggle()); // -> Any
+    fireEvent.click(qualityToggle()); // -> Normal
     fireEvent.click(searchButton());
     await waitFor(() => expect(searchListings).toHaveBeenCalled());
     expect(lastFilters().rarity).toEqual(['Normal']);
@@ -298,7 +303,7 @@ describe('ItemOverlayWidget header', () => {
 
   it('"Any" searches every base quality, so rares and crafted come back together', async () => {
     renderWidget(rareRing());
-    fireEvent.click(screen.getByTitle('Click to cycle quality')); // -> Any
+    fireEvent.click(qualityToggle()); // -> Any
     fireEvent.click(searchButton());
     await waitFor(() => expect(searchListings).toHaveBeenCalled());
     expect(lastFilters().rarity).toEqual(['Normal', 'Superior', 'Magic', 'Rare', 'Crafted']);
@@ -306,8 +311,8 @@ describe('ItemOverlayWidget header', () => {
 
   it('uniques have no quality/search-mode toggles', () => {
     renderWidget(shako());
-    expect(screen.queryByTitle('Click to cycle quality')).toBeNull();
-    expect(screen.queryByTitle('Click to toggle search mode')).toBeNull();
+    expect(screen.queryByRole('button', { name: QUALITY_TOGGLE })).toBeNull();
+    expect(screen.queryByRole('button', { name: MODE_TOGGLE })).toBeNull();
   });
 
   it('Close and Settings do what they say', () => {
@@ -603,12 +608,12 @@ describe('ItemOverlayWidget market search', () => {
     await screen.findByText('1.5 HR');
     expect(lastFilters().sort).toEqual({ by: 'bumped', dir: 'desc' });
 
-    fireEvent.click(screen.getByTitle('Sort by price'));
+    fireEvent.click(screen.getByRole('button', { name: 'Price' }));
     await waitFor(() => expect(lastFilters().sort).toEqual({ by: 'price', dir: 'desc' }));
     expect(lastPage()).toBe(0);
-    fireEvent.click(screen.getByTitle('Sort by price'));
+    fireEvent.click(screen.getByRole('button', { name: 'Price' }));
     await waitFor(() => expect(lastFilters().sort).toEqual({ by: 'price', dir: 'asc' }));
-    fireEvent.click(screen.getByTitle('Sort by listing date'));
+    fireEvent.click(screen.getByRole('button', { name: 'Age' }));
     await waitFor(() => expect(lastFilters().sort).toEqual({ by: 'bumped', dir: 'desc' }));
   });
 
@@ -617,12 +622,12 @@ describe('ItemOverlayWidget market search', () => {
     renderWidget(rareRing());
     fireEvent.click(searchButton());
     await screen.findByText('1.5 HR');
-    fireEvent.click(screen.getByTitle('Sort by price'));
+    fireEvent.click(screen.getByRole('button', { name: 'Price' }));
     await waitFor(() => expect(lastFilters().sort.by).toBe('price'));
 
     searchListings.mockRejectedValueOnce(new MarketBackendError('down', 'unavailable', 503));
     getMarketListings.mockResolvedValueOnce(page([listing({ hr_price: 2 })]));
-    fireEvent.click(screen.getByTitle('Sort by price'));
+    fireEvent.click(screen.getByRole('button', { name: 'Price' }));
     expect(await screen.findByText('2 HR')).not.toBeNull();
     expect(lastQuery()).toMatchObject({ $sort: { hr_price: 1 }, hr_price: { $gt: 0 } });
   });
@@ -751,7 +756,8 @@ describe('ItemOverlayWidget market search', () => {
     fireEvent.click(searchButton());
     const row = (await screen.findByText('4 HR')).closest('tr')!;
     const ended = within(row).getByText('sold after 2 days');
-    expect(ended.getAttribute('title')).toBe('Ended 2 days ago');
+    fireEvent.focus(ended);
+    expect((await screen.findByRole('tooltip')).textContent).toBe('Ended 2 days ago');
   });
 
   it('asks PD2 for the page when the market service fails, and reports the failure', async () => {
@@ -1071,7 +1077,7 @@ describe('ItemOverlayWidget rare appraisal', () => {
     expect(screen.queryByText('Keep')).toBeNull();
   });
 
-  it('explains a crafted gate-off reason in plain words and keeps the detail on hover', () => {
+  it('explains a crafted gate-off reason in plain words and keeps the detail on hover', async () => {
     const reason = 'crafted slot unreliable: backtest MAE not better than the crafted median';
     rareState = {
       status: 'done',
@@ -1082,52 +1088,51 @@ describe('ItemOverlayWidget rare appraisal', () => {
     expect(note.textContent).toBe(
       "Appraisal note: crafted items in this slot can't be appraised reliably yet (too little crafted data)",
     );
-    expect(note.getAttribute('title')).toBe(reason);
+    fireEvent.focus(note);
+    expect((await screen.findByRole('tooltip')).textContent).toBe(reason);
   });
 });
 
 describe('ItemOverlayWidget extra header behaviour', () => {
   it('toggles a rare between searching its exact base and its whole item type', async () => {
     renderWidget(rareRing());
-    const mode = screen.getByTitle('Click to toggle search mode');
+    const mode = modeToggle();
     expect(mode.textContent).toBe('Base: Ring');
     fireEvent.click(mode);
-    await waitFor(() => expect(screen.getByTitle('Click to toggle search mode').textContent).toBe('Type: Jewelry'));
+    await waitFor(() => expect(modeToggle().textContent).toBe('Type: Jewelry'));
 
     fireEvent.click(searchButton());
     await waitFor(() => expect(searchListings).toHaveBeenCalled());
     expect(JSON.stringify(lastFilters())).toContain('amul');
     expect(lastFilters().baseCode).toBeUndefined();
 
-    fireEvent.click(screen.getByTitle('Click to toggle search mode'));
-    await waitFor(() => expect(screen.getByTitle('Click to toggle search mode').textContent).toBe('Base: Ring'));
+    fireEvent.click(modeToggle());
+    await waitFor(() => expect(modeToggle().textContent).toBe('Base: Ring'));
   });
 
   it("cycles a rare bow's base → type → type group → base, searching the group's members", async () => {
     renderWidget(rareRing({ name: 'Grim Fletch', type: 'Ceremonial Bow' }));
-    const mode = () => screen.getByTitle('Click to toggle search mode');
-    expect(mode().textContent).toBe('Base: Ceremonial Bow');
-    fireEvent.click(mode());
-    await waitFor(() => expect(mode().textContent).toBe('Type: Amazon Bow'));
-    fireEvent.click(mode());
-    await waitFor(() => expect(mode().textContent).toBe('Group: Bows'));
+    expect(modeToggle().textContent).toBe('Base: Ceremonial Bow');
+    fireEvent.click(modeToggle());
+    await waitFor(() => expect(modeToggle().textContent).toBe('Type: Amazon Bow'));
+    fireEvent.click(modeToggle());
+    await waitFor(() => expect(modeToggle().textContent).toBe('Group: Bows'));
 
     fireEvent.click(searchButton());
     await waitFor(() => expect(searchListings).toHaveBeenCalled());
     expect(lastFilters()).toMatchObject({ typeCode: 'group:bows' });
     expect(lastFilters().baseCode).toBeUndefined();
 
-    fireEvent.click(mode());
-    await waitFor(() => expect(mode().textContent).toBe('Base: Ceremonial Bow'));
+    fireEvent.click(modeToggle());
+    await waitFor(() => expect(modeToggle().textContent).toBe('Base: Ceremonial Bow'));
   });
 
   it('toggles a rare without a type group (Sorceress Orb) between base and type only', async () => {
     renderWidget(rareRing({ name: 'Doom Eye', type: 'Eagle Orb' }));
-    const mode = () => screen.getByTitle('Click to toggle search mode');
-    fireEvent.click(mode());
-    await waitFor(() => expect(mode().textContent).toBe('Type: Sorceress Orb'));
-    fireEvent.click(mode());
-    await waitFor(() => expect(mode().textContent).toBe('Base: Eagle Orb'));
+    fireEvent.click(modeToggle());
+    await waitFor(() => expect(modeToggle().textContent).toBe('Type: Sorceress Orb'));
+    fireEvent.click(modeToggle());
+    await waitFor(() => expect(modeToggle().textContent).toBe('Base: Eagle Orb'));
   });
 
   it('Net Worth opens the currency panel', () => {

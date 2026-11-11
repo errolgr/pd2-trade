@@ -4,6 +4,7 @@ import { AlertTriangle, Filter, MoreHorizontal, RefreshCw, Store } from 'lucide-
 import { cn } from '@/lib/utils';
 import { springSnappy } from '@/lib/motion';
 import { Button } from '@/components/ui/button';
+import { Tip } from '@/components/ui/tooltip';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -150,19 +151,17 @@ export function PriceChip({
   const { t } = useTranslation('builds');
   if (hr == null) {
     return unpriced ? (
-      <span className={cn('text-[11px] text-muted-foreground', className)}
-        title={t('price.noReliablePrice')}>
-        {t('price.na')}
-      </span>
+      <Tip label={t('price.noReliablePrice')}>
+        <span className={cn('text-[11px] text-muted-foreground', className)}>{t('price.na')}</span>
+      </Tip>
     ) : null;
   }
   return (
-    <span
-      className={cn('shrink-0 text-[11px] font-medium whitespace-nowrap text-q-gold tabular-nums', className)}
-      title={t('price.hrTitle', { hr })}
-    >
-      {fmtHr(hr)} <span className="text-[10px] opacity-75">HR</span>
-    </span>
+    <Tip label={t('price.hrTitle', { hr })}>
+      <span className={cn('shrink-0 text-[11px] font-medium whitespace-nowrap text-q-gold tabular-nums', className)}>
+        {fmtHr(hr)} <span className="text-[10px] opacity-75">HR</span>
+      </span>
+    </Tip>
   );
 }
 
@@ -267,25 +266,26 @@ export function SearchMarketButton({
   const { searchMarket, mode } = useBuildsActions();
   if (!marketFiltersFor(item, mode)) return null;
   return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="sm"
-      aria-label={t('itemActions.searchMarketFor', { name: item.name })}
-      title={t('itemActions.searchMarketFor', { name: item.name })}
-      onClick={(e) => {
-        e.stopPropagation();
-        searchMarket(item);
-      }}
-      className={cn(
-        label ? 'h-6 gap-1 px-2 text-[11px]' : 'size-6 p-0',
-        'text-muted-foreground hover:text-foreground',
-        className,
-      )}
-    >
-      <Store className="size-3.5" />
-      {label && t('itemActions.searchMarket')}
-    </Button>
+    <Tip label={t('itemActions.searchMarketFor', { name: item.name })}>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        aria-label={t('itemActions.searchMarketFor', { name: item.name })}
+        onClick={(e) => {
+          e.stopPropagation();
+          searchMarket(item);
+        }}
+        className={cn(
+          label ? 'h-6 gap-1 px-2 text-[11px]' : 'size-6 p-0',
+          'text-muted-foreground hover:text-foreground',
+          className,
+        )}
+      >
+        <Store className="size-3.5" />
+        {label && t('itemActions.searchMarket')}
+      </Button>
+    </Tip>
   );
 }
 
@@ -423,28 +423,29 @@ export function Segmented<T extends string>({
       className={cn('flex h-7 shrink-0 rounded-md border border-input bg-background/40 p-0.5', className)}
     >
       {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          role="radio"
-          aria-checked={value === o.value}
-          title={o.title}
-          onClick={() => onChange(o.value)}
-          className={cn(
-            'relative inline-flex items-center justify-center rounded-[4px] px-2 text-xs text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50',
-            value === o.value && 'text-accent-foreground',
-          )}
-        >
-          {value === o.value && (
-            <motion.span
-              layoutId={layoutId}
-              transition={springSnappy}
-              aria-hidden
-              className="absolute inset-0 rounded-[4px] bg-accent shadow-xs"
-            />
-          )}
-          <span className="relative flex items-center gap-1">{o.label}</span>
-        </button>
+        <Tip key={o.value}
+          label={o.title}>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={value === o.value}
+            onClick={() => onChange(o.value)}
+            className={cn(
+              'relative inline-flex items-center justify-center rounded-[4px] px-2 text-xs text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50',
+              value === o.value && 'text-accent-foreground',
+            )}
+          >
+            {value === o.value && (
+              <motion.span
+                layoutId={layoutId}
+                transition={springSnappy}
+                aria-hidden
+                className="absolute inset-0 rounded-[4px] bg-accent shadow-xs"
+              />
+            )}
+            <span className="relative flex items-center gap-1">{o.label}</span>
+          </button>
+        </Tip>
       ))}
     </div>
   );

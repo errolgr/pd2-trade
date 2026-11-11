@@ -6,6 +6,7 @@ import { openUrl } from '@/lib/browser-opener';
 import { describeSimExportError } from '@/lib/sim-export-api';
 import { defaultSimCharacter, savedSimCharacter, simListingPlanUrl } from '@/lib/sim-try-on';
 import { trackMeasurement } from '@/lib/telemetry';
+import { Tip } from '@/components/ui/tooltip';
 import { showToast } from '@/overlay';
 
 /** Opens a market listing in the Horadric Sim planner on the default character; null while Try on is off. */
@@ -72,20 +73,21 @@ export function ChatSimTryOnButton({ listingId }: { listingId: string }) {
     ? `Try on ${context.character} in the Horadric Sim planner`
     : 'Try on your character in the Horadric Sim planner';
   return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      disabled={opening}
-      onClick={(e) => {
-        e.stopPropagation();
-        setOpening(true);
-        void context.tryOn(listingId).finally(() => setOpening(false));
-      }}
-      className="mx-1 inline-flex cursor-pointer items-center gap-1 rounded-md border border-primary/60 bg-primary/10 px-1.5 py-px align-middle text-[11px] font-medium text-primary hover:bg-primary/20 disabled:cursor-default disabled:opacity-60"
-    >
-      {opening ? <Loader2 className="size-3 animate-spin" /> : <FlaskConical className="size-3" />}
-      Try on
-    </button>
+    <Tip label={label}>
+      <button
+        type="button"
+        aria-label={label}
+        disabled={opening}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpening(true);
+          void context.tryOn(listingId).finally(() => setOpening(false));
+        }}
+        className="mx-1 inline-flex cursor-pointer items-center gap-1 rounded-md border border-primary/60 bg-primary/10 px-1.5 py-px align-middle text-[11px] font-medium text-primary hover:bg-primary/20 disabled:cursor-default disabled:opacity-60"
+      >
+        {opening ? <Loader2 className="size-3 animate-spin" /> : <FlaskConical className="size-3" />}
+        Try on
+      </button>
+    </Tip>
   );
 }

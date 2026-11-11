@@ -9,9 +9,9 @@ import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
 import { useTranslation } from '@/i18n';
 import { cn } from '@/lib/utils';
+import { Tip } from '@/components/ui/tooltip';
 import { buildGetAllUserMarketListingsQuery } from '@/pages/price-check/lib/tradeUrlBuilder';
 import { ListingThumb, nameColor } from './ListingCard';
-import { Tip } from './chat-parts';
 
 /** Newest-bumped active listings offered by the picker. */
 const PICKER_LIMIT = 50;

@@ -6,12 +6,13 @@ import { t, Trans, useTranslation } from '@/i18n';
 import { writeText } from '@/lib/browser-clipboard';
 import { fadeInUp, slideInRight } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import { Tip } from '@/components/ui/tooltip';
 import { showToast } from '@/overlay';
 import type { ChatListingState } from '../hooks/useChatListings';
 import type { TimelineEntry } from '../lib/inbox';
 import { OfferListingHoverCard } from './OfferListingHoverCard';
 import { MessageContent } from './MessageContent';
-import { ChatAvatar, ReadReceipt, Tip } from './chat-parts';
+import { ChatAvatar, ReadReceipt } from './chat-parts';
 import { dealStatusLabel, offerStatus, STATUS_CLASS } from './ThreadDeals';
 
 /** Messages from one side and source less than this far apart form a group (tight spacing, shared corners). */
@@ -226,7 +227,6 @@ export function MessageBubble({
           {isOwnMessage && copyButton}
           <div
             aria-busy={sending || undefined}
-            title={moment(entry.createdAt).format('ddd, MMM D YYYY · h:mm A')}
             className={cn(
               'relative max-w-[72%] rounded-2xl px-3 py-1.5 text-foreground ring-1 ring-inset transition-[opacity,box-shadow] duration-(--dur-med)',
               isOwnMessage
@@ -267,16 +267,17 @@ export function MessageBubble({
                     aria-label={whisper ? t('bubble.inGameWhisper') : t('bubble.websiteMessage')}
                     className="size-2.5 text-muted-foreground/70"
                   />
-                  <span>{time}</span>
+                  <Tip label={moment(entry.createdAt).format('ddd, MMM D YYYY · h:mm A')}>
+                    <span>{time}</span>
+                  </Tip>
                   {entry.copied && (
-                    <span
-                      title={t('bubble.copiedHint')}
-                      className="ml-0.5 inline-flex cursor-help items-center gap-0.5 rounded-sm bg-warning/15 px-1 font-medium text-warning"
-                    >
-                      <ClipboardCopy aria-hidden
-                        className="size-2.5" />
-                      {t('bubble.copied')}
-                    </span>
+                    <Tip label={t('bubble.copiedHint')}>
+                      <span className="ml-0.5 inline-flex cursor-help items-center gap-0.5 rounded-sm bg-warning/15 px-1 font-medium text-warning">
+                        <ClipboardCopy aria-hidden
+                          className="size-2.5" />
+                        {t('bubble.copied')}
+                      </span>
+                    </Tip>
                   )}
                   {sending && <Loader2 aria-hidden
                     className="size-3 animate-spin" />}

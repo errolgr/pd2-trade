@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT } from '@/lib/motion';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
+import { Tip } from '@/components/ui/tooltip';
 import { SearchPopover, useSearchPopover } from '@/components/custom/SearchPopover';
 import { facetShare } from '../lib/facets';
 import type { Tri } from '../lib/types';
@@ -161,12 +162,10 @@ export function Segmented<T extends string>({
       {options.map((o) => {
         const button = (
           <button
-            key={o.value}
             type="button"
             role="radio"
             aria-checked={value === o.value}
             aria-label={o.facet?.text}
-            title={o.title}
             onClick={() => onChange(o.value)}
             className={cn(
               'relative min-w-0 flex-1 truncate rounded-[5px] px-1.5 text-[11px] font-medium text-muted-foreground outline-none transition-[color,background-color,opacity] duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
@@ -181,12 +180,17 @@ export function Segmented<T extends string>({
         );
         // Options with a facet always get their tooltip, so they keep focus when counts come and go
         return o.facet ? (
-          <FacetTip key={o.value}
-            text={o.facet.text}>
+          <FacetTip
+            key={o.value}
+            text={o.title && o.facet.text ? `${o.title} · ${o.facet.text}` : (o.title ?? o.facet.text)}
+          >
             {button}
           </FacetTip>
         ) : (
-          button
+          <Tip key={o.value}
+            label={o.title}>
+            {button}
+          </Tip>
         );
       })}
     </div>

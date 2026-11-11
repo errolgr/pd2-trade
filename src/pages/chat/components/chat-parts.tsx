@@ -1,7 +1,6 @@
 import React from 'react';
 import { Check, CheckCheck } from 'lucide-react';
 import type { Conversation, Message, Participant } from '@/common/types/pd2-website/ChatTypes';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { t } from '@/i18n';
 import { cn } from '@/lib/utils';
 import type { TraderPresence } from '../hooks/useTraderProfile';
@@ -94,29 +93,6 @@ export function ChatAvatar({
   );
 }
 
-/** A themed tooltip on a button-like child (its accessible name stays the child's own). */
-export function Tip({
-  label,
-  side = 'top',
-  children,
-}: {
-  label: React.ReactNode;
-  side?: 'top' | 'bottom' | 'left' | 'right';
-  children: React.ReactElement;
-}) {
-  return (
-    <TooltipProvider delayDuration={300}>
-      <Tooltip>
-        <TooltipTrigger asChild>{children}</TooltipTrigger>
-        <TooltipContent side={side}
-          className="max-w-64">
-          {label}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-}
-
 /** Own messages: double check once `readerId` (the other participant) has read it, else a single check. */
 export function ReadReceipt({
   message,
@@ -137,16 +113,19 @@ export function ReadReceipt({
 }
 
 /** Small round count badge (unread). */
-export function CountBadge({ count, className, ...props }: { count: number } & React.ComponentProps<'span'>) {
-  return (
-    <span
-      {...props}
-      className={cn(
-        'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold tabular-nums leading-none text-primary-foreground shadow-xs',
-        className,
-      )}
-    >
-      {count > 99 ? '99+' : count}
-    </span>
-  );
-}
+export const CountBadge = React.forwardRef<HTMLSpanElement, { count: number } & React.ComponentPropsWithoutRef<'span'>>(
+  function CountBadge({ count, className, ...props }, ref) {
+    return (
+      <span
+        ref={ref}
+        {...props}
+        className={cn(
+          'inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold tabular-nums leading-none text-primary-foreground shadow-xs',
+          className,
+        )}
+      >
+        {count > 99 ? '99+' : count}
+      </span>
+    );
+  },
+);

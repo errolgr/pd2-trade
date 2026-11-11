@@ -4,6 +4,7 @@ import { Package, User as UserIcon } from 'lucide-react';
 import { t, Trans, useTranslation } from '@/i18n';
 import { openUrl } from '@/lib/browser-opener';
 import { cn } from '@/lib/utils';
+import { Tip } from '@/components/ui/tooltip';
 import { useItems } from '@/hooks/useItems';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -194,10 +195,13 @@ export function ListingDetails({
               components={{ name: <span className="text-foreground" /> }}
             />
             {online && (
-              <span
-                className="size-2 rounded-full bg-success ring-2 ring-success/25"
-                title={t('listing.onlineInGame')}
-              />
+              <Tip label={t('listing.onlineInGame')}>
+                <span
+                  role="img"
+                  aria-label={t('listing.onlineInGame')}
+                  className="size-2 rounded-full bg-success ring-2 ring-success/25"
+                />
+              </Tip>
             )}
           </div>
         )}
