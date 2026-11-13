@@ -97,8 +97,25 @@ pub fn find_diablo_window(conn: &impl Connection) -> Result<Option<Window>, Box<
 
     let net_client_list = get_atom(conn, "_NET_CLIENT_LIST")?;
 
-    let clients =
+    let mut clients =
         get_property_u32(conn, root, net_client_list, AtomEnum::WINDOW.into())?.unwrap_or_default();
+    // Some X servers don't keep a client list (xwayland-satellite); fall back to the mapped top-level windows.
+    if clients.is_empty() {
+        use x11rb::protocol::xproto::MapState;
+        let children = conn.query_tree(root)?.reply()?.children;
+        let attributes: Vec<_> = children
+            .iter()
+            .map(|&window| conn.get_window_attributes(window))
+            .collect();
+        clients = children
+            .into_iter()
+            .zip(attributes)
+            .filter_map(|(window, cookie)| {
+                let viewable = cookie.ok()?.reply().ok()?.map_state == MapState::VIEWABLE;
+                viewable.then_some(window)
+            })
+            .collect();
+    }
 
     for window in &clients {
         if let Ok(name) = get_window_name(conn, *window) {
@@ -152,6 +169,8 @@ pub fn foreground() -> Foreground {
                 .flatten()
         }) {
             Some(v) if !v.is_empty() && v[0] != 0 => v[0],
+            // No X11 window active: a Wayland surface has the keyboard, possibly our layer-shell overlay
+            _ if crate::modules::layer_shell::has_focus() => return Foreground::OwnWindow,
             _ => return Foreground::Other,
         };
 
@@ -260,6 +279,24 @@ pub fn focus_diablo() -> bool {
 }
 
 pub fn initialize_foreground_monitoring<F: Fn() + Send + 'static>(callback: F) {
+    let callback = std::sync::Arc::new(Mutex::new(callback));
+    let layer_shell = crate::modules::layer_shell::is_active();
+    if layer_shell {
+        let on_focus = callback.clone();
+        crate::modules::layer_shell::on_focus_change(Box::new(move || {
+            if let Ok(callback) = on_focus.lock() {
+                callback();
+            }
+        }));
+    }
+    let callback = move || {
+        if layer_shell {
+            std::thread::sleep(crate::modules::layer_shell::FOCUS_SETTLE);
+        }
+        if let Ok(callback) = callback.lock() {
+            callback();
+        }
+    };
     std::thread::spawn(move || {
         let (conn, screen_num) = match x11rb::connect(None) {
             Ok(c) => c,
