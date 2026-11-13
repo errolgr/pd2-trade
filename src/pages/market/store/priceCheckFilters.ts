@@ -16,7 +16,14 @@ import { PSEUDO_KEY_PREFIX } from '@/pages/price-check/lib/utils';
 import { findBaseOption, findTypeOption } from '@/pages/market/lib/catalog';
 import { typeGroupForMembers } from '@/pages/market/lib/type-groups';
 import { defaultFilters, mergeFilters } from '@/pages/market/lib/defaults';
-import { DAMAGE_KEY, MAX_DAMAGE_NAMES, MIN_DAMAGE_NAMES } from '@/pages/market/lib/stats';
+import {
+  DAMAGE_KEY,
+  MAX_DAMAGE_NAMES,
+  MIN_DAMAGE_NAMES,
+  isDamageRangeKey,
+  withLowDamageRange,
+} from '@/pages/market/lib/stats';
+import { PSEUDO_LOW_ENDS } from '@/pages/market/lib/pseudo';
 import type { MarketFilters, MarketListingStatus, Rarity, StatFilter } from '@/pages/market/lib/types';
 
 export interface PriceCheckSearch {
@@ -115,6 +122,16 @@ function statRows(match: ElemMatch, gaps: Set<MarketFilterGap>): Omit<StatFilter
   // (`item_maxdamage_percent` is Enhanced Maximum Damage alone), All Resistances `all_resist` and All Attributes
   // `all_attributes` (one line on the listing, not four)
   const names = typeof match.name === 'string' ? [match.name] : match.name.$in;
+
+  // An elemental "Adds X-Y" line: the min's bounds pin slot 0, the max's are the row's (as `damageRow`), also when
+  // only the min is bounded
+  const pairKey = `${names.join('|')}[1]`;
+  if (isDamageRangeKey(pairKey)) {
+    const low = readRange(match['values.0']);
+    const key = withLowDamageRange(pairKey, low);
+    if (key === null) gaps.add('slot-value');
+    return [{ kind: 'mod', key: key ?? pairKey, ...readRange(match['values.1']), enabled: true }];
+  }
 
   const values = Array.from({ length: QUERY_SLOTS }, (_, i) => match[`values.${i}`]);
   const bounded = values.flatMap((v, i) => (Object.keys(readRange(v)).length > 0 ? [i] : []));
@@ -262,16 +279,24 @@ export function priceCheckMarketSearch(search: PriceCheckSearch): MarketQueryFil
   // Runewords keep their base's quality on PD2; the service selects them by Runeword (`item.is_runeword`), and
   // would leave them out of a Normal/Superior search
   if (search.item.isRuneword) filters.rarity = ['Runeword'];
-  // Pseudo rows (`pseudo:<id>` keys) aren't in the PD2 query: added from the selection
+  // Pseudo rows (`pseudo:<id>` keys) aren't in the PD2 query: added from the selection. A pair total (Total
+  // Elemental Damage) bounds both ends like a damage row: min / max the low end, pinned in the key, maxMin / maxMax
+  // the high end, the row's bounds
+  const bound = (v?: string) => (v?.trim() ? Number(v) : undefined);
   for (const key of search.selected) {
     if (!key.startsWith(PSEUDO_KEY_PREFIX)) continue;
-    const { min, max } = search.filters[key] ?? {};
+    const id = key.slice(PSEUDO_KEY_PREFIX.length);
+    const input = search.filters[key] ?? {};
+    const pair = id in PSEUDO_LOW_ENDS;
+    const pinned = pair ? withLowDamageRange(id, { min: bound(input.min), max: bound(input.max) }) : id;
+    if (pinned === null) gaps.push('slot-value');
+    const [min, max] = pair ? [bound(input.maxMin), bound(input.maxMax)] : [bound(input.min), bound(input.max)];
     filters.stats!.push({
       id: crypto.randomUUID(),
       kind: 'pseudo',
-      key: key.slice(PSEUDO_KEY_PREFIX.length),
-      ...(min?.trim() ? { min: Number(min) } : {}),
-      ...(max?.trim() ? { max: Number(max) } : {}),
+      key: pinned ?? id,
+      ...(min !== undefined && { min }),
+      ...(max !== undefined && { max }),
       enabled: true,
     });
   }

@@ -72,7 +72,9 @@ export function PseudoChip({
             className="gap-2">
             <Sigma className={cn('size-3.5', o.id === active ? 'text-info' : 'text-muted-foreground')} />
             <span className="flex-1">{o.name}</span>
-            <span className="tabular-nums text-muted-foreground">{o.value}</span>
+            <span className="tabular-nums text-muted-foreground">
+              {o.maxValue !== undefined ? `${o.value}-${o.maxValue}` : o.value}
+            </span>
             <Check className={cn('size-3.5 text-info', o.id !== active && 'invisible')} />
           </DropdownMenuItem>
         ))}

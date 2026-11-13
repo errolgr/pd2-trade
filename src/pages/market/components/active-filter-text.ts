@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { currentLocale, useTranslation } from '@/i18n';
 import { CLASSES, basesForType, findTypeOption } from '../lib/catalog';
+import { isDamageRangeKey, lowDamageRange } from '../lib/stats';
 import type { ActiveFilterSpec, RangeField, TriField } from '../lib/active-filters';
 import type { OnlineFilter, Tri } from '../lib/types';
 import type { FilterHighlight } from './controls';
@@ -136,10 +137,17 @@ export function useActiveFilterText(): (spec: ActiveFilterSpec) => string {
           return `${t(spec.field === 'site' ? 'filters.onlineSite' : 'filters.onlineGame')}: ${online(spec.value)}`;
         case 'stat': {
           const { row } = spec;
-          const name =
-            row.min === undefined && row.max === undefined
-              ? filterName(row)
-              : rangeText(filterName(row), row.min, row.max);
+          const low = row.kind !== 'corruption' && isDamageRangeKey(row.key) ? lowDamageRange(row.key) : {};
+          const bounded = (r: { min?: number; max?: number }) => r.min !== undefined || r.max !== undefined;
+          let name: string;
+          if (bounded(low)) {
+            // "Adds Fire Damage: Min dmg 4–10, Max dmg ≥ 15", the price check's damage pair ends
+            const ends = [rangeText(t('priceCheck:statRow.minDamage'), low.min, low.max)];
+            if (bounded(row)) ends.push(rangeText(t('priceCheck:statRow.maxDamage'), row.min, row.max));
+            name = `${filterName(row)}: ${ends.join(', ')}`;
+          } else {
+            name = bounded(row) ? rangeText(filterName(row), row.min, row.max) : filterName(row);
+          }
           return row.not ? t('filters.applied.not', { name }) : name;
         }
       }

@@ -18,6 +18,7 @@ import { useSearchDefaults } from './hooks/useSearchDefaults';
 import { defaultFilters, upgradeFilters } from './lib/defaults';
 import { listingUrl } from './lib/listing';
 import { scoreListings } from './lib/search';
+import { pseudoIdOf } from './lib/stats';
 import { useTranslation } from '@/i18n';
 
 /**
@@ -52,7 +53,7 @@ export const ListingDrawerPage: React.FC = () => {
     [watch?.filters, mode, searchDefaults],
   );
   const pseudoKeys = useMemo(
-    () => filters.stats.filter((s) => s.enabled && !s.not && s.kind === 'pseudo').map((s) => s.key),
+    () => filters.stats.filter((s) => s.enabled && !s.not && s.kind === 'pseudo').map((s) => pseudoIdOf(s.key)),
     [filters.stats],
   );
   const row = useMemo(() => (listing ? scoreListings([listing], filters)[0] : null), [listing, filters]);

@@ -105,6 +105,8 @@ describe('marketQueryToFilters', () => {
               },
             },
             { $elemMatch: { name: { $in: ['colddam', 'coldmindam'] }, 'values.1': { $gte: 10 } } },
+            // Only the low end bounded: still a pin, the row unbounded
+            { $elemMatch: { name: { $in: ['lightdam', 'lightmindam'] }, 'values.0': { $gte: 2, $lte: 6 } } },
           ],
         },
       },
@@ -118,6 +120,7 @@ describe('marketQueryToFilters', () => {
       { kind: 'mod', key: 'item_splashonhit[2]', min: 50, enabled: true },
       { kind: 'mod', key: 'firedam|firemindam{4..}', min: 14, max: 20, enabled: true },
       { kind: 'mod', key: 'colddam|coldmindam[1]', min: 10, enabled: true },
+      { kind: 'mod', key: 'lightdam|lightmindam{2..6}', enabled: true },
     ]);
   });
 

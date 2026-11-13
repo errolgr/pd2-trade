@@ -124,6 +124,11 @@ export interface PseudoDef {
   group: string;
   /** Sum/derive from the listing's item modifiers. Return 0 when absent. */
   compute: (mods: Modifier[]) => number;
+  /**
+   * The pair pseudo whose low end this is (`pseudo_elemental_min_damage`): filtered through that row's pinned key
+   * (`pseudo_elemental_max_damage{4..10}`), never picked or offered on its own.
+   */
+  lowEndOf?: string;
 }
 
 export interface StatPreset {

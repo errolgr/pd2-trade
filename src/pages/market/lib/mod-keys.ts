@@ -49,9 +49,9 @@ export function modStatValue(mod: Pick<Modifier, 'values'>, key: string): number
   return typeof value === 'number' ? value : null;
 }
 
-/** Pseudo stats this mod line feeds (fire resist → Total Resistances, Total Fire Resistance…). */
+/** Pseudo stats this mod line feeds (fire resist → Total Resistances, Total Fire Resistance…); not a pair's low end. */
 export function coveringPseudos(mod: Modifier): PseudoDef[] {
-  return PSEUDO_STATS.filter((p) => p.compute([mod]) !== 0);
+  return PSEUDO_STATS.filter((p) => !p.lowEndOf && p.compute([mod]) !== 0);
 }
 
 /**

@@ -51,3 +51,26 @@ describe('foldRows', () => {
     expect(foldRows(rows, options, [])).toEqual(rows);
   });
 });
+
+describe('elemental damage Σ', () => {
+  const fireDmg: Stat = { stat_id: StatId.FireDamage, name: 'Fire Damage', value: 4, maxValue: 20 };
+  const ltngDmg: Stat = { stat_id: StatId.LightningDamage, name: 'Lightning Damage', value: 1, maxValue: 114 };
+  const poisonDmg: Stat = { stat_id: StatId.PoisonDamage, name: 'Poison Damage', value: 11, maxValue: 11 };
+
+  it('sums fire, cold and lightning Adds X-Y rows per end and folds them into a two-range Σ row', () => {
+    const rows = [fireDmg, life, ltngDmg, poisonDmg];
+    const options = pseudoOptions(rows);
+    expect(options).toEqual([
+      {
+        id: 'pseudo_elemental_max_damage',
+        name: 'Total Elemental Damage',
+        value: 5,
+        maxValue: 134,
+        covers: ['id:1003', 'id:1004'],
+      },
+    ]);
+    const folded = foldRows(rows, options, ['pseudo_elemental_max_damage']);
+    expect(folded.map((s) => s.pseudo ?? s.name)).toEqual(['pseudo_elemental_max_damage', 'Life', 'Poison Damage']);
+    expect(folded[0]).toMatchObject({ value: 5, maxValue: 134, folded: [fireDmg, ltngDmg] });
+  });
+});

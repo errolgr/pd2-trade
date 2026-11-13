@@ -1,5 +1,5 @@
 import type { Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { PSEUDO_STATS } from './pseudo';
+import { PSEUDO_LOW_ENDS, PSEUDO_STATS } from './pseudo';
 import { SITE_STAT_OPTIONS } from './stat-options.data';
 import type { CorruptionOption, PseudoDef, StatOption } from './types';
 
@@ -164,8 +164,8 @@ const DAMAGE_OPTION: StatOption = { key: DAMAGE_KEY, label: 'Adds {X}-{Y} Damage
  * The site's elemental Minimum / Maximum Damage entries (`firemindam`, `firemaxdam`) as one entry per element, the
  * line PD2 sends: "Adds X-Y" `firedam [min, max]` (cold: `[min, max, chill frames]`), or the same pair named
  * `firemindam`. Lone min / max lines don't occur on listings, so the site's keys match nothing. Like `damage`, the
- * entry rolls the max (`values.1`); the price check's `firedam|firemindam{4..}` pins the min on top. Poison reads
- * "+X Poison Damage over N Seconds" (`[min, max, seconds]`, min = max).
+ * entry rolls the max (`values.1`) and its low end is a slot-0 pin (`firedam|firemindam{4..10}`, see
+ * `withLowDamageRange`). Poison reads "+X Poison Damage over N Seconds" (`[min, max, seconds]`, min = max).
  */
 const ELEMENTAL_DAMAGE: ReadonlyMap<string, StatOption | null> = new Map(
   (
@@ -181,6 +181,49 @@ const ELEMENTAL_DAMAGE: ReadonlyMap<string, StatOption | null> = new Map(
     [`${e}maxdam`, null],
   ]),
 );
+
+/** Elemental "Adds X-Y" pair lines with a low end of their own (not poison: min = max). */
+const ELEMENTAL_PAIRS = new Set(['fire', 'light', 'magic', 'cold'].map((e) => `${e}dam|${e}mindam`));
+
+/**
+ * An "Adds X-Y" key with two ends to bound: physical `damage{…}`, an elemental pair line rolling its max, or a pair
+ * pseudo stat (`pseudo_elemental_max_damage{…}`, its low end a pseudo of its own).
+ */
+export function isDamageRangeKey(key: string): boolean {
+  const { names, valueIndex } = parseStatKey(key);
+  if (names.length === 1 && names[0] in PSEUDO_LOW_ENDS) return true;
+  return valueIndex === 1 && (isDamagePair(names) || ELEMENTAL_PAIRS.has(names.join('|')));
+}
+
+/** The pseudo id a pseudo row key reads (`pseudo_elemental_max_damage{4..}` → `pseudo_elemental_max_damage`). */
+export const pseudoIdOf = (key: string): string => parseStatKey(key).names[0];
+
+/** The low end a damage pair key pins (slot 0): `firedam|firemindam{4..10}` → `{ min: 4, max: 10 }`. */
+export function lowDamageRange(key: string): { min?: number; max?: number } {
+  const pin = parseStatKey(key).pins.find((p) => p.index === 0);
+  if (!pin) return {};
+  if (pin.values) return { min: pin.values[0], max: pin.values[0] };
+  return { ...(pin.min !== undefined && { min: pin.min }), ...(pin.max !== undefined && { max: pin.max }) };
+}
+
+/** A value the key grammar can pin: a non-negative integer of at most 6 digits. */
+const isSlotNumber = (v: number) => Number.isInteger(v) && v >= 0 && v < 1e6;
+
+/**
+ * The damage pair key with its low end pinned to `range` (`damage{4..}`, `firedam|firemindam{4..10}`,
+ * `pseudo_elemental_max_damage{4..}`; unpinned when empty: `damage`, `firedam|firemindam[1]`,
+ * `pseudo_elemental_max_damage`); null when the grammar can't hold it (not a non-negative integer, or min above
+ * max: the service rejects such keys).
+ */
+export function withLowDamageRange(key: string, { min, max }: { min?: number; max?: number }): string | null {
+  const { names } = parseStatKey(key);
+  const base = names.join('|');
+  if (min === undefined && max === undefined)
+    return isDamagePair(names) || base in PSEUDO_LOW_ENDS ? base : `${base}[1]`;
+  const ends = [min, max].filter((v) => v !== undefined);
+  if (!ends.every(isSlotNumber) || (min !== undefined && max !== undefined && min > max)) return null;
+  return `${base}{${min === max ? min : `${min ?? ''}..${max ?? ''}`}}`;
+}
 
 /**
  * The site's Properties list (labels are `{X}` templates), in site order, with display groups; the physical
@@ -209,7 +252,7 @@ const OPTION_BY_NAMES = new Map(
  * (`a|b` alternatives, extended slots); the key itself when unknown.
  */
 export function statLabel(key: string): string {
-  const known = OPTION_BY_KEY.get(key) ?? PSEUDO_BY_ID.get(key);
+  const known = OPTION_BY_KEY.get(key) ?? PSEUDO_BY_ID.get(key) ?? PSEUDO_BY_ID.get(pseudoIdOf(key));
   if (known) return known.label;
   const { names } = parseStatKey(key);
   const sameNames = OPTION_BY_NAMES.get(names.join('|'));
@@ -310,10 +353,12 @@ const CORRUPT_WORD = /^corrupt/;
  */
 export function searchStats(query: string, limit = 50, corruptions: readonly CorruptionOption[] = []): StatChoice[] {
   const words = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return [...PSEUDO_STATS, ...STAT_OPTIONS].slice(0, limit);
+  // A pair's low-end pseudo is filtered through the pair's row, never picked alone
+  const pseudos = PSEUDO_STATS.filter((p) => !p.lowEndOf);
+  if (words.length === 0) return [...pseudos, ...STAT_OPTIONS].slice(0, limit);
   const tokens = words.flatMap((w) => normalize(ALIASES[w] ?? w).split(' '));
   const hits: { option: StatChoice; score: number }[] = [];
-  for (const pseudo of PSEUDO_STATS) {
+  for (const pseudo of pseudos) {
     // "Total …" frames the pseudo, so rank on the rest; still match when the user typed "total"
     const label = normalize(pseudo.label);
     const score = scoreMatch(label.replace(/^total /, ''), tokens) ?? scoreMatch(label, tokens);
