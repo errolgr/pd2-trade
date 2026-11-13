@@ -97,3 +97,26 @@ describe('getStatKey', () => {
     }
   });
 });
+
+describe('buildStatRows: magic damage', () => {
+  // BH sends both "+%d magic damage" lines with the max (Lightsabre: Adds 60-120 magic damage)
+  const lightsabre = (quality: string): Item =>
+    ({
+      name: 'Lightsabre',
+      quality,
+      type: 'Phase Blade',
+      stats: [
+        { name: '+%d magic damage', stat_id: 52, value: 120, range: { min: 60, max: 120 } },
+        { name: '+%d magic damage', stat_id: 53, value: 120, range: { min: 60, max: 120 } },
+      ],
+    }) as unknown as Item;
+  const magic = (item: Item) => buildStatRows(item).find((s) => s.name === 'Magic Damage');
+
+  it("is one Adds X-Y row with the unique's min, not +120", () => {
+    expect(magic(lightsabre('Unique'))).toMatchObject({ value: 60, maxValue: 120 });
+  });
+
+  it('stays as sent without a fixed item to read the min from', () => {
+    expect(magic(lightsabre('Rare'))).toMatchObject({ value: 120, maxValue: 120 });
+  });
+});

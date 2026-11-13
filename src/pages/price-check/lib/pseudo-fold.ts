@@ -31,14 +31,20 @@ const ALL_RES_KEY = `id:${StatId.AllResistances}`;
 
 /** The "Adds X-Y" rows the market's elemental damage total adds up (not poison or magic, as the service). */
 const ELEMENTAL_DAMAGE_IDS: readonly number[] = [StatId.FireDamage, StatId.ColdDamage, StatId.LightningDamage];
+/** The flat damage total's rows: physical and every element but poison (damage over time). */
+const FLAT_DAMAGE_IDS: readonly number[] = [...ELEMENTAL_DAMAGE_IDS, StatId.MagicDamage, StatId.Damage];
 
 /**
  * The Σ totals for an item's rows (buildStatRows output): resist totals, all-resist line counted into every
  * element, as the market service computes them (element totals cover only their own line: All Resistances also
- * feeds the other elements), and the elemental damage total of its fire / cold / lightning damage rows.
+ * feeds the other elements), and the elemental and flat damage totals of its "Adds X-Y" rows.
  */
 export function pseudoOptions(rows: Stat[]): PseudoOption[] {
-  return [...resistOptions(rows), ...elementalDamageOptions(rows)];
+  return [
+    ...resistOptions(rows),
+    ...damageTotal(rows, ELEMENTAL_DAMAGE_IDS, 'pseudo_elemental_max_damage', 'Total Elemental Damage'),
+    ...damageTotal(rows, FLAT_DAMAGE_IDS, 'pseudo_flat_max_damage', 'Total Flat Damage'),
+  ];
 }
 
 function resistOptions(rows: Stat[]): PseudoOption[] {
@@ -70,14 +76,14 @@ function resistOptions(rows: Stat[]): PseudoOption[] {
   ];
 }
 
-/** "Adds X-Y" fire, cold and lightning rows summed per end: Adds 4-20 fire + 1-114 lightning = 5-134. */
-function elementalDamageOptions(rows: Stat[]): PseudoOption[] {
-  const damage = rows.filter((s) => ELEMENTAL_DAMAGE_IDS.includes(s.stat_id) && s.maxValue !== undefined);
+/** The "Adds X-Y" rows of `ids` summed per end (Adds 4-20 fire + 1-114 lightning = 5-134); none without such rows. */
+function damageTotal(rows: Stat[], ids: readonly number[], id: string, name: string): PseudoOption[] {
+  const damage = rows.filter((s) => ids.includes(s.stat_id) && s.maxValue !== undefined);
   if (damage.length === 0) return [];
   return [
     {
-      id: 'pseudo_elemental_max_damage',
-      name: 'Total Elemental Damage',
+      id,
+      name,
       value: damage.reduce((n, s) => n + (s.value ?? 0), 0),
       maxValue: damage.reduce((n, s) => n + (s.maxValue ?? 0), 0),
       covers: [...new Set(damage.map(getStatKey))],

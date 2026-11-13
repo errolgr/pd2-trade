@@ -320,6 +320,23 @@ export function fixedMods(item: Item): TxtSlots | null {
   return null;
 }
 
+/** Min / max magic damage (ItemStatCost `magicmindam`, `magicmaxdam`). */
+const MAGIC_DAMAGE = [52, 53] as const;
+
+/**
+ * The stats with min magic damage restored: BH merges Ctrl+C stats that share a name, keeping the larger value, and
+ * min and max magic damage are both "+%d magic damage", so the min arrives as the max ("+120 magic damage" instead
+ * of "Adds 60-120"). A unique / set / runeword's fixed magic damage gives the min back; other items stay as sent.
+ */
+export function withMagicDamageMin<T extends Stat>(item: Item, stats: T[]): T[] {
+  const minMagic = stats.find((s) => s.stat_id === MAGIC_DAMAGE[0]);
+  const maxMagic = stats.find((s) => s.stat_id === MAGIC_DAMAGE[1]);
+  if (!minMagic || !maxMagic || minMagic.value !== maxMagic.value) return stats;
+  const magicMod = fixedMods(item)?.find((m) => m && STAT_RANGE_DATA.props[m[0]]?.[0][0] === MAGIC_DAMAGE[0]);
+  if (!magicMod) return stats;
+  return stats.map((s) => (s === minMagic ? { ...s, value: magicMod[2] } : s));
+}
+
 /**
  * The range PD2 draws on the tooltip line of `nStat` (ItemStatCost id; `param` = the stat layer, e.g. the
  * skill id of a +skill), or null when it draws none.

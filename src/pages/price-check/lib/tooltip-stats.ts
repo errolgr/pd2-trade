@@ -9,7 +9,7 @@ import { TOOLTIP_DATA } from '@/assets/tooltip.data';
 import { itemTypes } from '@/common/item-types';
 import type { Item, Socketed, Stat } from './interfaces';
 import { StatId, statRemapByName } from './stat-mappings';
-import { fixedMods, typeChain, type TxtMod } from './stat-ranges';
+import { fixedMods, typeChain, withMagicDamageMin, type TxtMod } from './stat-ranges';
 import { cleanItemType } from './utils';
 
 /** Base damage [min, max], 0 when the base has none of that kind. */
@@ -82,7 +82,6 @@ const CHANCE_TO_CAST: Record<number, string> = {
   201: 'when struck',
 };
 const SKILL_STATS = new Set<number>([S.nonClassSkill, S.singleSkill, 83, S.skillTab]);
-const MAGIC_DAMAGE = [52, 53] as const;
 const AURA_RE = /^Level \d+ .+ Aura When Equipped$/;
 
 const labels = new Map<number, string>();
@@ -230,15 +229,7 @@ function socketStats(item: Item): TooltipStat[] {
  * line keeps the item's range source), otherwise it is a line of its own.
  */
 export function tooltipStats(item: Item): TooltipStat[] {
-  const own = normalize(item.stats ?? [], 'item');
-  // BH merges Ctrl+C stats that share a name, keeping the larger value: min and max magic damage are both
-  // "+%d magic damage", so the min arrives as the max. A unique/set/runeword row fixes both.
-  const minMagic = own.find((s) => s.stat_id === MAGIC_DAMAGE[0]);
-  const maxMagic = own.find((s) => s.stat_id === MAGIC_DAMAGE[1]);
-  const magicMod = fixedMods(item)?.find((m) => m && STAT_RANGE_DATA.props[m[0]]?.[0][0] === MAGIC_DAMAGE[0]);
-  if (minMagic && maxMagic && minMagic.value === maxMagic.value && magicMod) {
-    own[own.indexOf(minMagic)] = { ...minMagic, value: magicMod[2] };
-  }
+  const own = withMagicDamageMin(item, normalize(item.stats ?? [], 'item'));
   const stats = [...own, ...runewordStats(item, own)];
   for (const extra of socketStats(item)) {
     const sums =

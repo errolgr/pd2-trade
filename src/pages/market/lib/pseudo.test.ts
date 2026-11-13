@@ -94,4 +94,16 @@ describe('computePseudo', () => {
       pseudo_elemental_max_damage: 37,
     });
   });
+
+  it('Adds X-Y Total Flat Damage adds physical and magic to the elemental lines, per end; poison stays out', () => {
+    const p = pseudo(
+      mod('min_damage', 10),
+      mod('max_damage', 30),
+      mod('magicdam', 60, 120),
+      mod('lightdam', 1, 700),
+      mod('poisondam', 100, 100, 6),
+    );
+    expect(p).toMatchObject({ pseudo_flat_min_damage: 71, pseudo_flat_max_damage: 850 });
+    expect(p).toMatchObject({ pseudo_elemental_min_damage: 1, pseudo_elemental_max_damage: 700 });
+  });
 });
