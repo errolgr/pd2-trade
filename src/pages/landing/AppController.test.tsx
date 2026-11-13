@@ -222,16 +222,12 @@ describe('AppController price check hotkey', () => {
 });
 
 describe('AppController list and delist hotkeys', () => {
-  it('opens Quick List at the cursor with a stash item', async () => {
+  it('opens Quick List with a stash item', async () => {
     itemUnderCursor = 'ITEM stash ring';
     await mount();
     await press(1);
     await advance(300);
-    expect(h.overlay.openPanel).toHaveBeenCalledWith(
-      'quickList',
-      { item: encodeItemForQuickList('ITEM stash ring') },
-      { placement: 'cursor' },
-    );
+    expect(h.overlay.openPanel).toHaveBeenCalledWith('quickList', { item: encodeItemForQuickList('ITEM stash ring') });
     expect(toasts()).toEqual([]);
   });
 
@@ -240,7 +236,7 @@ describe('AppController list and delist hotkeys', () => {
     await mount();
     await press(1);
     await advance(300);
-    expect(h.overlay.openPanel).toHaveBeenCalledWith('quickList', { error: 'not_in_stash' }, { placement: 'cursor' });
+    expect(h.overlay.openPanel).toHaveBeenCalledWith('quickList', { error: 'not_in_stash' });
     expect(toasts()).toContainEqual(
       expect.objectContaining({
         title: 'Cannot List Item',
@@ -254,7 +250,7 @@ describe('AppController list and delist hotkeys', () => {
     await mount();
     await press(1);
     await advance(300);
-    expect(h.overlay.openPanel).toHaveBeenCalledWith('quickList', { error: 'not_in_stash' }, { placement: 'cursor' });
+    expect(h.overlay.openPanel).toHaveBeenCalledWith('quickList', { error: 'not_in_stash' });
     expect(toasts()).toContainEqual(expect.objectContaining({ description: 'Item is not supported or invalid.' }));
   });
 

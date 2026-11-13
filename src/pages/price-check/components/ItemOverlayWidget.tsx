@@ -770,7 +770,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
   const openListWindow = useCallback(() => {
     trackEvent('item_overlay_list_opened');
-    openPanel('quickList', { item: encodeItemForQuickList(JSON.stringify(item)) }, { placement: 'cursor' });
+    openPanel('quickList', { item: encodeItemForQuickList(JSON.stringify(item)) });
   }, [item, openPanel]);
 
   /**

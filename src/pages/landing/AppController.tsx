@@ -130,7 +130,7 @@ const AppController: React.FC = () => {
 
     let payload: PanelPayloads['quickList'] = { error: 'not_in_stash' };
     if (raw && isStashItem(raw)) payload = { item: encodeItemForQuickList(raw) };
-    openPanel('quickList', payload, { placement: 'cursor' });
+    openPanel('quickList', payload);
 
     // After opening so the toast shows above the panel
     if (!raw) {

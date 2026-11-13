@@ -115,7 +115,7 @@ export const useActionsSource: PaletteSource = ({ query, scope, limit, refs }) =
         icon: <ListChecks className={ICON} />,
         keywords: ['quick list', 'listings', 'sell', 'manage'],
         when: (signedIn) => signedIn,
-        run: (ctx) => ctx.openPanel('quickList', undefined, { placement: 'gameCenter' }),
+        run: (ctx) => ctx.openPanel('quickList'),
       },
       {
         key: 'settings',
