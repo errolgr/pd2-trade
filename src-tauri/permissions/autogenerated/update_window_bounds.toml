@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-update-window-bounds"
+description = "Enables the update_window_bounds command without any pre-configured scope."
+commands.allow = ["update_window_bounds"]
+
+[[permission]]
+identifier = "deny-update-window-bounds"
+description = "Denies the update_window_bounds command without any pre-configured scope."
+commands.deny = ["update_window_bounds"]

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-auto-detect-diablo2-directory"
+description = "Enables the auto_detect_diablo2_directory command without any pre-configured scope."
+commands.allow = ["auto_detect_diablo2_directory"]
+
+[[permission]]
+identifier = "deny-auto-detect-diablo2-directory"
+description = "Denies the auto_detect_diablo2_directory command without any pre-configured scope."
+commands.deny = ["auto_detect_diablo2_directory"]

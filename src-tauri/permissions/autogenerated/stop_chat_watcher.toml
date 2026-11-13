@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-stop-chat-watcher"
+description = "Enables the stop_chat_watcher command without any pre-configured scope."
+commands.allow = ["stop_chat_watcher"]
+
+[[permission]]
+identifier = "deny-stop-chat-watcher"
+description = "Denies the stop_chat_watcher command without any pre-configured scope."
+commands.deny = ["stop_chat_watcher"]

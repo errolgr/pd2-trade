@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-open-sign-in-window"
+description = "Enables the open_sign_in_window command without any pre-configured scope."
+commands.allow = ["open_sign_in_window"]
+
+[[permission]]
+identifier = "deny-open-sign-in-window"
+description = "Denies the open_sign_in_window command without any pre-configured scope."
+commands.deny = ["open_sign_in_window"]

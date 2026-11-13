@@ -15,20 +15,20 @@ name = "dmg_meter_widget_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2.5", features = [] }
+tauri-build = { version = "2.7.4", features = [] }
 
 [dependencies]
 # image-png: decode PNG bytes for the clipboard image (price check "Copy image").
-tauri = { version = "2.9.1", features = ["tray-icon", "image-png"] }
-tauri-plugin-opener = "2.5.2"
-tauri-plugin-process = "2.2"
-tauri-plugin-clipboard-manager = "2.3.2"
+tauri = { version = "2.12.5", features = ["tray-icon", "image-png"] }
+tauri-plugin-opener = "2.7.2"
+tauri-plugin-process = "2.4.0"
+tauri-plugin-clipboard-manager = "2.5.0"
 tauri-plugin-app-exit = "0.1"
-tauri-plugin-fs = "2.3"
+tauri-plugin-fs = "2.7.1"
 # rustls-tls-native-roots: also trust the OS certificate store (on top of the bundled Mozilla roots), so HTTPS works
-# behind antivirus web shields and corporate proxies that re-sign TLS with a locally installed root. Feature
-# unification applies it to every reqwest 0.12 user (tauri-plugin-updater too).
-tauri-plugin-http = { version = "2.5.0", features = ["rustls-tls-native-roots"] }
+# behind antivirus web shields and corporate proxies that re-sign TLS with a locally installed root.
+# tauri-plugin-updater is on reqwest 0.13, whose rustls backend verifies against the OS store (rustls-platform-verifier).
+tauri-plugin-http = { version = "2.8.3", features = ["rustls-tls-native-roots"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 rdev = "0.5.1"
@@ -53,9 +53,9 @@ windows-sys = { version = "0.48.0", features = [
 runas = "0.2"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-tauri-plugin-global-shortcut = "2.2"
-tauri-plugin-single-instance = "2"
-tauri-plugin-updater = "2.9"
+tauri-plugin-global-shortcut = "2.4.1"
+tauri-plugin-single-instance = "2.5.5"
+tauri-plugin-updater = "2.14.1"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 x11rb = "0.13"

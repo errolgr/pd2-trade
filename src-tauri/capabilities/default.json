@@ -3,7 +3,9 @@
   "identifier": "default",
   "description": "Capability for the main window",
   "windows": ["Main"],
+  "local": true,
   "permissions": [
+    "main-window",
     "core:default",
     "opener:default",
     "core:window:allow-set-focus",

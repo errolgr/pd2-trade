@@ -141,6 +141,11 @@ sequenceDiagram
     Server->>App: Protected Data
 ```
 
+### Webview lockdown (ACL + CSP)
+
+- **App commands are ACL-checked.** `src-tauri/build.rs` declares every `generate_handler!` command in an app manifest, so Tauri only runs a command for a window whose capability grants its `allow-<command>` permission. `src-tauri/permissions/main-window.toml` grants them all to `Main` (`capabilities/default.json`, local origin only); `SignIn` gets none. A new command must be added to the handler, `APP_COMMANDS` in `build.rs` and the `main-window` set; `scripts/tauri-acl.test.mjs` fails `npm test` when they disagree.
+- **CSP.** `app.security.csp` in `tauri.conf.json` applies to the bundled app (not to `npm run tauri dev`, which loads the Vite server directly). A new remote host for `img`/native `fetch`/WebSocket needs a source there. Requests through `@tauri-apps/plugin-http` (`src/lib/browser-http.ts`) go over IPC and are scoped by the `http:default` capability instead. `style-src` keeps `'unsafe-inline'` (libraries inject `<style>` at runtime), so `dangerousDisableAssetCspModification: ["style-src"]` stops Tauri adding a nonce that would void it. `script-src` allows the plugin runtime's sandboxes (PR #254, `src/plugins/host/sandbox.ts`): `blob:` for plugin worker and panel scripts, and the sha256 of the worker and panel bootstrap scripts, which the sandboxed `srcdoc` frames inherit from this policy (`worker-src` already has `blob:`). `src/plugins/host/sandbox.test.ts` pins both hashes and fails when a bootstrap changes without this list.
+
 ### 👶 "Explain it like I'm 5"
 
 The app needs a special ticket (Token) to talk to the project servers. It doesn't know your username or password. Instead, it sends you to the official website to sign in. The website gives the app a ticket that says "This user is okay." The app uses this ticket for all requests until it expires, then it asks you to get a new one.
