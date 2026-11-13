@@ -121,6 +121,39 @@ describe('marketQueryToFilters', () => {
     ]);
   });
 
+  it('reads the physical min + max damage pair as one damage row, like an elemental pair', () => {
+    const min = ['min_damage', 'mindamage', 'secondary_mindamage'];
+    const max = ['max_damage', 'maxdamage', 'secondary_maxdamage'];
+    const rows = (...matches: Record<string, unknown>[]) =>
+      stripIds(read({ 'item.modifiers': { $all: matches.map(($elemMatch) => ({ $elemMatch })) } }));
+    expect(
+      rows(
+        { name: 'item_fastercastrate', 'values.0': { $gte: 20 } },
+        { name: { $in: min }, 'values.0': { $gte: 4 } },
+        { name: { $in: max }, 'values.0': { $gte: 14, $lte: 20 } },
+      ),
+    ).toEqual([
+      { kind: 'mod', key: 'item_fastercastrate', min: 20, enabled: true },
+      { kind: 'mod', key: 'damage{4..}', min: 14, max: 20, enabled: true },
+    ]);
+    expect(rows({ name: { $in: min }, 'values.0': { $gte: 4, $lte: 9 } }, { name: { $in: max } })).toEqual([
+      { kind: 'mod', key: 'damage{4..9}', enabled: true },
+    ]);
+    expect(rows({ name: { $in: min }, 'values.0': { $gte: 4, $lte: 4 } }, { name: { $in: max } })).toEqual([
+      { kind: 'mod', key: 'damage{4}', enabled: true },
+    ]);
+    expect(rows({ name: { $in: min } }, { name: { $in: max }, 'values.0': { $gte: 10 } })).toEqual([
+      { kind: 'mod', key: 'damage', min: 10, enabled: true },
+    ]);
+    // A lone line keeps its own row
+    expect(rows({ name: { $in: max }, 'values.0': { $gte: 10 } })).toEqual([
+      { kind: 'mod', key: 'max_damage|maxdamage|secondary_maxdamage|item_throw_maxdamage', min: 10, enabled: true },
+    ]);
+    expect(rows({ name: { $in: min }, 'values.0': { $gte: 3 } })).toEqual([
+      { kind: 'mod', key: 'min_damage|mindamage|secondary_mindamage|item_throw_mindamage', min: 3, enabled: true },
+    ]);
+  });
+
   it('reports a skill matched by its label as a gap', () => {
     const { gaps } = marketQueryToFilters(
       {
@@ -265,6 +298,28 @@ describe('priceCheckToMarketFilters', () => {
       { kind: 'pseudo', key: 'pseudo_total_res', min: 80, enabled: true },
       { kind: 'pseudo', key: 'pseudo_fire_res', min: 30, max: 45, enabled: true },
     ]);
+  });
+
+  it("opens a price check's physical damage row as one damage row", () => {
+    const axe: Item = {
+      name: 'Grim Edge',
+      quality: 'Rare',
+      type: 'Axe',
+      iLevel: 80,
+      stats: [
+        { stat_id: 21, name: 'to Minimum Damage', value: 10 },
+        { stat_id: 22, name: 'to Maximum Damage', value: 30 },
+      ],
+    };
+    const filters = priceCheckToMarketFilters(
+      search({
+        item: axe,
+        pd2Item: { name: 'Grim Edge' } as unknown as PD2Item,
+        selected: new Set(['id:1008']),
+        filters: { 'id:1008': { min: '8', max: '', maxMin: '25', maxMax: '' } },
+      }),
+    );
+    expect(stripIds(filters)).toEqual([{ kind: 'mod', key: 'damage{8..}', min: 25, enabled: true }]);
   });
 
   it('searches the type group of a rare in search mode 2', () => {

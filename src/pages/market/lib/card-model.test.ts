@@ -3,7 +3,9 @@ import type { ItemDetail, Modifier } from '@/common/types/pd2-website/GetMarketL
 import {
   amountIndex,
   buildCardModel,
+  displayMods,
   groupSockets,
+  mergeDamageLines,
   modMatchesStatKey,
   multipliedLabel,
   perLevelLabel,
@@ -261,5 +263,59 @@ describe('card-model helpers', () => {
     expect(modMatchesStatKey(mod('item_singleskill', [149, 3], ''), 'item_singleskill{149}')).toBe(true);
     expect(modMatchesStatKey(mod('item_singleskill', [54, 3], ''), 'item_singleskill{149}')).toBe(false);
     expect(modMatchesStatKey(mod('fireresist', [30], ''), 'fireresist|all_resist')).toBe(true);
+  });
+
+  it('mergeDamageLines: a min and a max damage line → one "Adds X-Y Damage" line at the first one', () => {
+    const minLine = mod('min_damage', [9], '+9 to Minimum Damage', { min: 5, max: 10 });
+    const maxLine = mod('maxdamage', [15], '+15 to Maximum Damage', { min: 10, max: 20, corrupted: true });
+    const str = mod('strength', [20], '+20 to Strength');
+    const [merged, rest] = mergeDamageLines([minLine, str, maxLine]);
+    expect(merged).toMatchObject({
+      name: 'damage',
+      values: [9, 15],
+      label: 'Adds 9-15 Damage',
+      priority: minLine.priority,
+      corrupted: true,
+      // The pair's roll range is the max line's
+      min: 10,
+      max: 20,
+      parts: [minLine, maxLine],
+    });
+    expect(rest).toBe(str);
+    expect(mergeDamageLines([maxLine, minLine])[0].label).toBe('Adds 9-15 Damage');
+    expect(mergeDamageLines([mod('min_damage', [7], ''), mod('max_damage', [7], '')])[0].label).toBe('+7 Damage');
+  });
+
+  it('mergeDamageLines leaves a lone line (or a min above the max) as is', () => {
+    const minLine = mod('min_damage', [9], '+9 to Minimum Damage');
+    const str = mod('strength', [20], '+20 to Strength');
+    expect(mergeDamageLines([minLine, str])).toEqual([minLine, str]);
+    const maxLine = mod('max_damage', [15], '+15 to Maximum Damage');
+    expect(mergeDamageLines([maxLine])).toEqual([maxLine]);
+    const high = mod('min_damage', [20], '+20 to Minimum Damage');
+    expect(mergeDamageLines([high, maxLine])).toEqual([high, maxLine]);
+  });
+
+  it('cards and tooltips show the merged pair; a damage filter highlights it', () => {
+    const axe = item({
+      corruptions: ['max_damage'],
+      modifiers: [
+        mod('corrupted', [0, 20], 'Corrupted'),
+        mod('strength', [20], '+20 to Strength'),
+        mod('max_damage', [14], '+14 to Maximum Damage'),
+        mod('min_damage', [4], '+4 to Minimum Damage'),
+      ],
+    });
+    expect(displayMods(axe).map((m) => m.label)).toEqual(['+20 to Strength', 'Adds 4-14 Damage']);
+    const line = buildCardModel(axe).mods[1];
+    expect(line).toMatchObject({ label: 'Adds 4-14 Damage', corrupted: true, own: null, sources: [] });
+    expect(modMatchesStatKey(line.mod, 'damage{4..}')).toBe(true);
+    expect(modMatchesStatKey(line.mod, 'damage{5..}')).toBe(false);
+    expect(modMatchesStatKey(line.mod, 'max_damage|maxdamage')).toBe(true);
+    expect(modMatchesStatKey(line.mod, 'strength')).toBe(false);
+    // A lone line under a damage filter: its half of the pair
+    expect(modMatchesStatKey(mod('min_damage', [4], ''), 'damage{4..}')).toBe(true);
+    expect(modMatchesStatKey(mod('min_damage', [3], ''), 'damage{4..}')).toBe(false);
+    expect(modMatchesStatKey(mod('maxdamage', [9], ''), 'damage')).toBe(true);
   });
 });

@@ -24,6 +24,29 @@ export interface ParsedStatKey {
   valueIndex: number;
 }
 
+/**
+ * Virtual key of physical flat damage ("Adds 4-14 Damage"), shared with the market service: PD2 lists it as a
+ * min-damage line and a max-damage line, resolved as one `[min, max]` pair like `firedam`. `damage{4..}` pins the
+ * min line's value (slot 0); the row's min/max and the roll read the max line.
+ */
+export const DAMAGE_KEY = 'damage';
+/** Modifier names of the physical min / max damage lines (the site's `a|b` alternatives). */
+export const MIN_DAMAGE_NAMES: readonly string[] = [
+  'min_damage',
+  'mindamage',
+  'secondary_mindamage',
+  'item_throw_mindamage',
+];
+export const MAX_DAMAGE_NAMES: readonly string[] = [
+  'max_damage',
+  'maxdamage',
+  'secondary_maxdamage',
+  'item_throw_maxdamage',
+];
+
+/** Whether a parsed key's names are the physical damage pair (`damage`, `damage{4..}`). */
+export const isDamagePair = (names: readonly string[]) => names.length === 1 && names[0] === DAMAGE_KEY;
+
 const INT = '\\d{1,6}';
 /** `*` (any), `N` or `N|M|…` (any of), `N..M` / `N..` / `..M` (range). */
 const SLOT = `\\*|${INT}(?:\\|${INT}){0,7}|(?:${INT})?\\.\\.(?:${INT})?`;
@@ -43,15 +66,17 @@ function slotPin(slot: string, index: number): ParamPin | null {
  * `*` (unconstrained), then optionally `[i]`, the value min/max and scoring read. Without `[i]` the roll follows
  * the slots (`item_singleskill{54}` → `values.1`); without slots `item_elemskill_*` rolls live in `values.1`,
  * everything else in `values.0`. E.g. `item_skillongethit{*,44}[0]`, `item_aura{98|123}`, `item_splashonhit[2]`,
- * `firedam|firemindam{4..}[1]`. A key outside the grammar reads as unpinned `a|b` names.
+ * `firedam|firemindam{4..}[1]`, `damage{4..}` (the physical pair, see `DAMAGE_KEY`). A key outside the grammar
+ * reads as unpinned `a|b` names.
  */
 export function parseStatKey(key: string): ParsedStatKey {
   const match = KEY.exec(key);
   const names = match ? match[1].split('|') : key.split('|');
   const slots = match?.[2]?.split(',') ?? [];
   const pins = slots.flatMap((slot, i) => slotPin(slot, i) ?? []);
-  const valueIndex =
-    match?.[3] !== undefined ? Number(match[3]) : slots.length || (names[0].includes('item_elemskill_') ? 1 : 0);
+  // Pairs read as `[min, max]` roll their max: `item_elemskill_*` (values.1 as on the site) and `damage`
+  const pairRoll = names[0].includes('item_elemskill_') || isDamagePair(names);
+  const valueIndex = match?.[3] !== undefined ? Number(match[3]) : slots.length || (pairRoll ? 1 : 0);
   return { names, pins, valueIndex };
 }
 
@@ -65,10 +90,17 @@ export function pinsMatch(values: readonly unknown[] | undefined, pins: readonly
   });
 }
 
-/** The stat's roll on these modifiers (largest when several lines match), or null when the item lacks it. */
+/**
+ * The stat's roll on these modifiers (largest when several lines match), or null when the item lacks it. The
+ * physical pair (`damage{…}`) needs a min-damage line within the pins and rolls the largest max-damage line.
+ */
 export function readStatValue(mods: Modifier[] | undefined, key: string): number | null {
   if (!mods?.length) return null;
   const { names, pins, valueIndex } = parseStatKey(key);
+  if (isDamagePair(names)) {
+    if (!mods.some((m) => MIN_DAMAGE_NAMES.includes(m.name) && pinsMatch(m.values, pins))) return null;
+    return readStatValue(mods, MAX_DAMAGE_NAMES.join('|'));
+  }
   let best: number | null = null;
   for (const mod of mods) {
     if (!names.includes(mod.name) || !pinsMatch(mod.values, pins)) continue;
@@ -125,12 +157,17 @@ export function statGroup(key: string): string {
   return 'Charm/Misc';
 }
 
-/** The site's Properties list (labels are `{X}` templates), in site order, with display groups. */
-export const STAT_OPTIONS: StatOption[] = SITE_STAT_OPTIONS.map(([key, label]) => ({
-  key,
-  label,
-  group: statGroup(key),
-}));
+/** The physical damage pair's picker entry (not a site property: the market service resolves `DAMAGE_KEY`). */
+const DAMAGE_OPTION: StatOption = { key: DAMAGE_KEY, label: 'Adds {X}-{Y} Damage', group: 'Offense' };
+
+/**
+ * The site's Properties list (labels are `{X}` templates), in site order, with display groups; the physical
+ * damage pair ahead of its max/min lines.
+ */
+export const STAT_OPTIONS: StatOption[] = SITE_STAT_OPTIONS.flatMap(([key, label]) => {
+  const option = { key, label, group: statGroup(key) };
+  return key.startsWith(`${MAX_DAMAGE_NAMES[0]}|`) ? [DAMAGE_OPTION, option] : [option];
+});
 
 const OPTION_BY_KEY = new Map(STAT_OPTIONS.map((o) => [o.key, o]));
 const PSEUDO_BY_ID = new Map(PSEUDO_STATS.map((p) => [p.id, p]));
@@ -183,10 +220,17 @@ const ALIASES: Record<string, string> = {
   pdr: 'physical damage taken reduced',
   res: 'resist',
   hp: 'life',
+  // "flat damage" → "Adds {X}-{Y} Damage"
+  flat: 'adds',
 };
 
 function normalize(text: string): string {
-  return text.replace(/\{X\}/g, ' ').replace(/[+%]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+  return text
+    .replace(/\{X\}(?:-\{Y\})?/g, ' ')
+    .replace(/[+%]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
 }
 
 /** A normalized label without filler: leading "to " / "total ", trailing "(…)" notes ("+{X} to Life" → "life"). */

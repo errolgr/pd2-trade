@@ -1,7 +1,7 @@
 import type { ItemDetail, Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { jewelElement, type JewelElement } from '@/pages/chat/lib/listing-art';
 import { itemCorruptions } from '@/lib/item-utils';
-import { parseStatKey, pinsMatch } from './stats';
+import { DAMAGE_KEY, isDamagePair, MAX_DAMAGE_NAMES, MIN_DAMAGE_NAMES, parseStatKey, pinsMatch } from './stats';
 
 /*
  * Pure view model of the full-width result card: socketed items grouped, each item mod split into the item's own
@@ -44,10 +44,65 @@ export function perLevelLabel(label: string): { label: string; perLevel: boolean
     : { label, perLevel: false };
 }
 
-/** Does stat-filter key `key` (site grammar, e.g. `item_singleskill{54}`) select this mod line? */
-export function modMatchesStatKey(mod: Pick<Modifier, 'name' | 'values'>, key: string): boolean {
+/** A listing line as shown: a modifier, or the physical damage pair merged from its min and max lines. */
+export interface DisplayMod extends Modifier {
+  /** The merged pair's min-damage and max-damage lines. */
+  parts?: readonly [Modifier, Modifier];
+}
+
+/** The physical pair's line text, worded like the game ("Adds 4-14 Damage", "+9 Damage"). */
+export function damagePairLabel(lo: number, hi: number): string {
+  return lo === hi ? `+${lo} Damage` : `Adds ${lo}-${hi} Damage`;
+}
+
+/**
+ * Merge a min-damage and a max-damage line into one `damage [min, max]` line ("Adds 4-14 Damage", the `DAMAGE_KEY`
+ * stat), at the first one's place, like the game draws it. Its roll range is the max line's (the pair's roll, as
+ * for the `damage` filter). One line alone, or a min above the max, stays as is.
+ */
+export function mergeDamageLines(mods: readonly Modifier[]): DisplayMod[] {
+  const minAt = mods.findIndex((m) => MIN_DAMAGE_NAMES.includes(m.name) && typeof m.values?.[0] === 'number');
+  const maxAt = mods.findIndex((m) => MAX_DAMAGE_NAMES.includes(m.name) && typeof m.values?.[0] === 'number');
+  if (minAt < 0 || maxAt < 0) return [...mods];
+  const minLine = mods[minAt];
+  const maxLine = mods[maxAt];
+  const lo = minLine.values[0];
+  const hi = maxLine.values[0];
+  if (lo > hi) return [...mods];
+  const merged: DisplayMod = {
+    name: DAMAGE_KEY,
+    values: [lo, hi],
+    label: damagePairLabel(lo, hi),
+    priority: Math.max(minLine.priority, maxLine.priority),
+    ...((minLine.corrupted || maxLine.corrupted) && { corrupted: true }),
+    ...(typeof maxLine.min === 'number' && typeof maxLine.max === 'number' && { min: maxLine.min, max: maxLine.max }),
+    parts: [minLine, maxLine],
+  };
+  const first = Math.min(minAt, maxAt);
+  return mods.flatMap((m, i) => (i === first ? [merged] : i === minAt || i === maxAt ? [] : [m]));
+}
+
+/** Mods in game order (highest priority first) as listing lines: no bare "Corrupted" marker, damage pair merged. */
+export function displayMods(item: Pick<ItemDetail, 'modifiers'>): DisplayMod[] {
+  const mods = (item.modifiers ?? []).filter((m) => m.name !== 'corrupted').sort((a, b) => b.priority - a.priority);
+  return mergeDamageLines(mods);
+}
+
+/** A corrupted line: flagged, or one of the item's corruption rolls (`corruptions`); a merged pair by its lines. */
+export function isCorruptedLine(mod: DisplayMod, corruptions: readonly string[]): boolean {
+  return (mod.parts ?? [mod]).some((m) => m.corrupted === true || corruptions.includes(m.name));
+}
+
+/**
+ * Does stat-filter key `key` (site grammar, e.g. `item_singleskill{54}`) select this line? A merged damage pair
+ * by either line; under a `damage` key a lone min line by the pin, a lone max line always (its half of the pair).
+ */
+export function modMatchesStatKey(mod: Pick<DisplayMod, 'name' | 'values' | 'parts'>, key: string): boolean {
   const { names, pins } = parseStatKey(key);
-  return names.includes(mod.name) && pinsMatch(mod.values, pins);
+  if (names.includes(mod.name)) return pinsMatch(mod.values, pins);
+  if (mod.parts) return mod.parts.some((part) => modMatchesStatKey(part, key));
+  if (!isDamagePair(names)) return false;
+  return MIN_DAMAGE_NAMES.includes(mod.name) ? pinsMatch(mod.values, pins) : MAX_DAMAGE_NAMES.includes(mod.name);
 }
 
 export interface SocketGroup {
@@ -58,8 +113,8 @@ export interface SocketGroup {
   items: ItemDetail[];
   /** 0-based socket positions, in socket order. */
   sockets: number[];
-  /** Mods of one item of the group. */
-  mods: Modifier[];
+  /** Mods of one item of the group (damage pair merged). */
+  mods: DisplayMod[];
   /** Tells same-named groups apart: element / trigger ("Fire · on death"). */
   subtitle: string | null;
   /** Rainbow Facets: their element (art and name colour). */
@@ -74,7 +129,7 @@ export interface ModSource {
 }
 
 export interface CardMod {
-  mod: Modifier;
+  mod: DisplayMod;
   /** Label without "(Based on Character Level)". */
   label: string;
   perLevel: boolean;
@@ -152,7 +207,7 @@ export function groupSockets(socketed: ItemDetail[]): { groups: SocketGroup[]; s
         name: item.name,
         items: [],
         sockets: [],
-        mods: (item.modifiers ?? []).filter((m) => m.name !== 'corrupted'),
+        mods: mergeDamageLines((item.modifiers ?? []).filter((m) => m.name !== 'corrupted')),
         subtitle: null,
         element: item.name === 'Rainbow Facet' ? jewelElement(item.modifiers) : null,
         lines: [],
@@ -175,11 +230,6 @@ export function groupSockets(socketed: ItemDetail[]): { groups: SocketGroup[]; s
   return { groups, socketGroups };
 }
 
-/** Item mods in game order (priority), without the bare "Corrupted" marker. */
-function orderedMods(item: Pick<ItemDetail, 'modifiers'>): Modifier[] {
-  return (item.modifiers ?? []).filter((m) => m.name !== 'corrupted').sort((a, b) => b.priority - a.priority);
-}
-
 /** Split one item line into its own part and the socket groups' contributions. */
 function splitMod(
   mod: Modifier,
@@ -197,7 +247,8 @@ function splitMod(
   const sources: ModSource[] = [];
   groups.forEach((group, g) => {
     let amount = 0;
-    for (const sm of group.mods) {
+    // Merged damage pairs by their lines (an item's lone max-damage line still credits a jewel's)
+    for (const sm of group.mods.flatMap((m) => m.parts ?? [m])) {
       if (amountIndex(sm) === null || !sameLine(mod, sm, index)) continue;
       // Jewel ED is `[x, x]`, the item's `[total, own]`: read the socket's amount at its own index
       amount += sm.values[amountIndex(sm) as number] ?? 0;
@@ -221,14 +272,14 @@ export function buildCardModel(item: ItemDetail): CardModel {
   const attribute = !item.is_runeword && groups.length > 0;
   const corruptions = itemCorruptions(item);
 
-  const mods = orderedMods(item).map((mod): CardMod => {
+  const mods = displayMods(item).map((mod): CardMod => {
     const { label, perLevel } = perLevelLabel(mod.label);
     const split = splitMod(mod, groups, attribute);
     return {
       mod,
       label,
       perLevel,
-      corrupted: mod.corrupted === true || corruptions.includes(mod.name),
+      corrupted: isCorruptedLine(mod, corruptions),
       ...split,
     };
   });

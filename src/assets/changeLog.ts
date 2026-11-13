@@ -1,6 +1,11 @@
 export const changeLog = {
   '0.11.2': [
+    '🆕 Market browser: Total Elemental Damage pseudo stat, the average of every Adds X-Y fire, cold and lightning line added up (Adds 6-36 fire + 4-114 lightning = 80)',
+    '🆕 Market browser: filter on flat physical damage as one stat, "Adds X-Y Damage" (search "flat damage" or "adds damage"), like fire or cold damage',
     '✨ Market Watch works without signing in. Saved searches and watches are kept on this PC (the ones you had on pd2trader.com come over once when you sign in), and every watch catches up on listings bumped while the overlay was closed',
+    '✨ Price check: Open in market keeps a physical damage line as one "Adds X-Y Damage" filter instead of separate minimum and maximum damage rows',
+    '✨ Market browser: listings show +minimum and +maximum damage as one "Adds X-Y Damage" line, as the game does',
+    '🔧 Price check: a listing with a long price note no longer makes the results list scroll sideways',
   ],
   '0.11.1': [
     '🆕 Market browser: the Type filter groups class items under their family. Pick Bows, Spears, Javelins, Helms or Shields to search every type in it at once (Bows finds Amazon Bows too; Helms includes Barbarian Helms, Druid Pelts and Circlets; Shields includes Paladin Shields and Shrunken Heads), or pick one type under it as before',

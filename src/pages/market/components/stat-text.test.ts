@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { statName, statWithValue, templateName } from './stat-text';
+import { itemStatText, statName, statWithValue, templateName } from './stat-text';
 
 describe('stat text', () => {
   it('names templates without their placeholder', () => {
@@ -18,5 +18,11 @@ describe('stat text', () => {
     expect(statWithValue('pseudo_total_res', 120.5, { short: true })).toBe('+120.5% Total Res');
     expect(statWithValue('pseudo_fire_res', -5)).toBe('-5% Total Fire Resistance');
     expect(statWithValue('unknown_key', 3)).toBe('unknown_key 3');
+  });
+
+  it('spells the physical damage pair (damage) without raw placeholders', () => {
+    expect(statName('damage{4..}')).toBe('Adds Damage');
+    expect(itemStatText('damage')).toBe('Adds #-# Damage');
+    expect(statWithValue('damage', 14)).toBe('Adds #-14 Damage');
   });
 });

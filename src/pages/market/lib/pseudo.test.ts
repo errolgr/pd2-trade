@@ -64,4 +64,18 @@ describe('computePseudo', () => {
     expect(p.pseudo_skill_damage).toBe(9);
     expect(p.pseudo_enemy_res).toBe(7);
   });
+
+  it('elemental damage sums the average of each fire, cold and lightning line; poison and magic stay out', () => {
+    const p = pseudo(
+      mod('firedam', 6, 36),
+      mod('colddam', 6, 22, 50),
+      mod('lightdam', 4, 114),
+      mod('poisondam', 100, 100, 6),
+      mod('magicdam', 500, 650),
+    );
+    expect(p.pseudo_elemental_damage).toBe(21 + 14 + 59);
+    // lone min / max lines add to each end of the element's average
+    expect(pseudo(mod('firemindam', 4), mod('firemaxdam', 50)).pseudo_elemental_damage).toBe(27);
+    expect(pseudo(mod('min_damage', 9), mod('max_damage', 15)).pseudo_elemental_damage).toBe(0);
+  });
 });

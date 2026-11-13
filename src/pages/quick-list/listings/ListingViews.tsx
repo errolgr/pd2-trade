@@ -5,7 +5,7 @@ import moment from 'moment';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { DealBadge } from '@/pages/market/enrich/DealBadge';
 import { OfferBadge } from '@/pages/market/components/OfferBadge';
-import { displayMods } from '@/pages/market/components/ItemTooltip';
+import { displayMods, isCorruptedLine } from '@/pages/market/lib/card-model';
 import type { Deal } from '@/pages/market/enrich/useDealIndicators';
 import type { ListingOffers } from '@/pages/market/lib/listing-offers';
 import { cn } from '@/lib/utils';
@@ -118,10 +118,7 @@ function CardStats({ listing }: { listing: MarketListingEntry }) {
             transition={transition}
             initial={i >= CARD_MODS ? { opacity: 0 } : false}
             animate={{ opacity: 1 }}
-            className={cn(
-              'shrink-0',
-              mod.corrupted === true || corruptions.includes(mod.name) ? 'text-q-corrupted' : 'text-q-magic',
-            )}
+            className={cn('shrink-0', isCorruptedLine(mod, corruptions) ? 'text-q-corrupted' : 'text-q-magic')}
           >
             {!open && i > 0 && <span className="px-1 text-muted-foreground">·</span>}
             {mod.label}

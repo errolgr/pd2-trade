@@ -2529,7 +2529,8 @@ const ListingRow = ({ row, idx }: { row: ScoredListing; idx: number }) => {
         >
           {/* Price Column */}
           <td className="flex flex-row items-center gap-2 whitespace-nowrap rounded-l-md px-2 py-1">
-            <div className="flex-1 truncate">
+            {/* w-0: truncating text adds nothing to the row's min-content, so a long price note can't widen the table */}
+            <div className="w-0 min-w-0 flex-1 truncate">
               {listing.hr_price ? (
                 <span className="font-semibold tabular-nums text-foreground">{`${listing.hr_price} HR`}</span>
               ) : listing.price && listing.price.length > 40 ? (

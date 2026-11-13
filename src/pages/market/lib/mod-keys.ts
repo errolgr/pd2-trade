@@ -1,4 +1,5 @@
 import type { Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { mergeDamageLines } from './card-model';
 import { PSEUDO_STATS } from './pseudo';
 import { parseStatKey, pinsMatch, STAT_OPTIONS } from './stats';
 import type { PseudoDef, StatFilter } from './types';
@@ -102,6 +103,7 @@ export function isUsefulFilterLine(mod: Pick<Modifier, 'name' | 'label'>): boole
 /**
  * One `≥` filter row per useful, filterable mod line of an item ("add all mods as filters"): min = value − fill
  * margin, kept inside the roll range; flags, procs, per-level lines, unfilterable lines and duplicates are skipped.
+ * The physical min/max damage lines make one `damage` row, as the card shows them.
  */
 export function modsAsFilters(
   mods: Modifier[],
@@ -109,7 +111,7 @@ export function modsAsFilters(
 ): Omit<StatFilter, 'id' | 'enabled'>[] {
   const rows: Omit<StatFilter, 'id' | 'enabled'>[] = [];
   const seen = new Set<string>();
-  for (const mod of mods) {
+  for (const mod of mergeDamageLines(mods)) {
     if (!isUsefulFilterLine(mod)) continue;
     const key = modToStatKey(mod);
     if (!key || seen.has(key)) continue;
