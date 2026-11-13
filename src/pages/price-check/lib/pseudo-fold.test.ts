@@ -52,23 +52,36 @@ describe('foldRows', () => {
   });
 });
 
-describe('elemental damage Σ', () => {
+describe('damage totals Σ', () => {
   const fireDmg: Stat = { stat_id: StatId.FireDamage, name: 'Fire Damage', value: 4, maxValue: 20 };
   const ltngDmg: Stat = { stat_id: StatId.LightningDamage, name: 'Lightning Damage', value: 1, maxValue: 114 };
   const poisonDmg: Stat = { stat_id: StatId.PoisonDamage, name: 'Poison Damage', value: 11, maxValue: 11 };
+  const physDmg: Stat = { stat_id: StatId.Damage, name: 'Damage', value: 10, maxValue: 30 };
+  const magicDmg: Stat = { stat_id: StatId.MagicDamage, name: 'Magic Damage', value: 60, maxValue: 120 };
+
+  it('flat damage adds physical and magic to the elemental rows; poison stays out of both', () => {
+    const o = byId([physDmg, fireDmg, magicDmg, ltngDmg, poisonDmg]);
+    expect(o.pseudo_elemental_max_damage).toMatchObject({ value: 5, maxValue: 134, covers: ['id:1003', 'id:1004'] });
+    expect(o.pseudo_flat_max_damage).toMatchObject({
+      name: 'Total Flat Damage',
+      value: 10 + 4 + 60 + 1,
+      maxValue: 30 + 20 + 120 + 114,
+      covers: ['id:1008', 'id:1003', 'id:1005', 'id:1004'],
+    });
+    // Physical alone still offers the flat total
+    expect(Object.keys(byId([physDmg]))).toEqual(['pseudo_flat_max_damage']);
+  });
 
   it('sums fire, cold and lightning Adds X-Y rows per end and folds them into a two-range Σ row', () => {
     const rows = [fireDmg, life, ltngDmg, poisonDmg];
     const options = pseudoOptions(rows);
-    expect(options).toEqual([
-      {
-        id: 'pseudo_elemental_max_damage',
-        name: 'Total Elemental Damage',
-        value: 5,
-        maxValue: 134,
-        covers: ['id:1003', 'id:1004'],
-      },
-    ]);
+    expect(options.find((o) => o.id === 'pseudo_elemental_max_damage')).toEqual({
+      id: 'pseudo_elemental_max_damage',
+      name: 'Total Elemental Damage',
+      value: 5,
+      maxValue: 134,
+      covers: ['id:1003', 'id:1004'],
+    });
     const folded = foldRows(rows, options, ['pseudo_elemental_max_damage']);
     expect(folded.map((s) => s.pseudo ?? s.name)).toEqual(['pseudo_elemental_max_damage', 'Life', 'Poison Damage']);
     expect(folded[0]).toMatchObject({ value: 5, maxValue: 134, folded: [fireDmg, ltngDmg] });

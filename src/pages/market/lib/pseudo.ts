@@ -44,17 +44,19 @@ const ELEMENTS = ['fire', 'cold', 'ltng', 'pois', 'mag'] as const;
 
 /** Fire, cold and lightning "Adds X-Y" lines (`firedam`) and their lone-end forms (`firemindam`, `firemaxdam`). */
 const ELEMENTAL_DAMAGE_LINE = /^(fire|cold|light)(min|max)?dam$/;
+/** The flat damage total's elemental lines: fire, cold, lightning and magic (poison is damage over time). */
+const FLAT_ELEMENT_LINE = /^(fire|cold|light|magic)(min|max)?dam$/;
 
 /**
- * Added fire, cold and lightning damage summed per end: Σ min and Σ max over every "Adds X-Y" line. PD2 sends the
- * line as `firedam [min, max]` (cold: `[min, max, chill frames]`); `firemindam [min, max]` is the same pair under
- * another name, and lone `firemindam [min]` / `firemaxdam [max]` lines add to their end.
+ * Added damage of the "Adds X-Y" lines `lines` matches, summed per end: Σ min and Σ max. PD2 sends the line as
+ * `firedam [min, max]` (cold: `[min, max, chill frames]`); `firemindam [min, max]` is the same pair under another
+ * name, and lone `firemindam [min]` / `firemaxdam [max]` lines add to their end.
  */
-function addedElementalDamage(mods: Modifier[]): { min: number; max: number } {
+function addedDamage(mods: Modifier[], lines: RegExp): { min: number; max: number } {
   let min = 0;
   let max = 0;
   for (const mod of mods) {
-    const line = ELEMENTAL_DAMAGE_LINE.exec(mod.name);
+    const line = lines.exec(mod.name);
     const first = mod.values?.[0];
     if (!line || typeof first !== 'number') continue;
     if (line[2] === 'max') {
@@ -66,6 +68,17 @@ function addedElementalDamage(mods: Modifier[]): { min: number; max: number } {
     if (typeof second === 'number') max += second;
   }
   return { min, max };
+}
+
+const addedElementalDamage = (mods: Modifier[]) => addedDamage(mods, ELEMENTAL_DAMAGE_LINE);
+
+/**
+ * All flat damage summed per end: physical ("Adds X-Y Damage", the `min_damage` / `max_damage` lines listings carry)
+ * plus fire, cold, lightning and magic.
+ */
+function addedFlatDamage(mods: Modifier[]): { min: number; max: number } {
+  const elemental = addedDamage(mods, FLAT_ELEMENT_LINE);
+  return { min: elemental.min + sum(mods, 'min_damage'), max: elemental.max + sum(mods, 'max_damage') };
 }
 
 /**
@@ -199,6 +212,21 @@ export const PSEUDO_STATS: PseudoDef[] = [
     group: 'Pseudo',
     compute: (m) => addedElementalDamage(m).min,
     lowEndOf: 'pseudo_elemental_max_damage',
+  },
+  {
+    // Physical, fire, cold, lightning and magic "Adds X-Y" summed; rolls the max, its low end pinned like the
+    // elemental total's (`pseudo_flat_max_damage{4..10}`)
+    id: 'pseudo_flat_max_damage',
+    label: 'Adds {X}-{Y} Total Flat Damage',
+    group: 'Pseudo',
+    compute: (m) => addedFlatDamage(m).max,
+  },
+  {
+    id: 'pseudo_flat_min_damage',
+    label: 'Adds {X}-{Y} Total Flat Damage (low end)',
+    group: 'Pseudo',
+    compute: (m) => addedFlatDamage(m).min,
+    lowEndOf: 'pseudo_flat_max_damage',
   },
   {
     id: 'pseudo_life_leech',

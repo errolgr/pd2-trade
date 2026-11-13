@@ -2,6 +2,8 @@ export const changeLog = {
   '0.11.2': [
     '🆕 Market browser: elemental damage pseudo stats over every Adds X-Y fire, cold and lightning line: "Adds #-# Total Elemental Damage" with Min dmg and Max dmg ranges (Adds 4-20 fire + 1-114 lightning = Adds 5-134) and "Average Elemental Damage" (Adds 6-36 fire + 4-114 lightning = 80)',
     '🆕 Price check: click Σ on a fire, cold or lightning damage row to fold them into one "Total Elemental Damage" row (5-134) with Min dmg and Max dmg ranges, like the resist totals',
+    '🆕 "Adds #-# Total Flat Damage": physical, fire, cold, lightning and magic damage added up (Adds 10-30 damage + 60-120 magic + 1-700 lightning = Adds 71-850), with Min dmg and Max dmg ranges. A pseudo stat in the market browser, and a Σ total on any damage row in the price check',
+    '🔧 Price check: magic damage on uniques, sets and runewords shows as "Adds 60-120 magic damage" (Lightsabre) instead of "+120 magic damage", and searches its real minimum',
     '🆕 Market browser: filter on flat physical damage as one stat, "Adds X-Y Damage" (search "flat damage" or "adds damage"), like fire or cold damage',
     '✨ Market Watch works without signing in. Saved searches and watches are kept on this PC (the ones you had on pd2trader.com come over once when you sign in), and every watch catches up on listings bumped while the overlay was closed',
     '✨ Price check: Open in market keeps a physical damage line as one "Adds X-Y Damage" filter instead of separate minimum and maximum damage rows',
