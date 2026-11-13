@@ -17,6 +17,8 @@ vi.mock('@/hooks/useSignIn', () => ({ useSignIn: vi.fn() }));
 vi.mock('@/lib/networth-api', async (importOriginal) => ({
   ...(await importOriginal<typeof NetWorthApi>()),
   getPoints: vi.fn(),
+  // PublicProfileToggle loads this on mount; the toggle stays hidden as when signed out of the leaderboard
+  getProfileSettings: vi.fn(async () => null),
 }));
 
 const NOW = new Date('2026-10-18T12:00:00.000Z');
