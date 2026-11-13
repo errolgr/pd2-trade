@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { itemStatText, statName, statWithValue, templateName } from './stat-text';
+import { choiceText, itemStatText, statName, statWithValue, templateName } from './stat-text';
+import { PSEUDO_STATS } from '../lib/pseudo';
 
 describe('stat text', () => {
   it('names templates without their placeholder', () => {
@@ -20,13 +21,20 @@ describe('stat text', () => {
     expect(statWithValue('unknown_key', 3)).toBe('unknown_key 3');
   });
 
-  it('spells damage pairs like the item line: the filtered end, the other as … in names and # in chips', () => {
-    expect(statName('damage{4..}')).toBe('Adds …-# Damage');
-    expect(itemStatText('damage')).toBe('Adds …-# Damage');
+  it('spells the physical damage pair (damage) without raw placeholders', () => {
+    expect(statName('damage{4..}')).toBe('Adds Damage');
+    expect(itemStatText('damage')).toBe('Adds #-# Damage');
     expect(statWithValue('damage', 14)).toBe('Adds #-14 Damage');
-    expect(itemStatText('firedam|firemindam')).toBe('Adds #-… Fire Damage');
-    expect(statWithValue('firedam|firemindam', 4)).toBe('Adds 4-# Fire Damage');
+  });
+
+  it('spells elemental pairs and the elemental pseudo as Adds #-#', () => {
+    expect(itemStatText('firedam|firemindam[1]')).toBe('Adds #-# Fire Damage');
     expect(statWithValue('firedam|firemindam[1]', 20)).toBe('Adds #-20 Fire Damage');
-    expect(statWithValue('pseudo_elemental_min_damage', 5, { short: true })).toBe('Adds 5-# Total Elemental Damage');
+    // a price check bounding only the low end
+    expect(statWithValue('firedam|firemindam', 4)).toBe('Adds 4-# Fire Damage');
+    expect(choiceText(PSEUDO_STATS.find((p) => p.id === 'pseudo_elemental_max_damage')!)).toBe(
+      'Adds #-# Total Elemental Damage',
+    );
+    expect(statWithValue('pseudo_elemental_max_damage', 134)).toBe('Adds #-134 Total Elemental Damage');
   });
 });
