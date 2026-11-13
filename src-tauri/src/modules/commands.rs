@@ -1,4 +1,4 @@
-use crate::modules::opener;
+use crate::modules::{opener, system};
 use crate::{chat_watcher, debug_logger, keyboard, window};
 use tauri::Manager;
 
@@ -17,6 +17,12 @@ pub fn press_key(sequence: String) -> Result<(), String> {
 #[tauri::command]
 pub fn is_diablo_focused() -> bool {
     window::is_game_context()
+}
+
+/// Milliseconds since the user last touched the keyboard or mouse (any app); None when unknown.
+#[tauri::command]
+pub fn input_idle_ms() -> Option<u64> {
+    system::input_idle_ms()
 }
 
 /// Diablo II fills its monitor (D2GL fullscreen): while it holds the foreground the graphics driver draws nothing

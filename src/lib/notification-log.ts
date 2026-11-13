@@ -3,9 +3,11 @@
  * watch alerts, Horadric Sim results, net worth moves, updates, errors), whether or not a toast showed it. Feedback
  * on the user's own actions ("Whisper copied") is never logged.
  *
- * An entry is *missed* when nobody saw it: its toast was suppressed (Diablo focused, popups or that type off) or
- * timed out without the pointer ever on it. Missed entries put the log's icon on the chat dock (none = no icon);
- * opening the log marks everything seen. Joins are logged but never missed (too frequent to call for attention).
+ * An entry is *missed* when nobody saw it. Seen: it reached the player in the game (Diablo in front, keyboard or
+ * mouse used within the last minute) by a toast or the game's own chat (whispers), or its toast had the pointer on
+ * it. Otherwise missed: no toast (that type off, or a whisper while tabbed out) or a toast that timed out unhovered.
+ * Missed entries put the log's icon on the chat dock (none = no icon); opening the log marks everything seen. Joins
+ * are logged but never missed (too frequent to call for attention).
  *
  * Kept in AppConfig/notification-log.json (newest LOG_MAX entries), saved shortly after each change.
  */

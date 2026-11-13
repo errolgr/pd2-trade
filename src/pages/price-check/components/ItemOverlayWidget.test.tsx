@@ -976,16 +976,16 @@ describe('ItemOverlayWidget secondary actions', () => {
     });
     expect((await screen.findByRole('tooltip')).textContent).toContain(LIST_DISABLED);
     fireEvent.click(list);
-    expect(overlay.openPanel).not.toHaveBeenCalledWith('quickList', expect.anything(), expect.anything());
+    expect(vi.mocked(overlay.openPanel).mock.calls.some(([id]) => id === 'quickList')).toBe(false);
   });
 
-  it('List opens the quick-list panel at the cursor with the encoded item for stash items', () => {
+  it('List opens the quick-list panel with the encoded item for stash items', () => {
     const item = rareRing({ location: 'Stash' });
     renderWidget(item);
     const list = screen.getByRole('button', { name: 'List' });
     expect(list.getAttribute('aria-disabled')).toBe('false');
     fireEvent.click(list);
-    expect(overlay.openPanel).toHaveBeenCalledWith('quickList', { item: expect.any(String) }, { placement: 'cursor' });
+    expect(overlay.openPanel).toHaveBeenCalledWith('quickList', { item: expect.any(String) });
     const { item: encoded } = vi.mocked(overlay.openPanel).mock.calls[0][1] as { item: string };
     expect(JSON.parse(decodeURIComponent(escape(atob(encoded))))).toEqual(item);
   });

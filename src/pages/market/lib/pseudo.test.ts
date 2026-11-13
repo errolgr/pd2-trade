@@ -78,4 +78,20 @@ describe('computePseudo', () => {
     expect(pseudo(mod('firemindam', 4), mod('firemaxdam', 50)).pseudo_elemental_damage).toBe(27);
     expect(pseudo(mod('min_damage', 9), mod('max_damage', 15)).pseudo_elemental_damage).toBe(0);
   });
+
+  it('elemental min / max damage sum each end of the fire, cold and lightning lines', () => {
+    const p = pseudo(
+      mod('firedam', 4, 20),
+      mod('colddam', 6, 22, 50),
+      mod('lightdam', 1, 114),
+      mod('poisondam', 100, 100, 6),
+      mod('magicdam', 500, 650),
+      mod('min_damage', 9),
+    );
+    expect(p.pseudo_elemental_min_damage).toBe(4 + 6 + 1);
+    expect(p.pseudo_elemental_max_damage).toBe(20 + 22 + 114);
+    // a `firemindam [min, max]` pair and lone end lines
+    const lone = pseudo(mod('firemindam', 3, 7), mod('coldmindam', 2), mod('lightmaxdam', 30));
+    expect(lone).toMatchObject({ pseudo_elemental_min_damage: 5, pseudo_elemental_max_damage: 37 });
+  });
 });

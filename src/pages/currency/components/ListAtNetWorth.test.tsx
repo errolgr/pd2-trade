@@ -131,7 +131,7 @@ describe('ListAtNetWorthMenu', () => {
     expect(menuItem('List on market…')).toBeNull();
     expect(menuItem('Already listed')!.getAttribute('aria-disabled')).toBe('true');
     fireEvent.click(menuItem('Manage listings')!);
-    expect(openPanel).toHaveBeenCalledWith('quickList', undefined, { placement: 'gameCenter' });
+    expect(openPanel).toHaveBeenCalledWith('quickList');
   });
 
   it('lists at an edited price with a note', async () => {
@@ -168,7 +168,7 @@ describe('ListAtNetWorthMenu', () => {
     expect(screen.getByText('Already listed on the market.')).not.toBeNull();
     expect(screen.queryByRole('button', { name: 'List' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Manage listings' }));
-    expect(openPanel).toHaveBeenCalledWith('quickList', undefined, { placement: 'gameCenter' });
+    expect(openPanel).toHaveBeenCalledWith('quickList');
     expect(api.listSpecificItem).not.toHaveBeenCalled();
   });
 

@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { installUpdateAndRelaunch } from '@/lib/updater';
 import { RELEASE_PAGE_URL } from '@/lib/manual-update';
 import { openUrl } from '@/lib/browser-opener';
+import { isPlayerInGame } from '@/lib/diablo-focus';
 import { CustomToastPayload, GenericToastPayload, ToastActionType } from '@/common/types/Events';
 import { chatDockWidth } from '@/pages/chat/chat-dock';
 import { offerNotificationLanding } from '@/pages/chat/chat-feed';
@@ -210,23 +211,31 @@ function entryOf(
 }
 
 export interface NotifyOptions {
-  /** Show the toast (false: suppressed by focus or settings, so the entry is missed right away). */
+  /** Show the toast (false: suppressed by focus or settings). */
   toast: boolean;
+  /** The game's own chat shows it (whispers, trade whispers): seen when the player is in the game. */
+  inGameChat?: boolean;
   /** Consecutive entries with this key fold into one ("×3"). */
   groupKey?: string;
 }
 
 /**
  * Something that happened to the user (not feedback on their own action): logged in the notification log, and
- * toasted when `toast`. A toast that times out unseen marks the entry missed.
+ * toasted when `toast`. Seen when it reached the player in the game (Diablo in front, input within the AFK window)
+ * by a toast or the game's chat; otherwise missed when no toast showed, or when the toast timed out without the
+ * pointer on it.
  */
 export function notify(
   kind: NotificationKind,
   payload: GenericToastPayload | CustomToastPayload,
-  { toast: shown, groupKey }: NotifyOptions,
+  { toast: shown, inGameChat = false, groupKey }: NotifyOptions,
 ): void {
-  const id = logNotification(entryOf(kind, payload, groupKey), { missed: !shown });
-  if (shown) showToast(payload, { onUnseen: () => markNotificationMissed(id) });
+  const entry = entryOf(kind, payload, groupKey);
+  void isPlayerInGame().then((inGame) => {
+    const seen = inGame && (shown || inGameChat);
+    const id = logNotification(entry, { missed: !shown && !seen });
+    if (shown) showToast(payload, seen ? undefined : { onUnseen: () => markNotificationMissed(id) });
+  });
 }
 
 /** A logged entry's action (the same as its toast's). */

@@ -135,6 +135,7 @@ pub fn run() {
             commands::get_diablo_rect,
             commands::press_key,
             commands::is_diablo_focused,
+            commands::input_idle_ms,
             commands::is_diablo_fullscreen,
             commands::focus_diablo,
             commands::focus_overlay,

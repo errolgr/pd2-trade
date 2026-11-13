@@ -6,6 +6,11 @@ pub fn is_elevated() -> bool {
     true
 }
 
+/// Not tracked off Windows: unknown.
+pub fn input_idle_ms() -> Option<u64> {
+    None
+}
+
 pub fn restart_as_admin() {
     // No-op or log warning
     eprintln!("Elevation requested but not implemented for Linux");

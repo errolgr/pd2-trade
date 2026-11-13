@@ -9,14 +9,24 @@ import type { StatFilter } from '../lib/types';
  * these so no raw `{X}` reaches the screen.
  */
 
-/** `{X}` (with its sign/percent), or a pair's `{X}-{Y}` ("Adds {X}-{Y} Damage"). */
-const PLACEHOLDER = /[+-]?\{X\}(?:-\{Y\})?%?/g;
+/** `{X}` with its sign/percent. */
+const PLACEHOLDER = /[+-]?\{X\}%?/g;
+
+/**
+ * A damage pair's ends, as the item line reads ("Adds 4-20 Fire Damage"): `{X}` is the filtered end, `{Y}` the
+ * other. `Adds {X}-{Y} …` filters the min, `Adds {Y}-{X} …` the max.
+ */
+const PAIR = /\{X\}-\{Y\}|\{Y\}-\{X\}/;
+
+/** A pair template for lists and pickers: the filtered end `#`, the other `…` ("Adds #-… Fire Damage"). */
+const pairText = (template: string) => template.replace('{X}', '#').replace('{Y}', '…');
 
 /** Number shown for a score/stat total: integers stay integers, else one decimal. */
 export const formatStat = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
 
 /** A template without its placeholder: "+{X}% Total Fire Resistance" → "Total Fire Resistance", "+{X} to Strength" → "Strength". */
 export function templateName(template: string): string {
+  if (PAIR.test(template)) return pairText(template);
   return (
     template
       .replace(PLACEHOLDER, ' ')
@@ -73,12 +83,13 @@ export function itemStatText(key: string): string {
       text = label.replace(/\s*\(Oskill\)$/, '');
       break;
   }
-  return text.replace(/\{[XY]\}/g, '#').replace(/# %/g, '#%');
+  if (PAIR.test(text)) return pairText(text);
+  return text.replace(/\{X\}/g, '#').replace(/# %/g, '#%');
 }
 
 /** A stat picker entry as the item shows it (see `itemStatText`); pseudo stats as their template. */
 export function choiceText(choice: StatChoice): string {
-  if (isPseudo(choice)) return choice.label.replace(/\{X\}/g, '#');
+  if (isPseudo(choice)) return PAIR.test(choice.label) ? pairText(choice.label) : choice.label.replace(/\{X\}/g, '#');
   if (isCorruption(choice)) {
     const text = choice.rolled ? itemStatText(choice.value) : choice.value;
     return text === choice.value ? templateName(choice.label) : text;
@@ -95,14 +106,15 @@ const shorten = (text: string) =>
 
 /**
  * The template with `value` filled in: "+29% Total Fire Resistance"; `short` for chips ("+29% Total Fire Res").
- * A pair's value is its max ("Adds #-14 Damage"). Labels without a placeholder get the value appended.
+ * A pair shows its other end as `#` ("Adds #-14 Damage", "Adds 4-# Fire Damage"). Labels without a placeholder get
+ * the value appended.
  */
 export function statWithValue(key: string, value: number, { short = false }: { short?: boolean } = {}): string {
   const label = statLabel(key);
   const shown = formatStat(value);
   let text: string;
-  if (label.includes('{X}-{Y}')) {
-    text = label.replace('{X}-{Y}', `#-${shown}`);
+  if (PAIR.test(label)) {
+    text = label.replace('{X}', shown).replace('{Y}', '#');
   } else if (label.includes('{X}')) {
     // A negative total in a "+{X}" template reads "-5", not "+-5"
     text = label.replace(/([+-]?)\{X\}/, (_, sign: string) => (value < 0 ? shown : `${sign}${shown}`));

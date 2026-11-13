@@ -157,29 +157,71 @@ export function statGroup(key: string): string {
   return 'Charm/Misc';
 }
 
-/** The physical damage pair's picker entry (not a site property: the market service resolves `DAMAGE_KEY`). */
-const DAMAGE_OPTION: StatOption = { key: DAMAGE_KEY, label: 'Adds {X}-{Y} Damage', group: 'Offense' };
+/**
+ * The physical damage pair's picker entry (not a site property: the market service resolves `DAMAGE_KEY`). Pair
+ * labels read like the item line: `{X}` the filtered end, `{Y}` the other ("Adds {Y}-{X} Damage" filters the max).
+ */
+const DAMAGE_OPTION: StatOption = { key: DAMAGE_KEY, label: 'Adds {Y}-{X} Damage', group: 'Offense' };
+
+/**
+ * The site's elemental Minimum / Maximum Damage entries (`firemindam`, `firemaxdam`) as the lines PD2 sends: one
+ * "Adds X-Y" line `firedam [min, max]` (cold: `[min, max, chill frames]`, poison: `[min, max, seconds]`), or the same
+ * pair named `firemindam`. Lone min / max lines don't occur on listings, so the site's keys match nothing. Minimum
+ * reads `values.0`, Maximum `values.1` (the price check's `firedam|firemindam{4..}` rolls it too). Labels follow the
+ * item line ("Adds {X}-{Y} Fire Damage" = the min); poison keeps the site's, its line reads "+X Poison Damage over
+ * N Seconds".
+ */
+const ELEMENTAL_DAMAGE: ReadonlyMap<string, { key: string; label?: string }> = new Map(
+  (
+    [
+      ['fire', 'Fire'],
+      ['light', 'Lightning'],
+      ['magic', 'Magic'],
+      ['cold', 'Cold'],
+      ['poison', null],
+    ] as const
+  ).flatMap(([e, name]) => [
+    [`${e}mindam`, { key: `${e}dam|${e}mindam`, ...(name && { label: `Adds {X}-{Y} ${name} Damage` }) }],
+    [`${e}maxdam`, { key: `${e}dam|${e}mindam[1]`, ...(name && { label: `Adds {Y}-{X} ${name} Damage` }) }],
+  ]),
+);
 
 /**
  * The site's Properties list (labels are `{X}` templates), in site order, with display groups; the physical
- * damage pair ahead of its max/min lines.
+ * damage pair ahead of its max/min lines, elemental min/max entries on their pair line (`ELEMENTAL_DAMAGE`).
  */
-export const STAT_OPTIONS: StatOption[] = SITE_STAT_OPTIONS.flatMap(([key, label]) => {
-  const option = { key, label, group: statGroup(key) };
+export const STAT_OPTIONS: StatOption[] = SITE_STAT_OPTIONS.flatMap(([siteKey, siteLabel]) => {
+  const elemental = ELEMENTAL_DAMAGE.get(siteKey);
+  const key = elemental?.key ?? siteKey;
+  const option = { key, label: elemental?.label ?? siteLabel, group: statGroup(key) };
   return key.startsWith(`${MAX_DAMAGE_NAMES[0]}|`) ? [DAMAGE_OPTION, option] : [option];
 });
 
 const OPTION_BY_KEY = new Map(STAT_OPTIONS.map((o) => [o.key, o]));
 const PSEUDO_BY_ID = new Map(PSEUDO_STATS.map((p) => [p.id, p]));
 
+/** The names and rolled value of a parsed key, pins aside: `firedam|firemindam{4..}` → `firedam|firemindam[1]`. */
+const rollId = ({ names, valueIndex }: ParsedStatKey) => `${names.join('|')}[${valueIndex}]`;
+/** Unpinned options by what they roll, for pinned keys the list lacks (`firedam|firemindam{4..}`). */
+const OPTION_BY_ROLL = new Map(
+  STAT_OPTIONS.flatMap((o) => {
+    const parsed = parseStatKey(o.key);
+    return parsed.pins.length === 0 ? [[rollId(parsed), o] as const] : [];
+  }),
+);
+
 /**
- * Label template for a property key or pseudo id; a key the site list lacks (`a|b` alternatives, extended slots)
- * takes the label of its first known name; the key itself when unknown.
+ * Label template for a property key or pseudo id; a key the site list lacks takes the label of the unpinned
+ * option rolling the same value of the same names (`firedam|firemindam{4..}` → Maximum Fire Damage), else of its
+ * first known name (`a|b` alternatives, extended slots); the key itself when unknown.
  */
 export function statLabel(key: string): string {
   const known = OPTION_BY_KEY.get(key) ?? PSEUDO_BY_ID.get(key);
   if (known) return known.label;
-  for (const name of parseStatKey(key).names) {
+  const parsed = parseStatKey(key);
+  const sameRoll = OPTION_BY_ROLL.get(rollId(parsed));
+  if (sameRoll) return sameRoll.label;
+  for (const name of parsed.names) {
     const option = OPTION_BY_KEY.get(name);
     if (option) return option.label;
   }
@@ -220,13 +262,16 @@ const ALIASES: Record<string, string> = {
   pdr: 'physical damage taken reduced',
   res: 'resist',
   hp: 'life',
-  // "flat damage" → "Adds {X}-{Y} Damage"
+  // "flat damage" → "Adds {Y}-{X} Damage"
   flat: 'adds',
 };
 
+/** Search text of a template: placeholders dropped, a pair's filtered end as a word ("adds minimum fire damage"). */
 function normalize(text: string): string {
   return text
-    .replace(/\{X\}(?:-\{Y\})?/g, ' ')
+    .replace(/\{X\}-\{Y\}/g, ' minimum ')
+    .replace(/\{Y\}-\{X\}/g, ' maximum ')
+    .replace(/\{X\}/g, ' ')
     .replace(/[+%]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()

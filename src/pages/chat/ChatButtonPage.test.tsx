@@ -150,7 +150,7 @@ describe('ChatButtonPage', () => {
     // Offers: chat on the Selling filter
     ['Offers', ['chat', { filter: 'selling' }]],
     // keepPayload: an open quick list keeps the item being listed
-    ['Manage listings', ['quickList', undefined, { placement: 'gameCenter', keepPayload: true }]],
+    ['Manage listings', ['quickList', undefined, { keepPayload: true }]],
     ['Settings', ['settings']],
   ] as const)('menu: %s opens its window and closes the menu', (name, args) => {
     render(<ChatButtonPage />);

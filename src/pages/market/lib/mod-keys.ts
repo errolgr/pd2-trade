@@ -30,15 +30,18 @@ function optionKeysFor(name: string): string[] {
 /**
  * The property key selecting this mod line, e.g. `item_fastercastrate`, `item_singleskill{54}` (params pinned),
  * `max_damage|maxdamage|…` (the alternatives option that lists the name); null when the site can't filter it.
- * With several matches the most specific (most pinned params) wins.
+ * With several matches the most specific (most pinned params) wins, then the later value: an elemental "Adds X-Y"
+ * line (`firedam [min, max]`) takes Maximum Fire Damage, its roll, like the physical `damage` pair.
  */
 export function modToStatKey(mod: Pick<Modifier, 'name' | 'values'>): string | null {
-  let best: { key: string; pins: number } | null = null;
+  let best: { key: string; pins: number; valueIndex: number } | null = null;
   for (const key of optionKeysFor(mod.name)) {
     const { pins, valueIndex } = parseStatKey(key);
     if (!pinsMatch(mod.values, pins)) continue;
     if (typeof mod.values?.[valueIndex] !== 'number') continue;
-    if (!best || pins.length > best.pins) best = { key, pins: pins.length };
+    if (!best || pins.length > best.pins || (pins.length === best.pins && valueIndex > best.valueIndex)) {
+      best = { key, pins: pins.length, valueIndex };
+    }
   }
   return best?.key ?? null;
 }
