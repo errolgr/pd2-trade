@@ -22,7 +22,15 @@ import { Tip } from '@/components/ui/tooltip';
 import { CORRUPTION_OPTIONS, corruptionOption } from '../lib/catalog';
 import { newStatFilter } from '../lib/defaults';
 import { MAX_OR_BLOCKS, compactBlocks, groupOf, moveToGroup, orBlockNumbers, type StatGroup } from '../lib/stat-groups';
-import { isCorruption, isPseudo, searchStats, type StatChoice } from '../lib/stats';
+import {
+  isCorruption,
+  isDamageRangeKey,
+  isPseudo,
+  lowDamageRange,
+  searchStats,
+  withLowDamageRange,
+  type StatChoice,
+} from '../lib/stats';
 import type { StatFilter, StatPreset } from '../lib/types';
 import { Autocomplete, FILTER_HIGHLIGHT_CLASS, FilterHighlightContext, NumberInput, fieldInputClass } from './controls';
 import { choiceText, filterName } from './stat-text';
@@ -58,6 +66,86 @@ function StatNumber({
         className="h-6 px-1 text-center"
       />
     </label>
+  );
+}
+
+/** "Min dmg [ ] – [ ]": one end of an "Adds X-Y" row, bounded as in the price check. */
+function DamageEnd({
+  label,
+  ariaName,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  ariaName: string;
+  min?: number;
+  max?: number;
+  onChange: (range: { min?: number; max?: number }) => void;
+}) {
+  const { t } = useTranslation('market');
+  return (
+    <div className="flex min-w-0 items-center gap-1">
+      <span className="w-14 shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
+      <NumberInput
+        ariaLabel={t('controls.minLabel', { label: ariaName })}
+        value={min}
+        onChange={(v) => onChange({ min: v, max })}
+        className="h-6 px-1 text-center"
+      />
+      <span aria-hidden
+        className="text-xs text-muted-foreground">
+        –
+      </span>
+      <NumberInput
+        ariaLabel={t('controls.maxLabel', { label: ariaName })}
+        value={max}
+        onChange={(v) => onChange({ min, max: v })}
+        className="h-6 px-1 text-center"
+      />
+    </div>
+  );
+}
+
+/**
+ * Both ends of an "Adds X-Y" row, as the price check bounds a damage pair: the low end is the key's slot-0 pin
+ * (`firedam|firemindam{4..10}`, `damage{4..}`), the high end the row's min / max. A low range the key grammar can't
+ * hold (min above max while typing, a decimal) stays on screen as typed; the key keeps its last valid pin.
+ */
+function DamageRange({
+  row,
+  name,
+  onChange,
+}: {
+  row: StatFilter;
+  name: string;
+  onChange: (changes: Partial<StatFilter>) => void;
+}) {
+  const { t } = useTranslation('priceCheck');
+  const [draft, setDraft] = useState(() => ({ key: row.key, range: lowDamageRange(row.key) }));
+  // A key changed elsewhere (Open in market, a mod menu) shows its own range
+  const low = draft.key === row.key ? draft.range : lowDamageRange(row.key);
+  return (
+    <div className="space-y-1 pr-7 pl-9">
+      <DamageEnd
+        label={t('statRow.minDamage')}
+        ariaName={t('statRow.minDamageAria', { name })}
+        min={low.min}
+        max={low.max}
+        onChange={(range) => {
+          const key = withLowDamageRange(row.key, range) ?? row.key;
+          setDraft({ key, range });
+          if (key !== row.key) onChange({ key });
+        }}
+      />
+      <DamageEnd
+        label={t('statRow.maxDamage')}
+        ariaName={t('statRow.maxDamageAria', { name })}
+        min={row.min}
+        max={row.max}
+        onChange={onChange}
+      />
+    </div>
   );
 }
 
@@ -327,7 +415,11 @@ export function StatFilters({
               </button>
             </Tip>
           </div>
-          {bounded ? (
+          {s.kind === 'mod' && isDamageRangeKey(s.key) ? (
+            <DamageRange row={s}
+              name={name}
+              onChange={(changes) => update(s.id, changes)} />
+          ) : bounded ? (
             <div className="grid grid-cols-2 gap-1 pr-7 pl-9">
               <StatNumber label="Min"
                 name={name}

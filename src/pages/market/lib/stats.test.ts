@@ -2,7 +2,16 @@ import { describe, expect, it } from 'vitest';
 import type { Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { mergeDamageLines } from './card-model';
 import { modStatValue, modToStatKey } from './mod-keys';
-import { parseStatKey, readStatValue, searchStats, STAT_OPTIONS, statLabel } from './stats';
+import {
+  isDamageRangeKey,
+  lowDamageRange,
+  parseStatKey,
+  readStatValue,
+  searchStats,
+  STAT_OPTIONS,
+  statLabel,
+  withLowDamageRange,
+} from './stats';
 
 const top = (query: string, n = 2) =>
   searchStats(query, n).map((o) => ('label' in o ? o.label : '').replace(/\{X\}/g, 'X'));
@@ -112,5 +121,30 @@ describe('elemental damage (Adds X-Y)', () => {
     expect(statLabel('firedam|firemindam{4..}')).toBe('Adds {X}-{Y} Fire Damage');
     expect(statLabel('firedam|firemindam')).toBe('Adds {X}-{Y} Fire Damage');
     expect(top('fire damage', 5)).toContain('Adds X-{Y} Fire Damage');
+  });
+
+  it('a damage row keeps its low end as a key pin the service accepts', () => {
+    expect(['damage', 'damage{4..}', 'firedam|firemindam[1]', 'colddam|coldmindam{2..5}'].every(isDamageRangeKey)).toBe(
+      true,
+    );
+    expect(['poisondam|poisonmindam[1]', 'firedam|firemindam', 'item_fastercastrate'].some(isDamageRangeKey)).toBe(
+      false,
+    );
+    expect(lowDamageRange('firedam|firemindam{4..10}')).toEqual({ min: 4, max: 10 });
+    expect(lowDamageRange('damage{7}')).toEqual({ min: 7, max: 7 });
+    expect(lowDamageRange('damage')).toEqual({});
+    expect(withLowDamageRange('firedam|firemindam[1]', { min: 4 })).toBe('firedam|firemindam{4..}');
+    expect(withLowDamageRange('firedam|firemindam{4..}', { max: 9 })).toBe('firedam|firemindam{..9}');
+    expect(withLowDamageRange('damage', { min: 5, max: 5 })).toBe('damage{5}');
+    expect(withLowDamageRange('firedam|firemindam{4..}', {})).toBe('firedam|firemindam[1]');
+    expect(withLowDamageRange('damage{4..}', {})).toBe('damage');
+    // The service rejects inverted, negative and decimal pins
+    expect(withLowDamageRange('damage', { min: 9, max: 4 })).toBeNull();
+    expect(withLowDamageRange('damage', { min: -1 })).toBeNull();
+    expect(withLowDamageRange('damage', { min: 1.5 })).toBeNull();
+    // Every key written reads back the same range and rolls the max
+    const key = withLowDamageRange('colddam|coldmindam[1]', { min: 2, max: 6 })!;
+    expect(parseStatKey(key).valueIndex).toBe(1);
+    expect(lowDamageRange(key)).toEqual({ min: 2, max: 6 });
   });
 });

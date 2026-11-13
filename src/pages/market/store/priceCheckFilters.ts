@@ -16,7 +16,13 @@ import { PSEUDO_KEY_PREFIX } from '@/pages/price-check/lib/utils';
 import { findBaseOption, findTypeOption } from '@/pages/market/lib/catalog';
 import { typeGroupForMembers } from '@/pages/market/lib/type-groups';
 import { defaultFilters, mergeFilters } from '@/pages/market/lib/defaults';
-import { DAMAGE_KEY, MAX_DAMAGE_NAMES, MIN_DAMAGE_NAMES } from '@/pages/market/lib/stats';
+import {
+  DAMAGE_KEY,
+  MAX_DAMAGE_NAMES,
+  MIN_DAMAGE_NAMES,
+  isDamageRangeKey,
+  withLowDamageRange,
+} from '@/pages/market/lib/stats';
 import type { MarketFilters, MarketListingStatus, Rarity, StatFilter } from '@/pages/market/lib/types';
 
 export interface PriceCheckSearch {
@@ -115,6 +121,16 @@ function statRows(match: ElemMatch, gaps: Set<MarketFilterGap>): Omit<StatFilter
   // (`item_maxdamage_percent` is Enhanced Maximum Damage alone), All Resistances `all_resist` and All Attributes
   // `all_attributes` (one line on the listing, not four)
   const names = typeof match.name === 'string' ? [match.name] : match.name.$in;
+
+  // An elemental "Adds X-Y" line: the min's bounds pin slot 0, the max's are the row's (as `damageRow`), also when
+  // only the min is bounded
+  const pairKey = `${names.join('|')}[1]`;
+  if (isDamageRangeKey(pairKey)) {
+    const low = readRange(match['values.0']);
+    const key = withLowDamageRange(pairKey, low);
+    if (key === null) gaps.add('slot-value');
+    return [{ kind: 'mod', key: key ?? pairKey, ...readRange(match['values.1']), enabled: true }];
+  }
 
   const values = Array.from({ length: QUERY_SLOTS }, (_, i) => match[`values.${i}`]);
   const bounded = values.flatMap((v, i) => (Object.keys(readRange(v)).length > 0 ? [i] : []));

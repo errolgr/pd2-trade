@@ -9,7 +9,7 @@ export const changeLog = {
     "✨ Notification log: what reaches you while you're playing no longer counts as missed. Whispers show in the game's chat and popups show over the game, so only what arrives while you're tabbed out or away from the keyboard (no input for a minute) lights up the log",
     '🔧 Price check: a listing with a long price note no longer makes the results list scroll sideways',
     '🔧 Market browser: sellers shown online stay online until you refresh, instead of turning offline while the results sit open',
-    '🔧 Market browser: fire, cold, lightning and magic damage filters now find items. They looked for lines listings never have, so a jewel with Adds 4-20 Fire Damage matched nothing. Each element is now one "Adds #-# Fire Damage" filter (on the higher number, like "Adds #-# Damage"), and poison one "+# Poison Damage"',
+    '🔧 Market browser: fire, cold, lightning and magic damage filters now find items. They looked for lines listings never have, so a jewel with Adds 4-20 Fire Damage matched nothing. Each element is now one "Adds #-# Fire Damage" filter with Min dmg and Max dmg ranges, like the price check (and "Adds #-# Damage" gets them too); poison is "+# Poison Damage"',
   ],
   '0.11.1': [
     '🆕 Market browser: the Type filter groups class items under their family. Pick Bows, Spears, Javelins, Helms or Shields to search every type in it at once (Bows finds Amazon Bows too; Helms includes Barbarian Helms, Druid Pelts and Circlets; Shields includes Paladin Shields and Shrunken Heads), or pick one type under it as before',
