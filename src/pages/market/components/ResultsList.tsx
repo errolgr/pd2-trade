@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import moment from 'moment';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Heart, Loader2, Sigma } from 'lucide-react';
@@ -105,10 +105,21 @@ export function LoadMoreFooter({ loading, error, retryAt, onRetry }: LoadMoreSta
   );
 }
 
+/**
+ * The time seller presence on result rows is judged at (epoch ms): when the search was shown, so a seller doesn't
+ * turn offline while the list sits open, only on the next refresh. Null: judged at render time.
+ */
+export const PresenceAsOf = createContext<number | null>(null);
+
+/** Whether `lastSeen` counts as online on a result row (as of PresenceAsOf). */
+export function useRowOnline(lastSeen: string | undefined): boolean {
+  return isUserOnlineIngame(lastSeen, useContext(PresenceAsOf) ?? undefined);
+}
+
 /** Site and in-game presence dots of a listing's seller. */
 export function OnlineDots({ listing, className }: { listing: MarketListingEntry; className?: string }) {
-  const site = isUserOnlineIngame(listing.user_last_online);
-  const game = isUserOnlineIngame(listing.user_last_ingame);
+  const site = useRowOnline(listing.user_last_online);
+  const game = useRowOnline(listing.user_last_ingame);
   const { t } = useTranslation('market');
   return (
     <Tip

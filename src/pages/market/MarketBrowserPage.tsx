@@ -32,7 +32,7 @@ import { FilterHighlightContext } from './components/controls';
 import { RelaxationChips, relaxationChips } from './components/RelaxationChips';
 import { FilterSidebar } from './components/FilterSidebar';
 import { ItemNameSearch } from './components/ItemNameSearch';
-import { type LoadMoreState, ResultsList } from './components/ResultsList';
+import { type LoadMoreState, PresenceAsOf, ResultsList } from './components/ResultsList';
 import { type CardCommand, ResultCards } from './components/ResultCards';
 import { useCardCommand } from './hooks/useCardCommand';
 import { ListingDetail } from './components/ListingDetail';
@@ -561,65 +561,68 @@ const MarketBrowserPage: React.FC = () => {
                             </>
                           }
                         >
-                          <AnimatePresence mode="wait"
-                            initial={false}>
-                            <motion.div
-                              key={viewMode}
-                              variants={fadeIn}
-                              initial="hidden"
-                              animate="visible"
-                              exit="exit"
-                              className="flex min-h-0 flex-1 flex-col"
-                            >
-                              {cards ? (
-                                <ResultCards
-                                  rows={cardRows}
-                                  enter={enter}
-                                  pinned={
-                                    pinned && tab === 'search'
-                                      ? {
-                                          id: pinned.row.listing._id,
-                                          searchName: pinned.searchName,
-                                          onDismiss: dismissPinned,
-                                        }
-                                      : null
-                                  }
-                                  glowIds={glowIds}
-                                  selectedId={selectedId}
-                                  onSelect={selectCard}
-                                  statKeys={statKeys}
-                                  command={cardCommands.command}
-                                  takeCommand={cardCommands.take}
-                                  deals={deals}
-                                  offers={offers}
-                                  pseudoKeys={pseudoKeys}
-                                  favoriteIds={favoriteIds}
-                                  onToggleFavorite={toggleFavorite}
-                                  archived={archived}
-                                  api={marketApi ?? null}
-                                  hasMore={tab === 'search' && search.hasMore}
-                                  loadingMore={tab === 'search' && search.loadingMore}
-                                  onLoadMore={search.loadMore}
-                                  loadMore={loadMore}
-                                />
-                              ) : (
-                                <ResultsList
-                                  rows={rows}
-                                  enter={enter}
-                                  selectedId={selectedId}
-                                  onSelect={selectListing}
-                                  deals={deals}
-                                  offers={offers}
-                                  pseudoKeys={pseudoKeys}
-                                  favoriteIds={favoriteIds}
-                                  hasMore={tab === 'search' && search.hasMore}
-                                  loadingMore={tab === 'search' && search.loadingMore}
-                                  onLoadMore={search.loadMore}
-                                  loadMore={loadMore}
-                                />
-                              )}
-                            </motion.div>
-                          </AnimatePresence>
+                          {/* Search rows: presence as of when the results were shown, until the next refresh */}
+                          <PresenceAsOf.Provider value={tab === 'search' ? search.shownAt : null}>
+                            <AnimatePresence mode="wait"
+                              initial={false}>
+                              <motion.div
+                                key={viewMode}
+                                variants={fadeIn}
+                                initial="hidden"
+                                animate="visible"
+                                exit="exit"
+                                className="flex min-h-0 flex-1 flex-col"
+                              >
+                                {cards ? (
+                                  <ResultCards
+                                    rows={cardRows}
+                                    enter={enter}
+                                    pinned={
+                                      pinned && tab === 'search'
+                                        ? {
+                                            id: pinned.row.listing._id,
+                                            searchName: pinned.searchName,
+                                            onDismiss: dismissPinned,
+                                          }
+                                        : null
+                                    }
+                                    glowIds={glowIds}
+                                    selectedId={selectedId}
+                                    onSelect={selectCard}
+                                    statKeys={statKeys}
+                                    command={cardCommands.command}
+                                    takeCommand={cardCommands.take}
+                                    deals={deals}
+                                    offers={offers}
+                                    pseudoKeys={pseudoKeys}
+                                    favoriteIds={favoriteIds}
+                                    onToggleFavorite={toggleFavorite}
+                                    archived={archived}
+                                    api={marketApi ?? null}
+                                    hasMore={tab === 'search' && search.hasMore}
+                                    loadingMore={tab === 'search' && search.loadingMore}
+                                    onLoadMore={search.loadMore}
+                                    loadMore={loadMore}
+                                  />
+                                ) : (
+                                  <ResultsList
+                                    rows={rows}
+                                    enter={enter}
+                                    selectedId={selectedId}
+                                    onSelect={selectListing}
+                                    deals={deals}
+                                    offers={offers}
+                                    pseudoKeys={pseudoKeys}
+                                    favoriteIds={favoriteIds}
+                                    hasMore={tab === 'search' && search.hasMore}
+                                    loadingMore={tab === 'search' && search.loadingMore}
+                                    onLoadMore={search.loadMore}
+                                    loadMore={loadMore}
+                                  />
+                                )}
+                              </motion.div>
+                            </AnimatePresence>
+                          </PresenceAsOf.Provider>
                         </ResultsPane>
                       )}
                     </motion.div>
