@@ -23,6 +23,7 @@ import {
   isDamageRangeKey,
   withLowDamageRange,
 } from '@/pages/market/lib/stats';
+import { PSEUDO_LOW_ENDS } from '@/pages/market/lib/pseudo';
 import type { MarketFilters, MarketListingStatus, Rarity, StatFilter } from '@/pages/market/lib/types';
 
 export interface PriceCheckSearch {
@@ -278,16 +279,24 @@ export function priceCheckMarketSearch(search: PriceCheckSearch): MarketQueryFil
   // Runewords keep their base's quality on PD2; the service selects them by Runeword (`item.is_runeword`), and
   // would leave them out of a Normal/Superior search
   if (search.item.isRuneword) filters.rarity = ['Runeword'];
-  // Pseudo rows (`pseudo:<id>` keys) aren't in the PD2 query: added from the selection
+  // Pseudo rows (`pseudo:<id>` keys) aren't in the PD2 query: added from the selection. A pair total (Total
+  // Elemental Damage) bounds both ends like a damage row: min / max the low end, pinned in the key, maxMin / maxMax
+  // the high end, the row's bounds
+  const bound = (v?: string) => (v?.trim() ? Number(v) : undefined);
   for (const key of search.selected) {
     if (!key.startsWith(PSEUDO_KEY_PREFIX)) continue;
-    const { min, max } = search.filters[key] ?? {};
+    const id = key.slice(PSEUDO_KEY_PREFIX.length);
+    const input = search.filters[key] ?? {};
+    const pair = id in PSEUDO_LOW_ENDS;
+    const pinned = pair ? withLowDamageRange(id, { min: bound(input.min), max: bound(input.max) }) : id;
+    if (pinned === null) gaps.push('slot-value');
+    const [min, max] = pair ? [bound(input.maxMin), bound(input.maxMax)] : [bound(input.min), bound(input.max)];
     filters.stats!.push({
       id: crypto.randomUUID(),
       kind: 'pseudo',
-      key: key.slice(PSEUDO_KEY_PREFIX.length),
-      ...(min?.trim() ? { min: Number(min) } : {}),
-      ...(max?.trim() ? { max: Number(max) } : {}),
+      key: pinned ?? id,
+      ...(min !== undefined && { min }),
+      ...(max !== undefined && { max }),
       enabled: true,
     });
   }

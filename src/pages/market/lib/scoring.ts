@@ -1,5 +1,5 @@
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { readStatValue } from './stats';
+import { pseudoIdOf, readStatValue } from './stats';
 import type { StatFilter } from './types';
 
 /**
@@ -18,7 +18,9 @@ export function scoreListing(
   for (const stat of stats) {
     if (!stat.enabled || !stat.weight) continue;
     const roll =
-      stat.kind === 'pseudo' ? (pseudo[stat.key] ?? 0) : (readStatValue(listing.item?.modifiers, stat.key) ?? 0);
+      stat.kind === 'pseudo'
+        ? (pseudo[pseudoIdOf(stat.key)] ?? 0)
+        : (readStatValue(listing.item?.modifiers, stat.key) ?? 0);
     score = (score ?? 0) + stat.weight * roll;
   }
   const hr = listing.hr_price;

@@ -137,7 +137,7 @@ export function useActiveFilterText(): (spec: ActiveFilterSpec) => string {
           return `${t(spec.field === 'site' ? 'filters.onlineSite' : 'filters.onlineGame')}: ${online(spec.value)}`;
         case 'stat': {
           const { row } = spec;
-          const low = row.kind === 'mod' && isDamageRangeKey(row.key) ? lowDamageRange(row.key) : {};
+          const low = row.kind !== 'corruption' && isDamageRangeKey(row.key) ? lowDamageRange(row.key) : {};
           const bounded = (r: { min?: number; max?: number }) => r.min !== undefined || r.max !== undefined;
           let name: string;
           if (bounded(low)) {

@@ -415,7 +415,7 @@ export function StatFilters({
               </button>
             </Tip>
           </div>
-          {s.kind === 'mod' && isDamageRangeKey(s.key) ? (
+          {s.kind !== 'corruption' && isDamageRangeKey(s.key) ? (
             <DamageRange row={s}
               name={name}
               onChange={(changes) => update(s.id, changes)} />

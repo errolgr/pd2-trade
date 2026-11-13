@@ -186,11 +186,19 @@ export const PSEUDO_STATS: PseudoDef[] = [
     },
   },
   {
-    // Fire, cold and lightning "Adds X-Y" lines summed; rolls the max, like the `damage` stat
+    // Fire, cold and lightning "Adds X-Y" lines summed; rolls the max, like the `damage` stat. Its low end is
+    // `pseudo_elemental_min_damage`, bounded through the key's pin (`pseudo_elemental_max_damage{4..10}`)
     id: 'pseudo_elemental_max_damage',
     label: 'Adds {X}-{Y} Total Elemental Damage',
     group: 'Pseudo',
     compute: (m) => addedElementalDamage(m).max,
+  },
+  {
+    id: 'pseudo_elemental_min_damage',
+    label: 'Adds {X}-{Y} Total Elemental Damage (low end)',
+    group: 'Pseudo',
+    compute: (m) => addedElementalDamage(m).min,
+    lowEndOf: 'pseudo_elemental_max_damage',
   },
   {
     id: 'pseudo_life_leech',
@@ -213,3 +221,8 @@ export function computePseudo(item: Pick<ItemDetail, 'modifiers'> | undefined | 
   for (const def of PSEUDO_STATS) out[def.id] = def.compute(mods);
   return out;
 }
+
+/** Pair pseudo stats whose row bounds the low end too: the rolled (high end) id → the low end's id. */
+export const PSEUDO_LOW_ENDS: Readonly<Record<string, string>> = Object.fromEntries(
+  PSEUDO_STATS.flatMap((p) => (p.lowEndOf ? [[p.lowEndOf, p.id]] : [])),
+);

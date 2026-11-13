@@ -22,6 +22,7 @@ import { applyPreset, BUILT_IN_PRESETS } from './lib/presets';
 import type { MarketFilters, MarketTab, ScoredListing, StatPreset } from './lib/types';
 import { indexListingOffers } from './lib/listing-offers';
 import { scoreListings } from './lib/search';
+import { pseudoIdOf } from './lib/stats';
 import { withRowPresence } from './lib/presence';
 import { type MarketSearch, searchCountText, useMarketSearch } from './hooks/useMarketSearch';
 import { type MarketFavorites, useMarketFavorites } from './hooks/useMarketFavorites';
@@ -244,7 +245,8 @@ const MarketBrowserPage: React.FC = () => {
   const glowIds = useLiveAlertGlow(filters, store.savedSearches);
 
   const pseudoKeys = useMemo(
-    () => (filters?.stats ?? []).filter((s) => s.enabled && !s.not && s.kind === 'pseudo').map((s) => s.key),
+    () =>
+      (filters?.stats ?? []).filter((s) => s.enabled && !s.not && s.kind === 'pseudo').map((s) => pseudoIdOf(s.key)),
     [filters?.stats],
   );
   const statKeys = useMemo(
