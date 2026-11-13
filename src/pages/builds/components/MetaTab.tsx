@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ArrowDown,
   ArrowUp,
@@ -27,9 +27,11 @@ import {
   getBuildCharacters,
   getBuildShoppingList,
   getBuildUsage,
+  getBuildUsageList,
   type ItemUsage,
   type ShoppingListResponse,
   type UsageCount,
+  type UsageListName,
   type UsageResponse,
 } from '@/lib/builds-api';
 import { useBuildsActions } from '../lib/context';
@@ -58,6 +60,10 @@ const LEVEL_PRESETS = [
   { value: '99', label: '99', min: 99 },
 ] as const;
 const PAGE_SIZE = 25;
+/** A usage search asks the server once typing pauses this long (the top-50 matches show at once). */
+const SEARCH_DEBOUNCE_MS = 200;
+/** Most rows a usage search shows. */
+const SEARCH_LIMIT = 100;
 
 type ListKey = 'classes' | 'skills' | 'items' | 'mercTypes' | 'mercItems';
 
@@ -95,13 +101,18 @@ export function MetaTab({
   const usage = useBuildsQuery(`usage|${filterKey}`, (signal) => getBuildUsage(filters, signal));
   const shopping = useBuildsQuery(`shopping|${filterKey}`, (signal) => getBuildShoppingList(filters, signal));
 
+  /** Names of items picked from a usage search (they may be missing from the top-50 usage lists). */
+  const [picked, setPicked] = useState<ReadonlyMap<string, string>>(new Map());
   const itemNames = useMemo(() => {
-    const names = new Map(labels);
+    const names = new Map([...labels, ...picked]);
     for (const item of [...(usage.data?.items ?? []), ...(usage.data?.mercItems ?? [])]) names.set(item.key, item.name);
     return names;
-  }, [labels, usage.data]);
+  }, [labels, picked, usage.data]);
 
-  const toggle = (key: ListKey, value: string) => onChange(toggleListFilter(filters, key, value));
+  const toggle = (key: ListKey, value: string, name?: string) => {
+    if (name) setPicked((prev) => new Map(prev).set(value, name));
+    onChange(toggleListFilter(filters, key, value));
+  };
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -368,19 +379,33 @@ function UsagePanel({
 }: {
   usage: BuildsQuery<UsageResponse>;
   filters: BuildsFilters;
-  onToggle: (list: ListKey, value: string) => void;
+  onToggle: (list: ListKey, value: string, name?: string) => void;
 }) {
   const { t } = useTranslation('builds');
   const [view, setView] = useState<UsageView>('skills');
   const [search, setSearch] = useState('');
   const data = usage.data;
   const needle = search.trim().toLowerCase();
+  const [debounced, setDebounced] = useState(needle);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(needle), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(id);
+  }, [needle]);
+  // `usage` holds only the 50 most used skills / items / merc items: a search asks the server for the whole list
+  const searchList: UsageListName = view === 'merc' ? 'mercItems' : view;
+  const filterKey = JSON.stringify(filterParams(filters));
+  const found = useBuildsQuery(debounced ? `usage-list|${searchList}|${filterKey}|${debounced}` : null, (signal) =>
+    getBuildUsageList(searchList, filters, { q: debounced, pageSize: SEARCH_LIMIT, signal }),
+  );
+  const foundRows = needle && debounced === needle && !found.loading && !found.error ? found.data?.rows : undefined;
+  // Until the server answers (or when it can't), the top-50 lists' matches
+  const searching = !!needle && !foundRows && !found.error;
   const matches = <T extends { name: string }>(rows: T[], limit: number) =>
     needle ? rows.filter((r) => r.name.toLowerCase().includes(needle)) : rows.slice(0, limit);
-  const skills = data ? matches(data.skills, 30) : [];
-  const items = data ? matches(data.items, 40) : [];
+  const skills = view === 'skills' && foundRows ? foundRows : data ? matches(data.skills, 30) : [];
+  const items = view === 'items' && foundRows ? (foundRows as ItemUsage[]) : data ? matches(data.items, 40) : [];
   const mercTypes = data ? matches(data.mercTypes, Infinity) : [];
-  const mercItems = data ? matches(data.mercItems, 25) : [];
+  const mercItems = view === 'merc' && foundRows ? (foundRows as ItemUsage[]) : data ? matches(data.mercItems, 25) : [];
   const empty =
     view === 'skills'
       ? skills.length === 0
@@ -438,12 +463,13 @@ function UsagePanel({
       ) : data.total === 0 ? (
         <p className="p-3 text-center text-xs text-muted-foreground">{t('meta.noMatchFilters')}</p>
       ) : (
-        <div className={cn('transition-opacity duration-(--dur-med)', usage.stale && 'opacity-60')}>
-          {needle && empty && (
+        <div className={cn('transition-opacity duration-(--dur-med)', (usage.stale || searching) && 'opacity-60')}>
+          {needle && empty && !searching && (
             <p className="p-3 text-center text-xs text-muted-foreground">
               {t('meta.nothingMatches', { search: search.trim() })}
             </p>
           )}
+          {needle && empty && searching && <ListSkeleton rows={3} />}
           {view === 'skills' && (
             <>
               {skills.length > 0 && (
@@ -470,7 +496,7 @@ function UsagePanel({
                 key={item.key}
                 item={item}
                 active={filters.items.includes(item.key)}
-                onClick={() => onToggle('items', item.key)}
+                onClick={() => onToggle('items', item.key, item.name)}
               />
             ))}
           {view === 'merc' && (
@@ -501,7 +527,7 @@ function UsagePanel({
                   item={item}
                   merc
                   active={filters.mercItems.includes(item.key)}
-                  onClick={() => onToggle('mercItems', item.key)}
+                  onClick={() => onToggle('mercItems', item.key, item.name)}
                 />
               ))}
             </>
