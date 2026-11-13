@@ -185,6 +185,27 @@ export interface UsageResponse {
   mercItems: ItemUsage[];
 }
 
+/** The usage lists `/usage/:list` pages through in full (`/usage` holds only the 50 most used of each). */
+export type UsageListName = 'skills' | 'items' | 'mercItems';
+
+interface UsageListRows {
+  skills: UsageCount;
+  items: ItemUsage;
+  mercItems: ItemUsage;
+}
+
+export interface UsageListResponse<L extends UsageListName> {
+  season: string;
+  mode: BuildsMode;
+  total: number;
+  list: L;
+  /** Rows matching `q` in the whole list. */
+  matches: number;
+  page: number;
+  pageSize: number;
+  rows: UsageListRows[L][];
+}
+
 export interface ShoppingListItem extends ItemUsage {
   /** Site path of the item's market page, or null. */
   marketUrl: string | null;
@@ -360,6 +381,16 @@ export function getBuildUsage(filters: BuildsFilters, signal?: AbortSignal): Pro
 
 export function getBuildShoppingList(filters: BuildsFilters, signal?: AbortSignal): Promise<ShoppingListResponse> {
   return getJson(builds('/shopping-list', filterParams(filters)), signal);
+}
+
+/** One page of a full usage list; `q` keeps the names containing it (case-insensitive). pageSize 1–200. */
+export function getBuildUsageList<L extends UsageListName>(
+  list: L,
+  filters: BuildsFilters,
+  opts: { q?: string; page?: number; pageSize?: number; signal?: AbortSignal } = {},
+): Promise<UsageListResponse<L>> {
+  const params = { ...filterParams(filters), q: opts.q, page: opts.page, pageSize: opts.pageSize };
+  return getJson(builds(`/usage/${list}`, params), opts.signal);
 }
 
 /** `mode` omitted: the server looks in softcore first, then hardcore. 404 → BuildsApiError status 404. */

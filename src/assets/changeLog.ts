@@ -11,6 +11,7 @@ export const changeLog = {
     '🔧 Price check: a listing with a long price note no longer makes the results list scroll sideways',
     '🔧 Market browser: sellers shown online stay online until you refresh, instead of turning offline while the results sit open',
     '🔧 Market browser: fire, cold, lightning and magic damage filters now find items. They looked for lines listings never have, so a jewel with Adds 4-20 Fire Damage matched nothing. Each element is now one "Adds #-# Fire Damage" filter with Min dmg and Max dmg ranges, like the price check (and "Adds #-# Damage" gets them too); poison is "+# Poison Damage"',
+    '🔧 Builds: the skill, item and merc searches on the Meta tab now search every skill and item, not only the 50 most used, so runewords like Enigma show up as they do on pd2trader.com',
   ],
   '0.11.1': [
     '🆕 Market browser: the Type filter groups class items under their family. Pick Bows, Spears, Javelins, Helms or Shields to search every type in it at once (Bows finds Amazon Bows too; Helms includes Barbarian Helms, Druid Pelts and Circlets; Shields includes Paladin Shields and Shrunken Heads), or pick one type under it as before',

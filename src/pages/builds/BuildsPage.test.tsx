@@ -235,6 +235,51 @@ describe('BuildsPage class bar', () => {
   });
 });
 
+describe('BuildsPage usage search', () => {
+  it('searches the whole item list on the server, not only the 50 most used', async () => {
+    const top = { quality: 'Unique', iconUrl: null, count: 900, pct: 9, priceHr: null };
+    const usage: UsageResponse = { ...USAGE, total: 10_000, items: [{ ...top, key: 'unique:shako', name: 'Shako' }] };
+    const enigma = {
+      key: 'rw:enigma',
+      name: 'Enigma',
+      quality: 'Runeword',
+      iconUrl: null,
+      count: 3,
+      pct: 0.03,
+      priceHr: null,
+    };
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname === '/api/builds/usage') return json(usage);
+      if (url.pathname === '/api/builds/usage/items') {
+        const q = url.searchParams.get('q') ?? '';
+        const rows = 'enigma'.includes(q) ? [enigma] : [];
+        return json({
+          season: 's14',
+          mode: 'softcore',
+          total: 10_000,
+          list: 'items',
+          matches: rows.length,
+          page: 1,
+          pageSize: 100,
+          rows,
+        });
+      }
+      if (url.pathname === '/api/builds/characters') return json(LIST);
+      return json({ season: 's14', mode: 'softcore', total: 0, items: [] });
+    });
+    panel.payload = { tab: 'meta' };
+    render(<BuildsPage />);
+    fireEvent.click(await screen.findByRole('radio', { name: 'Items' }));
+    await screen.findByText('Shako');
+    fireEvent.change(screen.getByLabelText('Search items'), { target: { value: 'Enig' } });
+    fireEvent.click((await screen.findByText('Enigma')).closest('button')!);
+    expect(requested('/api/builds/usage/items').at(-1)?.searchParams.get('q')).toBe('enig');
+    // The chip names the picked item, though the top-50 usage list doesn't hold it
+    expect(within(await screen.findByLabelText('Active filters')).getByText('Enigma')).toBeTruthy();
+  });
+});
+
 describe('BuildsPage Mine tab', () => {
   it('asks a signed-out user to sign in', async () => {
     panel.payload = { tab: 'characters' };
