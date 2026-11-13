@@ -44,6 +44,11 @@ export interface MarketSearchState {
    * search while the next one loads, null before the first or after an error.
    */
   facets: MarketFacets | null;
+  /**
+   * When the first page was shown (epoch ms; a refresh or new search moves it, a next page doesn't): seller
+   * presence on the rows is judged as of then, so it doesn't decay while the results sit open. Null until ready.
+   */
+  shownAt: number | null;
 }
 
 const IDLE: MarketSearchState = {
@@ -59,6 +64,7 @@ const IDLE: MarketSearchState = {
   filters: null,
   ranFilters: null,
   facets: null,
+  shownAt: null,
 };
 
 /** Recent results by query; module-level so reopening the panel or flipping tabs back is instant. */
@@ -229,6 +235,7 @@ export function useMarketSearch(
         total: result.total,
         totalExact: result.totalExact,
         facets: result.facets ?? null,
+        shownAt: Date.now(),
         hasMore: result.fetched < result.total,
       });
     };
@@ -241,7 +248,7 @@ export function useMarketSearch(
 
     const controller = new AbortController();
     abortRef.current = controller;
-    setState((s) => ({ ...IDLE, status: 'loading', items: s.items, facets: s.facets }));
+    setState((s) => ({ ...IDLE, status: 'loading', items: s.items, facets: s.facets, shownAt: s.shownAt }));
     const timer = window.setTimeout(
       async () => {
         const startedAt = performance.now();
