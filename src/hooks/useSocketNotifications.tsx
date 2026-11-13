@@ -241,6 +241,7 @@ export const useSocketNotifications = ({
             {
               toast:
                 shouldNotifyByTiming && !!whisper.itemName && !isDiabloFocused && isToastEnabled(settings, 'trade'),
+              inGameChat: true,
               groupKey,
             },
           );
@@ -259,7 +260,11 @@ export const useSocketNotifications = ({
             duration: 5000,
             action: reply,
           },
-          { toast: shouldNotifyByTiming && !isDiabloFocused && isToastEnabled(settings, 'whispers'), groupKey },
+          {
+            toast: shouldNotifyByTiming && !isDiabloFocused && isToastEnabled(settings, 'whispers'),
+            inGameChat: true,
+            groupKey,
+          },
         );
       }),
       'whisper-received',

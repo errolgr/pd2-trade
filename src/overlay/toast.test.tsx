@@ -2,10 +2,12 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { toast } from 'sonner';
+import { invoke, isTauri } from '@tauri-apps/api/core';
+import { getNotificationLog, resetNotificationLog } from '@/lib/notification-log';
 import { openUrl } from '@/lib/browser-opener';
 import { installUpdateAndRelaunch } from '@/lib/updater';
 import { ToastActionType } from '@/common/types/Events';
-import { ToastLayer, confirmToast, setToastBridge, showToast, undoToast } from './toast';
+import { ToastLayer, confirmToast, notify, setToastBridge, showToast, undoToast } from './toast';
 import { intentToast } from '@/hooks/useOverlayIntents';
 import { fetchMarketListing } from '@/pages/market/alerts/market-api';
 import { listing, mod } from '@/pages/market/lib/test-utils';
@@ -494,5 +496,56 @@ describe('undoToast', () => {
     expect(dismissSpy).toHaveBeenCalledTimes(1);
     expect(dismissSpy.mock.calls[0][0]).toBeDefined();
     expect(onUndo).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('notify: missed or seen', () => {
+  /** Tauri with Diablo in front (or not) and this much time since the last keyboard/mouse input. */
+  function player({ focused, idleMs }: { focused: boolean; idleMs: number }) {
+    vi.mocked(isTauri).mockReturnValue(true);
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => (cmd === 'is_diablo_focused' ? focused : idleMs));
+  }
+  const missed = () => getNotificationLog().map((e) => e.missed);
+  const offer = { title: 'New Offer', description: 'offer text', duration: 5000 };
+  const whisper = { title: 'Whisper from bob', description: 'hi' };
+
+  beforeEach(() => resetNotificationLog());
+  afterEach(() => vi.mocked(isTauri).mockReturnValue(false));
+
+  it('a toast over the game the player is playing is seen, even unhovered', async () => {
+    player({ focused: true, idleMs: 2_000 });
+    await renderLayer();
+    await show(() => notify('offer', offer, { toast: true }));
+    expect(toastEl('offer text')).not.toBeNull();
+    await advance(10_000);
+    expect(missed()).toEqual([false]);
+  });
+
+  it('AFK in the game or tabbed out, an unhovered toast is missed', async () => {
+    await renderLayer();
+    player({ focused: true, idleMs: 120_000 });
+    await show(() => notify('offer', offer, { toast: true }));
+    await advance(10_000);
+    player({ focused: false, idleMs: 0 });
+    await show(() => notify('offer', { ...offer, description: 'second' }, { toast: true }));
+    await advance(10_000);
+    expect(missed()).toEqual([true, true]);
+  });
+
+  it("a whisper the game's chat showed is seen in the game, missed when AFK or tabbed out", async () => {
+    player({ focused: true, idleMs: 0 });
+    await act(async () => notify('whisper', whisper, { toast: false, inGameChat: true }));
+    player({ focused: true, idleMs: 120_000 });
+    await act(async () => notify('whisper', whisper, { toast: false, inGameChat: true }));
+    player({ focused: false, idleMs: 0 });
+    await act(async () => notify('whisper', whisper, { toast: false, inGameChat: true }));
+    // newest first
+    expect(missed()).toEqual([true, true, false]);
+  });
+
+  it('a suppressed popup nothing else showed stays missed in the game', async () => {
+    player({ focused: true, idleMs: 0 });
+    await act(async () => notify('offer', offer, { toast: false }));
+    expect(missed()).toEqual([true]);
   });
 });
