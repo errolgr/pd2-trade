@@ -63,16 +63,61 @@ describe('physical damage pair (damage)', () => {
     expect(readStatValue([line('min_damage', 4)], 'damage')).toBeNull();
   });
 
-  it('is a picker option labelled "Adds {X}-{Y} Damage", found as flat / adds damage', () => {
-    expect(statLabel('damage{4..}')).toBe('Adds {X}-{Y} Damage');
+  it('is a picker option labelled "Adds {Y}-{X} Damage" (filters the max), found as flat / adds damage', () => {
+    expect(statLabel('damage{4..}')).toBe('Adds {Y}-{X} Damage');
     expect(STAT_OPTIONS.find((o) => o.key === 'damage')).toMatchObject({ group: 'Offense' });
-    expect(top('flat damage', 1)).toEqual(['Adds X-{Y} Damage']);
-    expect(top('adds damage', 1)).toEqual(['Adds X-{Y} Damage']);
+    expect(top('flat damage', 1)).toEqual(['Adds {Y}-X Damage']);
+    expect(top('adds damage', 1)).toEqual(['Adds {Y}-X Damage']);
   });
 
   it('a merged card line filters and sorts on the damage key, valued by its max', () => {
     const [merged] = mergeDamageLines([line('min_damage', 4), line('max_damage', 14)]);
     expect(modToStatKey(merged)).toBe('damage');
     expect(modStatValue(merged, 'damage')).toBe(14);
+  });
+});
+
+describe('elemental min / max damage', () => {
+  // Live listings: one "Adds X-Y" line per element (no lone firemindam / firemaxdam lines)
+  const jewel: Modifier[] = [
+    { name: 'firedam', values: [4, 20], label: 'Adds 4-20 Fire Damage', priority: 101 },
+    { name: 'colddam', values: [1, 3, 50], label: 'Adds 1-3 Cold Damage', priority: 99 },
+  ];
+
+  it.each([
+    ['fire', 'Fire'],
+    ['light', 'Lightning'],
+    ['magic', 'Magic'],
+    ['cold', 'Cold'],
+  ])('%s: the low end reads values.0 of the pair line, the high end values.1', (e, label) => {
+    expect(STAT_OPTIONS.find((o) => o.key === `${e}dam|${e}mindam`)?.label).toBe(`Adds {X}-{Y} ${label} Damage`);
+    expect(STAT_OPTIONS.find((o) => o.key === `${e}dam|${e}mindam[1]`)?.label).toBe(`Adds {Y}-{X} ${label} Damage`);
+    expect(STAT_OPTIONS.some((o) => o.key === `${e}mindam` || o.key === `${e}maxdam`)).toBe(false);
+  });
+
+  it('poison keeps the site wording (its line reads "+X Poison Damage over N Seconds")', () => {
+    expect(statLabel('poisondam|poisonmindam')).toBe('+{X} to Minimum Poison Damage');
+    expect(statLabel('poisondam|poisonmindam[1]')).toBe('+{X} to Maximum Poison Damage');
+  });
+
+  it('min / max in a search find the matching end', () => {
+    expect(top('min fire damage', 1)).toEqual(['Adds X-{Y} Fire Damage']);
+    expect(top('max fire damage')).toContain('Adds {Y}-X Fire Damage');
+    expect(top('max fire damage')).not.toContain('Adds X-{Y} Fire Damage');
+    expect(top('min elemental damage', 1)).toEqual(['Adds X-{Y} Total Elemental Damage (fire + cold + lightning)']);
+  });
+
+  it('filters a jewel by either end', () => {
+    expect(readStatValue(jewel, 'firedam|firemindam')).toBe(4);
+    expect(readStatValue(jewel, 'firedam|firemindam[1]')).toBe(20);
+    expect(readStatValue(jewel, 'colddam|coldmindam[1]')).toBe(3);
+    expect(readStatValue(jewel, 'lightdam|lightmindam')).toBeNull();
+  });
+
+  it('a card line filters on its max, and a price-check pinned key is labelled Maximum', () => {
+    expect(modToStatKey(jewel[0])).toBe('firedam|firemindam[1]');
+    expect(modStatValue(jewel[0], 'firedam|firemindam[1]')).toBe(20);
+    expect(statLabel('firedam|firemindam{4..}')).toBe('Adds {Y}-{X} Fire Damage');
+    expect(statLabel('firedam|firemindam')).toBe('Adds {X}-{Y} Fire Damage');
   });
 });

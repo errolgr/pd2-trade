@@ -42,25 +42,30 @@ const MANA_PER_ENERGY = 2;
 
 const ELEMENTS = ['fire', 'cold', 'ltng', 'pois', 'mag'] as const;
 
+/** Fire, cold and lightning "Adds X-Y" lines (`firedam`) and their lone-end forms (`firemindam`, `firemaxdam`). */
+const ELEMENTAL_DAMAGE_LINE = /^(fire|cold|light)(min|max)?dam$/;
+
 /**
- * Average added damage of one element, (min + max) / 2, as the trade sites sum "Adds X-Y" lines. PD2 sends the
+ * Added fire, cold and lightning damage summed per end: Σ min and Σ max over every "Adds X-Y" line. PD2 sends the
  * line as `firedam [min, max]` (cold: `[min, max, chill frames]`); `firemindam [min, max]` is the same pair under
- * another name, and lone `firemindam [min]` / `firemaxdam [max]` lines add to each end.
+ * another name, and lone `firemindam [min]` / `firemaxdam [max]` lines add to their end.
  */
-function addedDamage(mods: Modifier[], element: 'fire' | 'cold' | 'light'): number {
-  let pairs = 0;
-  let lo = 0;
-  let hi = 0;
+function addedElementalDamage(mods: Modifier[]): { min: number; max: number } {
+  let min = 0;
+  let max = 0;
   for (const mod of mods) {
-    if (mod.name !== `${element}dam` && mod.name !== `${element}mindam` && mod.name !== `${element}maxdam`) continue;
+    const line = ELEMENTAL_DAMAGE_LINE.exec(mod.name);
     const first = mod.values?.[0];
-    if (typeof first !== 'number') continue;
-    const second = mod.name === `${element}maxdam` ? undefined : mod.values?.[1];
-    if (typeof second === 'number') pairs += (first + second) / 2;
-    else if (mod.name === `${element}maxdam`) hi += first;
-    else lo += first;
+    if (!line || typeof first !== 'number') continue;
+    if (line[2] === 'max') {
+      max += first;
+      continue;
+    }
+    min += first;
+    const second = mod.values?.[1];
+    if (typeof second === 'number') max += second;
   }
-  return pairs + (lo + hi) / 2;
+  return { min, max };
 }
 
 /**
@@ -174,7 +179,22 @@ export const PSEUDO_STATS: PseudoDef[] = [
     id: 'pseudo_elemental_damage',
     label: '+{X} Total Elemental Damage (average added fire + cold + lightning)',
     group: 'Pseudo',
-    compute: (m) => addedDamage(m, 'fire') + addedDamage(m, 'cold') + addedDamage(m, 'light'),
+    compute: (m) => {
+      const { min, max } = addedElementalDamage(m);
+      return (min + max) / 2;
+    },
+  },
+  {
+    id: 'pseudo_elemental_min_damage',
+    label: 'Adds {X}-{Y} Total Elemental Damage (fire + cold + lightning)',
+    group: 'Pseudo',
+    compute: (m) => addedElementalDamage(m).min,
+  },
+  {
+    id: 'pseudo_elemental_max_damage',
+    label: 'Adds {Y}-{X} Total Elemental Damage (fire + cold + lightning)',
+    group: 'Pseudo',
+    compute: (m) => addedElementalDamage(m).max,
   },
   {
     id: 'pseudo_life_leech',

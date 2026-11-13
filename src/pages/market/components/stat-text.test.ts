@@ -20,9 +20,13 @@ describe('stat text', () => {
     expect(statWithValue('unknown_key', 3)).toBe('unknown_key 3');
   });
 
-  it('spells the physical damage pair (damage) without raw placeholders', () => {
-    expect(statName('damage{4..}')).toBe('Adds Damage');
-    expect(itemStatText('damage')).toBe('Adds #-# Damage');
+  it('spells damage pairs like the item line: the filtered end, the other as … in names and # in chips', () => {
+    expect(statName('damage{4..}')).toBe('Adds …-# Damage');
+    expect(itemStatText('damage')).toBe('Adds …-# Damage');
     expect(statWithValue('damage', 14)).toBe('Adds #-14 Damage');
+    expect(itemStatText('firedam|firemindam')).toBe('Adds #-… Fire Damage');
+    expect(statWithValue('firedam|firemindam', 4)).toBe('Adds 4-# Fire Damage');
+    expect(statWithValue('firedam|firemindam[1]', 20)).toBe('Adds #-20 Fire Damage');
+    expect(statWithValue('pseudo_elemental_min_damage', 5, { short: true })).toBe('Adds 5-# Total Elemental Damage');
   });
 });
