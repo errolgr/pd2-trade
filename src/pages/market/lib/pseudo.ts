@@ -177,7 +177,8 @@ export const PSEUDO_STATS: PseudoDef[] = [
   },
   {
     id: 'pseudo_elemental_damage',
-    label: '+{X} Total Elemental Damage (average added fire + cold + lightning)',
+    // Σ (min + max) / 2 over fire, cold and lightning "Adds X-Y" lines
+    label: '+{X} Average Elemental Damage',
     group: 'Pseudo',
     compute: (m) => {
       const { min, max } = addedElementalDamage(m);
@@ -185,14 +186,9 @@ export const PSEUDO_STATS: PseudoDef[] = [
     },
   },
   {
-    id: 'pseudo_elemental_min_damage',
-    label: 'Adds {X}-{Y} Total Elemental Damage (fire + cold + lightning)',
-    group: 'Pseudo',
-    compute: (m) => addedElementalDamage(m).min,
-  },
-  {
+    // Fire, cold and lightning "Adds X-Y" lines summed; rolls the max, like the `damage` stat
     id: 'pseudo_elemental_max_damage',
-    label: 'Adds {Y}-{X} Total Elemental Damage (fire + cold + lightning)',
+    label: 'Adds {X}-{Y} Total Elemental Damage',
     group: 'Pseudo',
     compute: (m) => addedElementalDamage(m).max,
   },
