@@ -1,35 +1,29 @@
 // @vitest-environment happy-dom
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { exists, readTextFile } from '@/lib/browser-fs';
+import { exists, readTextFile, writeTextFile } from '@/lib/browser-fs';
 import { playNotificationSound } from '@/hooks/useSocketNotifications';
 import { showToast } from '@/overlay';
-import type { SavedSearch } from '@/pages/market/lib/types';
+import type { MarketFilters, SavedSearch } from '@/pages/market/lib/types';
 import {
   getMarketPrefs,
+  MARKET_PREFS_FILENAME,
+  marketStoreActions as actions,
   resetMarketPrefs,
-  retrySavedSearchSync,
-  SYNC_RETRY_BASE_MS,
 } from '@/pages/market/store/useMarketStore';
 import {
-  listMarketAlerts,
-  listSavedSearches,
-  openAlertStream,
-  SavedSearchApiError,
-  type MarketAlert,
-} from './saved-search-api';
-import type * as SavedSearchApi from './saved-search-api';
-import { MAX_RECONNECT_MS, STREAM_IDLE_TIMEOUT_MS } from './alert-stream';
+  fetchNewestListings,
+  listServerSavedSearches,
+  type MarketListingSummary,
+  openLiveSearchStream,
+  watchQuery,
+} from './market-api';
+import type * as MarketApi from './market-api';
 import { useMarketAlerts } from './useMarketAlerts';
 
-const h = vi.hoisted(() => ({
-  settings: {} as Record<string, unknown>,
-  openSignIn: vi.fn(),
-  refreshTokens: vi.fn<(refreshToken: string) => Promise<boolean>>(),
-}));
+const h = vi.hoisted(() => ({ settings: {} as Record<string, unknown> }));
 
 vi.mock('@/hooks/useOptions', () => ({ useOptions: () => ({ settings: h.settings, isLoading: false }) }));
-vi.mock('@/hooks/useOAuth', () => ({ useOAuth: () => ({ refreshTokens: h.refreshTokens }) }));
 vi.mock('@/hooks/useSocketNotifications', () => ({ playNotificationSound: vi.fn() }));
 // notify() logs and toasts when asked: the toast half goes through the showToast mock
 vi.mock('@/overlay', () => {
@@ -41,7 +35,6 @@ vi.mock('@/overlay', () => {
     }),
   };
 });
-vi.mock('@/hooks/useSignIn', () => ({ useSignIn: () => ({ openSignIn: h.openSignIn, isOpen: false }) }));
 vi.mock('@/lib/browser-fs', () => ({
   BaseDirectory: { AppConfig: 13 },
   exists: vi.fn(async () => false),
@@ -49,44 +42,42 @@ vi.mock('@/lib/browser-fs', () => ({
   readTextFile: vi.fn(),
   writeTextFile: vi.fn(async () => {}),
 }));
-vi.mock('./saved-search-api', async (importOriginal) => ({
-  ...(await importOriginal<typeof SavedSearchApi>()),
-  listSavedSearches: vi.fn(),
-  listMarketAlerts: vi.fn(async () => ({ items: [] })),
-  openAlertStream: vi.fn(),
+vi.mock('./market-api', async (importOriginal) => ({
+  ...(await importOriginal<typeof MarketApi>()),
+  openLiveSearchStream: vi.fn(),
+  fetchNewestListings: vi.fn(async () => []),
+  listServerSavedSearches: vi.fn(async () => []),
 }));
 
-const search = (id: string, alert: boolean): SavedSearch => ({
+const filters = (itemName: string, over: Partial<MarketFilters> = {}) =>
+  ({ source: 'live', hardcore: false, ladder: true, itemName, stats: [], ...over }) as unknown as MarketFilters;
+const search = (id: string, watching: boolean, over: Partial<SavedSearch> = {}): SavedSearch => ({
   id,
-  name: id,
-  filters: { source: 'live', itemName: 'Harlequin Crest', stats: [] } as unknown as SavedSearch['filters'],
-  alert,
+  name: id === 's1' ? 'Cheap Shako' : id,
+  filters: filters(id === 's1' ? 'Harlequin Crest' : id),
+  watching,
   createdAt: '2026-10-21T00:00:00Z',
+  updatedAt: '2026-10-21T00:00:00Z',
+  ...over,
 });
+const q = (s: SavedSearch) => watchQuery(s.filters);
 
-const alert: MarketAlert = {
-  id: 'al1',
-  savedSearchId: 's1',
-  savedSearchName: 'Cheap Shako',
-  listingId: 'l1',
-  matchedAt: '2026-10-21T08:01:00Z',
-  listing: {
-    id: 'l1',
-    isLadder: true,
-    isHardcore: false,
-    name: 'Harlequin Crest',
-    baseName: 'Shako',
-    baseCode: 'uap',
-    typeCode: 'helm',
-    quality: 'Unique',
-    price: '2 ist',
-    hrPrice: 0.5,
-    bumpedAt: null,
-    seller: 'Gheed',
-    status: 'active',
-    soldHr: null,
-  },
-};
+const listing = (id: string, bumpedAt: string): MarketListingSummary => ({
+  id,
+  isLadder: true,
+  isHardcore: false,
+  name: 'Harlequin Crest',
+  baseName: 'Shako',
+  baseCode: 'uap',
+  typeCode: 'helm',
+  quality: 'Unique',
+  price: '2 ist',
+  hrPrice: 0.5,
+  bumpedAt,
+  seller: 'Gheed',
+  status: 'active',
+  soldHr: null,
+});
 
 /** An open stream that sends `text` and stays open. */
 const stream = (text: string) =>
@@ -98,25 +89,35 @@ const stream = (text: string) =>
     }),
   );
 const HELLO = 'event: hello\ndata: {"serverTime":"2026-10-21T08:00:00Z"}\n\n';
-const ALERT = `event: market.alert\ndata: ${JSON.stringify(alert)}\n\n`;
+const match = (forSearch: SavedSearch, id: string, bumpedAt: string) =>
+  `event: market.match\ndata: ${JSON.stringify({ ...listing(id, bumpedAt), matchedAt: bumpedAt, q: q(forSearch) })}\n\n`;
 
 const settle = () => act(() => vi.advanceTimersByTimeAsync(0));
+const written = () =>
+  vi
+    .mocked(writeTextFile)
+    .mock.calls.filter(([path]) => path === MARKET_PREFS_FILENAME)
+    .map(([, text]) => JSON.parse(String(text)));
+
+/** market-prefs.json holds `file`. */
+function savedFile(file: Record<string, unknown>) {
+  vi.mocked(exists).mockResolvedValue(true);
+  vi.mocked(readTextFile).mockResolvedValue(JSON.stringify({ savedSearchesImported: true, ...file }));
+}
 
 beforeEach(() => {
   vi.useFakeTimers();
   resetMarketPrefs();
   vi.mocked(exists).mockResolvedValue(false);
   vi.mocked(readTextFile).mockReset();
+  vi.mocked(writeTextFile).mockClear();
   vi.mocked(showToast).mockClear();
   vi.mocked(playNotificationSound).mockClear();
-  vi.mocked(openAlertStream).mockReset();
-  vi.mocked(listMarketAlerts).mockClear();
-  vi.mocked(listSavedSearches).mockReset();
-  h.settings = { pd2Token: 'tok' };
-  h.openSignIn.mockReset();
-  h.refreshTokens.mockReset().mockResolvedValue(false);
+  vi.mocked(openLiveSearchStream).mockReset().mockResolvedValue(stream(HELLO));
+  vi.mocked(fetchNewestListings).mockReset().mockResolvedValue([]);
+  vi.mocked(listServerSavedSearches).mockReset().mockResolvedValue([]);
+  h.settings = {};
   vi.spyOn(console, 'warn').mockImplementation(() => {});
-  vi.spyOn(console, 'log').mockImplementation(() => {});
 });
 
 afterEach(() => {
@@ -126,34 +127,37 @@ afterEach(() => {
 });
 
 describe('useMarketAlerts', () => {
-  it('syncs the saved searches and pops a toast with the alert sound for each new match', async () => {
-    h.settings = { pd2Token: 'tok', marketAlertVolume: 40 };
-    vi.mocked(listSavedSearches).mockResolvedValue({
-      items: [search('s1', true)],
-      limits: { maxSearches: 25, maxAlerting: 10 },
+  it('streams every watched search over one connection, signed out, and toasts each new match with the sound', async () => {
+    h.settings = { marketAlertVolume: 40 };
+    const shako = search('s1', true);
+    const spirit = search('s2', true);
+    savedFile({
+      savedSearches: [shako, spirit, search('s3', false), search('s4', true, { filters: filters('x', { source: 'archive' }) })],
     });
-    vi.mocked(openAlertStream).mockResolvedValue(stream(HELLO + ALERT + ALERT));
+    vi.mocked(openLiveSearchStream).mockResolvedValue(
+      stream(HELLO + match(shako, 'l1', '2026-10-21T08:01:00Z') + match(shako, 'l1', '2026-10-21T08:01:00Z')),
+    );
     renderHook(() => useMarketAlerts());
     await settle();
     await settle();
 
-    expect(listSavedSearches).toHaveBeenCalledWith('tok');
-    expect(openAlertStream).toHaveBeenCalledWith('tok', expect.any(AbortSignal));
+    expect(openLiveSearchStream).toHaveBeenCalledExactlyOnceWith([q(shako), q(spirit)].sort(), expect.any(AbortSignal));
+    expect(listServerSavedSearches).not.toHaveBeenCalled();
     expect(showToast).toHaveBeenCalledTimes(1);
     expect(vi.mocked(showToast).mock.calls[0][0]).toMatchObject({
       description: 'Cheap Shako: Harlequin Crest — 0.5 HR',
       action: { data: { savedSearchId: 's1', focusListingId: 'l1' } },
+      listing: { listingId: 'l1', savedSearchId: 's1' },
     });
     expect(playNotificationSound).toHaveBeenCalledWith(40);
+    expect(getMarketPrefs().savedSearches[0].lastSeenBumpedAt).toBe('2026-10-21T08:01:00Z');
   });
 
   it('stays quiet when the alert sound is off', async () => {
-    h.settings = { pd2Token: 'tok', marketAlertSoundEnabled: false };
-    vi.mocked(listSavedSearches).mockResolvedValue({
-      items: [search('s1', true)],
-      limits: { maxSearches: 25, maxAlerting: 10 },
-    });
-    vi.mocked(openAlertStream).mockResolvedValue(stream(HELLO + ALERT));
+    h.settings = { marketAlertSoundEnabled: false };
+    const shako = search('s1', true);
+    savedFile({ savedSearches: [shako] });
+    vi.mocked(openLiveSearchStream).mockResolvedValue(stream(HELLO + match(shako, 'l1', '2026-10-21T08:01:00Z')));
     renderHook(() => useMarketAlerts());
     await settle();
     await settle();
@@ -161,192 +165,127 @@ describe('useMarketAlerts', () => {
     expect(playNotificationSound).not.toHaveBeenCalled();
   });
 
-  it('opens no stream without a watched search, with alerts off, or signed out', async () => {
-    vi.mocked(listSavedSearches).mockResolvedValue({
-      items: [search('s1', false)],
-      limits: { maxSearches: 25, maxAlerting: 10 },
-    });
+  it('opens no stream without a watched search or with alerts off', async () => {
+    savedFile({ savedSearches: [search('s1', false)] });
     renderHook(() => useMarketAlerts());
     await settle();
-    expect(openAlertStream).not.toHaveBeenCalled();
+    expect(openLiveSearchStream).not.toHaveBeenCalled();
     cleanup();
 
     resetMarketPrefs();
-    vi.mocked(exists).mockResolvedValue(true);
-    vi.mocked(readTextFile).mockResolvedValue(JSON.stringify({ alertsEnabled: false }));
-    vi.mocked(listSavedSearches).mockResolvedValue({
-      items: [search('s1', true)],
-      limits: { maxSearches: 25, maxAlerting: 10 },
-    });
+    savedFile({ savedSearches: [search('s1', true)], alertsEnabled: false });
     renderHook(() => useMarketAlerts());
     await settle();
-    expect(openAlertStream).not.toHaveBeenCalled();
-    cleanup();
-
-    resetMarketPrefs();
-    h.settings = {};
-    renderHook(() => useMarketAlerts());
-    await settle();
-    expect(listSavedSearches).toHaveBeenCalledTimes(2);
-    expect(openAlertStream).not.toHaveBeenCalled();
+    expect(openLiveSearchStream).not.toHaveBeenCalled();
   });
 
-  it('stops after a 401 until the token changes', async () => {
-    vi.mocked(listSavedSearches).mockResolvedValue({
-      items: [search('s1', true)],
-      limits: { maxSearches: 25, maxAlerting: 10 },
+  it('reopens the stream when the watched set changes, not on renames or seen bumps', async () => {
+    const shako = search('s1', true);
+    savedFile({ savedSearches: [shako] });
+    renderHook(() => useMarketAlerts());
+    await settle();
+    expect(openLiveSearchStream).toHaveBeenCalledTimes(1);
+    const firstSignal = vi.mocked(openLiveSearchStream).mock.calls[0][1];
+
+    act(() => {
+      actions.renameSearch('s1', 'Renamed');
+      actions.markSearchSeen('s1', '2026-10-21T09:00:00Z');
     });
-    vi.mocked(openAlertStream).mockRejectedValue(Object.assign(new Error('expired'), { status: 401 }));
+    await settle();
+    expect(openLiveSearchStream).toHaveBeenCalledTimes(1);
+
+    let spirit: SavedSearch | null = null;
+    act(() => {
+      spirit = actions.saveSearch('Spirit', filters('Spirit'), true);
+    });
+    await settle();
+    expect(firstSignal.aborted).toBe(true);
+    expect(openLiveSearchStream).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(openLiveSearchStream).mock.calls[1][0]).toEqual([q(shako), q(spirit!)].sort());
+
+    act(() => {
+      actions.setSearchWatching('s1', false);
+      actions.setSearchWatching(spirit!.id, false);
+    });
+    await settle();
+    expect(vi.mocked(openLiveSearchStream).mock.calls[1][1].aborted).toBe(true);
+    expect(openLiveSearchStream).toHaveBeenCalledTimes(2);
+  });
+
+  it('catches up on (re)connect: only listings bumped after the last one seen, which it then remembers', async () => {
+    const shako = search('s1', true, { lastSeenBumpedAt: '2026-10-21T08:00:00Z' });
+    savedFile({ savedSearches: [shako] });
+    vi.mocked(fetchNewestListings).mockResolvedValue([
+      listing('new', '2026-10-21T08:10:00Z'),
+      listing('seen', '2026-10-21T08:00:00Z'),
+      listing('old', '2026-10-21T07:50:00Z'),
+    ]);
+    renderHook(() => useMarketAlerts());
+    await settle();
+    await settle();
+
+    expect(fetchNewestListings).toHaveBeenCalledWith(q(shako));
+    expect(showToast).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(showToast).mock.calls[0][0]).toMatchObject({ listing: { listingId: 'new', savedSearchId: 's1' } });
+    expect(getMarketPrefs().savedSearches[0].lastSeenBumpedAt).toBe('2026-10-21T08:10:00Z');
+    expect(written().at(-1).savedSearches[0].lastSeenBumpedAt).toBe('2026-10-21T08:10:00Z');
+  });
+
+  it('a first catch-up only records the newest listing', async () => {
+    savedFile({ savedSearches: [search('s1', true)] });
+    vi.mocked(fetchNewestListings).mockResolvedValue([listing('a', '2026-10-21T08:10:00Z')]);
+    renderHook(() => useMarketAlerts());
+    await settle();
+    await settle();
+    expect(showToast).not.toHaveBeenCalled();
+    expect(getMarketPrefs().savedSearches[0].lastSeenBumpedAt).toBe('2026-10-21T08:10:00Z');
+  });
+
+  it('imports the saved searches kept on pd2trader.com once when signed in', async () => {
+    h.settings = { pd2Token: 'tok' };
+    vi.mocked(listServerSavedSearches).mockResolvedValue([
+      { id: 'srv1', name: 'Server Shako', filters: filters('Harlequin Crest'), alert: true, createdAt: '2026-10-20T00:00:00Z' },
+      { id: 'srv2', name: 'Bookmark', filters: filters('Spirit'), alert: false, createdAt: '2026-10-19T00:00:00Z' },
+    ]);
     const { rerender } = renderHook(() => useMarketAlerts());
     await settle();
-    await act(() => vi.advanceTimersByTimeAsync(120_000));
-    expect(openAlertStream).toHaveBeenCalledTimes(1);
-    // No refresh token: straight to sign-in
-    expect(h.refreshTokens).not.toHaveBeenCalled();
-    expect(h.openSignIn).toHaveBeenCalledOnce();
-    expect(getMarketPrefs().syncStatus).toBe('unauthorized');
+    await settle();
+    expect(listServerSavedSearches).toHaveBeenCalledExactlyOnceWith('tok');
+    expect(getMarketPrefs()).toMatchObject({
+      savedSearchesImported: true,
+      savedSearches: [
+        { id: 'srv1', name: 'Server Shako', watching: true },
+        { id: 'srv2', name: 'Bookmark', watching: false },
+      ],
+    });
+    expect(written().at(-1)).toMatchObject({ savedSearchesImported: true });
+    // The imported watch streams right away
+    expect(openLiveSearchStream).toHaveBeenCalledWith([watchQuery(filters('Harlequin Crest'))], expect.any(AbortSignal));
 
-    vi.mocked(openAlertStream).mockResolvedValue(stream(HELLO));
+    h.settings = { pd2Token: 'tok2' };
+    rerender();
+    await settle();
+    expect(listServerSavedSearches).toHaveBeenCalledTimes(1);
+  });
+
+  it('a failed import keeps the local list and retries on the next sign-in', async () => {
+    h.settings = { pd2Token: 'tok' };
+    savedFile({ savedSearchesImported: false, savedSearches: [search('local', false)] });
+    vi.mocked(listServerSavedSearches).mockRejectedValueOnce(new Error('offline'));
+    const { rerender } = renderHook(() => useMarketAlerts());
+    await settle();
+    await settle();
+    expect(getMarketPrefs()).toMatchObject({ savedSearchesImported: false, savedSearches: [{ id: 'local' }] });
+
+    vi.mocked(listServerSavedSearches).mockResolvedValue([
+      { id: 'srv1', name: 'srv1', filters: filters('srv1'), alert: false, createdAt: '2026-10-22T00:00:00Z' },
+    ]);
     h.settings = { pd2Token: 'tok2' };
     rerender();
     await settle();
     await settle();
-    expect(openAlertStream).toHaveBeenLastCalledWith('tok2', expect.any(AbortSignal));
-  });
-
-  const refused = () => new SavedSearchApiError('Unauthorized', 401);
-
-  it('a 401 on the list refreshes the token once, then resumes with the new one', async () => {
-    h.settings = { pd2Token: 'tok', pd2RefreshToken: 'r' };
-    h.refreshTokens.mockResolvedValue(true);
-    vi.mocked(listSavedSearches).mockImplementation(async (token) => {
-      if (token === 'tok') throw refused();
-      return { items: [search('s1', true)], limits: { maxSearches: 25, maxAlerting: 10 } };
-    });
-    vi.mocked(openAlertStream).mockResolvedValue(stream(HELLO));
-    const { rerender } = renderHook(() => useMarketAlerts());
-    await settle();
-    expect(h.refreshTokens).toHaveBeenCalledExactlyOnceWith('r');
-    // The refused token is not retried while the refresh lands
-    await act(() => vi.advanceTimersByTimeAsync(5 * 60_000));
-    expect(listSavedSearches).toHaveBeenCalledTimes(1);
-    expect(openAlertStream).not.toHaveBeenCalled();
-
-    h.settings = { pd2Token: 'tok2', pd2RefreshToken: 'r2' };
-    rerender();
-    await settle();
-    await settle();
-    expect(listSavedSearches).toHaveBeenLastCalledWith('tok2');
-    expect(openAlertStream).toHaveBeenCalledWith('tok2', expect.any(AbortSignal));
-    expect(getMarketPrefs().syncStatus).toBe('ready');
-    expect(h.refreshTokens).toHaveBeenCalledTimes(1);
-    expect(h.openSignIn).not.toHaveBeenCalled();
-  });
-
-  it('a 401 with the refreshed token stops for good: sign-in prompt, no further requests', async () => {
-    h.settings = { pd2Token: 'tok', pd2RefreshToken: 'r' };
-    h.refreshTokens.mockResolvedValue(true);
-    vi.mocked(listSavedSearches).mockRejectedValue(refused());
-    const { rerender } = renderHook(() => useMarketAlerts());
-    await settle();
-    expect(h.refreshTokens).toHaveBeenCalledTimes(1);
-
-    h.settings = { pd2Token: 'tok2', pd2RefreshToken: 'r2' };
-    rerender();
-    await settle();
-    expect(listSavedSearches).toHaveBeenLastCalledWith('tok2');
-    expect(h.refreshTokens).toHaveBeenCalledTimes(1);
-    expect(h.openSignIn).toHaveBeenCalledOnce();
-
-    // Re-renders, the panel showing (WatchButton / Saved tab retry) and time send nothing more
-    rerender();
-    retrySavedSearchSync();
-    await act(() => vi.advanceTimersByTimeAsync(30 * 60_000));
-    expect(listSavedSearches).toHaveBeenCalledTimes(2);
-    expect(openAlertStream).not.toHaveBeenCalled();
-    expect(h.refreshTokens).toHaveBeenCalledTimes(1);
-    expect(h.openSignIn).toHaveBeenCalledTimes(1);
-  });
-
-  it('asks to sign in when the refresh itself fails', async () => {
-    h.settings = { pd2Token: 'tok', pd2RefreshToken: 'r' };
-    vi.mocked(listSavedSearches).mockRejectedValue(refused());
-    renderHook(() => useMarketAlerts());
-    await settle();
-    await settle();
-    expect(h.refreshTokens).toHaveBeenCalledExactlyOnceWith('r');
-    expect(h.openSignIn).toHaveBeenCalledOnce();
-    await act(() => vi.advanceTimersByTimeAsync(30 * 60_000));
-    expect(listSavedSearches).toHaveBeenCalledTimes(1);
-  });
-
-  it('a refreshed token that worked gets its own refresh when it is refused later', async () => {
-    h.settings = { pd2Token: 'tok', pd2RefreshToken: 'r' };
-    h.refreshTokens.mockResolvedValue(true);
-    vi.mocked(listSavedSearches).mockImplementation(async (token) => {
-      if (token === 'tok') throw refused();
-      return { items: [search('s1', true)], limits: { maxSearches: 25, maxAlerting: 10 } };
-    });
-    vi.mocked(openAlertStream).mockResolvedValue(stream(HELLO));
-    const { rerender } = renderHook(() => useMarketAlerts());
-    await settle();
-    expect(h.refreshTokens).toHaveBeenCalledExactlyOnceWith('r');
-
-    h.settings = { pd2Token: 'tok2', pd2RefreshToken: 'r2' };
-    rerender();
-    await settle();
-    await settle();
-    expect(getMarketPrefs().syncStatus).toBe('ready');
-
-    // Much later, tok2 is refused (here by the stream on a reconnect)
-    vi.mocked(openAlertStream).mockRejectedValue(refused());
-    await act(() => vi.advanceTimersByTimeAsync(STREAM_IDLE_TIMEOUT_MS + MAX_RECONNECT_MS * 2));
-    expect(getMarketPrefs().syncStatus).toBe('unauthorized');
-    expect(h.refreshTokens).toHaveBeenCalledTimes(2);
-    expect(h.refreshTokens).toHaveBeenLastCalledWith('r2');
-    expect(h.openSignIn).not.toHaveBeenCalled();
-  });
-
-  it('does not prompt when the user signs in some other way while a failing refresh runs', async () => {
-    h.settings = { pd2Token: 'tok', pd2RefreshToken: 'r' };
-    const refresh = Promise.withResolvers<boolean>();
-    h.refreshTokens.mockReturnValue(refresh.promise);
-    vi.mocked(listSavedSearches).mockImplementation(async (token) => {
-      if (token === 'tok') throw refused();
-      return { items: [], limits: { maxSearches: 25, maxAlerting: 10 } };
-    });
-    const { rerender } = renderHook(() => useMarketAlerts());
-    await settle();
-    expect(h.refreshTokens).toHaveBeenCalledTimes(1);
-
-    h.settings = { pd2Token: 'manual', pd2RefreshToken: 'rm' };
-    rerender();
-    await settle();
-    await act(async () => refresh.resolve(false));
-    await settle();
-    expect(h.openSignIn).not.toHaveBeenCalled();
-    expect(listSavedSearches).toHaveBeenLastCalledWith('manual');
-    expect(getMarketPrefs().syncStatus).toBe('ready');
-  });
-
-  it('a network error still backs off and retries, without refreshing or prompting', async () => {
-    h.settings = { pd2Token: 'tok', pd2RefreshToken: 'r' };
-    vi.spyOn(Math, 'random').mockReturnValue(0.5);
-    vi.mocked(listSavedSearches)
-      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
-      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
-      .mockResolvedValue({ items: [search('s1', true)], limits: { maxSearches: 25, maxAlerting: 10 } });
-    vi.mocked(openAlertStream).mockResolvedValue(stream(HELLO));
-    renderHook(() => useMarketAlerts());
-    await settle();
-    expect(getMarketPrefs().syncStatus).toBe('error');
-    await act(() => vi.advanceTimersByTimeAsync(SYNC_RETRY_BASE_MS));
-    expect(listSavedSearches).toHaveBeenCalledTimes(2);
-    await act(() => vi.advanceTimersByTimeAsync(SYNC_RETRY_BASE_MS * 2));
-    expect(listSavedSearches).toHaveBeenCalledTimes(3);
-    await settle();
-    expect(openAlertStream).toHaveBeenCalledWith('tok', expect.any(AbortSignal));
-    expect(h.refreshTokens).not.toHaveBeenCalled();
-    expect(h.openSignIn).not.toHaveBeenCalled();
+    expect(listServerSavedSearches).toHaveBeenLastCalledWith('tok2');
+    expect(getMarketPrefs().savedSearches.map((s) => s.id)).toEqual(['srv1', 'local']);
+    expect(getMarketPrefs().savedSearchesImported).toBe(true);
   });
 });

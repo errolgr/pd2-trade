@@ -1,9 +1,10 @@
 /**
- * The live saved-search alert stream (`GET /api/market/saved-searches/stream`, Server-Sent Events read with fetch
- * because `EventSource` cannot send the Bearer token): parsing, reconnecting with backoff, catching up on what
- * was missed while disconnected (`/alerts?since=`) and deduping alerts by id.
+ * The market watch stream: ONE live search stream of every watched search (`GET /api/market/search/live?q=…`,
+ * Server-Sent Events read with fetch like the other overlay streams): parsing, reconnecting with backoff,
+ * catching up on each `hello` (the newest listings of every watched search, alerting only those bumped after
+ * the last one that search saw) and deduping alerts by search and listing.
  */
-import type { MarketAlert } from './saved-search-api';
+import type { MarketAlert, MarketListingSummary, MarketMatch } from './market-api';
 
 export interface SseEvent {
   event: string;
@@ -91,16 +92,41 @@ export function takeUnseen(seen: Set<string>, alerts: readonly MarketAlert[]): M
   return fresh;
 }
 
-export interface AlertStreamOptions {
-  token: string;
+/** A watched search a `q` of the stream stands for, as it is now. */
+export interface WatchTarget {
+  id: string;
+  name: string;
+  /** bumpedAt of the newest listing this search has seen; unset until its first catch-up. */
+  lastSeenBumpedAt?: string;
+}
+
+/** The alert `target` shows for `listing`. */
+export function watchAlert(target: WatchTarget, listing: MarketListingSummary, matchedAt: string): MarketAlert {
+  return {
+    id: `${target.id}:${listing.id}`,
+    savedSearchId: target.id,
+    savedSearchName: target.name,
+    listingId: listing.id,
+    listing,
+    matchedAt,
+  };
+}
+
+const time = (iso: string | null | undefined) => (iso ? Date.parse(iso) : NaN);
+
+export interface WatchStreamOptions {
+  /** The distinct `q` of the watched searches (1-10). */
+  queries: readonly string[];
   /** Opens the stream; rejects with `{ status, retryAfterMs? }` on a non-2xx answer. */
-  open: (token: string, signal: AbortSignal) => Promise<Response>;
-  /** Alerts matched after `since` (ISO). */
-  catchUp: (token: string, since: string) => Promise<MarketAlert[]>;
-  /** New alerts, oldest first: one live alert, or what a reconnect caught up on. */
+  open: (queries: readonly string[], signal: AbortSignal) => Promise<Response>;
+  /** The newest listings of a search, newest bump first. */
+  fetchNewest: (q: string) => Promise<MarketListingSummary[]>;
+  /** The watched searches `q` stands for right now (renames and seen bumps show without a reconnect). */
+  targets: (q: string) => WatchTarget[];
+  /** New alerts, oldest first: one live match, or what a (re)connect caught up on. */
   onAlerts: (alerts: MarketAlert[], source: 'live' | 'catch-up') => void;
-  /** 401 (stream or catch-up), told once: the stream closes and never retries that token. */
-  onUnauthorized: () => void;
+  /** The newest bump a search has seen (an alert, or what its first catch-up found). */
+  onSeen: (searchId: string, bumpedAt: string) => void;
   signal: AbortSignal;
   /** Shared across restarts so an alert never shows twice. */
   seen?: Set<string>;
@@ -133,61 +159,83 @@ const retryAfterOf = (error: unknown) =>
     ? error.retryAfterMs
     : null;
 
+
 /**
- * Keeps the alert stream open until `signal` aborts or the token is refused (401). After each (re)connect's
- * `hello`, alerts matched since the last one seen (or since the first connect) are caught up on.
+ * Keeps the watch stream open until `signal` aborts or the server rejects the searches (400/414: the same
+ * searches would be rejected again). After each (re)connect's `hello`, every watched search catches up on the
+ * listings bumped since the newest it saw; a search that saw none yet only records its newest.
  */
-export async function runAlertStream(options: AlertStreamOptions): Promise<void> {
-  const { token, open, catchUp, onAlerts, onUnauthorized, signal } = options;
+export async function runWatchStream(options: WatchStreamOptions): Promise<void> {
+  const { queries, open, fetchNewest, targets, onAlerts, onSeen, signal } = options;
   const sleep = options.sleep ?? abortableSleep;
   const random = options.random ?? Math.random;
   const now = options.now ?? Date.now;
   const idleTimeoutMs = options.idleTimeoutMs ?? STREAM_IDLE_TIMEOUT_MS;
   const seen = options.seen ?? new Set<string>();
-  /** Newest matchedAt seen (or the first hello's serverTime): where a reconnect catches up from. */
-  let since: string | null = null;
   let serverRetryMs = MIN_RECONNECT_MS;
   let attempt = 0;
-  let stopped = false;
-  /** The open connection: a refused catch-up closes it at once instead of at the next heartbeat. */
-  let connection: AbortController | null = null;
 
   const deliver = (alerts: MarketAlert[], source: 'live' | 'catch-up') => {
     const fresh = takeUnseen(seen, alerts);
     if (fresh.length === 0) return;
-    const newest = fresh[fresh.length - 1].matchedAt;
-    if (!since || Date.parse(newest) > Date.parse(since)) since = newest;
+    for (const alert of fresh) if (alert.listing.bumpedAt) onSeen(alert.savedSearchId, alert.listing.bumpedAt);
     onAlerts(fresh, source);
   };
 
-  const unauthorized = () => {
-    if (stopped) return;
-    stopped = true;
-    connection?.abort();
-    onUnauthorized();
+  const catchUp = async () => {
+    const results = await Promise.all(
+      queries.map(async (q) => {
+        try {
+          return { q, listings: await fetchNewest(q) };
+        } catch (error) {
+          console.warn('[market alerts] catch-up failed:', error);
+          return { q, listings: null };
+        }
+      }),
+    );
+    // Stopped (watched set changed, alerts off): nothing more to show. A dropped connection still counts.
+    if (signal.aborted) return;
+    const alerts: MarketAlert[] = [];
+    for (const { q, listings } of results) {
+      if (!listings?.length) continue;
+      const newest = listings.reduce<string | null>(
+        (max, l) => (l.bumpedAt && (!max || time(l.bumpedAt) > time(max)) ? l.bumpedAt : max),
+        null,
+      );
+      for (const target of targets(q)) {
+        const since = time(target.lastSeenBumpedAt);
+        if (Number.isNaN(since)) {
+          // First look at this search: what is listed now is not new
+          for (const listing of listings) seen.add(`${target.id}:${listing.id}`);
+        } else {
+          for (const listing of listings)
+            if (time(listing.bumpedAt) > since) alerts.push(watchAlert(target, listing, listing.bumpedAt!));
+        }
+        if (newest) onSeen(target.id, newest);
+      }
+    }
+    deliver(alerts, 'catch-up');
   };
 
-  const onHello = async (data: string) => {
-    if (since) {
-      try {
-        deliver(await catchUp(token, since), 'catch-up');
-      } catch (error) {
-        if (statusOf(error) === 401) unauthorized();
-        else console.warn('[market alerts] catch-up failed:', error);
-      }
+  const onMatch = (data: string) => {
+    let match: MarketMatch;
+    try {
+      match = JSON.parse(data) as MarketMatch;
+    } catch (error) {
+      console.warn('[market alerts] bad match event:', error);
       return;
     }
-    try {
-      const hello = JSON.parse(data) as { serverTime?: string };
-      since = hello.serverTime ?? new Date().toISOString();
-    } catch {
-      since = new Date().toISOString();
-    }
+    if (!match?.id || typeof match.q !== 'string') return;
+    const { q: _q, matchedAt, ...listing } = match;
+    const alerts = targets(match.q)
+      // An update of a listing older than the newest this search saw is not a new listing
+      .filter((target) => !(time(listing.bumpedAt) < time(target.lastSeenBumpedAt)))
+      .map((target) => watchAlert(target, listing, matchedAt));
+    deliver(alerts, 'live');
   };
 
-  while (!signal.aborted && !stopped) {
+  while (!signal.aborted) {
     const current = new AbortController();
-    connection = current;
     const abortConnection = () => current.abort();
     signal.addEventListener('abort', abortConnection);
     let retryAfterMs: number | null = null;
@@ -199,23 +247,17 @@ export async function runAlertStream(options: AlertStreamOptions): Promise<void>
       idle = setTimeout(() => current.abort(), idleTimeoutMs);
     };
     try {
-      const response = await open(token, current.signal);
+      const response = await open(queries, current.signal);
       connectedAt = now();
       const reader = response.body?.getReader();
-      if (!reader) throw new Error('Alert stream has no body');
+      if (!reader) throw new Error('Watch stream has no body');
       // Some fetch implementations don't fail a pending read on abort: cancel it so the loop wakes up
       current.signal.addEventListener('abort', () => void reader.cancel().catch(() => {}), { once: true });
       const decoder = new TextDecoder();
       const parser = createSseParser(
         (event) => {
-          if (event.event === 'hello') void onHello(event.data);
-          else if (event.event === 'market.alert') {
-            try {
-              deliver([JSON.parse(event.data) as MarketAlert], 'live');
-            } catch (error) {
-              console.warn('[market alerts] bad alert event:', error);
-            }
-          }
+          if (event.event === 'hello') void catchUp();
+          else if (event.event === 'market.match') onMatch(event.data);
         },
         (ms) => {
           serverRetryMs = ms;
@@ -224,20 +266,21 @@ export async function runAlertStream(options: AlertStreamOptions): Promise<void>
       resetIdle();
       for (;;) {
         const { value, done } = await reader.read();
-        if (done || stopped) break;
+        if (done) break;
         resetIdle();
         parser.push(decoder.decode(value, { stream: true }));
       }
     } catch (error) {
       if (!signal.aborted && !current.signal.aborted) console.warn('[market alerts] stream error:', error);
-      if (statusOf(error) === 401) unauthorized();
+      const status = statusOf(error);
+      if (status === 400 || status === 414) return;
       retryAfterMs = retryAfterOf(error);
     } finally {
       clearTimeout(idle);
       signal.removeEventListener('abort', abortConnection);
       current.abort();
     }
-    if (signal.aborted || stopped) return;
+    if (signal.aborted) return;
     // Only a connection that stayed up resets the backoff (accept-then-drop keeps backing off)
     if (connectedAt !== null && now() - connectedAt >= STABLE_CONNECTION_MS) attempt = 0;
     await sleep(reconnectDelay(attempt, serverRetryMs, retryAfterMs, random), signal);

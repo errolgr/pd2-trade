@@ -1,4 +1,4 @@
-import type { MarketAlert } from './saved-search-api';
+import type { MarketAlert } from './market-api';
 
 /**
  * Live market alerts as they arrive (useMarketAlerts publishes each batch): the open market panel listens to

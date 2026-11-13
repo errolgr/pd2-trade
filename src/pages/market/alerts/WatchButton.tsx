@@ -1,76 +1,57 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bell, Eye, Loader2 } from 'lucide-react';
+import { Bell, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tip } from '@/components/ui/tooltip';
 import { EASE_OUT, springSnappy } from '@/lib/motion';
-import { showToast, usePanel } from '@/overlay';
+import { showToast } from '@/overlay';
 import type { MarketFilters } from '@/pages/market/lib/types';
-import {
-  isPendingSearch,
-  type MarketStore,
-  retrySavedSearchSync,
-  useMarketStore,
-} from '@/pages/market/store/useMarketStore';
+import { type MarketStore, MAX_WATCHED_SEARCHES, useMarketStore } from '@/pages/market/store/useMarketStore';
 import { findWatch } from './alert-logic';
 import { t as translate, useTranslation } from '@/i18n';
 
-/** What Watch would do for `filters`, and whether it can now (signed in, saved searches loaded, not sold listings). */
+/** What Watch would do for `filters`, and whether it can (not on sold listings). */
 export function watchState(store: MarketStore, filters: MarketFilters | null) {
   const { watching, saved } = filters ? findWatch(store.savedSearches, filters) : { watching: null, saved: null };
-  const signedOut = store.syncStatus === 'signedOut';
-  /** pd2trader.com refused the PD2 token: Watch waits for a new sign-in. */
-  const refused = store.syncStatus === 'unauthorized';
-  /** Without the list, Watch can't tell an existing watch from a new one (it would save duplicates). */
-  const unsynced = store.syncStatus === 'error';
   const archive = filters?.source === 'archive';
-  const busy = (!!watching && isPendingSearch(watching)) || store.syncStatus === 'loading';
-  const disabled = !filters || signedOut || refused || unsynced || (archive && !watching) || busy;
-  return { watching, saved, signedOut, refused, unsynced, archive, busy, disabled };
+  const disabled = !filters || (archive && !watching);
+  return { watching, saved, archive, disabled };
 }
 
 /** Starts watching `filters` (reusing a saved search with them), or stops the watch on them; toasts the outcome. */
 export function toggleWatch(store: MarketStore, filters: MarketFilters): void {
   const { watching, saved } = findWatch(store.savedSearches, filters);
   if (watching) {
-    store.setSearchAlert(watching.id, false);
+    store.setSearchWatching(watching.id, false);
     showToast({ title: translate('market:watch.stoppedToast'), description: watching.name, variant: 'info' });
     return;
   }
   if (!store.alertsEnabled) store.setAlertsEnabled(true);
-  if (saved && !isPendingSearch(saved)) {
-    if (!store.setSearchAlert(saved.id, true)) {
-      showToast({
-        title: translate('market:watch.tooManyTitle'),
-        description: translate('market:watch.tooManyDescription', { count: store.limits.maxAlerting }),
-        variant: 'warning',
-      });
-    }
-    return;
-  }
-  if (store.saveSearch(undefined, filters, true)) {
+  const started = saved ? store.setSearchWatching(saved.id, true) : !!store.saveSearch(undefined, filters, true);
+  if (started) {
     showToast({
       title: translate('market:watch.watching'),
       description: translate('market:watch.startedDescription'),
       variant: 'success',
     });
+  } else if (saved) {
+    showToast({
+      title: translate('market:watch.tooManyTitle'),
+      description: translate('market:watch.tooManyDescription', { count: MAX_WATCHED_SEARCHES }),
+      variant: 'warning',
+    });
   }
 }
 
 /**
- * "Watch" the current market filters: a popup and a sound for every new listing that matches them (an alerting
- * saved search on pd2trader.com). Shows "Watching" while one exists for identical filters; clicking it again
- * stops watching (the saved search stays, without alerts).
+ * "Watch" the current market filters: a popup and a sound for every new listing that matches them (a watched
+ * saved search, streamed live from pd2trader.com). Shows "Watching" while one exists for identical filters;
+ * clicking it again stops watching (the saved search stays, without alerts).
  */
 export function WatchButton({ filters, className }: { filters: MarketFilters | null; className?: string }) {
   const { t } = useTranslation('market');
   const store = useMarketStore();
-  const { visible } = usePanel<'market'>();
-  // Saved searches failed to load: try again whenever the market panel shows (the store also retries on a timer)
-  useEffect(() => {
-    if (visible) retrySavedSearchSync();
-  }, [visible]);
-  const { watching, signedOut, refused, unsynced, archive, busy, disabled } = watchState(store, filters);
+  const { watching, archive, disabled } = watchState(store, filters);
   // One soft pulse when watching starts (not when the panel opens on a watched search)
   const [pulses, setPulses] = useState(0);
   const [wasWatching, setWasWatching] = useState(!!watching);
@@ -83,17 +64,12 @@ export function WatchButton({ filters, className }: { filters: MarketFilters | n
     if (filters) toggleWatch(store, filters);
   };
 
-  const label = signedOut
-    ? t('watch.labels.signedOut')
-    : refused
-      ? t('watch.labels.refused')
-      : unsynced
-        ? t('watch.labels.unsynced')
-        : archive && !watching
-          ? t('watch.labels.archive')
-          : watching
-            ? t('watch.labels.watching')
-            : t('watch.labels.watch');
+  const label =
+    archive && !watching
+      ? t('watch.labels.archive')
+      : watching
+        ? t('watch.labels.watching')
+        : t('watch.labels.watch');
 
   return (
     // The span takes hover/focus while the button is disabled, so the tooltip still says why
@@ -130,20 +106,14 @@ export function WatchButton({ filters, className }: { filters: MarketFilters | n
             <AnimatePresence initial={false}
               mode="popLayout">
               <motion.span
-                key={busy ? 'busy' : watching ? 'bell' : 'eye'}
+                key={watching ? 'bell' : 'eye'}
                 className="inline-flex"
                 initial={{ opacity: 0, scale: 0.5, rotate: -45 }}
                 animate={{ opacity: 1, scale: 1, rotate: 0 }}
                 exit={{ opacity: 0, scale: 0.5, rotate: 45 }}
                 transition={springSnappy}
               >
-                {busy ? (
-                  <Loader2 className="size-3.5 animate-spin" />
-                ) : watching ? (
-                  <Bell className="size-3.5" />
-                ) : (
-                  <Eye className="size-3.5" />
-                )}
+                {watching ? <Bell className="size-3.5" /> : <Eye className="size-3.5" />}
               </motion.span>
             </AnimatePresence>
           </span>

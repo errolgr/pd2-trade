@@ -242,13 +242,17 @@ export interface MarketApi {
   createOffer?: (listingId: string, offer: { price: string; hrPrice?: number }) => Promise<unknown>;
 }
 
+/** A saved search, kept locally (market-prefs.json). */
 export interface SavedSearch {
   id: string;
   name: string;
   filters: MarketFilters;
-  /** Live alert enabled (15s poll). */
-  alert: boolean;
+  /** Watched: a popup for every new listing matching it (live search stream). */
+  watching: boolean;
   createdAt: string;
+  updatedAt: string;
+  /** bumpedAt of the newest listing the watch has seen: a reconnect alerts only what was bumped after it. */
+  lastSeenBumpedAt?: string;
 }
 
 export type MarketTab = 'search' | 'favorites' | 'saved';

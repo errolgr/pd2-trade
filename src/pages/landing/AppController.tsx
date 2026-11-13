@@ -51,7 +51,7 @@ const AppController: React.FC = () => {
   // Socket notifications (offers and whispers) - exactly one instance, here
   useSocketNotifications({ settings, whisperNotificationsEnabled: true });
 
-  // Saved-search alerts (15 s poll) - exactly one instance, here
+  // Market Watch alerts (one live search stream of the watched searches) - exactly one instance, here
   useMarketAlerts();
 
   // Horadric Sim intents from pd2trader.com (sim finished, open report/planner) - exactly one instance, here

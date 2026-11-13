@@ -1,10 +1,10 @@
 /**
- * Saved-search alerts, the pure part: the popup text of a `market.alert` and how a batch of them shows, and
- * which saved search a "Watch" of some filters is (`watchKey`).
+ * Watch alerts, the pure part: the popup text of a matched listing and how a batch of them shows, and which
+ * saved search a "Watch" of some filters is (`watchKey`).
  */
 import { ToastActionType, type CustomToastPayload } from '@/common/types/Events';
 import type { MarketFilters, SavedSearch } from '@/pages/market/lib/types';
-import type { MarketAlert } from './saved-search-api';
+import type { MarketAlert } from './market-api';
 import { t } from '@/i18n';
 
 /** More alerts than this at once (a catch-up after a reconnect) show as one summary popup. */
@@ -62,7 +62,7 @@ export function alertToasts(
 }
 
 /**
- * What a watch matches on: the filters minus what alerts ignore or the server fills in (sort, age window, stat
+ * What a watch matches on: the filters minus what alerts ignore or a search fills in (sort, age window, stat
  * row ids/weights, disabled stats, empty fields, order of rarities and rows). Equal keys = same watch.
  */
 export function watchKey(filters: MarketFilters): string {
@@ -94,12 +94,12 @@ export function watchKey(filters: MarketFilters): string {
   });
 }
 
-/** The alerting saved search watching `filters`, if any (else a saved, not alerting, one with them). */
+/** The saved search watching `filters`, if any (else a saved, not watching, one with them). */
 export function findWatch(
   searches: readonly SavedSearch[],
   filters: MarketFilters,
 ): { watching: SavedSearch | null; saved: SavedSearch | null } {
   const key = watchKey(filters);
   const same = searches.filter((s) => watchKey(s.filters) === key);
-  return { watching: same.find((s) => s.alert) ?? null, saved: same.find((s) => !s.alert) ?? null };
+  return { watching: same.find((s) => s.watching) ?? null, saved: same.find((s) => !s.watching) ?? null };
 }

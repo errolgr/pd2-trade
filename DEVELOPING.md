@@ -103,7 +103,7 @@ npm run tauri build
 
 ### Pointing at a local backend
 
-Search, deal badges, price history, saved-search alerts and the rest of the pd2trader.com API go to `BACKEND_URL` (`src/lib/pkce.ts`): `VITE_BACKEND_URL` when set at build/dev time, else `https://pd2trader.com`. To run against a local pd2-price-crawler (`npm run start:dev` there, port 3000 by default):
+Search, deal badges, price history, market Watch (live search) and the rest of the pd2trader.com API go to `BACKEND_URL` (`src/lib/pkce.ts`): `VITE_BACKEND_URL` when set at build/dev time, else `https://pd2trader.com`. To run against a local pd2-price-crawler (`npm run start:dev` there, port 3000 by default):
 
 ```bash
 VITE_BACKEND_URL=http://localhost:3000 npm run tauri dev
