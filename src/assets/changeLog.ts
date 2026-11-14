@@ -11,6 +11,8 @@ export const changeLog = {
     "🔧 Price check: a runeword's search now keeps the base, type or type group shown in the header (Epiphany on a Monarch finds Monarchs, live or expired) instead of every base it was made in",
     '🆕 Market browser: a "Sockets" stat filter (search "sockets") with min / max socket count. It works in any-of groups and as a NOT row: NOT Sockets 1-1 shows 0-socket and 2+ socket items',
     '✨ Chat, market and builds: traders and accounts show their tomb glyph, the same one pd2trader.com draws for them, instead of an initial',
+    '🔧 Windows: updates no longer bring back or move the desktop icon, or leave you with two PD2 Trader icons and two entries in Installed apps. Updates now install like the setup.exe from the website, without asking for admin rights every time. The first one removes the old MSI install (Windows asks once) and keeps one desktop icon, only if you still had one',
+    '🔧 Windows installer: no longer stuck on "This action is only valid for products that are currently installed" when Installed apps lists an old version that is already gone',
   ],
   '0.11.2': [
     '🆕 Market browser: elemental damage pseudo stats over every Adds X-Y fire, cold and lightning line: "Adds #-# Total Elemental Damage" with Min dmg and Max dmg ranges (Adds 4-20 fire + 1-114 lightning = Adds 5-134) and "Average Elemental Damage" (Adds 6-36 fire + 4-114 lightning = 80)',

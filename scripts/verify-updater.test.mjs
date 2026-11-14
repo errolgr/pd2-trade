@@ -97,6 +97,14 @@ describe('checkManifest', () => {
   it('rejects a manifest for a different version than the release', () => {
     expect(() => checkManifest(manifest(), { expectVersion: '1.2.4' })).toThrow(/expected 1.2.4/);
   });
+
+  it('rejects a draft that points Windows updates at the MSI', () => {
+    const { platforms } = manifest();
+    platforms['windows-x86_64'].url = 'https://example.com/PD2.Trader_1.2.3_x64_en-US.msi';
+    expect(() => checkManifest(manifest({ platforms }), { requireNsis: true })).toThrow(/NSIS -setup.exe/);
+    platforms['windows-x86_64'].url = 'https://example.com/PD2.Trader_1.2.3_x64-setup.exe';
+    expect(() => checkManifest(manifest({ platforms }), { requireNsis: true })).not.toThrow();
+  });
 });
 
 describe('compareVersions', () => {
@@ -110,7 +118,8 @@ describe('checkConfig', () => {
   const copyRepoConfig = () => {
     const root = mkdtempSync(path.join(dir, 'repo-'));
     for (const file of ['package.json', 'package-lock.json', 'src-tauri/tauri.conf.json', 'src-tauri/Cargo.toml',
-      'src-tauri/Cargo.lock', 'docs/.vitepress/config.js', 'src-tauri/capabilities/default.json', 'src-tauri/src/lib.rs']) {
+      'src-tauri/Cargo.lock', 'docs/.vitepress/config.js', 'src-tauri/capabilities/default.json', 'src-tauri/src/lib.rs',
+      'src-tauri/windows/installer.nsi', '.github/workflows/publish-to-manual-release.yml']) {
       mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
       cpSync(path.join(ROOT, file), path.join(root, file));
     }
@@ -148,5 +157,20 @@ describe('checkConfig', () => {
       cap.permissions = cap.permissions.filter((p) => typeof p !== 'string' || !p.startsWith('process:'));
     });
     expect(() => checkConfig(root)).toThrow(/relaunch/);
+  });
+
+  it('fails when @tauri-apps/cli changes but the NSIS template was not re-synced', () => {
+    const root = copyRepoConfig();
+    editJson(root, 'package-lock.json', (lock) => {
+      lock.packages['node_modules/@tauri-apps/cli'].version = '99.0.0';
+    });
+    expect(() => checkConfig(root)).toThrow(/installer\.nsi is synced with tauri-cli .* but @tauri-apps\/cli is 99\.0\.0/);
+  });
+
+  it('fails when latest.json would point Windows updates at the MSI', () => {
+    const root = copyRepoConfig();
+    const workflow = path.join(root, '.github/workflows/publish-to-manual-release.yml');
+    writeFileSync(workflow, readFileSync(workflow, 'utf8').replace(/^\s*updaterJsonPreferNsis:.*$/m, ''));
+    expect(() => checkConfig(root)).toThrow(/updaterJsonPreferNsis/);
   });
 });
