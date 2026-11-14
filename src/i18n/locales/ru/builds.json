@@ -17,7 +17,8 @@
     "na": "н/д",
     "noReliablePrice": "Нет надёжной рыночной цены",
     "hrTitle": "{{hr}} HR по текущим рыночным ценам",
-    "marketValue": "Рыночная стоимость <num>{{value}} HR</num>"
+    "marketValue": "Рыночная стоимость <num>{{value}} HR</num>",
+    "corruptionBasis": "Оценено по его corruption"
   },
   "itemActions": {
     "searchMarket": "Искать на рынке",

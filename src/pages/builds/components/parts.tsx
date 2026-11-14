@@ -11,7 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import type { EquippedItem, SocketedItem } from '@/lib/builds-api';
+import type { EquippedItem, PricedEquippedItem, SocketedItem } from '@/lib/builds-api';
 import type { BuildsQuery } from '../lib/useBuildsQuery';
 import { useBuildsActions } from '../lib/context';
 import { type MarketItemRef, marketFiltersFor } from '../lib/market-link';
@@ -183,7 +183,9 @@ export function ShareBar({ pct, className, barClassName }: { pct: number; classN
 type TooltipItem = Pick<
   EquippedItem,
   'slot' | 'name' | 'quality' | 'base' | 'runeword' | 'ethereal' | 'corrupted' | 'sockets' | 'mods'
-> & { socketed: Pick<SocketedItem, 'name' | 'quality'>[]; priceHr?: number | null };
+> & { socketed: Pick<SocketedItem, 'name' | 'quality'>[] } & Partial<
+    Pick<PricedEquippedItem, 'priceHr' | 'priceBasis'>
+  >;
 
 /** In-game style item card: name in its quality colour, base, mods in magic blue, sockets, price. */
 export function ItemTooltipCard({ item }: { item: TooltipItem }) {
@@ -242,6 +244,9 @@ export function ItemTooltipCard({ item }: { item: TooltipItem }) {
                 values={{ value: fmtHr(item.priceHr) }}
                 components={{ num: <span className="font-semibold text-q-gold tabular-nums" /> }}
               />
+              {item.priceBasis === 'corruption' && (
+                <span className="block text-[10px] text-q-corrupted/90">{t('price.corruptionBasis')}</span>
+              )}
             </span>
           ) : (
             <span className="text-muted-foreground">{t('price.noReliablePrice')}</span>

@@ -17,7 +17,8 @@
     "na": "b.d.",
     "noReliablePrice": "Brak wiarygodnej ceny rynkowej",
     "hrTitle": "{{hr}} HR według obecnych cen rynkowych",
-    "marketValue": "Wartość rynkowa <num>{{value}} HR</num>"
+    "marketValue": "Wartość rynkowa <num>{{value}} HR</num>",
+    "corruptionBasis": "Wyceniony według korupcji"
   },
   "itemActions": {
     "searchMarket": "Szukaj na rynku",

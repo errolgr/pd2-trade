@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.11.4': [
+    '✨ Builds: corrupted uniques and set items are valued at what listings with the same corruption ask (a Blackhand Key with +1 to All Skills: about 1.2 HR instead of the plain item\'s 0.08), in item prices and the gear value. Their tooltip says "Priced for its corruption"',
+  ],
   '0.11.3': [
     '🆕 Market browser: pick several item types at once in the Type filter (e.g. Polearm + Spears)',
     '🆕 Market browser: "Sockets" stat filter, also as a NOT row (NOT Sockets 1 = 0 or 2+ sockets)',

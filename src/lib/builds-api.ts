@@ -105,6 +105,11 @@ export interface PricedEquippedItem extends EquippedItem {
   iconUrl: string | null;
   /** Item + priced sockets; null when nothing in it is priced. */
   priceHr: number | null;
+  /**
+   * What `priceHr` rests on: `corruption`, the listings with the item's exact corruption (a corrupted unique/set);
+   * `item`, its price by name. Null when unpriced; absent from servers before it was added.
+   */
+  priceBasis?: 'corruption' | 'item' | null;
 }
 
 /** A charm in the inventory's charm area (its bottom 4 rows); slot `Inventory`. */
