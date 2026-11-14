@@ -25,6 +25,7 @@ import { MAX_OR_BLOCKS, compactBlocks, groupOf, moveToGroup, orBlockNumbers, typ
 import {
   isCorruption,
   isDamageRangeKey,
+  isItemProperty,
   isPseudo,
   lowDamageRange,
   searchStats,
@@ -39,7 +40,13 @@ import { Trans, useTranslation } from '@/i18n';
 const MAX_SUGGESTIONS = 40;
 
 const choiceKey = (choice: StatChoice) =>
-  isPseudo(choice) ? choice.id : isCorruption(choice) ? `corruption:${choice.value}` : choice.key;
+  isPseudo(choice)
+    ? choice.id
+    : isCorruption(choice)
+      ? `corruption:${choice.value}`
+      : isItemProperty(choice)
+        ? `item:${choice.property}`
+        : choice.key;
 
 /** "Min [  ]" — a stat bound input with its caption inside the row's second line. */
 function StatNumber({
@@ -177,7 +184,7 @@ export interface StatFiltersProps {
   highlight?: { id: string; nonce: number } | null;
 }
 
-/** Picker tabs: what kind of filter a suggestion adds. */
+/** Picker tabs: what kind of filter a suggestion adds (item properties sit with the mods). */
 type StatTab = 'mod' | 'pseudo' | 'corruption';
 const TABS: { id: StatTab; labelKey: string }[] = [
   { id: 'mod', labelKey: 'stats.tabs.mods' },
@@ -296,7 +303,9 @@ export function StatFilters({
       ? { kind: 'pseudo' as const, key: choice.id }
       : isCorruption(choice)
         ? { kind: 'corruption' as const, key: choice.value }
-        : { kind: 'mod' as const, key: choice.key };
+        : isItemProperty(choice)
+          ? { kind: 'item' as const, key: choice.property }
+          : { kind: 'mod' as const, key: choice.key };
     onChange([...stats, newStatFilter(row)]);
   };
   const update = (id: string, changes: Partial<StatFilter>) =>
@@ -415,7 +424,7 @@ export function StatFilters({
               </button>
             </Tip>
           </div>
-          {s.kind !== 'corruption' && isDamageRangeKey(s.key) ? (
+          {s.kind !== 'corruption' && s.kind !== 'item' && isDamageRangeKey(s.key) ? (
             <DamageRange row={s}
               name={name}
               onChange={(changes) => update(s.id, changes)} />

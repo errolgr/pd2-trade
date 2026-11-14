@@ -165,6 +165,18 @@ describe('StatFilters', () => {
     expect(screen.getByRole('spinbutton', { name: 'Faster Cast Rate min' })).toBeTruthy();
   });
 
+  it('adds a Sockets row (the socket count, min / max) ahead of the sockets corruption', () => {
+    const { latest } = mount([]);
+    const search = screen.getByRole('combobox', { name: 'Add a stat filter' });
+    fireEvent.focus(search);
+    fireEvent.change(search, { target: { value: 'sockets' } });
+    fireEvent.keyDown(search, { key: 'Enter' });
+    expect(latest()).toMatchObject([{ kind: 'item', key: 'sockets', enabled: true }]);
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Sockets min' }), { target: { value: '1' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Sockets max' }), { target: { value: '1' } });
+    expect(latest()[0]).toMatchObject({ kind: 'item', key: 'sockets', min: 1, max: 1 });
+  });
+
   it('splits suggestions into Mods / Pseudo / Corruptions tabs; the best match picks the tab, Tab cycles', () => {
     const { latest } = mount([]);
     const search = screen.getByRole('combobox', { name: 'Add a stat filter' });

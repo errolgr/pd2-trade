@@ -17,7 +17,10 @@ export type CharClass = 'amazon' | 'assassin' | 'barbarian' | 'druid' | 'necroma
  */
 export type SortBy = 'bumped' | 'price' | 'score' | 'value' | 'stat';
 
-export type StatKind = 'mod' | 'pseudo' | 'corruption';
+export type StatKind = 'mod' | 'pseudo' | 'corruption' | 'item';
+
+/** Item properties an `item` stat row bounds (`sockets`: the socket count, items without one count as 0). */
+export type ItemProperty = 'sockets';
 
 /** A listing's state on the market service: still up, or how it ended. */
 export type MarketListingStatus = 'active' | 'sold' | 'removed' | 'expired';
@@ -27,10 +30,11 @@ export interface StatFilter {
   id: string;
   /**
    * `mod` = PD2 property key; `pseudo` = a computed pseudo stat; `corruption` = a cube corruption name
-   * (`item.corruptions`; min/max bound its corrupted line). All filtered by the market service.
+   * (`item.corruptions`; min/max bound its corrupted line); `item` = an item property (`sockets`: min/max bound the
+   * socket count, no bounds = at least one). All filtered by the market service.
    */
   kind: StatKind;
-  /** PD2 modifier name (e.g. `item_fastercastrate`), pseudo id (e.g. `pseudo_total_res`) or corruption name. */
+  /** PD2 modifier name (e.g. `item_fastercastrate`), pseudo id (e.g. `pseudo_total_res`), corruption name or item property. */
   key: string;
   min?: number;
   max?: number;
@@ -119,6 +123,14 @@ export interface CorruptionOption {
   label: string;
   /** False when PD2 keeps no corrupted line to bound (sockets, dye…): presence only. */
   rolled: boolean;
+}
+
+/** An item property the stat picker offers (`item` rows). */
+export interface ItemPropertyOption {
+  property: ItemProperty;
+  /** Template like the stat labels: `{X} Sockets`. */
+  label: string;
+  group: string;
 }
 
 export interface PseudoDef {

@@ -1,6 +1,15 @@
 import { statTemplate } from '@/pages/price-check/lib/tooltip-lines';
 import { corruptionOption } from '../lib/catalog';
-import { isCorruption, isDamagePair, isPseudo, parseStatKey, type StatChoice, statLabel } from '../lib/stats';
+import {
+  isCorruption,
+  isDamagePair,
+  isItemProperty,
+  isPseudo,
+  itemPropertyOption,
+  parseStatKey,
+  type StatChoice,
+  statLabel,
+} from '../lib/stats';
 import { PSEUDO_STATS } from '../lib/pseudo';
 import type { StatFilter } from '../lib/types';
 
@@ -34,9 +43,11 @@ export function statName(key: string): string {
   return templateName(statLabel(key));
 }
 
-/** A stat row's display name; corruption rows by their corruption ("Faster Cast Rate", "Sockets"). */
+/** A stat row's display name; corruption rows by their corruption, item rows by their property ("Faster Cast Rate", "Sockets"). */
 export function filterName(row: Pick<StatFilter, 'kind' | 'key'>): string {
-  return row.kind === 'corruption' ? templateName(corruptionOption(row.key).label) : statName(row.key);
+  if (row.kind === 'corruption') return templateName(corruptionOption(row.key).label);
+  if (row.kind === 'item') return templateName(itemPropertyOption(row.key)?.label ?? row.key);
+  return statName(row.key);
 }
 
 /** Skill tabs the game names without a trailing "Skills" ("+2 to Curses (Necromancer Only)"). */
@@ -77,9 +88,9 @@ export function itemStatText(key: string): string {
   return text.replace(/\{[XY]\}/g, '#').replace(/# %/g, '#%');
 }
 
-/** A stat picker entry as the item shows it (see `itemStatText`); pseudo stats as their template. */
+/** A stat picker entry as the item shows it (see `itemStatText`); pseudo stats and item properties as their template. */
 export function choiceText(choice: StatChoice): string {
-  if (isPseudo(choice)) return choice.label.replace(/\{[XY]\}/g, '#');
+  if (isPseudo(choice) || isItemProperty(choice)) return choice.label.replace(/\{[XY]\}/g, '#');
   if (isCorruption(choice)) {
     const text = choice.rolled ? itemStatText(choice.value) : choice.value;
     return text === choice.value ? templateName(choice.label) : text;

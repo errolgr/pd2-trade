@@ -200,7 +200,7 @@ describe('marketSearchBody', () => {
     expect(body({ hrMax: 1 }).hrMaxExclusive).toBeUndefined();
   });
 
-  it('sends OR blocks, NOT and corruption rows, and never text over the service limits', () => {
+  it('sends OR blocks, NOT, corruption and sockets rows, and never text over the service limits', () => {
     const f = mergeFilters(base, {
       priceText: 'x'.repeat(150),
       sellerName: 'CIutch',
@@ -208,6 +208,8 @@ describe('marketSearchBody', () => {
         { id: 'a', kind: 'corruption', key: 'item_fastercastrate', min: 10, enabled: true, or: 2 },
         { id: 'b', kind: 'mod', key: 'maxhp', enabled: true, or: undefined },
         { id: 'c', kind: 'mod', key: 'strength', enabled: true, not: true },
+        // NOT sockets = 1: 0-socket and 2+ socket items
+        { id: 'd', kind: 'item', key: 'sockets', min: 1, max: 1, enabled: true, not: true },
       ],
     });
     const body = JSON.parse(JSON.stringify(marketSearchBody(f, 0, 25)));
@@ -215,6 +217,7 @@ describe('marketSearchBody', () => {
       { id: 'a', kind: 'corruption', key: 'item_fastercastrate', min: 10, enabled: true, or: 2 },
       { id: 'b', kind: 'mod', key: 'maxhp', enabled: true },
       { id: 'c', kind: 'mod', key: 'strength', enabled: true, not: true },
+      { id: 'd', kind: 'item', key: 'sockets', min: 1, max: 1, enabled: true, not: true },
     ]);
     expect(body.filters.priceText).toHaveLength(100);
     expect(body.filters.sellerName).toBe('CIutch');
