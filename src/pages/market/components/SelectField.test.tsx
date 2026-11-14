@@ -95,13 +95,13 @@ describe('SelectField', () => {
     const onChange = open();
     fireEvent.change(search(), { target: { value: 'bow' } });
     expect(names()).toEqual(['Bows · 40', 'Amazon Bow · 10', 'Bow · 30']);
-    expect(highlighted()?.textContent).toBe('Bows');
+    expect(highlighted()?.getAttribute('aria-label')).toBe('Bows · 40');
 
     fireEvent.keyDown(search(), { key: 'ArrowDown' });
     fireEvent.keyDown(search(), { key: 'ArrowDown' });
-    expect(highlighted()?.textContent).toBe('Bow');
+    expect(highlighted()?.getAttribute('aria-label')).toBe('Bow · 30');
     fireEvent.keyDown(search(), { key: 'ArrowUp' });
-    expect(highlighted()?.textContent).toBe('Amazon Bow');
+    expect(highlighted()?.getAttribute('aria-label')).toBe('Amazon Bow · 10');
     fireEvent.keyDown(search(), { key: 'Enter' });
     expect(onChange).toHaveBeenLastCalledWith('abow');
     expect(screen.queryByRole('option')).toBeNull();
@@ -116,7 +116,7 @@ describe('SelectField', () => {
     const onChange = open();
     fireEvent.change(search(), { target: { value: 'ci' } });
     expect(names()).toEqual(['Helms · 0', 'Circlet · 0']);
-    expect(highlighted()?.textContent).toBe('Circlet');
+    expect(highlighted()?.getAttribute('aria-label')).toBe('Circlet · 0');
     fireEvent.keyDown(search(), { key: 'Enter' });
     expect(onChange).toHaveBeenLastCalledWith('circ');
     expect(trigger().textContent).toBe('Circlet');
@@ -146,9 +146,21 @@ describe('SelectField', () => {
     expect(screen.queryByPlaceholderText('Search…')).toBeNull();
   });
 
-  it('Escape closes the list while a row shows its count tooltip', () => {
+  it('shows each count as text on the right of its row (0 too), before the picked row’s checkmark; none without facets', () => {
+    open({ initial: 'abow' });
+    const count = (name: string) =>
+      screen.getByRole('option', { name }).querySelector('[data-facet-count]')?.textContent ?? null;
+    expect(count('Bows · 40')).toBe('40');
+    expect(count('Helms · 0')).toBe('0');
+    expect(count('Sword')).toBeNull();
+    expect(count('Any')).toBeNull();
+    const picked = screen.getByRole('option', { name: 'Amazon Bow · 10' });
+    expect(picked.textContent).toBe('Amazon Bow10');
+    expect(picked.querySelector('[data-facet-count]')?.nextElementSibling?.querySelector('svg')).not.toBeNull();
+  });
+
+  it('Escape closes the list without picking', () => {
     const onChange = open({ initial: 'abow' });
-    expect(screen.getAllByText('Amazon Bow · 10').length).toBeGreaterThan(0);
     fireEvent.keyDown(search(), { key: 'Escape' });
     expect(screen.queryByPlaceholderText('Search…')).toBeNull();
     expect(onChange).not.toHaveBeenCalled();
@@ -189,7 +201,7 @@ describe('SelectField with onToggle (multi-select)', () => {
     screen
       .getAllByRole('option')
       .filter((o) => o.querySelector('svg'))
-      .map((o) => o.textContent);
+      .map((o) => o.getAttribute('aria-label') ?? o.textContent);
   function openMulti() {
     const onToggle = vi.fn();
     render(<MultiHarness onToggle={onToggle} />);
@@ -201,11 +213,11 @@ describe('SelectField with onToggle (multi-select)', () => {
     const onToggle = openMulti();
     fireEvent.click(option('Bows · 40'));
     expect(onToggle).toHaveBeenLastCalledWith('bows');
-    expect(checked()).toEqual(['Bows', 'Sword']);
+    expect(checked()).toEqual(['Bows · 40', 'Sword']);
     fireEvent.click(option('Helms · 0'));
-    expect(checked()).toEqual(['Bows', 'Helms', 'Sword']);
+    expect(checked()).toEqual(['Bows · 40', 'Helms · 0', 'Sword']);
     fireEvent.click(option('Sword'));
-    expect(checked()).toEqual(['Bows', 'Helms']);
+    expect(checked()).toEqual(['Bows · 40', 'Helms · 0']);
     expect(trigger().textContent).toBe('Bows, Helms');
   });
 

@@ -11,7 +11,7 @@ import { SearchPopover, useSearchPopover } from '@/components/custom/SearchPopov
 import { facetShare } from '../lib/facets';
 import type { Tri } from '../lib/types';
 import { useTranslation } from '@/i18n';
-import { FACET_DIM, FacetHairline, FacetRowTip, FacetTip, facetFill, useFacetText } from './FacetCounts';
+import { FACET_DIM, FacetCount, FacetHairline, FacetTip, useFacetText } from './FacetCounts';
 
 /*
  * Dense form controls for the market filter sidebar. Everything is h-7 / text-xs so the full site filter set
@@ -379,7 +379,6 @@ export function SelectField({
   const [highlight, setHighlight] = useState({ value: '', follow: false, resync: false });
   const anyLabel = anyLabelProp === undefined ? t('filters.any') : anyLabelProp;
   const current = value ?? ANY;
-  const peak = Math.max(0, ...options.map((o) => o.count ?? 0));
   const all: SelectOption[] = anyLabel === null ? options : [{ value: ANY, label: anyLabel }, ...options];
   const shown = filterSelectOptions(all, search.query);
   const q = search.query.trim().toLowerCase();
@@ -446,9 +445,7 @@ export function SelectField({
             label={o.label}
             count={o.count}
             depth={o.depth}
-            peak={peak}
             selected={selected && o.value !== ANY ? selected(o.value) : o.value === current}
-            highlighted={search.open && o.value === highlighted}
             onSelect={() => {
               if (onToggle && o.value !== ANY) return onToggle(o.value);
               onChange(o.value === ANY ? undefined : o.value);
@@ -464,27 +461,20 @@ export function SelectField({
   );
 }
 
-/**
- * A select option with its facet count (if any): row fill as its share of the busiest option, dimmed at 0, the
- * exact count in a tooltip while the row is highlighted.
- */
+/** A select option with its facet count (if any) on the right, dimmed at 0. */
 function FacetSelectItem({
   value,
   label,
   count,
   depth,
-  peak,
   selected,
-  highlighted,
   onSelect,
 }: {
   value: string;
   label: string;
   count: number | undefined;
   depth: 0 | 1 | undefined;
-  peak: number;
   selected: boolean;
-  highlighted: boolean;
   onSelect: () => void;
 }) {
   const facetText = useFacetText();
@@ -495,21 +485,19 @@ function FacetSelectItem({
       onSelect={onSelect}
       // With a count, it is part of the option's name
       aria-label={text}
-      style={facetFill(facetShare(count, peak))}
       className={cn(
-        'relative flex w-full cursor-default select-none items-center gap-2 rounded-md py-1.5 pr-8 pl-2 text-xs whitespace-nowrap outline-hidden transition-colors duration-(--dur-fast) data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground',
+        'relative flex w-full cursor-default select-none items-center gap-2 rounded-md py-1.5 pr-2 pl-2 text-xs whitespace-nowrap outline-hidden transition-colors duration-(--dur-fast) data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground',
         depth === 1 && 'pl-5',
         // The picked option stays readable even when it finds nothing
         count === 0 && !selected && FACET_DIM,
       )}
     >
-      <span className="absolute right-2 flex size-3.5 items-center justify-center">
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      <FacetCount count={count} />
+      <span className="flex size-3.5 shrink-0 items-center justify-center">
         {selected && <Check aria-hidden
           className="size-4" />}
       </span>
-      {label}
-      {text && <FacetRowTip text={text}
-        open={highlighted} />}
     </Command.Item>
   );
 }

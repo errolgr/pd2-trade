@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, ChevronDown, RotateCcw, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -18,17 +18,10 @@ import { CLASSES, RARITIES, TYPE_OPTIONS, optionCodes } from '../lib/catalog';
 import { basesForTypeValue, isTypeSelected, toggleTypeOption, typeLabel, typeSelection } from '../lib/type-selection';
 import { defaultAgeDays, MAX_FILTER_TEXT, MAX_SELLER_NAME, type SearchDefaults, withSource } from '../lib/defaults';
 import { anniversaryTri, withAnniversary } from '../lib/anniversary';
-import {
-  codeCounts,
-  CODE_FACET_SIZE,
-  type CodeCounts,
-  countsByValue,
-  facetShare,
-  type MarketFacets,
-} from '../lib/facets';
+import { codeCounts, CODE_FACET_SIZE, type CodeCounts, countsByValue, type MarketFacets } from '../lib/facets';
 import type { MarketFilters, OnlineFilter, Rarity, SortBy } from '../lib/types';
 import { Field, RangeField, Section, Segmented, SelectField, TriField, fieldInputClass, ClearButton } from './controls';
-import { FACET_DIM, FacetRowTip, facetFill, useFacetText } from './FacetCounts';
+import { FACET_DIM, FacetCount, useFacetText } from './FacetCounts';
 import { PriceControl } from './PriceControl';
 import { StatFilters, type StatFiltersProps } from './StatFilters';
 import { statName } from './stat-text';
@@ -65,7 +58,6 @@ function RarityField({
     ) : (
       t('filters.selected', { count: value.length })
     );
-  const peak = Math.max(0, ...counts.values());
   return (
     <Field label={t('filters.rarity')}>
       <DropdownMenu>
@@ -83,7 +75,6 @@ function RarityField({
               key={r}
               rarity={r}
               count={counts.get(r)}
-              peak={peak}
               checked={value.includes(r)}
               onCheckedChange={(on) => onChange(on ? [...value, r] : value.filter((x) => x !== r))}
             />
@@ -103,22 +94,19 @@ function RarityField({
   );
 }
 
-/** One rarity in the dropdown, with its facet count (if any): row fill as its share of the busiest, dimmed at 0. */
+/** One rarity in the dropdown, with its facet count (if any) on the right, dimmed at 0. */
 function RarityItem({
   rarity,
   count,
-  peak,
   checked,
   onCheckedChange,
 }: {
   rarity: Rarity;
   count: number | undefined;
-  peak: number;
   checked: boolean;
   onCheckedChange: (on: boolean) => void;
 }) {
   const facetText = useFacetText();
-  const [focused, setFocused] = useState(false);
   const text = count === undefined ? undefined : facetText(rarity, count);
   return (
     <DropdownMenuCheckboxItem
@@ -127,14 +115,10 @@ function RarityItem({
       // Stay open: several rarities are usually picked in a row
       onSelect={(e) => e.preventDefault()}
       onCheckedChange={onCheckedChange}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
-      style={facetFill(facetShare(count, peak))}
       className={cn('text-xs', rarityColor(rarity), count === 0 && !checked && FACET_DIM)}
     >
-      {rarity}
-      {text && <FacetRowTip text={text}
-        open={focused} />}
+      <span className="min-w-0 flex-1 truncate">{rarity}</span>
+      <FacetCount count={count} />
     </DropdownMenuCheckboxItem>
   );
 }
