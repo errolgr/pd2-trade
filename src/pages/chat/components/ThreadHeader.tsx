@@ -41,6 +41,7 @@ const iconButtonClass = cn(
 
 export function ThreadHeader({
   name,
+  glyphName,
   participant,
   account,
   inGameOnly,
@@ -60,6 +61,8 @@ export function ThreadHeader({
   onForgetWhispers,
 }: {
   name: string;
+  /** Draws their tomb glyph (traderGlyphName). */
+  glyphName: string;
   participant: Participant | undefined;
   /** The in-game account whispers reach. */
   account: string | undefined;
@@ -108,11 +111,10 @@ export function ThreadHeader({
           tabIndex={-1}
           aria-label={t('bubble.traderDetails', { name })}
           onClick={traderOpen ? undefined : onToggleTrader}
-          className="shrink-0 rounded-full outline-none transition-transform duration-(--dur-fast) hover:scale-105 active:scale-95"
+          className="shrink-0 rounded-md outline-none transition-transform duration-(--dur-fast) hover:scale-105 active:scale-95"
         >
-          <ChatAvatar name={name}
-            presence={presence}
-            className="size-10" />
+          <ChatAvatar name={glyphName}
+            presence={presence} />
         </button>
         <div className="min-w-0">
           <h3 className="flex min-w-0 items-center gap-1.5 text-[15px] font-semibold leading-tight tracking-tight text-foreground">

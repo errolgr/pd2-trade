@@ -33,6 +33,11 @@ export function sellerAccount(listing: Pick<MarketListingEntry, 'user' | 'item'>
   return listing.user?.in_game_account || listing.item?.account_id || listing.user?.game?.accounts?.[0] || null;
 }
 
+/** The name a seller's tomb glyph is drawn from: their account, else their username (as chat's traderGlyphName). */
+export function sellerGlyphName(listing: Pick<MarketListingEntry, 'user' | 'item'>): string | null {
+  return sellerAccount(listing) || listing.user?.username || null;
+}
+
 /** Name as the site's listing card titles it: rares/magic/crafted by quality + base, everything else by name. */
 export function itemDisplayName(item: Pick<ItemDetail, 'name' | 'quality' | 'base'>): string {
   const quality = item.quality?.name;

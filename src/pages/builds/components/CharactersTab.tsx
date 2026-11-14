@@ -1,6 +1,8 @@
 import React from 'react';
 import { ChevronRight, Clock, LogIn, Skull, Star, StarOff, Trash2, UserRound, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { glyphCodeForName } from '@/lib/glyph-code';
+import { TombGlyph } from '@/components/glyph/TombGlyph';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tip } from '@/components/ui/tooltip';
@@ -185,7 +187,8 @@ function AccountSection({ account }: { account: string }) {
   return (
     <section aria-label={t('characters.accountLabel', { account })}>
       <h3 className="flex h-8 items-center gap-2 border-b border-border/50 bg-muted/20 px-3 text-xs font-semibold text-foreground">
-        <UserRound className="size-3.5 text-muted-foreground" />
+        <TombGlyph code={glyphCodeForName(account)}
+          size={20} />
         {account}
         {query.data && (
           <span className="font-normal text-muted-foreground">
