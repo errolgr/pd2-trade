@@ -17,7 +17,7 @@ import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { z } from 'zod';
 import { BaseDirectory, exists, mkdir, readTextFile, writeTextFile } from '@/lib/browser-fs';
 import { showToast } from '@/overlay';
-import { findTypeOption } from '@/pages/market/lib/catalog';
+import { typeLabel } from '@/pages/market/lib/type-selection';
 import { upgradeFilters } from '@/pages/market/lib/defaults';
 import type { MarketFilters, SavedSearch, StatPreset } from '@/pages/market/lib/types';
 import { watchKey } from '@/pages/market/alerts/alert-logic';
@@ -201,10 +201,7 @@ const RARITY_SHORT: Record<string, string> = { Runeword: 'RW' };
 export function defaultSearchName(f: MarketFilters): string {
   const what =
     f.itemName?.trim() ||
-    [
-      (f.rarity ?? []).map((r) => RARITY_SHORT[r] ?? r).join('/'),
-      f.baseCode ?? (f.typeCode && (findTypeOption(f.typeCode)?.label ?? f.typeCode)),
-    ]
+    [(f.rarity ?? []).map((r) => RARITY_SHORT[r] ?? r).join('/'), f.baseCode ?? typeLabel(f.typeCode)]
       .filter(Boolean)
       .join(' ') ||
     t('market:store.anyItem');

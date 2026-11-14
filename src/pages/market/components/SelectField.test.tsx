@@ -77,15 +77,7 @@ describe('SelectField', () => {
   it('shows the current option on the trigger and lists Any, groups and counts', () => {
     open({ initial: 'abow' });
     expect(trigger().textContent).toBe('Amazon Bow');
-    expect(names()).toEqual([
-      'Any',
-      'Bows · 40',
-      'Amazon Bow · 10',
-      'Bow · 30',
-      'Helms · 0',
-      'Circlet · 0',
-      'Sword',
-    ]);
+    expect(names()).toEqual(['Any', 'Bows · 40', 'Amazon Bow · 10', 'Bow · 30', 'Helms · 0', 'Circlet · 0', 'Sword']);
     // Members are indented, an option that finds nothing is dimmed, the list opens on the current option
     expect(screen.getByRole('option', { name: 'Amazon Bow · 10' }).className).toMatch(/pl-5/);
     expect(screen.getByRole('option', { name: 'Helms · 0' }).className).toMatch(/opacity-30/);
@@ -160,5 +152,91 @@ describe('SelectField', () => {
     fireEvent.keyDown(search(), { key: 'Escape' });
     expect(screen.queryByPlaceholderText('Search…')).toBeNull();
     expect(onChange).not.toHaveBeenCalled();
+  });
+});
+
+/** Several picks as a comma list: plain picks replace it, Shift/Ctrl picks toggle one entry. */
+function MultiHarness({ onToggle }: { onToggle: (v: string) => void }) {
+  const [value, setValue] = useState<string | undefined>('swor');
+  const picked = value?.split(',') ?? [];
+  return (
+    <TooltipProvider delayDuration={0}>
+      <SelectField
+        label="Type"
+        value={value}
+        options={OPTIONS}
+        onChange={setValue}
+        onToggle={(v) => {
+          onToggle(v);
+          const next = picked.includes(v) ? picked.filter((p) => p !== v) : [...picked, v];
+          setValue(next.length ? next.join(',') : undefined);
+        }}
+        selected={(v) => picked.includes(v)}
+        valueLabel={
+          value &&
+          OPTIONS.filter((o) => picked.includes(o.value))
+            .map((o) => o.label)
+            .join(', ')
+        }
+      />
+    </TooltipProvider>
+  );
+}
+
+describe('SelectField with onToggle', () => {
+  const option = (name: string) => screen.getByRole('option', { name });
+  const checked = () =>
+    screen
+      .getAllByRole('option')
+      .filter((o) => o.querySelector('svg'))
+      .map((o) => o.textContent);
+  function openMulti() {
+    const onToggle = vi.fn();
+    render(<MultiHarness onToggle={onToggle} />);
+    fireEvent.click(trigger());
+    return onToggle;
+  }
+  const pick = (name: string, modifiers: { shiftKey?: boolean; ctrlKey?: boolean } = {}) => {
+    fireEvent.pointerDown(option(name), modifiers);
+    fireEvent.click(option(name), modifiers);
+  };
+
+  it('says how to pick several', () => {
+    openMulti();
+    expect(screen.getByText('Hold Shift or Ctrl to select several')).toBeTruthy();
+  });
+
+  it('Shift- or Ctrl-click adds or removes an option and keeps the list open', () => {
+    const onToggle = openMulti();
+    pick('Bows · 40', { shiftKey: true });
+    expect(onToggle).toHaveBeenLastCalledWith('bows');
+    expect(checked()).toEqual(['Bows', 'Sword']);
+    pick('Helms · 0', { ctrlKey: true });
+    expect(checked()).toEqual(['Bows', 'Helms', 'Sword']);
+    pick('Sword', { shiftKey: true });
+    expect(checked()).toEqual(['Bows', 'Helms']);
+    expect(trigger().textContent).toBe('Bows, Helms');
+  });
+
+  it('a plain click still replaces the pick and closes the list', () => {
+    const onToggle = openMulti();
+    pick('Bows · 40', { shiftKey: true });
+    pick('Circlet · 0');
+    expect(onToggle).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('option')).toBeNull();
+    expect(trigger().textContent).toBe('Circlet');
+  });
+
+  it('Shift+Enter toggles the highlighted option; Any always clears', () => {
+    const onToggle = openMulti();
+    fireEvent.change(search(), { target: { value: 'helms' } });
+    fireEvent.keyDown(search(), { key: 'Enter', shiftKey: true });
+    expect(onToggle).toHaveBeenLastCalledWith('helms');
+    expect(trigger().textContent).toBe('Helms, Sword');
+
+    fireEvent.change(search(), { target: { value: 'any' } });
+    fireEvent.keyDown(search(), { key: 'Enter', shiftKey: true });
+    expect(onToggle).toHaveBeenCalledTimes(1);
+    expect(trigger().textContent).toBe('Any');
   });
 });

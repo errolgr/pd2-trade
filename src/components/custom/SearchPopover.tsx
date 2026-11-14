@@ -30,7 +30,8 @@ const NAV_KEYS: Record<string, true> = { ArrowUp: true, ArrowDown: true, Home: t
  * `Command.Item` children by `state.query`. Arrow keys + Enter or click pick, Escape closes. The open list takes
  * the overlay's keyboard (data-keep-keyboard; give the trigger the attribute too), so typing reaches the search box
  * instead of the game. `highlighted` / `onHighlight` follow the row the arrow keys or the pointer are on;
- * `onNavigate` hears a navigation key or pointer move just before the list moves the highlight.
+ * `onNavigate` hears a navigation key or pointer move just before the list moves the highlight; `onKeyDown` hears
+ * every key before the list acts on it (Enter picks the highlighted row right after).
  */
 export function SearchPopover({
   state,
@@ -40,6 +41,7 @@ export function SearchPopover({
   highlighted,
   onHighlight,
   onNavigate,
+  onKeyDown,
   footer,
   contentClassName,
   inputClassName,
@@ -53,6 +55,7 @@ export function SearchPopover({
   highlighted?: string;
   onHighlight?: (value: string) => void;
   onNavigate?: () => void;
+  onKeyDown?: (e: React.KeyboardEvent) => void;
   footer?: React.ReactNode;
   contentClassName?: string;
   inputClassName?: string;
@@ -75,6 +78,7 @@ export function SearchPopover({
           // Escape closes the list even when a row's tooltip is open (Radix lets only the topmost layer, the
           // tooltip, see it)
           onKeyDown={(e) => {
+            onKeyDown?.(e);
             if (NAV_KEYS[e.key] || (e.ctrlKey && 'jknp'.includes(e.key))) onNavigate?.();
             if (e.key !== 'Escape') return;
             e.preventDefault();

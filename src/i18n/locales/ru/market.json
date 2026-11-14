@@ -134,6 +134,7 @@
     "pickTypeFirst": "Сначала выберите тип",
     "searchOptions": "Поиск…",
     "noOptions": "Ничего не найдено",
+    "multiSelectHint": "Удерживайте Shift или Ctrl, чтобы выбрать несколько",
     "class": "Класс",
     "corrupted": "Corrupted",
     "sockets": "Сокеты",

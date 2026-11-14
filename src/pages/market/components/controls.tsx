@@ -347,13 +347,18 @@ export function filterSelectOptions(options: SelectOption[], query: string): Sel
 /**
  * Compact select with a search box at the top of its list; `anyLabel` (default "Any") adds an entry mapped to
  * undefined, `anyLabel: null` omits it. An option's `count` (facets) shows in the list, not in the trigger;
- * `depth: 1` indents it under the option above (a type group's member types).
+ * `depth: 1` indents it under the option above (a type group's member types). With `onToggle`, Shift- or Ctrl-click
+ * (or Enter) adds or removes an option instead of replacing the pick and keeps the list open (a hint says so);
+ * `selected` then says which options show as picked and `valueLabel` what the trigger shows.
  */
 export function SelectField({
   label,
   value,
   options,
   onChange,
+  onToggle,
+  selected,
+  valueLabel,
   anyLabel: anyLabelProp,
   disabled,
 }: {
@@ -361,11 +366,16 @@ export function SelectField({
   value: string | undefined;
   options: SelectOption[];
   onChange: (v: string | undefined) => void;
+  onToggle?: (v: string) => void;
+  selected?: (v: string) => boolean;
+  valueLabel?: string;
   anyLabel?: string | null;
   disabled?: boolean;
 }) {
   const { t } = useTranslation('market');
   const search = useSearchPopover();
+  // Whether the event about to pick a row held Shift/Ctrl: set on pointer down and on keys, read on select
+  const additive = useRef(false);
   // `follow`: the highlight tracks the search (see below) until the arrow keys or the pointer move it. `resync`
   // flips to hand the list back its highlight after it picked its own first row.
   const [highlight, setHighlight] = useState({ value: '', follow: false, resync: false });
@@ -423,12 +433,22 @@ export function SelectField({
             data-keep-keyboard
             className="flex h-7 w-full items-center justify-between gap-2 rounded-md border border-input bg-transparent px-2 text-xs whitespace-nowrap outline-none transition-[color,background-color,border-color,box-shadow] duration-(--dur-fast) ease-out hover:border-ring/40 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-50 data-[state=open]:border-ring"
           >
-            <span className="truncate">{all.find((o) => o.value === current)?.label}</span>
+            <span className="truncate">{valueLabel ?? all.find((o) => o.value === current)?.label}</span>
             <ChevronDown
               aria-hidden
               className="size-4 shrink-0 text-muted-foreground opacity-50 transition-transform duration-(--dur-fast) ease-out [[data-state=open]>&]:rotate-180"
             />
           </button>
+        }
+        onKeyDown={(e) => {
+          additive.current = e.shiftKey || e.ctrlKey || e.metaKey;
+        }}
+        footer={
+          onToggle && (
+            <div className="border-t border-border px-2.5 py-1.5 text-[11px] text-muted-foreground">
+              {t('filters.multiSelectHint')}
+            </div>
+          )
         }
       >
         {shown.map((o) => (
@@ -439,9 +459,13 @@ export function SelectField({
             count={o.count}
             depth={o.depth}
             peak={peak}
-            selected={o.value === current}
+            selected={selected && o.value !== ANY ? selected(o.value) : o.value === current}
             highlighted={search.open && o.value === highlighted}
+            onPointerDown={(e) => {
+              additive.current = e.shiftKey || e.ctrlKey || e.metaKey;
+            }}
             onSelect={() => {
+              if (onToggle && additive.current && o.value !== ANY) return onToggle(o.value);
               onChange(o.value === ANY ? undefined : o.value);
               search.setOpen(false);
             }}
@@ -467,6 +491,7 @@ function FacetSelectItem({
   peak,
   selected,
   highlighted,
+  onPointerDown,
   onSelect,
 }: {
   value: string;
@@ -476,6 +501,7 @@ function FacetSelectItem({
   peak: number;
   selected: boolean;
   highlighted: boolean;
+  onPointerDown?: (e: React.PointerEvent) => void;
   onSelect: () => void;
 }) {
   const facetText = useFacetText();
@@ -484,6 +510,7 @@ function FacetSelectItem({
     <Command.Item
       value={value}
       onSelect={onSelect}
+      onPointerDown={onPointerDown}
       // With a count, it is part of the option's name
       aria-label={text}
       style={facetFill(facetShare(count, peak))}

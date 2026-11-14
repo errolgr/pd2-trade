@@ -70,7 +70,10 @@ export interface MarketFilters {
   hrMax?: number;
   /** `hrMax` is exclusive (`< hrMax`, a price chart bucket's upper edge) instead of `<=` (a typed max). */
   hrMaxExclusive?: boolean;
-  /** item.base.type_code: a type, a site `{"$in": [...]}` entry, or a type group code (`group:bows`, type-groups.ts) */
+  /**
+   * item.base.type_code: a type, a site `{"$in": [...]}` entry, a type group code (`group:bows`, type-groups.ts),
+   * or several of them as the `{"$in": [...]}` of their type codes (type-selection.ts)
+   */
   typeCode?: string;
   /** item.base_code */
   baseCode?: string;

@@ -13,8 +13,8 @@ import { buildGetMarketListingQuery, type QualitySearch } from '@/pages/price-ch
 import type { Item, Stat, StatFilterInput } from '@/pages/price-check/lib/interfaces';
 import { StatId } from '@/pages/price-check/lib/stat-mappings';
 import { PSEUDO_KEY_PREFIX } from '@/pages/price-check/lib/utils';
-import { findBaseOption, findTypeOption } from '@/pages/market/lib/catalog';
-import { typeGroupForMembers } from '@/pages/market/lib/type-groups';
+import { findBaseOption } from '@/pages/market/lib/catalog';
+import { typeCodeForCodes } from '@/pages/market/lib/type-selection';
 import { defaultFilters, mergeFilters } from '@/pages/market/lib/defaults';
 import {
   DAMAGE_KEY,
@@ -219,11 +219,9 @@ export function marketQueryToFilters(query: Record<string, unknown>, archive: bo
   if (typeof typeCode === 'string' && typeCode) out.typeCode = typeCode;
   else if (typeof baseCode === 'string' && CHARM_TYPE_BY_BASE[baseCode]) out.typeCode = CHARM_TYPE_BY_BASE[baseCode];
   // Type groups (`{ $in: ['bow', 'abow'] }`, any order) → their group code ("Bows"); other grouped types
-  // (`{ $in: ['h2h', 'h2h2'] }`) → their catalog option ("Fist Weapon")
-  else if (Array.isArray(typeGroup) && typeGroup.length > 0 && typeGroup.every((c) => typeof c === 'string')) {
-    const option = typeGroupForMembers(typeGroup) ?? findTypeOption(typeGroup[0]);
-    if (option) out.typeCode = option.code;
-  }
+  // (`{ $in: ['h2h', 'h2h2'] }`) → their catalog option ("Fist Weapon"); several types → their selection
+  else if (Array.isArray(typeGroup) && typeGroup.length > 0 && typeGroup.every((c) => typeof c === 'string'))
+    out.typeCode = typeCodeForCodes(typeGroup);
 
   if (query['item.corrupted'] === true) out.corrupted = 'yes';
   else if (query['item.corrupted'] === false) out.corrupted = 'no';

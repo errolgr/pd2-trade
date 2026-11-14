@@ -43,12 +43,6 @@ export function typeGroupOf(typeCode: string | undefined): TypeGroup | undefined
   return typeCode ? TYPE_GROUPS.find((g) => g.members.includes(typeCode)) : undefined;
 }
 
-/** The type group whose members are exactly `codes` (in any order), e.g. a PD2 query's `$in: ['abow', 'bow']`. */
-export function typeGroupForMembers(codes: readonly string[]): TypeGroup | undefined {
-  const set = new Set(codes);
-  return TYPE_GROUPS.find((g) => g.members.length === set.size && g.members.every((c) => set.has(c)));
-}
-
 /** The raw type codes a group code stands for; empty for an unknown group. */
 export function typeGroupMembers(code: string): string[] {
   return [...(typeGroupByCode(code)?.members ?? [])];

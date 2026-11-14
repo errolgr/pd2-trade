@@ -14,7 +14,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
-import { CLASSES, RARITIES, TYPE_OPTIONS, basesForType, optionCodes } from '../lib/catalog';
+import { CLASSES, RARITIES, TYPE_OPTIONS, optionCodes } from '../lib/catalog';
+import { basesForTypeValue, isTypeSelected, toggleTypeOption, typeLabel, typeSelection } from '../lib/type-selection';
 import { defaultAgeDays, MAX_FILTER_TEXT, MAX_SELLER_NAME, type SearchDefaults, withSource } from '../lib/defaults';
 import { anniversaryTri, withAnniversary } from '../lib/anniversary';
 import {
@@ -202,7 +203,8 @@ export function FilterSidebar({
   ];
   const setReq = (changes: Partial<MarketFilters['requirements']>) =>
     set({ requirements: { ...f.requirements, ...changes } });
-  const bases = useMemo(() => (f.typeCode ? basesForType(f.typeCode) : []), [f.typeCode]);
+  const bases = useMemo(() => basesForTypeValue(f.typeCode), [f.typeCode]);
+  const types = useMemo(() => typeSelection(f.typeCode), [f.typeCode]);
   const req = f.requirements;
   const counts = useMemo(
     () => ({
@@ -279,6 +281,14 @@ export function FilterSidebar({
               count: optionCount(o.code, counts.typeCode),
             }))}
             onChange={(typeCode) => set({ typeCode, baseCode: undefined })}
+            onToggle={(code) => {
+              const typeCode = toggleTypeOption(f.typeCode, code);
+              // A base stays while a type still offers it
+              const keepBase = basesForTypeValue(typeCode).some((b) => b.code === f.baseCode);
+              set({ typeCode, baseCode: keepBase ? f.baseCode : undefined });
+            }}
+            selected={(code) => isTypeSelected(types, code)}
+            valueLabel={typeLabel(f.typeCode)}
           />
           <SelectField
             label={t('filters.base')}
