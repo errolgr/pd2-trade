@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import React, { useState } from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import type { HrRange, PriceBucket } from '../lib/facets';
@@ -103,7 +103,7 @@ describe('PriceControl bars', () => {
   it('keyboard: arrows move between bars, Enter picks, Escape clears', () => {
     const onChange = vi.fn();
     render(<Price onChange={onChange} />);
-    bar(0).focus();
+    act(() => bar(0).focus());
     fireEvent.keyDown(bar(0), { key: 'ArrowRight' });
     expect(document.activeElement).toBe(bar(1));
     fireEvent.keyDown(bar(1), { key: 'Enter' });

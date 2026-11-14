@@ -152,12 +152,13 @@ describe('ChatButtonPage', () => {
     // keepPayload: an open quick list keeps the item being listed
     ['Manage listings', ['quickList', undefined, { keepPayload: true }]],
     ['Settings', ['settings']],
-  ] as const)('menu: %s opens its window and closes the menu', (name, args) => {
+  ] as const)('menu: %s opens its window and closes the menu', async (name, args) => {
     render(<ChatButtonPage />);
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
     fireEvent.click(screen.getByRole('menuitem', { name }));
     expect(overlay.openPanel.mock.calls).toEqual([args]);
     expect(screen.getByRole('button', { name: 'More' }).getAttribute('aria-expanded')).toBe('false');
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
   });
 
   it('slides along the edge when dragged, saves the spot on release, and the drag does not click', () => {
@@ -337,7 +338,7 @@ describe('ChatButtonPage feed', () => {
       expect((screen.getByRole('button', { name: 'Mark all read' }) as HTMLButtonElement).disabled).toBe(true);
     });
 
-    it('Open chat opens chat, on the newest unread with unread messages', () => {
+    it('Open chat opens chat, on the newest unread with unread messages', async () => {
       render(<ChatButtonPage />);
       hover();
       fireEvent.click(screen.getByRole('button', { name: 'Open chat' }));
@@ -348,6 +349,9 @@ describe('ChatButtonPage feed', () => {
         ['chat', undefined],
         ['chat', { newestUnread: true }],
       ]);
+      // the exit animation runs on real frames
+      vi.useRealTimers();
+      await waitFor(() => expect(peek()).toBeNull());
     });
 
     it("an empty feed shows You're all caught up", () => {
