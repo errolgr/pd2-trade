@@ -79,6 +79,8 @@ export function siteSearchLink(f: MarketFilters): SiteSearchLink {
         ? t('market:siteUrl.corruptionStat')
         : t('market:siteUrl.corruptionStats', { count: corruptions }),
     );
+  // Its socket range has the site's sockets min / max, but those don't combine with any-of blocks
+  if (stats.some((s) => s.kind === 'item' && !s.not)) dropped.push(t('market:siteUrl.socketsStat'));
 
   params.set('is_hardcore', String(f.hardcore));
   params.set('is_ladder', String(f.ladder));

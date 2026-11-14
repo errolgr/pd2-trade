@@ -123,6 +123,12 @@ describe('siteSearchLink', () => {
     expect(siteSearchLink(f).dropped).toEqual(['excluded stat']);
   });
 
+  it('names a sockets stat row, which the link leaves out', () => {
+    const f = base({ stats: [newStatFilter({ kind: 'item', key: 'sockets', min: 2 })] });
+    expect(query(f).params.some(([k]) => k.startsWith('sockets') || k.startsWith('properties'))).toBe(false);
+    expect(siteSearchLink(f).dropped).toEqual(['sockets stat row']);
+  });
+
   it('names every filter the site link cannot carry', () => {
     const f = base({
       rarity: ['Rare', 'Crafted'],

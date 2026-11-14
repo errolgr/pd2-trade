@@ -371,6 +371,7 @@
     "corruptionStats_one": "{{count}} stat de corrupção",
     "corruptionStats_many": "{{count}} de stats de corrupção",
     "corruptionStats_other": "{{count}} stats de corrupção",
+    "socketsStat": "linha de soquetes",
     "desecrated": "desecrated",
     "priceNote": "nota de preço",
     "hrPrice": "preço em HR",

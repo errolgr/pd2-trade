@@ -386,6 +386,7 @@
     "corruptionStats_few": "{{count}} стата corruption",
     "corruptionStats_many": "{{count}} статов corruption",
     "corruptionStats_other": "{{count}} стата corruption",
+    "socketsStat": "строка гнёзд",
     "desecrated": "desecrated",
     "priceNote": "примечание к цене",
     "hrPrice": "цена в HR",

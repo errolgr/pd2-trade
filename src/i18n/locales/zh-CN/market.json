@@ -341,6 +341,7 @@
     "pseudoStats_other": "{{count}} 个合计属性",
     "corruptionStat": "腐化属性",
     "corruptionStats_other": "{{count}} 个腐化属性",
+    "socketsStat": "孔数属性行",
     "desecrated": "desecrated",
     "priceNote": "价格备注",
     "hrPrice": "HR 价格",

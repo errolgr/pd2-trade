@@ -20,7 +20,9 @@ export function scoreListing(
     const roll =
       stat.kind === 'pseudo'
         ? (pseudo[pseudoIdOf(stat.key)] ?? 0)
-        : (readStatValue(listing.item?.modifiers, stat.key) ?? 0);
+        : stat.kind === 'item'
+          ? (listing.item?.socket_count ?? 0)
+          : (readStatValue(listing.item?.modifiers, stat.key) ?? 0);
     score = (score ?? 0) + stat.weight * roll;
   }
   const hr = listing.hr_price;

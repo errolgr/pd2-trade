@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { mergeDamageLines } from './card-model';
 import { modStatValue, modToStatKey } from './mod-keys';
+import { CORRUPTION_OPTIONS } from './catalog';
 import {
+  ITEM_PROPERTY_OPTIONS,
   isDamageRangeKey,
   lowDamageRange,
   parseStatKey,
@@ -27,6 +29,13 @@ describe('searchStats ranking', () => {
   it('prefers shorter names among partial matches, and short words must match whole words', () => {
     expect(top('def')).toEqual(['+X Defense', '+X Defense (Based on Character Level)']);
     expect(top('life', 5).indexOf('+X% Total Life Stolen per Hit')).toBeGreaterThan(1);
+  });
+
+  it('offers the Sockets item property ahead of the sockets corruption', () => {
+    const [first, second] = searchStats('sockets', 5, CORRUPTION_OPTIONS);
+    expect(first).toEqual(ITEM_PROPERTY_OPTIONS[0]);
+    expect(second).toMatchObject({ value: 'item_numsockets' });
+    expect(searchStats('socket', 5)).toContainEqual(ITEM_PROPERTY_OPTIONS[0]);
   });
 });
 

@@ -356,6 +356,7 @@
     "corruptionStat": "Corruption-Wert",
     "corruptionStats_one": "{{count}} Corruption-Wert",
     "corruptionStats_other": "{{count}} Corruption-Werte",
+    "socketsStat": "Sockel-Wertzeile",
     "desecrated": "Desecrated",
     "priceNote": "Preisnotiz",
     "hrPrice": "HR-Preis",

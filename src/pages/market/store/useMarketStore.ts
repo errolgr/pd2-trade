@@ -83,7 +83,7 @@ const PresetSchema = z.object({
   name: z.string(),
   typeCodes: z.array(z.string()).optional(),
   rarity: z.array(z.string()).optional(),
-  stats: z.array(z.object({ kind: z.enum(['mod', 'pseudo', 'corruption']), key: z.string() }).passthrough()),
+  stats: z.array(z.object({ kind: z.enum(['mod', 'pseudo', 'corruption', 'item']), key: z.string() }).passthrough()),
 });
 const HiddenPresetsSchema = z.array(z.string().max(100)).max(100);
 const SectionsOpenSchema = z.record(z.string().max(40), z.boolean());

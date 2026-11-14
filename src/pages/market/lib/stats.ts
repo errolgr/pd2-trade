@@ -1,10 +1,10 @@
 import type { Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { PSEUDO_LOW_ENDS, PSEUDO_STATS } from './pseudo';
 import { SITE_STAT_OPTIONS } from './stat-options.data';
-import type { CorruptionOption, PseudoDef, StatOption } from './types';
+import type { CorruptionOption, ItemPropertyOption, PseudoDef, StatOption } from './types';
 
-/** A stat picker entry: a property, a pseudo stat or a cube corruption. */
-export type StatChoice = StatOption | PseudoDef | CorruptionOption;
+/** A stat picker entry: a property, a pseudo stat, a cube corruption or an item property. */
+export type StatChoice = StatOption | PseudoDef | CorruptionOption | ItemPropertyOption;
 
 /** A constrained `values[index]` of a stat key: equal to one of `values`, or within `min`..`max`. */
 export interface ParamPin {
@@ -237,6 +237,17 @@ export const STAT_OPTIONS: StatOption[] = SITE_STAT_OPTIONS.flatMap(([key, label
 });
 
 const OPTION_BY_KEY = new Map(STAT_OPTIONS.map((o) => [o.key, o]));
+
+/** Item properties the picker offers next to the site's properties (`item` rows: the socket count). */
+export const ITEM_PROPERTY_OPTIONS: ItemPropertyOption[] = [
+  { property: 'sockets', label: '{X} Sockets', group: 'Item' },
+];
+
+/** The picker entry of an item property row's key. */
+export function itemPropertyOption(key: string): ItemPropertyOption | undefined {
+  return ITEM_PROPERTY_OPTIONS.find((o) => o.property === key);
+}
+
 const PSEUDO_BY_ID = new Map(PSEUDO_STATS.map((p) => [p.id, p]));
 /** Unpinned options by their names, for keys the list lacks over the same names (`firedam|firemindam{4..}`). */
 const OPTION_BY_NAMES = new Map(
@@ -272,6 +283,11 @@ export function isPseudo(option: StatChoice): option is PseudoDef {
 /** True for corruption entries returned by searchStats. */
 export function isCorruption(option: StatChoice): option is CorruptionOption {
   return 'rolled' in option;
+}
+
+/** True for item property entries returned by searchStats. */
+export function isItemProperty(option: StatChoice): option is ItemPropertyOption {
+  return 'property' in option;
 }
 
 /** Shorthands players type, expanded before matching. */
@@ -347,15 +363,15 @@ const CORRUPT_WORD = /^corrupt/;
 
 /**
  * Picker search: every query word (aliases like `fcr`, `res`, `mf` expanded) must appear in the label. Pseudo
- * stats rank ahead of plain properties on equal relevance, corruptions after them unless the query says
- * "corrupt…" (then they lead, and that word needn't appear in their label). Empty query → pseudos then all
- * properties.
+ * stats rank ahead of plain properties and item properties (sockets) on equal relevance, corruptions after them
+ * unless the query says "corrupt…" (then they lead, and that word needn't appear in their label). Empty query →
+ * pseudos then all properties.
  */
 export function searchStats(query: string, limit = 50, corruptions: readonly CorruptionOption[] = []): StatChoice[] {
   const words = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
   // A pair's low-end pseudo is filtered through the pair's row, never picked alone
   const pseudos = PSEUDO_STATS.filter((p) => !p.lowEndOf);
-  if (words.length === 0) return [...pseudos, ...STAT_OPTIONS].slice(0, limit);
+  if (words.length === 0) return [...pseudos, ...ITEM_PROPERTY_OPTIONS, ...STAT_OPTIONS].slice(0, limit);
   const tokens = words.flatMap((w) => normalize(ALIASES[w] ?? w).split(' '));
   const hits: { option: StatChoice; score: number }[] = [];
   for (const pseudo of pseudos) {
@@ -366,6 +382,10 @@ export function searchStats(query: string, limit = 50, corruptions: readonly Cor
   }
   for (const option of STAT_OPTIONS) {
     const score = scoreMatch(normalize(option.label), tokens) ?? scoreMatch(option.key.toLowerCase(), words);
+    if (score !== null) hits.push({ option, score });
+  }
+  for (const option of ITEM_PROPERTY_OPTIONS) {
+    const score = scoreMatch(normalize(option.label), tokens);
     if (score !== null) hits.push({ option, score });
   }
   const wantsCorruption = words.some((w) => CORRUPT_WORD.test(w));

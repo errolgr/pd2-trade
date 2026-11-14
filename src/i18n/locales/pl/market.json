@@ -386,6 +386,7 @@
     "corruptionStats_few": "{{count}} statystyki korupcji",
     "corruptionStats_many": "{{count}} statystyk korupcji",
     "corruptionStats_other": "{{count}} statystyki korupcji",
+    "socketsStat": "wiersz gniazd",
     "desecrated": "desecrated",
     "priceNote": "notatka cenowa",
     "hrPrice": "cena w HR",

@@ -356,6 +356,7 @@
     "corruptionStat": "corruption stat",
     "corruptionStats_one": "{{count}} corruption stats",
     "corruptionStats_other": "{{count}} corruption stats",
+    "socketsStat": "sockets stat row",
     "desecrated": "desecrated",
     "priceNote": "price note",
     "hrPrice": "HR price",
