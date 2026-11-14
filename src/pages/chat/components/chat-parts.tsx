@@ -1,9 +1,12 @@
 import React from 'react';
 import { Check, CheckCheck } from 'lucide-react';
 import type { Conversation, Message, Participant } from '@/common/types/pd2-website/ChatTypes';
+import { TombGlyph } from '@/components/glyph/TombGlyph';
 import { t } from '@/i18n';
+import { glyphCodeForName } from '@/lib/glyph-code';
 import { cn } from '@/lib/utils';
 import type { TraderPresence } from '../hooks/useTraderProfile';
+import type { InboxThread } from '../lib/inbox';
 
 /** The other participant of a 1:1 conversation. */
 export const otherParticipant = (conversation: Conversation, currentUserId: string | undefined) =>
@@ -11,6 +14,21 @@ export const otherParticipant = (conversation: Conversation, currentUserId: stri
 
 export const participantName = (participant: Participant | null | undefined) =>
   participant?.display_name || participant?.username || t('chat:parts.unknownUser');
+
+/**
+ * The name a trader's tomb glyph is drawn from. A website user: their in-game account, else their username, as
+ * pd2trader.com picks it, so a trader draws the same glyph there and here. Otherwise an account known from their
+ * offers, else the thread's name (a whisper sender's account when the log showed it).
+ */
+export function traderGlyphName(thread: Pick<InboxThread, 'participant' | 'accounts' | 'name'>): string {
+  const p = thread.participant;
+  if (p) {
+    const account = p.in_game_account || p.game?.preferences?.account || p.game?.accounts?.[0];
+    const name = account || p.username || p.display_name;
+    if (name) return name;
+  }
+  return thread.accounts[0] || thread.name;
+}
 
 /** PD2 website pages of a user (opened with openUrl). */
 export const profileUrl = (username: string) => `https://www.projectdiablo2.com/@${encodeURIComponent(username)}`;
@@ -27,22 +45,6 @@ export const segmentItemClass = cn(
   'aria-checked:shadow-sm aria-checked:ring-1 aria-checked:ring-primary/30',
 );
 
-/** Soft tint (lists, bubbles) and solid gradient (profile card) per theme chart colour. */
-const AVATAR_TINTS = [
-  'bg-linear-to-br from-chart-1/35 to-chart-1/10 text-chart-1 ring-chart-1/30',
-  'bg-linear-to-br from-chart-2/35 to-chart-2/10 text-chart-2 ring-chart-2/30',
-  'bg-linear-to-br from-chart-3/35 to-chart-3/10 text-chart-3 ring-chart-3/30',
-  'bg-linear-to-br from-chart-4/35 to-chart-4/10 text-chart-4 ring-chart-4/30',
-  'bg-linear-to-br from-chart-5/35 to-chart-5/10 text-chart-5 ring-chart-5/30',
-] as const;
-const AVATAR_SOLID = [
-  'bg-linear-to-br from-chart-1 to-chart-1/45 text-background ring-chart-1/40',
-  'bg-linear-to-br from-chart-2 to-chart-2/45 text-background ring-chart-2/40',
-  'bg-linear-to-br from-chart-3 to-chart-3/45 text-background ring-chart-3/40',
-  'bg-linear-to-br from-chart-4 to-chart-4/45 text-background ring-chart-4/40',
-  'bg-linear-to-br from-chart-5 to-chart-5/45 text-background ring-chart-5/40',
-] as const;
-
 /** Presence dot colours: in game now, online recently. */
 const PRESENCE_DOT: Partial<Record<TraderPresence['kind'], string>> = {
   ingame: 'bg-success',
@@ -50,40 +52,28 @@ const PRESENCE_DOT: Partial<Record<TraderPresence['kind'], string>> = {
 };
 
 /**
- * Initial on a gradient of a theme chart colour picked from the name, so a person keeps their colour
- * everywhere; `solid` for the large profile avatar. `presence` adds a dot (in game / online recently).
+ * A trader's account tomb glyph (as pd2trader.com shows them) drawn from `name` (traderGlyphName), `size` px
+ * square. `presence` adds a dot (in game / online recently).
  */
 export function ChatAvatar({
   name,
-  className,
-  solid = false,
+  size = 40,
   presence,
 }: {
   name: string;
-  className?: string;
-  solid?: boolean;
+  size?: number;
   presence?: TraderPresence['kind'];
 }) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0;
-  const index = Math.abs(hash) % AVATAR_TINTS.length;
   const dot = presence && PRESENCE_DOT[presence];
   return (
     <span aria-hidden
       className="relative inline-flex shrink-0">
-      <span
-        className={cn(
-          'flex size-10 shrink-0 select-none items-center justify-center rounded-full text-sm font-semibold uppercase shadow-xs ring-1 ring-inset',
-          solid ? AVATAR_SOLID[index] : AVATAR_TINTS[index],
-          className,
-        )}
-      >
-        {name.trim().charAt(0) || '?'}
-      </span>
+      <TombGlyph code={glyphCodeForName(name)}
+        size={size} />
       {dot && (
         <span
           className={cn(
-            'absolute bottom-0 right-0 size-[30%] min-h-2 min-w-2 rounded-full ring-2 ring-card',
+            'absolute -bottom-px -right-px size-[28%] min-h-2 min-w-2 rounded-full ring-2 ring-card',
             dot,
             presence === 'ingame' && 'shadow-[0_0_6px] shadow-success/60',
           )}

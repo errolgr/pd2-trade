@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.11.3': [
+    '✨ Chat, market and builds: traders and accounts show their tomb glyph, the same one pd2trader.com draws for them, instead of an initial',
+  ],
   '0.11.2': [
     '🆕 Market browser: elemental damage pseudo stats over every Adds X-Y fire, cold and lightning line: "Adds #-# Total Elemental Damage" with Min dmg and Max dmg ranges (Adds 4-20 fire + 1-114 lightning = Adds 5-134) and "Average Elemental Damage" (Adds 6-36 fire + 4-114 lightning = 80)',
     '🆕 Price check: click Σ on a fire, cold or lightning damage row to fold them into one "Total Elemental Damage" row (5-134) with Min dmg and Max dmg ranges, like the resist totals',

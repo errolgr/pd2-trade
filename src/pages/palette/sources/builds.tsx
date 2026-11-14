@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronRight, ExternalLink, Star, StarOff, User, UserRound } from 'lucide-react';
+import { ChevronRight, ExternalLink, Star, StarOff, User } from 'lucide-react';
+import { TombGlyph } from '@/components/glyph/TombGlyph';
 import { characterSkillMap } from '@/assets/character-skills';
 import {
   type AccountCharacter,
@@ -10,6 +11,7 @@ import {
   suggestBuilds,
 } from '@/lib/builds-api';
 import { reportApiError } from '@/lib/error-reporting';
+import { glyphCodeForName } from '@/lib/glyph-code';
 import { openUrl } from '@/lib/browser-opener';
 import { type BuildCharacterRef, type ISettings, useOptions } from '@/hooks/useOptions';
 import type { TFunction } from 'i18next';
@@ -349,7 +351,8 @@ function accountItem(account: string, characters: number | null, t: TFunction): 
   return {
     ref: { id: `builds:account:${account.toLowerCase()}`, group: 'builds', title: account, data: { account, characters } },
     subtitle: t('palette.account'),
-    icon: <UserRound className="size-4" />,
+    icon: <TombGlyph code={glyphCodeForName(account)}
+      size={ICON_SIZE} />,
     trailing:
       characters != null ? (
         <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
@@ -381,7 +384,7 @@ function localItem(entry: LocalEntry, t: TFunction, badge?: string): PaletteItem
     badge,
     icon: isClass ? <ClassEmblem className={entry.value}
       size={ICON_SIZE} /> : <SkillIcon name={entry.value}
-      size={ICON_SIZE} />,
+        size={ICON_SIZE} />,
     primary: {
       id: 'meta',
       label: t('palette.showMeta'),

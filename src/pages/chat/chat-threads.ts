@@ -4,6 +4,7 @@
  */
 import { useSyncExternalStore } from 'react';
 import { accountOf } from '@/lib/whisper-history';
+import { traderGlyphName } from './components/chat-parts';
 import { threadAliases, type InboxThread } from './lib/inbox';
 
 export interface ChatThreadEntry {
@@ -12,6 +13,8 @@ export interface ChatThreadEntry {
   /** Every id it is known by (a saved conversation id still finds it after it merged). */
   ids: string[];
   name: string;
+  /** Draws the trader's tomb glyph (traderGlyphName). */
+  glyphName: string;
   /** The other names the trader goes by: website username, in-game player, account and character names. */
   names: string[];
   unread: number;
@@ -38,6 +41,7 @@ export function chatThreadEntries(threads: readonly InboxThread[]): ChatThreadEn
       id: thread.id,
       ids: threadAliases(thread),
       name: thread.name,
+      glyphName: traderGlyphName(thread),
       names,
       unread: thread.unread,
       latest: thread.latest && { text: thread.latest.text, at: thread.latest.at },

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import moment from 'moment';
-import { Package, User as UserIcon } from 'lucide-react';
+import { Package } from 'lucide-react';
+import { TombGlyph } from '@/components/glyph/TombGlyph';
 import { t, Trans, useTranslation } from '@/i18n';
 import { openUrl } from '@/lib/browser-opener';
+import { glyphCodeForName } from '@/lib/glyph-code';
 import { cn } from '@/lib/utils';
 import { Tip } from '@/components/ui/tooltip';
 import { useItems } from '@/hooks/useItems';
@@ -17,6 +19,7 @@ import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketLis
 import { listingArtCandidates } from '../lib/listing-art';
 import { type ListingMarketPrice, useListingMarketPrices } from '../hooks/useListingMarketPrices';
 import { isPersonalStashLocation } from '@/hooks/pd2website/personal-stash';
+import { sellerGlyphName } from '@/pages/market/lib/listing';
 
 /**
  * Inline pill for listing links, so "interested in your [Ohm Rune 75 wss]" reads as one sentence. Shared by
@@ -187,7 +190,8 @@ export function ListingDetails({
         )}
         {user?.username && (
           <div className="flex items-center gap-1.5 pt-1 text-muted-foreground">
-            <UserIcon className="size-3" />
+            <TombGlyph code={glyphCodeForName(sellerGlyphName(listing) ?? user.username)}
+              size={16} />
             <Trans
               t={t}
               i18nKey="listing.seller"
