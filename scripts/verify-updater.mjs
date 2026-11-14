@@ -5,11 +5,13 @@
  *
  *   node scripts/verify-updater.mjs config
  *     Repo checks: version files agree, updater pubkey/endpoint/identifier match what installed builds
- *     expect, updater + process plugins are registered and permitted.
+ *     expect, updater + process plugins are registered and permitted, Windows updates use the NSIS
+ *     setup.exe built from src-tauri/windows/installer.nsi, synced with the locked @tauri-apps/cli.
  *
  *   node scripts/verify-updater.mjs draft --release-id <id> [--repo owner/name]     (needs GITHUB_TOKEN)
  *     Before publishing: the draft release's latest.json has this package version, is newer than the
- *     live release, covers every platform, and each signature verifies against the attached asset.
+ *     live release, covers every platform, points Windows at the NSIS setup.exe, and each signature
+ *     verifies against the attached asset.
  *
  *   node scripts/verify-updater.mjs live [--expect-version <x.y.z>]
  *     What installed apps see: the configured endpoint serves a valid latest.json whose download URLs
@@ -104,8 +106,12 @@ export function compareVersions(a, b) {
   return 0;
 }
 
-/** Validate latest.json structure; returns the platform entries to verify. */
-export function checkManifest(manifest, { expectVersion } = {}) {
+/**
+ * Validate latest.json structure; returns the platform entries to verify. `requireNsis` (draft releases): installed
+ * Windows builds update with whatever windows-x86_64 points at. Each MSI update re-creates its desktop shortcut (#30);
+ * the NSIS setup.exe migrates MSI installs and leaves shortcuts alone.
+ */
+export function checkManifest(manifest, { expectVersion, requireNsis = false } = {}) {
   const errors = [];
   if (typeof manifest?.version !== 'string') errors.push('latest.json has no version');
   else {
@@ -124,6 +130,10 @@ export function checkManifest(manifest, { expectVersion } = {}) {
     if (!entry) errors.push(`latest.json is missing platform ${name}`);
     else if (typeof entry.url !== 'string' || !entry.url.startsWith('https://')) errors.push(`${name}: url is not https`);
     else if (typeof entry.signature !== 'string' || !entry.signature) errors.push(`${name}: signature is empty`);
+  }
+  const windowsUrl = platforms['windows-x86_64']?.url;
+  if (requireNsis && typeof windowsUrl === 'string' && !windowsUrl.endsWith('-setup.exe')) {
+    errors.push(`windows-x86_64: url must be the NSIS -setup.exe (updaterJsonPreferNsis), not ${windowsUrl.split('/').pop()}`);
   }
   if (errors.length) throw new Error(errors.join('\n'));
   return REQUIRED_PLATFORMS.map((name) => ({ name, ...platforms[name] }));
@@ -170,6 +180,23 @@ export function checkConfig(root = ROOT) {
   }
   if (conf.identifier !== EXPECTED_IDENTIFIER) errors.push(`identifier must stay ${EXPECTED_IDENTIFIER}`);
   if (conf.mainBinaryName !== EXPECTED_MAIN_BINARY) errors.push(`mainBinaryName must stay ${EXPECTED_MAIN_BINARY}`);
+
+  // Windows updates run the NSIS setup.exe built from our template (#30). The bundler renders it, so it must be
+  // the template of the locked CLI: re-sync src-tauri/windows/installer.nsi whenever @tauri-apps/cli changes.
+  if (conf.bundle?.windows?.nsis?.template !== 'windows/installer.nsi') {
+    errors.push('bundle.windows.nsis.template must be windows/installer.nsi (MSI to NSIS update migration, #30)');
+  } else {
+    const cli = JSON.parse(read('package-lock.json')).packages?.['node_modules/@tauri-apps/cli']?.version;
+    const synced = /tag tauri-cli-v(\d+\.\d+\.\d+)/.exec(read('src-tauri/windows/installer.nsi'))?.[1];
+    if (synced !== cli) {
+      errors.push(
+        `src-tauri/windows/installer.nsi is synced with tauri-cli ${synced ?? '(no tag)'}, but @tauri-apps/cli is ${cli}; re-sync it (DEVELOPING.md)`,
+      );
+    }
+  }
+  if (!/^\s*updaterJsonPreferNsis:\s*true\b/m.test(read('.github/workflows/publish-to-manual-release.yml'))) {
+    errors.push('publish-to-manual-release.yml must set updaterJsonPreferNsis: true, or Windows updates keep running the MSI (#30)');
+  }
 
   const permissions = new Set(
     JSON.parse(read('src-tauri/capabilities/default.json')).permissions.map((p) => (typeof p === 'string' ? p : p.identifier)),
@@ -240,7 +267,7 @@ async function runDraft(args) {
   const manifestAsset = assets.get('latest.json');
   if (!manifestAsset) throw new Error(`Release ${release.tag_name} has no latest.json asset`);
   const manifest = JSON.parse((await downloadAsset(manifestAsset)).toString('utf8'));
-  const entries = checkManifest(manifest, { expectVersion: args['expect-version'] ?? packageVersion() });
+  const entries = checkManifest(manifest, { expectVersion: args['expect-version'] ?? packageVersion(), requireNsis: true });
   console.log(`Draft ${release.tag_name} latest.json: v${manifest.version}`);
 
   await verifyPlatforms(entries, tauriConfig().plugins.updater.pubkey, async (entry) => {
