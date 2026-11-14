@@ -45,7 +45,9 @@
       "change7d": "7 天变化",
       "last30Days": "最近 30 天",
       "openOnPd2Trader": "在 pd2trader.com 打开",
-      "viewOnWeb": "网页查看"
+      "viewOnWeb": "网页查看",
+      "clean": "未腐化 {{price}} HR",
+      "cleanListings_other": "未腐化（{{count}} 个挂单）"
     },
     "corruptions": {
       "thisItem": "此物品的腐化",

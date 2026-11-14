@@ -45,7 +45,12 @@
       "change7d": "Zmiana 7 dni",
       "last30Days": "Ostatnie 30 dni",
       "openOnPd2Trader": "Otwórz na pd2trader.com",
-      "viewOnWeb": "Zobacz w sieci"
+      "viewOnWeb": "Zobacz w sieci",
+      "clean": "Nieskażone {{price}} HR",
+      "cleanListings_one": "Nieskażone ({{count}} ogłoszenie)",
+      "cleanListings_few": "Nieskażone ({{count}} ogłoszenia)",
+      "cleanListings_many": "Nieskażone ({{count}} ogłoszeń)",
+      "cleanListings_other": "Nieskażone ({{count}} ogłoszenia)"
     },
     "corruptions": {
       "thisItem": "Korupcja tego przedmiotu",

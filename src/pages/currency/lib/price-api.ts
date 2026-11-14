@@ -35,6 +35,10 @@ export interface AveragePriceResponse {
    * that fall back to a longer window when the requested one has too few sales. Absent on older servers.
    */
   priceWindow?: string;
+  /**
+   * The same statistics over uncorrupted listings only; null when fewer than 3 exist. Absent on older servers.
+   */
+  clean?: { averagePrice: number; medianPrice: number; sampleCount: number } | null;
 }
 
 export interface PriceApiConfig {

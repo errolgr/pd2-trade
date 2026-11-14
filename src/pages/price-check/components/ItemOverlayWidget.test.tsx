@@ -397,6 +397,37 @@ describe('ItemOverlayWidget unique price pill', () => {
     );
   });
 
+  it('adds the clean (uncorrupted) median under the headline and as a popover tile', async () => {
+    vi.mocked(fetchItemPriceByName).mockResolvedValue(
+      priceData({ clean: { averagePrice: 2.6, medianPrice: 2.5, sampleCount: 30 } }),
+    );
+    renderWidget(shako());
+    const img = await screen.findByAltText('Harlequin Crest');
+    const pill = img.parentElement!;
+    await waitFor(() => expect(pill.textContent).toContain('3.50 HR')); // headline unchanged
+    expect(within(pill).getByText('Clean 2.50 HR')).not.toBeNull();
+
+    fireEvent.mouseEnter(pill.parentElement!);
+    const popover = await screen.findByRole('dialog');
+    expect(within(popover).getByText('Clean (30 listings)').parentElement!.textContent).toContain('2.50 HR');
+    expect(within(popover).getByText('Median').parentElement!.textContent).toContain('3.00 HR');
+  });
+
+  it.each([
+    ['null (fewer than 3 clean listings)', { clean: null }],
+    ['absent (older server)', {}],
+  ])('hides the clean line and tile when clean is %s', async (_, overrides) => {
+    vi.mocked(fetchItemPriceByName).mockResolvedValue(priceData(overrides));
+    renderWidget(shako());
+    const img = await screen.findByAltText('Harlequin Crest');
+    await waitFor(() => expect(img.parentElement!.textContent).toContain('3.50 HR'));
+    expect(img.parentElement!.textContent).not.toContain('Clean');
+
+    fireEvent.mouseEnter(img.parentElement!.parentElement!);
+    const popover = await screen.findByRole('dialog');
+    expect(within(popover).queryByText(/^Clean/)).toBeNull();
+  });
+
   it('lists top corruptions and searches expired corrupted listings with the clicked corruption', async () => {
     vi.mocked(fetchItemPriceByName).mockResolvedValue(priceData());
     const corruptions: CorruptionPricesResponse = {

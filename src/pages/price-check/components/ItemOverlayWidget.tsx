@@ -1470,6 +1470,14 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                             <PopoverTile label={t('overlay.price.max')}>
                               {averagePriceData.maxPrice.toFixed(2)} HR
                             </PopoverTile>
+                            {averagePriceData.clean && (
+                              <PopoverTile
+                                label={t('overlay.price.cleanListings', { count: averagePriceData.clean.sampleCount })}
+                                className="col-span-2"
+                              >
+                                {averagePriceData.clean.medianPrice.toFixed(2)} HR
+                              </PopoverTile>
+                            )}
                           </div>
                           <div className="space-y-1 border-t border-border pt-2 text-xs">
                             <PopoverKeyValue label={t('overlay.price.samples')}>
@@ -1582,6 +1590,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                           <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                             {priceBasis}
                           </span>
+                          {averagePriceData.clean && (
+                            <span className="text-[10px] tabular-nums text-muted-foreground/80">
+                              {t('overlay.price.clean', { price: averagePriceData.clean.medianPrice.toFixed(2) })}
+                            </span>
+                          )}
                         </div>
                         {averagePriceData.priceChange7Days && (
                           <ChangeLabel

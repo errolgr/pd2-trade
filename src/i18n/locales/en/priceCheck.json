@@ -45,7 +45,10 @@
       "change7d": "7d Change",
       "last30Days": "Last 30 days",
       "openOnPd2Trader": "Open on pd2trader.com",
-      "viewOnWeb": "View on Web"
+      "viewOnWeb": "View on Web",
+      "clean": "Clean {{price}} HR",
+      "cleanListings_one": "Clean ({{count}} listing)",
+      "cleanListings_other": "Clean ({{count}} listings)"
     },
     "corruptions": {
       "thisItem": "This Item's Corruption",
