@@ -1,5 +1,6 @@
 export const changeLog = {
   '0.11.3': [
+    '✨ Market browser: the Rarity and Type dropdowns show how many listings each option finds as a number on the right of the row, instead of a shaded bar with the count on hover',
     '🆕 Market browser: search several item types at once. The Type filter is a multi-select: click types to tick or untick them (Polearm + Spears for Insight bases, Fist Weapon + Dagger for claws), and pick Any to clear them',
     '✨ Market browser: put your saved searches in the order you want with the up and down arrows on each row. The order is kept when you restart (your current list keeps its order until you change it)',
     "🔧 Offers on your listings show up in the overlay again. The offer popup came, but the chat's Selling list stayed empty and View offer led nowhere: PD2 no longer sends a listing's offers along with your listings, so they are now read separately",
