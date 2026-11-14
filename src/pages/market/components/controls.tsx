@@ -347,9 +347,9 @@ export function filterSelectOptions(options: SelectOption[], query: string): Sel
 /**
  * Compact select with a search box at the top of its list; `anyLabel` (default "Any") adds an entry mapped to
  * undefined, `anyLabel: null` omits it. An option's `count` (facets) shows in the list, not in the trigger;
- * `depth: 1` indents it under the option above (a type group's member types). With `onToggle`, Shift- or Ctrl-click
- * (or Enter) adds or removes an option instead of replacing the pick and keeps the list open (a hint says so);
- * `selected` then says which options show as picked and `valueLabel` what the trigger shows.
+ * `depth: 1` indents it under the option above (a type group's member types). With `onToggle` it is a multi-select:
+ * clicking (or Enter on) an option adds or removes it and keeps the list open, while "Any" clears the picks and
+ * closes; `selected` then says which options show as picked and `valueLabel` what the trigger shows.
  */
 export function SelectField({
   label,
@@ -374,8 +374,6 @@ export function SelectField({
 }) {
   const { t } = useTranslation('market');
   const search = useSearchPopover();
-  // Whether the event about to pick a row held Shift/Ctrl: set on pointer down and on keys, read on select
-  const additive = useRef(false);
   // `follow`: the highlight tracks the search (see below) until the arrow keys or the pointer move it. `resync`
   // flips to hand the list back its highlight after it picked its own first row.
   const [highlight, setHighlight] = useState({ value: '', follow: false, resync: false });
@@ -440,16 +438,6 @@ export function SelectField({
             />
           </button>
         }
-        onKeyDown={(e) => {
-          additive.current = e.shiftKey || e.ctrlKey || e.metaKey;
-        }}
-        footer={
-          onToggle && (
-            <div className="border-t border-border px-2.5 py-1.5 text-[11px] text-muted-foreground">
-              {t('filters.multiSelectHint')}
-            </div>
-          )
-        }
       >
         {shown.map((o) => (
           <FacetSelectItem
@@ -461,11 +449,8 @@ export function SelectField({
             peak={peak}
             selected={selected && o.value !== ANY ? selected(o.value) : o.value === current}
             highlighted={search.open && o.value === highlighted}
-            onPointerDown={(e) => {
-              additive.current = e.shiftKey || e.ctrlKey || e.metaKey;
-            }}
             onSelect={() => {
-              if (onToggle && additive.current && o.value !== ANY) return onToggle(o.value);
+              if (onToggle && o.value !== ANY) return onToggle(o.value);
               onChange(o.value === ANY ? undefined : o.value);
               search.setOpen(false);
             }}
@@ -491,7 +476,6 @@ function FacetSelectItem({
   peak,
   selected,
   highlighted,
-  onPointerDown,
   onSelect,
 }: {
   value: string;
@@ -501,7 +485,6 @@ function FacetSelectItem({
   peak: number;
   selected: boolean;
   highlighted: boolean;
-  onPointerDown?: (e: React.PointerEvent) => void;
   onSelect: () => void;
 }) {
   const facetText = useFacetText();
@@ -510,7 +493,6 @@ function FacetSelectItem({
     <Command.Item
       value={value}
       onSelect={onSelect}
-      onPointerDown={onPointerDown}
       // With a count, it is part of the option's name
       aria-label={text}
       style={facetFill(facetShare(count, peak))}

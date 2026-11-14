@@ -155,7 +155,7 @@ describe('SelectField', () => {
   });
 });
 
-/** Several picks as a comma list: plain picks replace it, Shift/Ctrl picks toggle one entry. */
+/** Several picks as a comma list: each pick toggles one entry, Any clears them. */
 function MultiHarness({ onToggle }: { onToggle: (v: string) => void }) {
   const [value, setValue] = useState<string | undefined>('swor');
   const picked = value?.split(',') ?? [];
@@ -183,7 +183,7 @@ function MultiHarness({ onToggle }: { onToggle: (v: string) => void }) {
   );
 }
 
-describe('SelectField with onToggle', () => {
+describe('SelectField with onToggle (multi-select)', () => {
   const option = (name: string) => screen.getByRole('option', { name });
   const checked = () =>
     screen
@@ -196,47 +196,38 @@ describe('SelectField with onToggle', () => {
     fireEvent.click(trigger());
     return onToggle;
   }
-  const pick = (name: string, modifiers: { shiftKey?: boolean; ctrlKey?: boolean } = {}) => {
-    fireEvent.pointerDown(option(name), modifiers);
-    fireEvent.click(option(name), modifiers);
-  };
 
-  it('says how to pick several', () => {
-    openMulti();
-    expect(screen.getByText('Hold Shift or Ctrl to select several')).toBeTruthy();
-  });
-
-  it('Shift- or Ctrl-click adds or removes an option and keeps the list open', () => {
+  it('a click adds or removes an option and keeps the list open', () => {
     const onToggle = openMulti();
-    pick('Bows · 40', { shiftKey: true });
+    fireEvent.click(option('Bows · 40'));
     expect(onToggle).toHaveBeenLastCalledWith('bows');
     expect(checked()).toEqual(['Bows', 'Sword']);
-    pick('Helms · 0', { ctrlKey: true });
+    fireEvent.click(option('Helms · 0'));
     expect(checked()).toEqual(['Bows', 'Helms', 'Sword']);
-    pick('Sword', { shiftKey: true });
+    fireEvent.click(option('Sword'));
     expect(checked()).toEqual(['Bows', 'Helms']);
     expect(trigger().textContent).toBe('Bows, Helms');
   });
 
-  it('a plain click still replaces the pick and closes the list', () => {
-    const onToggle = openMulti();
-    pick('Bows · 40', { shiftKey: true });
-    pick('Circlet · 0');
-    expect(onToggle).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('option')).toBeNull();
-    expect(trigger().textContent).toBe('Circlet');
-  });
-
-  it('Shift+Enter toggles the highlighted option; Any always clears', () => {
+  it('Enter toggles the highlighted option; Any clears every pick and closes the list', () => {
     const onToggle = openMulti();
     fireEvent.change(search(), { target: { value: 'helms' } });
-    fireEvent.keyDown(search(), { key: 'Enter', shiftKey: true });
+    fireEvent.keyDown(search(), { key: 'Enter' });
     expect(onToggle).toHaveBeenLastCalledWith('helms');
     expect(trigger().textContent).toBe('Helms, Sword');
+    expect(screen.getAllByRole('option').length).toBeGreaterThan(0);
 
     fireEvent.change(search(), { target: { value: 'any' } });
-    fireEvent.keyDown(search(), { key: 'Enter', shiftKey: true });
+    fireEvent.keyDown(search(), { key: 'Enter' });
     expect(onToggle).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('option')).toBeNull();
     expect(trigger().textContent).toBe('Any');
+  });
+
+  it('shows Any as picked only when nothing is', () => {
+    openMulti();
+    expect(checked()).toEqual(['Sword']);
+    fireEvent.click(option('Sword'));
+    expect(checked()).toEqual(['Any']);
   });
 });
