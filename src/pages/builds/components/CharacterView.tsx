@@ -20,6 +20,7 @@ import {
   getCharacterSnapshot,
 } from '@/lib/builds-api';
 import { snapshotQueryKey, useBuildCharacter, useBuildsQuery } from '../lib/useBuildsQuery';
+import { type RareValue, useRarePrices } from '../lib/rare-value';
 import { isFollowed, pushRecent, toggleFollow } from '../lib/character-refs';
 import { characterSiteUrl, classMeta, fmtDateTime, fmtHr, qualityBorder, timeAgo } from '../lib/format';
 import {
@@ -36,7 +37,8 @@ import { GearUp } from './GearUp';
 import { currentLocale, Trans, useTranslation } from '@/i18n';
 import { Timeline } from './Timeline';
 
-type DollItem = EquippedItem & Partial<Pick<PricedEquippedItem, 'priceHr' | 'priceBasis'>> & { iconUrl: string | null };
+type DollItem = EquippedItem &
+  Partial<Pick<PricedEquippedItem, 'priceHr' | 'priceBasis'>> & { iconUrl: string | null; rareValue?: RareValue };
 
 interface DollCellDef {
   area: string;
@@ -97,6 +99,8 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
   const { settings, updateSettings } = useOptions();
   const query = useBuildCharacter(name, mode);
   const detail = query.data && !query.stale && query.data.name.toLowerCase() === name.toLowerCase() ? query.data : null;
+  // Rares and rare jewels valued by the rare appraisal once known (the API prices nothing rare)
+  const valued = useRarePrices(detail);
   const [pane, setPane] = useState<Pane>('gear-up');
   const [snapId, setSnapId] = useState<string | null>(null);
   const [weaponSet, setWeaponSet] = useState(0);

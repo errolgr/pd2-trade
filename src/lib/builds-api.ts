@@ -84,7 +84,21 @@ export interface EquippedItem {
   socketed: SocketedItem[];
   /** PD2 display lines (sockets included). */
   mods: string[];
+  /** Roll of each `mods` line (same order), null for fixed lines; absent when nothing rolls. */
+  rolls?: (ModRoll | null)[];
+  itemLevel?: number | null;
+  /**
+   * Corrupted items: the `mods` lines the corruption added or changed (`Socketed (N)` for a socket corruption).
+   * Missing on items stored before the server recorded it.
+   */
+  corruptedMods?: string[];
 }
+
+/**
+ * A mod's rolled value and its roll range (PD2's `modifiers[].values[0]/min/max`). `value`: the number shown in
+ * the line, null when it has none.
+ */
+export type ModRoll = [value: number | null, min: number, max: number];
 
 export interface CharacterSkill {
   name: string;

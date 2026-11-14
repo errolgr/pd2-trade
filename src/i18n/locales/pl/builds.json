@@ -18,7 +18,9 @@
     "noReliablePrice": "Brak wiarygodnej ceny rynkowej",
     "hrTitle": "{{hr}} HR według obecnych cen rynkowych",
     "marketValue": "Wartość rynkowa <num>{{value}} HR</num>",
-    "corruptionBasis": "Wyceniony według korupcji"
+    "corruptionBasis": "Wyceniony według korupcji",
+    "rareAppraised": "Wycena rare: podobne oferty żądają ~{{band}} HR",
+    "rareJewels": "Zawiera {{value}} HR wycenionych rzadkich klejnotów"
   },
   "itemActions": {
     "searchMarket": "Szukaj na rynku",

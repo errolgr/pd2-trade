@@ -1,6 +1,7 @@
 export const changeLog = {
   '0.11.4': [
     '✨ Builds: corrupted uniques and set items are valued at what listings with the same corruption ask (a Blackhand Key with +1 to All Skills: about 1.2 HR instead of the plain item\'s 0.08), in item prices and the gear value. Their tooltip says "Priced for its corruption"',
+    "✨ Builds: rare and crafted gear and socketed rare jewels count toward a character's item values and gear value. Each is appraised like a market rare (the middle of what similar listings ask) and shows that band in its tooltip; without a confident appraisal it stays unpriced. Magic items have no appraisal yet",
   ],
   '0.11.3': [
     '🆕 Market browser: pick several item types at once in the Type filter (e.g. Polearm + Spears)',

@@ -18,7 +18,9 @@
     "noReliablePrice": "No reliable market price",
     "hrTitle": "{{hr}} HR at current market prices",
     "marketValue": "Market value <num>{{value}} HR</num>",
-    "corruptionBasis": "Priced for its corruption"
+    "corruptionBasis": "Priced for its corruption",
+    "rareAppraised": "Rare appraisal: similar listings ask ~{{band}} HR",
+    "rareJewels": "Includes {{value}} HR of appraised rare jewels"
   },
   "itemActions": {
     "searchMarket": "Search market",
