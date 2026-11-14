@@ -3,8 +3,10 @@ import type { ItemType as PD2Item } from '@/assets/itemFuzzySearch';
 import type { Item } from '@/pages/price-check/lib/interfaces';
 import type { MarketFilters } from '@/pages/market/lib/types';
 import {
+  ARCHIVE_STATUSES,
   marketQueryToFilters,
   priceCheckMarketSearch,
+  priceCheckServiceSearch,
   priceCheckToMarketFilters,
   type PriceCheckSearch,
 } from './priceCheckFilters';
@@ -285,6 +287,32 @@ describe('priceCheckToMarketFilters', () => {
     const { filters, gaps } = priceCheckMarketSearch(search({ item: spirit, selected: new Set(), filters: {} }));
     expect(filters).toMatchObject({ itemName: 'Spirit', rarity: ['Runeword'] });
     expect(gaps).toEqual([]);
+  });
+
+  // #297: Epiphany on Monarch showed paladin shields once switched from Live to Expired
+  it('keeps a runeword on its searched base, live and expired', () => {
+    const epiphany: Item = {
+      name: 'Epiphany',
+      quality: 'Superior',
+      type: 'Monarch',
+      isRuneword: true,
+      runeword: 'Epiphany',
+      iLevel: 80,
+      stats: [],
+    };
+    const sort = { by: 'bumped', dir: 'desc' } as const;
+    const at = (archive: boolean) =>
+      priceCheckServiceSearch(search({ item: epiphany, selected: new Set(), filters: {}, archive }), sort).filters;
+    const live = at(false);
+    const expired = at(true);
+    expect(live).toMatchObject({ itemName: 'Epiphany', rarity: ['Runeword'], typeCode: 'shie', baseCode: 'uit' });
+    expect(expired).toMatchObject({
+      itemName: 'Epiphany',
+      rarity: ['Runeword'],
+      typeCode: 'shie',
+      baseCode: 'uit',
+      status: ARCHIVE_STATUSES,
+    });
   });
 
   it('sends selected pseudo rows as pseudo filters, not PD2 modifiers', () => {

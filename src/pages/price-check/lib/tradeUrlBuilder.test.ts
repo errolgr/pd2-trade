@@ -297,12 +297,18 @@ describe('buildTradeUrl', () => {
       expect(p.has('name')).toBe(false);
     });
 
-    it('searches runewords by runeword name even in typeLabel mode', () => {
-      const item = makeItem({ quality: 'Normal', isRuneword: true, runeword: 'Spirit' });
+    // #297: the header's Base / Type / Group toggle narrows a runeword's name search too
+    it('searches runewords by runeword name within the search mode', () => {
+      const item = makeItem({ quality: 'Superior', isRuneword: true, runeword: 'Epiphany' });
+      const base = urlParams(item).p;
+      expect(base.get('name')).toBe('Epiphany');
+      expect(base.get('base')).toBe('uit');
+      expect(base.get('type')).toBeTruthy();
       const matched = { typeLabel: 'Shield', typeValue: 'shie', bases: [] };
       const { p } = urlParams(item, [], {}, { searchMode: 1, matched });
-      expect(p.get('name')).toBe('Spirit');
-      expect(p.has('type')).toBe(false);
+      expect(p.get('name')).toBe('Epiphany');
+      expect(p.get('type')).toBe('shie');
+      expect(p.has('base')).toBe(false);
     });
 
     it('searches uniques by mapped name, falling back to the parsed name', () => {
@@ -643,10 +649,14 @@ describe('buildGetMarketListingQuery', () => {
       });
     });
 
-    it('matches runewords by case-insensitive runeword name', () => {
-      const q = query(makeItem({ quality: 'Normal', isRuneword: true, runeword: 'Enigma' }));
-      expect(q['item.name']).toEqual({ $regex: 'Enigma', $options: 'i' });
-      expect(q).not.toHaveProperty(['item.base.type_code']);
+    it('matches runewords by case-insensitive runeword name, on the searched base for live and expired', () => {
+      const item = makeItem({ quality: 'Superior', isRuneword: true, runeword: 'Epiphany' });
+      for (const archive of [false, true]) {
+        const q = query(item, [], {}, { archive });
+        expect(q['item.name']).toEqual({ $regex: 'Epiphany', $options: 'i' });
+        expect(q['item.base_code']).toBe('uit');
+        expect(q['item.base.type_code']).toBeTruthy();
+      }
     });
 
     it('matches uniques/sets by mapped name, else parsed name', () => {
