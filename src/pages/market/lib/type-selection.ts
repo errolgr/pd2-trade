@@ -61,7 +61,7 @@ export function isTypeSelected(selection: readonly string[], code: string): bool
 }
 
 /**
- * The Type value after adding or removing one option (Shift/Ctrl-click). Removing a member type of a selected group
+ * The Type value after ticking or unticking one option. Removing a member type of a selected group
  * keeps the group's other members; adding a group takes in its members picked one by one.
  */
 export function toggleTypeOption(typeCode: string | undefined, code: string): string | undefined {
