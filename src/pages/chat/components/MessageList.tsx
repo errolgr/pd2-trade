@@ -36,6 +36,7 @@ export function MessageList({
   thread,
   readerId,
   otherName,
+  otherGlyphName,
   onOpenTrader,
   listings,
   unreadKey,
@@ -51,6 +52,8 @@ export function MessageList({
   /** The other participant: own messages they have read show as Read. */
   readerId?: string;
   otherName: string;
+  /** Draws their tomb glyph (traderGlyphName). */
+  otherGlyphName: string;
   /** The other side's avatars open their Trader details. */
   onOpenTrader: () => void;
   listings: ReadonlyMap<string, ChatListingState>;
@@ -205,6 +208,7 @@ export function MessageList({
                     startsUnread={row.key === unreadKey}
                     readerId={readerId}
                     otherName={otherName}
+                    otherGlyphName={otherGlyphName}
                     onOpenTrader={onOpenTrader}
                     listings={listings}
                     onRetry={onRetry}

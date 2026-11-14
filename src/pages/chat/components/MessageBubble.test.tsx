@@ -23,6 +23,7 @@ const row: MessageRow = { entry, key: 'm1', startsDay: false, continuesGroup: fa
 const renderBubble = () =>
   render(<MessageBubble row={row}
     otherName="Alice"
+    otherGlyphName="Alice"
     onOpenTrader={() => {}}
     listings={new Map()}
     onRetry={() => {}} />);

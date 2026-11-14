@@ -43,6 +43,7 @@ import { useTradeListings } from '../hooks/useTradeListings';
 import { EMPTY_THREAD, useChatStore } from '../hooks/useChatStore';
 import { useResolvedSellers } from '../hooks/useResolvedSellers';
 import { presenceLabel, useTraderProfile } from '../hooks/useTraderProfile';
+import { traderGlyphName } from './chat-parts';
 import { Composer, type ComposerHandle, type ReplyChannel, type TemplateVars } from './Composer';
 import { ConversationList } from './ConversationList';
 import { MessageList } from './MessageList';
@@ -784,6 +785,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                 <>
                   <ThreadHeader
                     name={selectedThread.name}
+                    glyphName={traderGlyphName(selectedThread)}
                     participant={participant}
                     account={whisperAccount}
                     inGameOnly={!selectedThread.userId}
@@ -854,6 +856,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                     thread={websiteThread}
                     readerId={participant?._id}
                     otherName={selectedThread.name}
+                    otherGlyphName={traderGlyphName(selectedThread)}
                     onOpenTrader={() => setTraderShown(true)}
                     listings={listings}
                     unreadKey={unreadKey}

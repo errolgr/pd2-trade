@@ -79,6 +79,7 @@ export function MessageBubble({
   startsUnread = false,
   readerId,
   otherName,
+  otherGlyphName,
   onOpenTrader,
   listings,
   onRetry,
@@ -89,6 +90,8 @@ export function MessageBubble({
   readerId?: string;
   /** The other side's name: their avatar starts each of their groups. */
   otherName: string;
+  /** Draws their tomb glyph (traderGlyphName). */
+  otherGlyphName: string;
   /** Their avatar opens the Trader details. */
   onOpenTrader: () => void;
   listings: ReadonlyMap<string, ChatListingState>;
@@ -218,10 +221,10 @@ export function MessageBubble({
                 tabIndex={-1}
                 aria-label={t('bubble.traderDetails', { name: otherName })}
                 onClick={onOpenTrader}
-                className="mt-0.5 shrink-0 rounded-full outline-none transition-transform duration-(--dur-fast) hover:scale-105 active:scale-95"
+                className="mt-0.5 shrink-0 rounded-md outline-none transition-transform duration-(--dur-fast) hover:scale-105 active:scale-95"
               >
-                <ChatAvatar name={otherName}
-                  className="size-7 text-xs" />
+                <ChatAvatar name={otherGlyphName}
+                  size={28} />
               </button>
             ))}
           {isOwnMessage && copyButton}

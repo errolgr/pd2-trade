@@ -34,10 +34,11 @@ import {
   Store,
   TrendingDown,
   TrendingUp,
-  UserIcon,
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
+import { TombGlyph } from '@/components/glyph/TombGlyph';
+import { glyphCodeForName } from '@/lib/glyph-code';
 import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT, fadeInUp, scaleIn, useReducedMotionSafe } from '@/lib/motion';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
@@ -93,7 +94,7 @@ import { StatId } from '../lib/stat-mappings';
 import { corruptionNamesForRoll, sameCorruptionNames } from '../lib/corruptions';
 import { corruptionOption } from '@/pages/market/lib/catalog';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
-import { listingAge } from '@/pages/market/lib/listing';
+import { listingAge, sellerGlyphName } from '@/pages/market/lib/listing';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { writePng, writeText } from '@/lib/browser-clipboard';
 import { whisperCommand } from '@/lib/whisper-history';
@@ -2645,7 +2646,8 @@ const ListingRow = ({ row, idx }: { row: ScoredListing; idx: number }) => {
             hideToggle={true} />
           {listing.user?.username && (
             <div className="mt-2 flex items-center gap-1.5 border-t border-border pt-2 text-xs text-muted-foreground">
-              <UserIcon className="size-3" />
+              <TombGlyph code={glyphCodeForName(sellerGlyphName(listing) ?? listing.user.username)}
+                size={16} />
               <span>
                 <Trans
                   t={t}

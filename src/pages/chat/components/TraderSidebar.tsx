@@ -35,7 +35,7 @@ import { presenceLabel, shortAgo, type TraderProfile } from '../hooks/useTraderP
 import type { InboxThread } from '../lib/inbox';
 import { ListingDetails, ListingThumb, marketDelta, nameColor } from './ListingCard';
 import { dealStatusLabel, OfferHoverCard, offerStatus, STATUS_CLASS } from './ThreadDeals';
-import { characterUrl, ChatAvatar, marketUrl, profileUrl } from './chat-parts';
+import { characterUrl, ChatAvatar, marketUrl, profileUrl, traderGlyphName } from './chat-parts';
 
 /** Their listings shown in the grid; the rest are behind "N more" (their market on the website). */
 const MARKET_GRID_LIMIT = 8;
@@ -310,10 +310,9 @@ export function TraderSidebar({
             />
             <div className="flex items-center gap-3">
               <ChatAvatar
-                name={thread.name}
-                solid
+                name={traderGlyphName(thread)}
+                size={44}
                 presence={profile.status === 'ready' ? profile.presence.kind : undefined}
-                className="size-11 shrink-0 text-lg shadow-sm"
               />
               <div className="min-w-0 flex-1">
                 <h4 className="truncate text-sm font-semibold leading-tight text-foreground">{thread.name}</h4>
