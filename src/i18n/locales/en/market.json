@@ -443,7 +443,9 @@
     "toastNewMatches": "Toast new matches",
     "alertsOff": "Alerts are off (switch above)",
     "alertsFor": "Alerts for {{name}}",
-    "delete": "Delete {{name}}"
+    "delete": "Delete {{name}}",
+    "moveUp": "Move {{name}} up",
+    "moveDown": "Move {{name}} down"
   },
   "store": {
     "anyItem": "Any item",

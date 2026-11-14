@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import moment from 'moment';
-import { Bell, BellOff, Bookmark, Check, Pencil, Play, Plus, Trash2, X } from 'lucide-react';
+import { Bell, BellOff, Bookmark, Check, ChevronDown, ChevronUp, Pencil, Play, Plus, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,7 +54,7 @@ export interface SavedSearchesProps {
   onRun: (search: SavedSearch) => void;
 }
 
-/** Saved tab: run, rename, delete, live-alert toggle and "save current search". */
+/** Saved tab: run, rename, reorder, delete, live-alert toggle and "save current search". */
 export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
   const { t } = useTranslation(['market', 'common']);
   const [name, setName] = useState('');
@@ -74,7 +74,7 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
     if (!removed) return;
     undoToast({
       title: t('saved.deletedToast'),
-      description: removed.name,
+      description: removed.search.name,
       duration: UNDO_MS,
       onUndo: () => store.restoreSearch(removed),
     });
@@ -132,7 +132,7 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
       ) : (
         <ScrollArea className="min-h-0 flex-1 [&_[data-radix-scroll-area-viewport]>div]:!block">
           <ul className="divide-y divide-border/50">
-            {store.savedSearches.map((s) => (
+            {store.savedSearches.map((s, i, all) => (
               <SavedRow
                 key={s.id}
                 search={s}
@@ -140,6 +140,8 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
                 onRename={(n) => store.renameSearch(s.id, n)}
                 onRemove={() => remove(s)}
                 onAlert={(on) => toggleAlert(s, on)}
+                onMoveUp={i > 0 ? () => store.moveSearch(s.id, i - 1) : undefined}
+                onMoveDown={i < all.length - 1 ? () => store.moveSearch(s.id, i + 1) : undefined}
                 alertsEnabled={store.alertsEnabled}
               />
             ))}
@@ -156,6 +158,8 @@ function SavedRow({
   onRename,
   onRemove,
   onAlert,
+  onMoveUp,
+  onMoveDown,
   alertsEnabled,
 }: {
   search: SavedSearch;
@@ -163,6 +167,9 @@ function SavedRow({
   onRename: (name: string) => void;
   onRemove: () => void;
   onAlert: (on: boolean) => void;
+  /** Unset at the top (up) or bottom (down) of the list. */
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
   alertsEnabled: boolean;
 }) {
   const { t } = useTranslation('market');
@@ -175,6 +182,18 @@ function SavedRow({
   };
   return (
     <li className="group flex items-center gap-2 px-3 py-1.5 hover:bg-accent/30">
+      {(onMoveUp || onMoveDown) && (
+        <div className="-ml-1.5 flex shrink-0 flex-col">
+          <MoveArrow label={t('saved.moveUp', { name: search.name })}
+            onMove={onMoveUp}>
+            <ChevronUp className="size-3.5" />
+          </MoveArrow>
+          <MoveArrow label={t('saved.moveDown', { name: search.name })}
+            onMove={onMoveDown}>
+            <ChevronDown className="size-3.5" />
+          </MoveArrow>
+        </div>
+      )}
       <Button
         variant="ghost"
         size="sm"
@@ -284,5 +303,32 @@ function SavedRow({
         <Trash2 className="size-3.5" />
       </Button>
     </li>
+  );
+}
+
+/**
+ * A saved row's up or down arrow. At the end of the list it is aria-disabled rather than disabled, so the arrow that
+ * just moved the row there keeps focus.
+ */
+function MoveArrow({ label, onMove, children }: { label: string; onMove?: () => void; children: React.ReactNode }) {
+  const ref = useRef<HTMLButtonElement>(null);
+  return (
+    <Button
+      ref={ref}
+      variant="ghost"
+      size="sm"
+      className="h-3.5 w-5 p-0 text-muted-foreground opacity-40 group-hover:opacity-100 focus-visible:opacity-100 has-[>svg]:px-0 aria-disabled:cursor-default aria-disabled:opacity-0 aria-disabled:hover:bg-transparent aria-disabled:focus-visible:opacity-30"
+      aria-label={label}
+      aria-disabled={!onMove || undefined}
+      onClick={() => {
+        if (!onMove) return;
+        const focused = document.activeElement === ref.current;
+        onMove();
+        // Moving re-orders the rows in the DOM, which can drop focus: keep it here to move the row again by keyboard
+        if (focused) requestAnimationFrame(() => ref.current?.focus());
+      }}
+    >
+      {children}
+    </Button>
   );
 }

@@ -481,7 +481,9 @@
     "toastNewMatches": "Powiadamiaj o nowych dopasowaniach",
     "alertsOff": "Alerty są wyłączone (przełącznik powyżej)",
     "alertsFor": "Alerty dla {{name}}",
-    "delete": "Usuń {{name}}"
+    "delete": "Usuń {{name}}",
+    "moveUp": "Przesuń {{name}} w górę",
+    "moveDown": "Przesuń {{name}} w dół"
   },
   "store": {
     "anyItem": "Dowolny przedmiot",

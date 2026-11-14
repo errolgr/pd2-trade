@@ -462,7 +462,9 @@
     "toastNewMatches": "Notifier les nouveaux résultats",
     "alertsOff": "Les alertes sont désactivées (interrupteur ci-dessus)",
     "alertsFor": "Alertes pour {{name}}",
-    "delete": "Supprimer {{name}}"
+    "delete": "Supprimer {{name}}",
+    "moveUp": "Monter {{name}}",
+    "moveDown": "Descendre {{name}}"
   },
   "store": {
     "anyItem": "N'importe quel objet",
