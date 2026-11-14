@@ -17,7 +17,8 @@
     "na": "无",
     "noReliablePrice": "无可靠市场价",
     "hrTitle": "按当前市场价 {{hr}} HR",
-    "marketValue": "市场价值 <num>{{value}} HR</num>"
+    "marketValue": "市场价值 <num>{{value}} HR</num>",
+    "corruptionBasis": "按其腐化定价"
   },
   "itemActions": {
     "searchMarket": "搜索市场",

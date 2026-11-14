@@ -17,7 +17,8 @@
     "na": "k. A.",
     "noReliablePrice": "Kein verlässlicher Marktpreis",
     "hrTitle": "{{hr}} HR zu aktuellen Marktpreisen",
-    "marketValue": "Marktwert <num>{{value}} HR</num>"
+    "marketValue": "Marktwert <num>{{value}} HR</num>",
+    "corruptionBasis": "Nach seiner Corruption bewertet"
   },
   "itemActions": {
     "searchMarket": "Im Markt suchen",

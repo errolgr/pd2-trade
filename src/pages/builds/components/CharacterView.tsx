@@ -16,6 +16,7 @@ import {
   type CharacterSkill,
   type CharmItem,
   type EquippedItem,
+  type PricedEquippedItem,
   getCharacterSnapshot,
 } from '@/lib/builds-api';
 import { snapshotQueryKey, useBuildCharacter, useBuildsQuery } from '../lib/useBuildsQuery';
@@ -35,7 +36,7 @@ import { GearUp } from './GearUp';
 import { currentLocale, Trans, useTranslation } from '@/i18n';
 import { Timeline } from './Timeline';
 
-type DollItem = EquippedItem & { iconUrl: string | null; priceHr?: number | null };
+type DollItem = EquippedItem & Partial<Pick<PricedEquippedItem, 'priceHr' | 'priceBasis'>> & { iconUrl: string | null };
 
 interface DollCellDef {
   area: string;
