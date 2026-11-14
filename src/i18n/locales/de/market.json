@@ -118,6 +118,7 @@
     "pickTypeFirst": "Wähle zuerst einen Typ",
     "searchOptions": "Suchen…",
     "noOptions": "Keine Treffer",
+    "multiSelectHint": "Shift oder Strg halten, um mehrere auszuwählen",
     "class": "Klasse",
     "corrupted": "Corrupted",
     "sockets": "Sockel",

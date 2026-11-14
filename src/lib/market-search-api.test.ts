@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fetch } from '@/lib/browser-http';
 import { BACKEND_URL } from '@/lib/pkce';
 import { defaultFilters, mergeFilters } from '@/pages/market/lib/defaults';
+import { toggleTypeOption } from '@/pages/market/lib/type-selection';
 import type { MarketFilters } from '@/pages/market/lib/types';
 import {
   MARKET_SEARCH_TIMEOUT_MS,
@@ -220,6 +221,17 @@ describe('marketSearchBody', () => {
     // A seller picked from a listing is queried by id
     const byId = marketSearchBody({ ...f, sellerUserId: 'u1' }, 0, 25).filters;
     expect(byId).toMatchObject({ sellerUserId: 'u1', sellerName: undefined });
+  });
+
+  it('sends several picked types as one `$in` of their type codes, which the service validates as a Type value', () => {
+    const polearmsAndSpears = toggleTypeOption('pole', 'group:spears');
+    expect(marketSearchBody(mergeFilters(base, { typeCode: polearmsAndSpears }), 0, 25).filters.typeCode).toBe(
+      '{"$in": ["pole", "spea", "aspe"]}',
+    );
+    const claws = toggleTypeOption('{"$in": ["h2h", "h2h2"]}', 'knif');
+    expect(marketSearchBody(mergeFilters(base, { typeCode: claws }), 0, 25).filters.typeCode).toBe(
+      '{"$in": ["knif", "h2h", "h2h2"]}',
+    );
   });
 });
 

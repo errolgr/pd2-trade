@@ -186,8 +186,11 @@ describe('marketQueryToFilters', () => {
   it("reads a type group's members ($in, any order) as the group code, not its first member's type", () => {
     expect(read({ 'item.base.type_code': { $in: ['bow', 'abow'] } }).typeCode).toBe('group:bows');
     expect(read({ 'item.base.type_code': { $in: ['circ', 'helm', 'pelt', 'phlm'] } }).typeCode).toBe('group:helms');
-    // A subset of a group isn't the group
-    expect(read({ 'item.base.type_code': { $in: ['shie', 'ashd'] } }).typeCode).toBe('shie');
+    // Some of a group's types aren't the group: those types, all of them searched
+    expect(read({ 'item.base.type_code': { $in: ['shie', 'ashd'] } }).typeCode).toBe('{"$in": ["ashd", "shie"]}');
+    expect(read({ 'item.base.type_code': { $in: ['pole', 'spea', 'aspe'] } }).typeCode).toBe(
+      '{"$in": ["pole", "spea", "aspe"]}',
+    );
   });
 
   it('reads several qualities ($in, the price check\'s "Any") as a multi-rarity filter', () => {

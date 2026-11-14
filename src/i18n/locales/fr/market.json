@@ -126,6 +126,7 @@
     "pickTypeFirst": "Choisissez d'abord un type",
     "searchOptions": "Rechercher…",
     "noOptions": "Aucun résultat",
+    "multiSelectHint": "Maintenez Maj ou Ctrl pour en choisir plusieurs",
     "class": "Classe",
     "corrupted": "Corrupted",
     "sockets": "Sockets",

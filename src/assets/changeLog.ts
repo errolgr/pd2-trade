@@ -1,5 +1,6 @@
 export const changeLog = {
   '0.11.3': [
+    '🆕 Market browser: search several item types at once. Hold Shift or Ctrl while clicking in the Type filter to add or remove a type (Polearm + Spears for Insight bases, Fist Weapon + Dagger for claws), a plain click still picks just one',
     '✨ Market browser: put your saved searches in the order you want with the up and down arrows on each row. The order is kept when you restart (your current list keeps its order until you change it)',
     "🔧 Offers on your listings show up in the overlay again. The offer popup came, but the chat's Selling list stayed empty and View offer led nowhere: PD2 no longer sends a listing's offers along with your listings, so they are now read separately",
     "🔧 Linux (deb/rpm, or an AppImage in a folder you can't write to): updates no longer download again and again only to fail; you get the release page link right away",
