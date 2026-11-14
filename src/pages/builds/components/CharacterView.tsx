@@ -19,6 +19,7 @@ import {
   getCharacterSnapshot,
 } from '@/lib/builds-api';
 import { snapshotQueryKey, useBuildCharacter, useBuildsQuery } from '../lib/useBuildsQuery';
+import { useCorruptionPrices } from '../lib/corruption-value';
 import { isFollowed, pushRecent, toggleFollow } from '../lib/character-refs';
 import { characterSiteUrl, classMeta, fmtDateTime, fmtHr, qualityBorder, timeAgo } from '../lib/format';
 import {
@@ -35,7 +36,7 @@ import { GearUp } from './GearUp';
 import { currentLocale, Trans, useTranslation } from '@/i18n';
 import { Timeline } from './Timeline';
 
-type DollItem = EquippedItem & { iconUrl: string | null; priceHr?: number | null };
+type DollItem = EquippedItem & { iconUrl: string | null; priceHr?: number | null; corruptionPriced?: boolean };
 
 interface DollCellDef {
   area: string;
@@ -96,6 +97,8 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
   const { settings, updateSettings } = useOptions();
   const query = useBuildCharacter(name, mode);
   const detail = query.data && !query.stale && query.data.name.toLowerCase() === name.toLowerCase() ? query.data : null;
+  // Corrupted uniques/sets priced by their corruption once known (the API prices them as plain items)
+  const valued = useCorruptionPrices(detail);
   const [pane, setPane] = useState<Pane>('gear-up');
   const [snapId, setSnapId] = useState<string | null>(null);
   const [weaponSet, setWeaponSet] = useState(0);
@@ -126,8 +129,8 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
   // live build when it still knows the item; prices are left out (they'd be today's, not then).
   const viewing = snapId && snapshot.data && !snapshot.stale ? snapshot.data : null;
   const shown = useMemo(() => {
-    if (!detail) return null;
-    if (!viewing) return detail;
+    if (!detail || !valued) return null;
+    if (!viewing) return valued;
     const icons = new Map([...detail.equipped, ...(detail.merc?.equipped ?? [])].map((it) => [it.key, it.iconUrl]));
     const unpriced = (items: EquippedItem[]): DollItem[] =>
       items.map((it) => ({ ...it, iconUrl: icons.get(it.key) ?? null }));
@@ -139,7 +142,7 @@ export function CharacterView({ name, mode, onBack }: { name: string; mode?: Bui
       // Snapshots don't record charms
       charms: [],
     };
-  }, [detail, viewing]);
+  }, [detail, valued, viewing]);
 
   if (query.error) {
     return (

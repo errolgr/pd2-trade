@@ -182,8 +182,13 @@ export function ShareBar({ pct, className, barClassName }: { pct: number; classN
 
 type TooltipItem = Pick<
   EquippedItem,
-  'slot' | 'name' | 'quality' | 'base' | 'runeword' | 'ethereal' | 'corrupted' | 'sockets' | 'mods'
-> & { socketed: Pick<SocketedItem, 'name' | 'quality'>[]; priceHr?: number | null };
+  'slot' | 'name' | 'quality' | 'base' | 'runeword' | 'ethereal' | 'corrupted' | 'sockets' | 'mods' | 'corruptedMods'
+> & {
+  socketed: Pick<SocketedItem, 'name' | 'quality'>[];
+  priceHr?: number | null;
+  /** `priceHr` values the item's corruption (`corruptedMods`), not the plain item. */
+  corruptionPriced?: boolean;
+};
 
 /** In-game style item card: name in its quality colour, base, mods in magic blue, sockets, price. */
 export function ItemTooltipCard({ item }: { item: TooltipItem }) {
@@ -235,14 +240,21 @@ export function ItemTooltipCard({ item }: { item: TooltipItem }) {
       {item.priceHr !== undefined && (
         <div className="mt-2 border-t border-border/60 pt-1.5 text-[11px]">
           {item.priceHr != null ? (
-            <span className="text-muted-foreground">
-              <Trans
-                t={t}
-                i18nKey="price.marketValue"
-                values={{ value: fmtHr(item.priceHr) }}
-                components={{ num: <span className="font-semibold text-q-gold tabular-nums" /> }}
-              />
-            </span>
+            <>
+              <span className="text-muted-foreground">
+                <Trans
+                  t={t}
+                  i18nKey="price.marketValue"
+                  values={{ value: fmtHr(item.priceHr) }}
+                  components={{ num: <span className="font-semibold text-q-gold tabular-nums" /> }}
+                />
+              </span>
+              {item.corruptionPriced && item.corruptedMods && (
+                <div className="text-[10px] text-muted-foreground">
+                  {t('price.corruptionPriced', { corruption: item.corruptedMods.join(', ') })}
+                </div>
+              )}
+            </>
           ) : (
             <span className="text-muted-foreground">{t('price.noReliablePrice')}</span>
           )}

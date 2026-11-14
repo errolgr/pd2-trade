@@ -84,6 +84,11 @@ export interface EquippedItem {
   socketed: SocketedItem[];
   /** PD2 display lines (sockets included). */
   mods: string[];
+  /**
+   * Corrupted items: the `mods` lines the corruption added or changed (`Socketed (N)` for a socket corruption).
+   * Missing on items stored before the server recorded it.
+   */
+  corruptedMods?: string[];
 }
 
 export interface CharacterSkill {

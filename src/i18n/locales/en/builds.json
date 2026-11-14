@@ -15,7 +15,8 @@
     "na": "n/a",
     "noReliablePrice": "No reliable market price",
     "hrTitle": "{{hr}} HR at current market prices",
-    "marketValue": "Market value <num>{{value}} HR</num>"
+    "marketValue": "Market value <num>{{value}} HR</num>",
+    "corruptionPriced": "Priced for its corruption: {{corruption}}"
   },
   "itemActions": {
     "searchMarket": "Search market",

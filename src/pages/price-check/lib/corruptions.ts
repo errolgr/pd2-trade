@@ -1,4 +1,5 @@
 import { cubeCorruptions } from '@/assets/cube-corruptions';
+import { modifierByName } from '@/assets/modifiers';
 
 /**
  * The `item.corruptions` names the market records for each cube corruption stat (the `stat` of an entry in
@@ -103,4 +104,91 @@ export function sameCorruptionNames(a: readonly string[], b: readonly string[]):
   if (a.length !== b.length) return false;
   const sortedB = [...b].sort();
   return [...a].sort().every((name, i) => name === sortedB[i]);
+}
+
+/** Labels of corruption names whose modifier has none of its own (the rest use their modifier label). */
+const EXTRA_LABELS: Record<string, string> = {
+  maxdamage_percent: 'Enhanced Damage',
+  'dmg-min': 'to Minimum Damage',
+  'dmg-max': 'to Maximum Damage',
+  indestruct: 'Indestructible',
+};
+
+/** Names sharing a label, told apart by whether their line is a percentage. */
+const PERCENT_LINE: Record<string, boolean> = { damageresist: true, normal_damage_reduction: false };
+
+/** A display line's words: rolls, signs and `%` dropped, lower case (`+1 to All Skills` → `to all skills`). */
+const lineWords = (line: string): string =>
+  line
+    .toLowerCase()
+    .replace(/%d|[+-]?\d+(\.\d+)?|[+%]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+/** The distinct corruption outcomes an item can roll, as sorted market names. */
+const ITEM_OUTCOMES: string[][] = (() => {
+  const byKey = new Map<string, string[]>();
+  for (const { key } of cubeCorruptions) {
+    const names = corruptionNamesForRoll(key);
+    if (names) byKey.set(names.join(','), names);
+  }
+  return [...byKey.values()];
+})();
+
+/** Line words → the corruption names displayed with them (own labels, then group lines like All Resistances). */
+const NAMES_BY_LINE: Map<string, string[]> = (() => {
+  const map = new Map<string, string[]>();
+  const add = (label: string | undefined, name: string) => {
+    if (!label) return;
+    const words = lineWords(label);
+    const names = map.get(words) ?? [];
+    if (!names.includes(name)) map.set(words, [...names, name]);
+  };
+  for (const name of new Set(ITEM_OUTCOMES.flat())) {
+    const label = modifierByName[name]?.description?.label as
+      | { positive?: string; negative?: string; secondary?: string; group?: { positive?: string } }
+      | undefined;
+    add(EXTRA_LABELS[name], name);
+    add(label?.positive, name);
+    add(label?.negative, name);
+    if (label?.positive && label.secondary) add(`${label.positive} ${label.secondary}`, name);
+    add(label?.group?.positive, name);
+  }
+  // A grouped line stands for the whole group, the market's `all_resist` marker included
+  const allRes = map.get('all resistances');
+  if (allRes) map.set('all resistances', [...allRes, 'all_resist']);
+  return map;
+})();
+
+/** Names that show a line of their own when rolled (not `dmg%`, the `all_resist` marker or dye). */
+const LINE_NAMES = new Set([...NAMES_BY_LINE.values()].flat().filter((name) => name !== 'all_resist')).add(
+  'item_numsockets',
+);
+
+/** The corruption names one corrupted line may show; empty when nothing displays that way. */
+function namesForLine(line: string): string[] {
+  if (/^socketed \(\d+\)$/i.test(line.trim())) return ['item_numsockets'];
+  const names = NAMES_BY_LINE.get(lineWords(line)) ?? [];
+  const percent = line.includes('%');
+  return names.filter((name) => PERCENT_LINE[name] === undefined || PERCENT_LINE[name] === percent);
+}
+
+/**
+ * The corruption outcome (sorted market names, as `corruptionNamesForRoll`) behind the lines a corruption changed
+ * on an item (`Socketed (N)` for sockets), e.g. a build item's `corruptedMods`. The outcome must explain every
+ * line, and every line-bearing name of it must show; null when no line was changed, a line is unknown, or more
+ * than one outcome fits.
+ */
+export function corruptionNamesForLines(lines: readonly string[]): string[] | null {
+  if (!lines.length) return null;
+  const perLine = lines.map(namesForLine);
+  if (perLine.some((names) => !names.length)) return null;
+  const shown = new Set(perLine.flat());
+  const fits = ITEM_OUTCOMES.filter(
+    (outcome) =>
+      // A line's names all belong to the outcome (a grouped line like All Resistances shows each of its names)
+      perLine.every((names) => names.every((name) => outcome.includes(name))) &&
+      outcome.every((name) => shown.has(name) || !LINE_NAMES.has(name)),
+  );
+  return fits.length === 1 ? fits[0] : null;
 }
