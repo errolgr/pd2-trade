@@ -13,7 +13,12 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowUpCircle, CheckCircle2, Download, FileText, Loader2, RefreshCw } from 'lucide-react';
 import { fadeInUp, springSoft } from '@/lib/motion';
 import { showToast, useOverlay } from '@/overlay';
-import { manualUpdateToast, markManualUpdateRequired, requiresManualUpdate } from '@/lib/manual-update';
+import {
+  manualUpdateToast,
+  markManualUpdateRequired,
+  requiresManualUpdate,
+  selfUpdateSupported,
+} from '@/lib/manual-update';
 import { isNetworkError } from '@/lib/network-errors';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import { useTranslation } from '@/i18n';
@@ -56,6 +61,12 @@ export function AboutForm() {
 
   const handleUpdateNow = async () => {
     if (!updateInfo?.available) return;
+    if (!(await selfUpdateSupported())) {
+      // Linux deb/rpm or a read-only AppImage folder: don't download what can't install
+      markManualUpdateRequired();
+      showToast(manualUpdateToast(updateInfo.version));
+      return;
+    }
     try {
       await downloadUpdate(updateInfo);
     } catch (error) {
