@@ -157,6 +157,37 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
+      # Issue #23: a bundled libwayland-client (Ubuntu 22.04's 1.20) is loaded ahead of the host's, and Mesa 24.1+
+      # libEGL needs newer symbols, so the AppImage dies with "Could not create default EGL display". Runs before
+      # publish-release, so a bad AppImage leaves the release a draft. linuxdeploy's excludelist only drops
+      # libwayland-client, so other bundled libwayland-* are reported but not fatal.
+      - name: Check AppImage does not bundle libwayland-client
+        if: matrix.platform == 'ubuntu-22.04'
+        shell: bash
+        working-directory: src-tauri/target/release/bundle/appimage
+        run: |
+          shopt -s nullglob
+          images=(*.AppImage)
+          if [ ${#images[@]} -ne 1 ]; then
+            echo "::error::Expected one AppImage, found ${#images[@]}"
+            exit 1
+          fi
+          rm -rf squashfs-root
+          chmod +x "${images[0]}"
+          "./${images[0]}" --appimage-extract > /dev/null
+          wayland=(squashfs-root/usr/lib/libwayland-*)
+          client=(squashfs-root/usr/lib/libwayland-client.so*)
+          rm -rf squashfs-root
+          if [ ${#wayland[@]} -gt 0 ]; then
+            echo "Bundled wayland libraries:"
+            printf '  %s\n' "${wayland[@]}"
+          fi
+          if [ ${#client[@]} -gt 0 ]; then
+            echo "::error::AppImage bundles libwayland-client; it fails to start on hosts with Mesa 24.1+ (#23)"
+            exit 1
+          fi
+          echo "No libwayland-client in ${images[0]}"
+
   ########################################################################
   # 3. Publish Release in pd2-trade
   ########################################################################
