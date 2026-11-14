@@ -464,8 +464,12 @@
     "alertsOff": "Les alertes sont désactivées (interrupteur ci-dessus)",
     "alertsFor": "Alertes pour {{name}}",
     "delete": "Supprimer {{name}}",
-    "moveUp": "Monter {{name}}",
-    "moveDown": "Descendre {{name}}"
+    "reorder": "Glisser pour réordonner {{name}}",
+    "reorderInstructions": "Pour saisir une recherche enregistrée, appuyez sur Espace ou Entrée sur sa poignée. Déplacez-la avec les flèches haut et bas, appuyez sur Espace ou Entrée pour la déposer, ou sur Échap pour annuler.",
+    "reorderPickedUp": "{{name}} saisie.",
+    "reorderMoved": "{{name}} déplacée en position {{position}} sur {{count}}.",
+    "reorderDropped": "{{name}} déposée en position {{position}} sur {{count}}.",
+    "reorderCancelled": "Déplacement annulé. {{name}} est revenue à sa place."
   },
   "store": {
     "anyItem": "N'importe quel objet",

@@ -445,8 +445,12 @@
     "alertsOff": "Benachrichtigungen sind aus (Schalter oben)",
     "alertsFor": "Benachrichtigungen für {{name}}",
     "delete": "{{name}} löschen",
-    "moveUp": "{{name}} nach oben verschieben",
-    "moveDown": "{{name}} nach unten verschieben"
+    "reorder": "{{name}} zum Umsortieren ziehen",
+    "reorderInstructions": "Um eine gespeicherte Suche aufzunehmen, drücke Leertaste oder Enter auf ihrem Griff. Verschiebe sie mit den Pfeiltasten nach oben und unten, lege sie mit Leertaste oder Enter ab oder brich mit Escape ab.",
+    "reorderPickedUp": "{{name}} aufgenommen.",
+    "reorderMoved": "{{name}} auf Position {{position}} von {{count}} verschoben.",
+    "reorderDropped": "{{name}} auf Position {{position}} von {{count}} abgelegt.",
+    "reorderCancelled": "Verschieben abgebrochen. {{name}} ist wieder an seinem Platz."
   },
   "store": {
     "anyItem": "Beliebiger Gegenstand",
