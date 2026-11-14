@@ -18,7 +18,9 @@
     "noReliablePrice": "Нет надёжной рыночной цены",
     "hrTitle": "{{hr}} HR по текущим рыночным ценам",
     "marketValue": "Рыночная стоимость <num>{{value}} HR</num>",
-    "corruptionBasis": "Оценено по его corruption"
+    "corruptionBasis": "Оценено по его corruption",
+    "rareAppraised": "Оценка рара: похожие лоты просят ~{{band}} HR",
+    "rareJewels": "Включает {{value}} HR оценённых редких самоцветов"
   },
   "itemActions": {
     "searchMarket": "Искать на рынке",

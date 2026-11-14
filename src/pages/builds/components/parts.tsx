@@ -17,6 +17,8 @@ import { useBuildsActions } from '../lib/context';
 import { type MarketItemRef, marketFiltersFor } from '../lib/market-link';
 import { classMeta, classPortraitUrl, fmtHr, initials, qualityBorder, qualityText, skillIconUrl } from '../lib/format';
 import { itemArtCandidates } from '../lib/item-art';
+import type { RareValue } from '../lib/rare-value';
+import { bandRange } from '@/components/rares/rares-format';
 import { Trans, useTranslation } from '@/i18n';
 
 /** In-game class portrait (46×41 art); `size` is the height. Unknown classes get a lettered tile. */
@@ -185,7 +187,10 @@ type TooltipItem = Pick<
   'slot' | 'name' | 'quality' | 'base' | 'runeword' | 'ethereal' | 'corrupted' | 'sockets' | 'mods'
 > & { socketed: Pick<SocketedItem, 'name' | 'quality'>[] } & Partial<
     Pick<PricedEquippedItem, 'priceHr' | 'priceBasis'>
-  >;
+  > & {
+    /** What rare appraisals added to `priceHr`. */
+    rareValue?: RareValue;
+  };
 
 /** In-game style item card: name in its quality colour, base, mods in magic blue, sockets, price. */
 export function ItemTooltipCard({ item }: { item: TooltipItem }) {
@@ -246,6 +251,16 @@ export function ItemTooltipCard({ item }: { item: TooltipItem }) {
               />
               {item.priceBasis === 'corruption' && (
                 <span className="block text-[10px] text-q-corrupted/90">{t('price.corruptionBasis')}</span>
+              )}
+              {item.rareValue?.band && (
+                <span className="block text-[10px] text-muted-foreground">
+                  {t('price.rareAppraised', { band: bandRange(item.rareValue.band.lowHr, item.rareValue.band.highHr) })}
+                </span>
+              )}
+              {item.rareValue?.jewelsHr !== undefined && (
+                <span className="block text-[10px] text-muted-foreground">
+                  {t('price.rareJewels', { value: fmtHr(item.rareValue.jewelsHr) })}
+                </span>
               )}
             </span>
           ) : (

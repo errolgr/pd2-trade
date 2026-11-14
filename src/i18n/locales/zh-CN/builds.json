@@ -18,7 +18,9 @@
     "noReliablePrice": "无可靠市场价",
     "hrTitle": "按当前市场价 {{hr}} HR",
     "marketValue": "市场价值 <num>{{value}} HR</num>",
-    "corruptionBasis": "按其腐化定价"
+    "corruptionBasis": "按其腐化定价",
+    "rareAppraised": "稀有估价：相似挂单要价约 {{band}} HR",
+    "rareJewels": "含已估价的稀有珠宝 {{value}} HR"
   },
   "itemActions": {
     "searchMarket": "搜索市场",

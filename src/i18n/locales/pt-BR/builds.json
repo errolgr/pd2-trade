@@ -18,7 +18,9 @@
     "noReliablePrice": "Sem preço de mercado confiável",
     "hrTitle": "{{hr}} HR nos preços atuais do mercado",
     "marketValue": "Valor de mercado <num>{{value}} HR</num>",
-    "corruptionBasis": "Avaliado pela sua corrupção"
+    "corruptionBasis": "Avaliado pela sua corrupção",
+    "rareAppraised": "Avaliação de raro: anúncios parecidos pedem ~{{band}} HR",
+    "rareJewels": "Inclui {{value}} HR de joias raras avaliadas"
   },
   "itemActions": {
     "searchMarket": "Buscar no mercado",
