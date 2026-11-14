@@ -464,8 +464,12 @@
     "alertsOff": "Alertas desativados (interruptor acima)",
     "alertsFor": "Alertas de {{name}}",
     "delete": "Excluir {{name}}",
-    "moveUp": "Mover {{name}} para cima",
-    "moveDown": "Mover {{name}} para baixo"
+    "reorder": "Arraste para reordenar {{name}}",
+    "reorderInstructions": "Para pegar uma busca salva, pressione Espaço ou Enter na alça dela. Mova-a com as setas para cima e para baixo, pressione Espaço ou Enter para soltá-la ou Esc para cancelar.",
+    "reorderPickedUp": "{{name}} selecionada.",
+    "reorderMoved": "{{name}} movida para a posição {{position}} de {{count}}.",
+    "reorderDropped": "{{name}} solta na posição {{position}} de {{count}}.",
+    "reorderCancelled": "Movimento cancelado. {{name}} voltou ao lugar."
   },
   "store": {
     "anyItem": "Qualquer item",

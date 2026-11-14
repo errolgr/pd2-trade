@@ -31,6 +31,9 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@grafana/faro-web-sdk": "^2.12.1",
     "@grafana/faro-web-tracing": "^2.12.1",
     "@hookform/resolvers": "^4.1.3",

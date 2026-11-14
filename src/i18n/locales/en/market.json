@@ -445,8 +445,12 @@
     "alertsOff": "Alerts are off (switch above)",
     "alertsFor": "Alerts for {{name}}",
     "delete": "Delete {{name}}",
-    "moveUp": "Move {{name}} up",
-    "moveDown": "Move {{name}} down"
+    "reorder": "Drag to reorder {{name}}",
+    "reorderInstructions": "To pick up a saved search, press Space or Enter on its grip. Move it with the up and down arrow keys, press Space or Enter to drop it, or Escape to cancel.",
+    "reorderPickedUp": "Picked up {{name}}.",
+    "reorderMoved": "{{name}} moved to position {{position}} of {{count}}.",
+    "reorderDropped": "{{name}} dropped at position {{position}} of {{count}}.",
+    "reorderCancelled": "Move cancelled. {{name}} is back where it was."
   },
   "store": {
     "anyItem": "Any item",

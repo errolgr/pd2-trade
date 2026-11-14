@@ -1,6 +1,24 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import moment from 'moment';
-import { Bell, BellOff, Bookmark, Check, ChevronDown, ChevronUp, Pencil, Play, Plus, Trash2, X } from 'lucide-react';
+import {
+  type Announcements,
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  type UniqueIdentifier,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Bell, BellOff, Bookmark, Check, GripVertical, Pencil, Play, Plus, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -90,6 +108,38 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
     }
   };
 
+  const searches = store.savedSearches;
+  const ids = searches.map((s) => s.id);
+  // The distance keeps a click on the grip a click; the keyboard sensor reorders with Space/Enter + arrow keys.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const nameOf = (id: UniqueIdentifier) => searches.find((s) => s.id === id)?.name ?? '';
+  const announcements: Announcements = {
+    onDragStart: ({ active }) => t('saved.reorderPickedUp', { name: nameOf(active.id) }),
+    onDragOver: ({ active, over }) =>
+      over
+        ? t('saved.reorderMoved', {
+            name: nameOf(active.id),
+            position: ids.indexOf(String(over.id)) + 1,
+            count: ids.length,
+          })
+        : undefined,
+    onDragEnd: ({ active, over }) =>
+      over
+        ? t('saved.reorderDropped', {
+            name: nameOf(active.id),
+            position: ids.indexOf(String(over.id)) + 1,
+            count: ids.length,
+          })
+        : t('saved.reorderCancelled', { name: nameOf(active.id) }),
+    onDragCancel: ({ active }) => t('saved.reorderCancelled', { name: nameOf(active.id) }),
+  };
+  const drop = ({ active, over }: DragEndEvent) => {
+    if (over && active.id !== over.id) store.moveSearch(String(active.id), ids.indexOf(String(over.id)));
+  };
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <form onSubmit={save}
@@ -122,7 +172,7 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
           />
         </label>
       </div>
-      {store.savedSearches.length === 0 ? (
+      {searches.length === 0 ? (
         <EmptyState
           className="m-4"
           icon={<Bookmark />}
@@ -131,21 +181,30 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
         />
       ) : (
         <ScrollArea className="min-h-0 flex-1 [&_[data-radix-scroll-area-viewport]>div]:!block">
-          <ul className="divide-y divide-border/50">
-            {store.savedSearches.map((s, i, all) => (
-              <SavedRow
-                key={s.id}
-                search={s}
-                onRun={() => onRun(s)}
-                onRename={(n) => store.renameSearch(s.id, n)}
-                onRemove={() => remove(s)}
-                onAlert={(on) => toggleAlert(s, on)}
-                onMoveUp={i > 0 ? () => store.moveSearch(s.id, i - 1) : undefined}
-                onMoveDown={i < all.length - 1 ? () => store.moveSearch(s.id, i + 1) : undefined}
-                alertsEnabled={store.alertsEnabled}
-              />
-            ))}
-          </ul>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={drop}
+            accessibility={{ announcements, screenReaderInstructions: { draggable: t('saved.reorderInstructions') } }}
+          >
+            <SortableContext items={ids}
+              strategy={verticalListSortingStrategy}>
+              <ul className="divide-y divide-border/50">
+                {searches.map((s) => (
+                  <SavedRow
+                    key={s.id}
+                    search={s}
+                    reorderable={searches.length > 1}
+                    onRun={() => onRun(s)}
+                    onRename={(n) => store.renameSearch(s.id, n)}
+                    onRemove={() => remove(s)}
+                    onAlert={(on) => toggleAlert(s, on)}
+                    alertsEnabled={store.alertsEnabled}
+                  />
+                ))}
+              </ul>
+            </SortableContext>
+          </DndContext>
         </ScrollArea>
       )}
     </div>
@@ -154,45 +213,56 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
 
 function SavedRow({
   search,
+  reorderable,
   onRun,
   onRename,
   onRemove,
   onAlert,
-  onMoveUp,
-  onMoveDown,
   alertsEnabled,
 }: {
   search: SavedSearch;
+  /** Shows the drag grip (more than one saved search). */
+  reorderable: boolean;
   onRun: () => void;
   onRename: (name: string) => void;
   onRemove: () => void;
   onAlert: (on: boolean) => void;
-  /** Unset at the top (up) or bottom (down) of the list. */
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
   alertsEnabled: boolean;
 }) {
   const { t } = useTranslation('market');
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(search.name);
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
+    id: search.id,
+    disabled: !reorderable,
+  });
   const commit = () => {
     const trimmed = draft.trim();
     if (trimmed && trimmed !== search.name) onRename(trimmed);
     setEditing(false);
   };
   return (
-    <li className="group flex items-center gap-2 px-3 py-1.5 hover:bg-accent/30">
-      {(onMoveUp || onMoveDown) && (
-        <div className="-ml-1.5 flex shrink-0 flex-col">
-          <MoveArrow label={t('saved.moveUp', { name: search.name })}
-            onMove={onMoveUp}>
-            <ChevronUp className="size-3.5" />
-          </MoveArrow>
-          <MoveArrow label={t('saved.moveDown', { name: search.name })}
-            onMove={onMoveDown}>
-            <ChevronDown className="size-3.5" />
-          </MoveArrow>
-        </div>
+    <li
+      ref={setNodeRef}
+      // Rows only slide up and down; the gap the dragged row leaves shows where it will drop
+      style={{ transform: CSS.Translate.toString(transform && { ...transform, x: 0 }), transition }}
+      className={cn(
+        'group flex items-center gap-2 px-3 py-1.5 hover:bg-accent/30',
+        isDragging && 'relative z-10 rounded-md bg-surface-elevated shadow-panel ring-1 ring-primary',
+      )}
+    >
+      {reorderable && (
+        <Button
+          ref={setActivatorNodeRef}
+          variant="ghost"
+          size="sm"
+          className="-ml-1.5 h-7 w-4 shrink-0 cursor-grab touch-none p-0 text-muted-foreground opacity-50 group-hover:opacity-100 focus-visible:opacity-100 active:cursor-grabbing has-[>svg]:px-0"
+          {...attributes}
+          {...listeners}
+          aria-label={t('saved.reorder', { name: search.name })}
+        >
+          <GripVertical className="size-3.5" />
+        </Button>
       )}
       <Button
         variant="ghost"
@@ -303,32 +373,5 @@ function SavedRow({
         <Trash2 className="size-3.5" />
       </Button>
     </li>
-  );
-}
-
-/**
- * A saved row's up or down arrow. At the end of the list it is aria-disabled rather than disabled, so the arrow that
- * just moved the row there keeps focus.
- */
-function MoveArrow({ label, onMove, children }: { label: string; onMove?: () => void; children: React.ReactNode }) {
-  const ref = useRef<HTMLButtonElement>(null);
-  return (
-    <Button
-      ref={ref}
-      variant="ghost"
-      size="sm"
-      className="h-3.5 w-5 p-0 text-muted-foreground opacity-40 group-hover:opacity-100 focus-visible:opacity-100 has-[>svg]:px-0 aria-disabled:cursor-default aria-disabled:opacity-0 aria-disabled:hover:bg-transparent aria-disabled:focus-visible:opacity-30"
-      aria-label={label}
-      aria-disabled={!onMove || undefined}
-      onClick={() => {
-        if (!onMove) return;
-        const focused = document.activeElement === ref.current;
-        onMove();
-        // Moving re-orders the rows in the DOM, which can drop focus: keep it here to move the row again by keyboard
-        if (focused) requestAnimationFrame(() => ref.current?.focus());
-      }}
-    >
-      {children}
-    </Button>
   );
 }

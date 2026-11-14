@@ -36,12 +36,30 @@ function Harness() {
     onRun={() => {}} />;
 }
 
-const settle = () => act(() => vi.advanceTimersByTimeAsync(0));
+const settle = () => act(() => vi.advanceTimersByTimeAsync(50));
+const grip = (name: string) => screen.getByRole('button', { name: `Drag to reorder ${name}` });
+/** dnd-kit's keyboard sensor: Space picks up, arrows move, Space drops, Escape cancels. */
+const key = async (name: string, code: string) => {
+  fireEvent.keyDown(grip(name), { code, key: code === 'Space' ? ' ' : code });
+  await settle();
+};
 const names = () => screen.getAllByRole('button', { name: /^Run / }).map((b) => b.getAttribute('aria-label')?.slice(4));
 const lastWritten = () => {
   const calls = vi.mocked(writeTextFile).mock.calls.filter(([path]) => path === MARKET_PREFS_FILENAME);
   return JSON.parse(String(calls.at(-1)?.[1]));
 };
+
+// happy-dom has no layout: give each row a 40px slot in list order so dnd-kit can measure where it is
+const ROW = 40;
+function stubLayout() {
+  vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+    const row = this.closest('li');
+    const index = row?.parentElement ? Array.from(row.parentElement.children).indexOf(row) : 0;
+    const top = row ? index * ROW : 0;
+    const height = row ? ROW : ROW * 3;
+    return { x: 0, y: top, top, left: 0, width: 300, height, right: 300, bottom: top + height, toJSON: () => ({}) };
+  });
+}
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -51,6 +69,7 @@ beforeEach(() => {
   vi.mocked(readTextFile).mockResolvedValue(
     JSON.stringify({ savedSearches: [saved('s', 'Shako'), saved('e', 'Enigma'), saved('j', 'Jah')] }),
   );
+  stubLayout();
 });
 
 afterEach(() => {
@@ -60,24 +79,35 @@ afterEach(() => {
 });
 
 describe('SavedSearches reordering', () => {
-  it('moves a search up and down with its arrows and saves the order', async () => {
+  it('drags a search by its grip with the keyboard and saves the order', async () => {
     render(<Harness />);
     await settle();
     expect(names()).toEqual(['Shako', 'Enigma', 'Jah']);
-    // No way past the ends (aria-disabled, so an arrow keeps focus once its row gets there)
-    expect(screen.getByRole('button', { name: 'Move Shako up' }).getAttribute('aria-disabled')).toBe('true');
-    expect(screen.getByRole('button', { name: 'Move Jah down' }).getAttribute('aria-disabled')).toBe('true');
-    fireEvent.click(screen.getByRole('button', { name: 'Move Shako up' }));
-    await settle();
-    expect(names()).toEqual(['Shako', 'Enigma', 'Jah']);
-    expect(writeTextFile).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: /^Move / })).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Move Jah up' }));
-    await settle();
-    expect(names()).toEqual(['Shako', 'Jah', 'Enigma']);
-    fireEvent.click(screen.getByRole('button', { name: 'Move Shako down' }));
-    await settle();
+    await key('Jah', 'Space');
+    await key('Jah', 'ArrowUp');
+    await key('Jah', 'ArrowUp');
+    await key('Jah', 'Space');
     expect(names()).toEqual(['Jah', 'Shako', 'Enigma']);
     expect(lastWritten().savedSearches.map((s: SavedSearch) => s.id)).toEqual(['j', 's', 'e']);
+  });
+
+  it('leaves the order alone when a drag is cancelled with Escape', async () => {
+    render(<Harness />);
+    await settle();
+    await key('Shako', 'Space');
+    await key('Shako', 'ArrowDown');
+    await key('Shako', 'Escape');
+    expect(names()).toEqual(['Shako', 'Enigma', 'Jah']);
+    expect(writeTextFile).not.toHaveBeenCalled();
+  });
+
+  it('shows no grip when there is only one saved search', async () => {
+    vi.mocked(readTextFile).mockResolvedValue(JSON.stringify({ savedSearches: [saved('s', 'Shako')] }));
+    render(<Harness />);
+    await settle();
+    expect(names()).toEqual(['Shako']);
+    expect(screen.queryByRole('button', { name: /^Drag to reorder/ })).toBeNull();
   });
 });

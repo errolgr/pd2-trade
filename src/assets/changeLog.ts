@@ -1,7 +1,7 @@
 export const changeLog = {
   '0.11.3': [
     '🆕 Market browser: search several item types at once. The Type filter is a multi-select: click types to tick or untick them (Polearm + Spears for Insight bases, Fist Weapon + Dagger for claws), and pick Any to clear them',
-    '✨ Market browser: put your saved searches in the order you want with the up and down arrows on each row. The order is kept when you restart (your current list keeps its order until you change it)',
+    '✨ Market browser: drag your saved searches by the grip on each row to put them in the order you want (or focus the grip, press Space and use the arrow keys). The order is kept when you restart (your current list keeps its order until you change it)',
     "🔧 Offers on your listings show up in the overlay again. The offer popup came, but the chat's Selling list stayed empty and View offer led nowhere: PD2 no longer sends a listing's offers along with your listings, so they are now read separately",
     "🔧 Linux (deb/rpm, or an AppImage in a folder you can't write to): updates no longer download again and again only to fail; you get the release page link right away",
     '🔧 Linux: the AppImage starts again on Arch, CachyOS, EndeavourOS, Fedora and other distros with a newer Mesa, instead of exiting with "Could not create default EGL display"',

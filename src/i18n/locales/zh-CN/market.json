@@ -426,8 +426,12 @@
     "alertsOff": "提醒已关闭（见上方开关）",
     "alertsFor": "{{name}} 的提醒",
     "delete": "删除 {{name}}",
-    "moveUp": "上移 {{name}}",
-    "moveDown": "下移 {{name}}"
+    "reorder": "拖动以调整 {{name}} 的顺序",
+    "reorderInstructions": "要拿起一个已保存的搜索，请在其拖动手柄上按空格键或回车键。用上下方向键移动，按空格键或回车键放下，或按 Esc 取消。",
+    "reorderPickedUp": "已拿起 {{name}}。",
+    "reorderMoved": "{{name}} 已移到第 {{position}} 位，共 {{count}} 个。",
+    "reorderDropped": "{{name}} 已放在第 {{position}} 位，共 {{count}} 个。",
+    "reorderCancelled": "已取消移动。{{name}} 回到原位。"
   },
   "store": {
     "anyItem": "任意物品",
