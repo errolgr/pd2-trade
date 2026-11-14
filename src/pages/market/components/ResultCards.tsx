@@ -5,6 +5,8 @@ import { DUR, EASE_OUT } from '@/lib/motion';
 import { Bell, Clock, ExternalLink, Gamepad2, Heart, MessageSquare, Shield, Sigma, Swords, X } from 'lucide-react';
 import { useSimAccess } from '@/hooks/useSimAccess';
 import { cn } from '@/lib/utils';
+import { glyphCodeForName } from '@/lib/glyph-code';
+import { TombGlyph } from '@/components/glyph/TombGlyph';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tip, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -16,7 +18,7 @@ import type { ItemDetail, MarketListingEntry } from '@/common/types/pd2-website/
 import type { JewelElement } from '@/pages/chat/lib/listing-art';
 import { useListingActions } from '../hooks/useListingActions';
 import { buildCardModel, modMatchesStatKey, type CardMod, type SocketGroup } from '../lib/card-model';
-import { listingAge, sellerAccount } from '../lib/listing';
+import { listingAge, sellerAccount, sellerGlyphName } from '../lib/listing';
 import { isAnniversaryItem } from '../lib/anniversary';
 import type { MarketApi, ScoredListing } from '../lib/types';
 import { itemNameColor } from './ItemTooltip';
@@ -322,6 +324,7 @@ const ResultCard = React.memo(function ResultCard({
     .join(' · ');
   const req = item.requirements;
   const account = sellerAccount(listing) || listing.user?.username;
+  const glyphName = sellerGlyphName(listing);
   const inGame = useRowOnline(listing.user_last_ingame);
 
   return (
@@ -498,13 +501,18 @@ const ResultCard = React.memo(function ResultCard({
       {/* 5. Footer: a quiet strip like the chat trader card's action bar */}
       <footer className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border/60 bg-foreground/[0.045] px-3 py-1.5 text-xs">
         <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2.5 gap-y-1">
-          {/* Who: presence + account, with the character they're on */}
+          {/* Who: presence + account glyph and name, with the character they're on */}
           <span className="inline-flex h-6 min-w-0 items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 pl-2 pr-2.5">
             <OnlineDots listing={listing} />
             {account && (
-              <SellerName onOpen={actions.openTrader} className="font-semibold text-foreground">
-                {account}
-              </SellerName>
+              <>
+                {glyphName && <TombGlyph code={glyphCodeForName(glyphName)}
+                  size={18} />}
+                <SellerName onOpen={actions.openTrader}
+                  className="font-semibold text-foreground">
+                  {account}
+                </SellerName>
+              </>
             )}
             {item.character_id && (
               <>

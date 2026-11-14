@@ -30,7 +30,14 @@ import { useChatListings } from '../hooks/useChatListings';
 import { useKnownPresence } from '../hooks/useTraderProfile';
 import type { InboxFilter, InboxThread } from '../lib/inbox';
 import { findMarketLinks } from '../lib/market-links';
-import { ChatAvatar, CountBadge, ReadReceipt, segmentedClass, segmentItemClass } from './chat-parts';
+import {
+  ChatAvatar,
+  CountBadge,
+  ReadReceipt,
+  segmentedClass,
+  segmentItemClass,
+  traderGlyphName,
+} from './chat-parts';
 import { ListingThumb } from './ListingCard';
 import { offerStatus } from './ThreadDeals';
 
@@ -243,9 +250,9 @@ export function ConversationList({
                 tabIndex={-1}
                 aria-label={t('bubble.traderDetails', { name })}
                 onClick={() => onOpenTrader(thread.id)}
-                className="relative z-10 shrink-0 rounded-full outline-none transition-transform duration-(--dur-fast) hover:scale-105 active:scale-95"
+                className="relative z-10 shrink-0 rounded-md outline-none transition-transform duration-(--dur-fast) hover:scale-105 active:scale-95"
               >
-                <ChatAvatar name={name}
+                <ChatAvatar name={traderGlyphName(thread)}
                   presence={presence} />
               </button>
               {/* The whole row selects (the button's ::after covers it); the avatar sits above it */}

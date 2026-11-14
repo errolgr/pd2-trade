@@ -59,6 +59,7 @@ function renderPill(listings: [string, ChatListingState][]) {
       <MessageBubble
         row={buildRows([entry])[0]}
         otherName="seller"
+        otherGlyphName="seller"
         onOpenTrader={() => {}}
         listings={new Map()}
         onRetry={() => {}}

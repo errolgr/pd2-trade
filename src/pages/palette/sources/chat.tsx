@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
-import { MessageSquare, Reply, UserRound } from 'lucide-react';
+import { Reply, UserRound } from 'lucide-react';
+import { TombGlyph } from '@/components/glyph/TombGlyph';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
+import { glyphCodeForName } from '@/lib/glyph-code';
 import { t } from '@/i18n';
 import { useChatThreads, type ChatThreadEntry } from '@/pages/chat/chat-threads';
 import { timeAgo } from '@/pages/chat/components/ChatPeek';
@@ -66,7 +68,8 @@ function toItem({ thread, matched }: RankedThread, now: number): PaletteItem {
     badge: matched,
     icon: (
       <span className="relative inline-flex">
-        <MessageSquare className={ICON} />
+        <TombGlyph code={glyphCodeForName(thread.glyphName)}
+          size={20} />
         {thread.unread > 0 && (
           <span
             aria-label={t('chat:palette.unread')}

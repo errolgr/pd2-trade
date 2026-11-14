@@ -58,6 +58,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
+import { TombGlyph } from '@/components/glyph/TombGlyph';
+import { glyphCodeForName } from '@/lib/glyph-code';
+import { ChatAvatar } from '@/pages/chat/components/chat-parts';
 
 const VARIANTS = ['default', 'secondary', 'outline', 'ghost', 'destructive', 'link'] as const;
 const SIZES = ['sm', 'default', 'lg'] as const;
@@ -73,6 +76,7 @@ const QUALITY_CLASS: Record<(typeof QUALITIES)[number], string> = {
   gold: 'text-q-gold',
   corrupted: 'text-q-corrupted',
 };
+const GLYPH_NAMES = ['errolgr', 'pd2trader', 'SomeTrader', 'Unknown', 'Ößé名前', 'ZonPala', 'hammerdin', 'TradeBot'];
 
 function Section({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
   return (
@@ -312,6 +316,25 @@ export default function PrimitivesGallery() {
                   style={{ fontFamily: 'DiabloFont' }}>
                   {q}
                 </span>
+              ))}
+            </div>
+          </Section>
+
+          <Section title="Tomb glyphs (trader avatars)"
+            className="col-span-3">
+            <div className="flex flex-wrap items-end gap-4">
+              {GLYPH_NAMES.map((name, i) => (
+                <div key={name}
+                  className="flex flex-col items-center gap-1 text-[11px] text-muted-foreground">
+                  <ChatAvatar name={name}
+                    size={44}
+                    presence={i % 3 === 0 ? 'ingame' : i % 3 === 1 ? 'online' : undefined} />
+                  <ChatAvatar name={name}
+                    size={28} />
+                  <TombGlyph code={glyphCodeForName(name)}
+                    size={16} />
+                  {name}
+                </div>
               ))}
             </div>
           </Section>
