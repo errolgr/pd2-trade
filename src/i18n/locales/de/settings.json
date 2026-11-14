@@ -278,6 +278,15 @@
         "description": "Der Diablo II-Ordner konnte nicht automatisch erkannt werden. Bitte gib ihn manuell ein."
       },
       "autoDetect": "Automatisch erkennen",
+      "browse": "Durchsuchen…",
+      "clear": "Leeren (automatisch erkennen)",
+      "check": {
+        "valid": "Diablo II-Installation gefunden.",
+        "missing": "Dieser Ordner existiert nicht.",
+        "notInstall": "Hier ist keine Diablo II-Installation: Wähle den Ordner, der den Ordner ProjectD2 enthält.",
+        "winePrefix": "Das ist ein Wine-Präfix. Diablo II ist installiert in {{path}}",
+        "useInstall": "Diesen Ordner verwenden"
+      },
       "label": "Diablo II-Ordner"
     },
     "game": {

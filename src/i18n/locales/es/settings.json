@@ -281,6 +281,15 @@
         "description": "No se pudo detectar automáticamente el directorio de Diablo II. Introdúcelo manualmente."
       },
       "autoDetect": "Detectar",
+      "browse": "Examinar…",
+      "clear": "Borrar (detectar automáticamente)",
+      "check": {
+        "valid": "Instalación de Diablo II encontrada.",
+        "missing": "Esta carpeta no existe.",
+        "notInstall": "Aquí no hay ninguna instalación de Diablo II: elige la carpeta que contiene la carpeta ProjectD2.",
+        "winePrefix": "Esto es un prefijo de Wine. Diablo II está instalado en {{path}}",
+        "useInstall": "Usar esta carpeta"
+      },
       "label": "Directorio de Diablo II"
     },
     "game": {

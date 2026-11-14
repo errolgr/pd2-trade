@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormMessage } from '@/components/ui/form';
@@ -6,9 +6,10 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useOptions } from '@/hooks/useOptions';
 import { Input } from '@/components/ui/input';
+import { Tip } from '@/components/ui/tooltip';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { isTauri, invoke } from '@tauri-apps/api/core';
-import { FolderSearch, Wand2 } from 'lucide-react';
+import { CircleCheck, FolderOpen, FolderSearch, TriangleAlert, Wand2, X } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { getSeasonSettingOptions } from '@/lib/seasons';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
@@ -30,11 +31,19 @@ const makeAppearanceFormSchema = (t: TFunction) =>
 
 type AppearanceFormValues = z.infer<ReturnType<typeof makeAppearanceFormSchema>>;
 
+/** `check_diablo2_directory`: what a typed or picked Diablo II directory holds. */
+interface DirectoryCheck {
+  status: 'valid' | 'winePrefix' | 'notInstall' | 'missing';
+  /** The Diablo II install inside a Wine prefix. */
+  resolved: string | null;
+}
+
 export function GeneralForm() {
   const { t } = useTranslation('settings');
   const { settings, isLoading, updateSettings } = useOptions();
   const appearanceFormSchema = React.useMemo(() => makeAppearanceFormSchema(t), [t]);
   const [detectedDirectory, setDetectedDirectory] = React.useState<string | null>(null);
+  const [directoryCheck, setDirectoryCheck] = React.useState<DirectoryCheck | null>(null);
   const debounceRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Always call hooks at the top level
@@ -46,6 +55,7 @@ export function GeneralForm() {
       diablo2Directory: settings?.diablo2Directory || '',
     },
   });
+  const directory = useWatch({ control: form.control, name: 'diablo2Directory' });
 
   // Reset form when settings change externally
   React.useEffect(() => {
@@ -93,6 +103,25 @@ export function GeneralForm() {
         .catch(console.error);
     }
   }, [detectedDirectory]);
+
+  // Check the typed/picked directory once typing pauses (the folder lives on disk, only Rust can look)
+  React.useEffect(() => {
+    const path = directory?.trim();
+    setDirectoryCheck(null);
+    if (!isTauri() || !path) return;
+    let stale = false;
+    const timer = setTimeout(() => {
+      invoke<DirectoryCheck>('check_diablo2_directory', { path })
+        .then((check) => {
+          if (!stale) setDirectoryCheck(check);
+        })
+        .catch(console.error);
+    }, 300);
+    return () => {
+      stale = true;
+      clearTimeout(timer);
+    };
+  }, [directory]);
 
   if (isLoading || !settings) {
     return <SettingsSkeleton rows={4} />;
@@ -224,6 +253,37 @@ export function GeneralForm() {
                         ref={field.ref}
                       />
                     </FormControl>
+                    {field.value && (
+                      <Tip label={t('general.directory.clear')}>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label={t('general.directory.clear')}
+                          onClick={() => field.onChange('')}
+                        >
+                          <X />
+                        </Button>
+                      </Tip>
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={async () => {
+                        if (!isTauri()) return;
+                        try {
+                          const picked = await invoke<string | null>('pick_diablo2_directory', {
+                            current: field.value || detectedDirectory || null,
+                          });
+                          if (picked) field.onChange(picked);
+                        } catch (error) {
+                          console.error('Failed to pick directory:', error);
+                        }
+                      }}
+                    >
+                      <FolderOpen />
+                      {t('general.directory.browse')}
+                    </Button>
                     <Button
                       type="button"
                       variant="outline"
@@ -253,6 +313,8 @@ export function GeneralForm() {
                   </>
                 }
               >
+                {directoryCheck && <DirectoryCheckNote check={directoryCheck}
+                  onUse={field.onChange} />}
                 <FormMessage />
               </SettingsRow>
             )}
@@ -289,5 +351,39 @@ export function GeneralForm() {
         </SettingsGroup>
       </div>
     </Form>
+  );
+}
+
+/** What the chosen Diablo II directory holds; a Wine prefix offers the install inside it. */
+function DirectoryCheckNote({ check, onUse }: { check: DirectoryCheck; onUse: (path: string) => void }) {
+  const { t } = useTranslation('settings');
+  if (check.status === 'valid') {
+    return (
+      <p className="flex items-center gap-1.5 text-[13px] text-success">
+        <CircleCheck className="size-3.5 shrink-0" />
+        {t('general.directory.check.valid')}
+      </p>
+    );
+  }
+  return (
+    <div role="alert"
+      className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-warning">
+      <TriangleAlert className="size-3.5 shrink-0" />
+      <span className="min-w-0 wrap-anywhere">
+        {check.status === 'winePrefix' && check.resolved
+          ? t('general.directory.check.winePrefix', { path: check.resolved })
+          : check.status === 'missing'
+            ? t('general.directory.check.missing')
+            : t('general.directory.check.notInstall')}
+      </span>
+      {check.status === 'winePrefix' && check.resolved && (
+        <Button type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => onUse(check.resolved!)}>
+          {t('general.directory.check.useInstall')}
+        </Button>
+      )}
+    </div>
   );
 }
