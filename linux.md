@@ -66,6 +66,10 @@ The frontend required updates to support the new configuration requirements.
 - **Current State**: Focus, game rect and `focus_diablo` use X11 (`_NET_ACTIVE_WINDOW`). Under native Wayland (no XWayland for the game) the game window cannot be found.
 - **Impact**: Without a game window the overlay covers the primary monitor, panels are placed relative to the whole screen, and global hotkeys cannot tell whether the game is in front.
 - **Mitigation**: A warning is displayed in the Settings > General tab. Users should be aware of this behavior.
+- **Example: PD2LCP**: Its bundled Wine prefers native Wayland, so Trader never sees the game window and hotkeys/`Ctrl+O` stay off. Fixes:
+  - PD2LCP v1.0.2+ **Force X11** option (works on KDE Plasma 6.8+ only; older Plasma falls back to the `wayland-0` socket).
+  - Or, in the PD2LCP Wine prefix (works everywhere): `wine reg add 'HKCU\Software\Wine\Drivers' /v Graphics /d x11 /f`
+  - Check: `xprop -root _NET_CLIENT_LIST` should list a "Diablo II" window; Trader then picks it up.
 
 ### Click-through on Wayland
 
