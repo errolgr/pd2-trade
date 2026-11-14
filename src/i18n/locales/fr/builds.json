@@ -6,6 +6,8 @@
     "lookupLabel": "Rechercher un personnage",
     "mode": "Mode",
     "followingShortcut": "Suivis ({{n}})",
+    "myCharacter": "Mon personnage : {{name}}",
+    "myCharacterUnavailable": "Connecte-toi et choisis ton personnage dans Paramètres › Compte pour y accéder directement",
     "tabs": {
       "meta": "Méta",
       "characters": "Personnages"
