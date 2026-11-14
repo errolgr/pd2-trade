@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
-import { Search, Star, Trophy } from 'lucide-react';
+import { Search, Star, Trophy, UserRound } from 'lucide-react';
 import { fadeIn, springSnappy } from '@/lib/motion';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Tip, TooltipProvider } from '@/components/ui/tooltip';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
 import { usePanel, useOverlay } from '@/overlay';
 import { useOptions } from '@/hooks/useOptions';
+import { legacySimCharacter } from '@/lib/sim-preferences';
 import { type BuildsFilters, type BuildsMode, EMPTY_BUILDS_FILTERS } from '@/lib/builds-api';
 import type { BuildsPanelPayload, BuildsTab } from './lib/types';
 import { type BuildsActions, BuildsActionsContext } from './lib/context';
@@ -31,6 +32,9 @@ const BuildsPage: React.FC = () => {
 
   const [tab, setTab] = useState<BuildsTab>('meta');
   const followedCount = settings?.followedBuildCharacters?.length ?? 0;
+  // The user's own character: the default ladder character chosen in Settings › Account (needs sign-in)
+  const [legacyCharacter] = useState(legacySimCharacter);
+  const myCharacter = settings?.pd2Token ? settings.simCharacter || legacyCharacter : '';
   // Unpicked: Following when the user follows anyone (that list is what they come back for), else Mine
   const [charactersViewChoice, setCharactersView] = useState<CharactersView | null>(null);
   const charactersView: CharactersView = charactersViewChoice ?? (followedCount > 0 ? 'following' : 'mine');
@@ -109,6 +113,10 @@ const BuildsPage: React.FC = () => {
     setTab('characters');
     setCharactersView('following');
     setCharacter(null);
+  };
+
+  const showMyCharacter = () => {
+    if (myCharacter) setCharacter({ name: myCharacter });
   };
 
   const openLookup = () => {
@@ -200,6 +208,27 @@ const BuildsPage: React.FC = () => {
                       </Button>
                     </Tip>
                   )}
+                  <Tip
+                    label={
+                      myCharacter ? t('page.myCharacter', { name: myCharacter }) : t('page.myCharacterUnavailable')
+                    }
+                  >
+                    {/* A disabled button gets no pointer events: the span keeps the tooltip reachable */}
+                    <span tabIndex={myCharacter ? undefined : 0}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 gap-1 px-2 text-xs text-muted-foreground"
+                        aria-label={
+                          myCharacter ? t('page.myCharacter', { name: myCharacter }) : t('page.myCharacterUnavailable')
+                        }
+                        disabled={!myCharacter}
+                        onClick={showMyCharacter}
+                      >
+                        <UserRound className="size-3.5" />
+                      </Button>
+                    </span>
+                  </Tip>
                   <Tabs
                     value={character ? '' : tab}
                     onValueChange={(v) => {

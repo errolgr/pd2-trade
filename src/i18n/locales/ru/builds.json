@@ -6,6 +6,8 @@
     "lookupLabel": "Найти персонажа",
     "mode": "Режим",
     "followingShortcut": "Отслеживаемые ({{n}})",
+    "myCharacter": "Мой персонаж: {{name}}",
+    "myCharacterUnavailable": "Войдите и выберите персонажа в Настройки › Аккаунт, чтобы сразу перейти к нему",
     "tabs": {
       "meta": "Мета",
       "characters": "Персонажи"

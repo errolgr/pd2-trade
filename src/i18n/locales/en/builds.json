@@ -6,6 +6,8 @@
     "lookupLabel": "Look up a character",
     "mode": "Mode",
     "followingShortcut": "Following ({{n}})",
+    "myCharacter": "My character: {{name}}",
+    "myCharacterUnavailable": "Sign in and choose your character in Settings › Account to jump to it",
     "tabs": {
       "meta": "Meta",
       "characters": "Characters"

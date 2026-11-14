@@ -3,6 +3,7 @@ export const changeLog = {
     "🔧 Offers on your listings show up in the overlay again. The offer popup came, but the chat's Selling list stayed empty and View offer led nowhere: PD2 no longer sends a listing's offers along with your listings, so they are now read separately",
     "🔧 Linux (deb/rpm, or an AppImage in a folder you can't write to): updates no longer download again and again only to fail; you get the release page link right away",
     '🔧 Linux: the AppImage starts again on Arch, CachyOS, EndeavourOS, Fedora and other distros with a newer Mesa, instead of exiting with "Could not create default EGL display"',
+    '🆕 Builds: a My character button next to the mode switch opens your own character in one click (the default character chosen in Settings › Account)',
   ],
   '0.11.2': [
     '🆕 Market browser: elemental damage pseudo stats over every Adds X-Y fire, cold and lightning line: "Adds #-# Total Elemental Damage" with Min dmg and Max dmg ranges (Adds 4-20 fire + 1-114 lightning = Adds 5-134) and "Average Elemental Damage" (Adds 6-36 fire + 4-114 lightning = 80)',

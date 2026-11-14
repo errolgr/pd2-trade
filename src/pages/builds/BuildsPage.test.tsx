@@ -341,6 +341,23 @@ describe('BuildsPage Mine tab', () => {
   });
 });
 
+describe('BuildsPage My character', () => {
+  it("jumps to the user's chosen character", async () => {
+    settings.pd2Token = 'token';
+    settings.simCharacter = 'Hammerdin';
+    render(<BuildsPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'My character: Hammerdin' }));
+    expect(await screen.findByRole('heading', { name: 'Hammerdin' })).toBeTruthy();
+  });
+
+  it('is disabled while signed out or with no character chosen', () => {
+    settings.simCharacter = 'Hammerdin';
+    render(<BuildsPage />);
+    const button = screen.getByRole('button', { name: /Sign in and choose your character/ });
+    expect((button as HTMLButtonElement).disabled).toBe(true);
+  });
+});
+
 describe('BuildsPage Following', () => {
   const HAMMERDIN = { name: 'Hammerdin', mode: 'softcore' as const };
 
