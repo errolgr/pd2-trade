@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { defaultFilters, mergeFilters, upgradeFilters, withSource } from './defaults';
-import { itemArtUrl, itemDisplayName, listingAge, listingUrl, sellerAccount } from './listing';
+import { itemArtUrl, itemDisplayName, listingAge, listingUrl, sellerAccount, sellerGlyphName } from './listing';
 import { applyPreset, BUILT_IN_PRESETS } from './presets';
 import { PSEUDO_STATS } from './pseudo';
 import { STAT_OPTIONS } from './stats';
@@ -35,6 +35,15 @@ describe('listing helpers', () => {
     expect(sellerAccount(l)).toBe('selleracc');
     expect(sellerAccount({ ...l, item: { ...l.item, account_id: '' } })).toBe('selleracc');
     expect(sellerAccount({ ...l, item: { ...l.item, account_id: '' }, user: undefined })).toBeNull();
+  });
+
+  it('draws the glyph from the trader’s main account, not the account the item was listed from', () => {
+    const l = listing();
+    const user = { ...l.user, game: { ...l.user.game, accounts: ['heidevolk', 'jetrouvepasgr'] } };
+    const multi = { ...l, user, item: { ...l.item, account_id: 'jetrouvepasgr' } } as MarketListingEntry;
+    expect(sellerGlyphName(multi)).toBe('heidevolk');
+    expect(sellerGlyphName(withUser(multi, { in_game_account: 'Playing' }))).toBe('Playing');
+    expect(sellerGlyphName({ ...multi, user: undefined } as unknown as MarketListingEntry)).toBe('jetrouvepasgr');
   });
 
   it('names rares by quality and base, uniques by name', () => {

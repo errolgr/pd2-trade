@@ -18,7 +18,7 @@ import type { ItemDetail, MarketListingEntry } from '@/common/types/pd2-website/
 import type { JewelElement } from '@/pages/chat/lib/listing-art';
 import { useListingActions } from '../hooks/useListingActions';
 import { buildCardModel, modMatchesStatKey, type CardMod, type SocketGroup } from '../lib/card-model';
-import { listingAge, sellerGlyphName } from '../lib/listing';
+import { listingAge, sellerAccount, sellerGlyphName } from '../lib/listing';
 import { isAnniversaryItem } from '../lib/anniversary';
 import type { MarketApi, ScoredListing } from '../lib/types';
 import { itemNameColor } from './ItemTooltip';
@@ -323,7 +323,8 @@ const ResultCard = React.memo(function ResultCard({
     .filter(Boolean)
     .join(' · ');
   const req = item.requirements;
-  const account = sellerGlyphName(listing);
+  const account = sellerAccount(listing) || listing.user?.username;
+  const glyphName = sellerGlyphName(listing);
   const inGame = useRowOnline(listing.user_last_ingame);
 
   return (
@@ -505,8 +506,8 @@ const ResultCard = React.memo(function ResultCard({
             <OnlineDots listing={listing} />
             {account && (
               <>
-                <TombGlyph code={glyphCodeForName(account)}
-                  size={18} />
+                {glyphName && <TombGlyph code={glyphCodeForName(glyphName)}
+                  size={18} />}
                 <SellerName onOpen={actions.openTrader}
                   className="font-semibold text-foreground">
                   {account}

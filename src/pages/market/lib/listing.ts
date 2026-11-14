@@ -33,9 +33,21 @@ export function sellerAccount(listing: Pick<MarketListingEntry, 'user' | 'item'>
   return listing.user?.in_game_account || listing.item?.account_id || listing.user?.game?.accounts?.[0] || null;
 }
 
-/** The name a seller's tomb glyph is drawn from: their account, else their username (as chat's traderGlyphName). */
+/**
+ * The name a seller's tomb glyph is drawn from, by chat's traderGlyphName rule (in-game account, preferred account,
+ * first account, username), so a trader has one glyph everywhere. The item's own account (sellerAccount) is only the
+ * fallback: a user with several accounts lists from any of them.
+ */
 export function sellerGlyphName(listing: Pick<MarketListingEntry, 'user' | 'item'>): string | null {
-  return sellerAccount(listing) || listing.user?.username || null;
+  const user = listing.user;
+  return (
+    user?.in_game_account ||
+    user?.game?.preferences?.account ||
+    user?.game?.accounts?.[0] ||
+    user?.username ||
+    listing.item?.account_id ||
+    null
+  );
 }
 
 /** Name as the site's listing card titles it: rares/magic/crafted by quality + base, everything else by name. */
