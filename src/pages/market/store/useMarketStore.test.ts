@@ -15,6 +15,7 @@ import {
   MAX_SAVED_SEARCHES,
   MAX_WATCHED_SEARCHES,
   mergeServerSavedSearches,
+  moveSearchTo,
   parseMarketPrefs,
   resetMarketPrefs,
 } from './useMarketStore';
@@ -209,14 +210,22 @@ describe('saved searches (local)', () => {
     await flush();
     expect(written().at(-1).savedSearches[1]).toMatchObject({ name: 'Cheap Shako', watching: true });
 
-    expect(actions.removeSearch(spirit.id)).toEqual(spirit);
+    expect(actions.removeSearch(spirit.id)).toEqual({ search: spirit, index: 0 });
     await flush();
-    expect(written().at(-1).savedSearches.map((s: SavedSearch) => s.id)).toEqual([shako!.id]);
+    expect(
+      written()
+        .at(-1)
+        .savedSearches.map((s: SavedSearch) => s.id),
+    ).toEqual([shako!.id]);
   });
 
   it('restores a deleted search where it was, watched again when the cap allows', async () => {
     await loadFrom({
-      savedSearches: [saved('c', { createdAt: '2026-10-23T00:00:00Z' }), saved('b', { watching: true, createdAt: '2026-10-22T00:00:00Z' }), saved('a')],
+      savedSearches: [
+        saved('c', { createdAt: '2026-10-23T00:00:00Z' }),
+        saved('b', { watching: true, createdAt: '2026-10-22T00:00:00Z' }),
+        saved('a'),
+      ],
     });
     const removed = actions.removeSearch('b')!;
     actions.restoreSearch(removed);
@@ -230,6 +239,63 @@ describe('saved searches (local)', () => {
     expect(getMarketPrefs().savedSearches).toHaveLength(3);
   });
 
+  it('reorders searches and keeps the order across a restart; files from before reordering keep theirs', async () => {
+    // A file written before searches could be reordered: newest first, as saved
+    await loadFrom({
+      savedSearches: [
+        saved('c', { createdAt: '2026-10-23T00:00:00Z' }),
+        saved('b', { watching: true, createdAt: '2026-10-22T00:00:00Z' }),
+        saved('a'),
+      ],
+    });
+    const ids = () => getMarketPrefs().savedSearches.map((s) => s.id);
+    expect(ids()).toEqual(['c', 'b', 'a']);
+
+    actions.moveSearch('a', 0);
+    actions.moveSearch('c', 2);
+    expect(ids()).toEqual(['a', 'b', 'c']);
+    actions.moveSearch('b', 1); // already there
+    actions.moveSearch('missing', 0);
+    await flush();
+    expect(written()).toHaveLength(2);
+    expect(
+      written()
+        .at(-1)
+        .savedSearches.map((s: SavedSearch) => s.id),
+    ).toEqual(['a', 'b', 'c']);
+
+    // Undo puts a deleted search back where it was in the user's order, not by date
+    actions.restoreSearch(actions.removeSearch('b')!);
+    expect(ids()).toEqual(['a', 'b', 'c']);
+    // A new search goes first
+    const d = actions.saveSearch('D', filters('d'))!;
+    expect(ids()).toEqual([d.id, 'a', 'b', 'c']);
+    await flush();
+
+    // Restart: the order comes back from the file, nothing lost
+    const file = written().at(-1);
+    resetMarketPrefs();
+    await loadFrom(file);
+    expect(getMarketPrefs().savedSearches.map((s) => [s.id, s.watching])).toEqual([
+      [d.id, false],
+      ['a', false],
+      ['b', true],
+      ['c', false],
+    ]);
+  });
+
+  it('moves a search to a position, clamped to the list', () => {
+    const list = [saved('a'), saved('b'), saved('c')];
+    const ids = (searches: SavedSearch[]) => searches.map((s) => s.id);
+    expect(ids(moveSearchTo(list, 'c', 0))).toEqual(['c', 'a', 'b']);
+    expect(ids(moveSearchTo(list, 'a', 1))).toEqual(['b', 'a', 'c']);
+    expect(ids(moveSearchTo(list, 'a', 99))).toEqual(['b', 'c', 'a']);
+    expect(ids(moveSearchTo(list, 'c', -5))).toEqual(['c', 'a', 'b']);
+    expect(moveSearchTo(list, 'b', 1)).toBe(list);
+    expect(moveSearchTo(list, 'missing', 0)).toBe(list);
+    expect(ids(list)).toEqual(['a', 'b', 'c']);
+  });
+
   it('refuses over the caps (25 saved, 10 watched), saying why', async () => {
     await loadFrom({
       savedSearches: Array.from({ length: MAX_WATCHED_SEARCHES }, (_, i) => saved(`w${i}`, { watching: true })),
@@ -239,7 +305,8 @@ describe('saved searches (local)', () => {
     const plain = actions.saveSearch('plain', filters('plain'))!;
     expect(actions.setSearchWatching(plain.id, true)).toBe(false);
 
-    for (let i = getMarketPrefs().savedSearches.length; i < MAX_SAVED_SEARCHES; i++) actions.saveSearch(`s${i}`, filters(`s${i}`));
+    for (let i = getMarketPrefs().savedSearches.length; i < MAX_SAVED_SEARCHES; i++)
+      actions.saveSearch(`s${i}`, filters(`s${i}`));
     expect(actions.saveSearch('one too many', filters('x'))).toBeNull();
     expect(showToast).toHaveBeenLastCalledWith(expect.objectContaining({ title: 'Too many saved searches' }));
     expect(getMarketPrefs().savedSearches).toHaveLength(MAX_SAVED_SEARCHES);
@@ -266,7 +333,7 @@ describe('saved searches (local)', () => {
 });
 
 describe('import from pd2trader.com (deprecated saved searches)', () => {
-  it('adds the server searches it does not have, within the caps', () => {
+  it('adds the server searches it does not have, within the caps, keeping the local order', () => {
     const local = [saved('l1', { watching: true }), saved('dup', { name: 'Same', createdAt: '2026-10-25T00:00:00Z' })];
     const merged = mergeServerSavedSearches(local, [
       server('l1'),
@@ -274,24 +341,27 @@ describe('import from pd2trader.com (deprecated saved searches)', () => {
       server('n1', { alert: true, createdAt: '2026-10-24T00:00:00Z' }),
       server('n2', { name: '  ', createdAt: '2026-10-20T00:00:00Z' }),
     ]);
+    // Each import goes before the first local search older than it; l1 stays ahead of dup as the user had them
     expect(merged.map((s) => [s.id, s.name, s.watching])).toEqual([
-      ['dup', 'Same', false],
       ['n1', 'N1', true],
       ['l1', 'L1', true],
+      ['dup', 'Same', false],
       ['n2', 'n2 · SC NL', false],
     ]);
 
     const fullWatch = Array.from({ length: MAX_WATCHED_SEARCHES }, (_, i) => saved(`w${i}`, { watching: true }));
-    expect(mergeServerSavedSearches(fullWatch, [server('x', { alert: true })]).find((s) => s.id === 'x')?.watching).toBe(
-      false,
-    );
+    expect(
+      mergeServerSavedSearches(fullWatch, [server('x', { alert: true })]).find((s) => s.id === 'x')?.watching,
+    ).toBe(false);
     const full = Array.from({ length: MAX_SAVED_SEARCHES }, (_, i) => saved(`s${i}`));
     expect(mergeServerSavedSearches(full, [server('x')])).toHaveLength(MAX_SAVED_SEARCHES);
   });
 
   it('imports once: marks the file and never asks the server again', async () => {
     await loadFrom({ savedSearches: [saved('local')] });
-    vi.mocked(listServerSavedSearches).mockResolvedValue([server('srv', { alert: true, createdAt: '2026-10-22T00:00:00Z' })]);
+    vi.mocked(listServerSavedSearches).mockResolvedValue([
+      server('srv', { alert: true, createdAt: '2026-10-22T00:00:00Z' }),
+    ]);
     await importServerSavedSearches('tok');
     await flush();
     expect(listServerSavedSearches).toHaveBeenCalledExactlyOnceWith('tok');

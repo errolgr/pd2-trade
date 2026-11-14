@@ -462,7 +462,9 @@
     "toastNewMatches": "Notificar nuevas coincidencias",
     "alertsOff": "Las alertas están desactivadas (interruptor de arriba)",
     "alertsFor": "Alertas de {{name}}",
-    "delete": "Eliminar {{name}}"
+    "delete": "Eliminar {{name}}",
+    "moveUp": "Subir {{name}}",
+    "moveDown": "Bajar {{name}}"
   },
   "store": {
     "anyItem": "Cualquier objeto",

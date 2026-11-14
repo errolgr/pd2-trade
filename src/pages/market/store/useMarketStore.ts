@@ -8,6 +8,9 @@
  * copies them here once, on the first sign-in after the update. Files from before then hold theirs under the
  * same `savedSearches` key (`alert` for `watching`).
  *
+ * The saved searches' order is the user's (`moveSearch`); it is the array order, so files from before searches
+ * could be reordered keep the newest-first order they were written in.
+ *
  * Module-level stores like `lib/chat-prefs.ts`; changes are saved right away, in order.
  */
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
@@ -34,7 +37,7 @@ export type MarketViewMode = 'rows' | 'cards';
 
 /** Everything in market-prefs.json. */
 export interface MarketPrefs {
-  /** Newest first. */
+  /** In the user's order (`moveSearch`); a new search goes first. */
   savedSearches: SavedSearch[];
   /** The deprecated pd2trader.com saved searches were imported (once; never asked for again). */
   savedSearchesImported: boolean;
@@ -217,7 +220,8 @@ const newestFirst = (a: { createdAt: string }, b: { createdAt: string }) =>
 
 /**
  * `local` plus the server's saved searches it doesn't have yet (by id, or by name and filters), within the caps:
- * past the saved cap the rest are left out, past the watch cap they come without Watch.
+ * past the saved cap the rest are left out, past the watch cap they come without Watch. The local order is kept;
+ * each imported search goes before the first local one older than it (all newest first when never reordered).
  */
 export function mergeServerSavedSearches(
   local: readonly SavedSearch[],
@@ -237,9 +241,10 @@ export function mergeServerSavedSearches(
     };
     const key = watchKey(search.filters);
     if (merged.some((s) => s.id === search.id || (s.name === search.name && watchKey(s.filters) === key))) continue;
-    merged.push(search);
+    const older = merged.findIndex((s) => newestFirst(search, s) < 0);
+    merged.splice(older < 0 ? merged.length : older, 0, search);
   }
-  return merged.sort(newestFirst);
+  return merged;
 }
 
 /** One import at a time: a second sign-in while one runs waits for it. */
@@ -279,6 +284,22 @@ const editSearch = (id: string, change: (search: SavedSearch) => SavedSearch) =>
   setSearches((searches) =>
     searches.some((s) => s.id === id) ? searches.map((s) => (s.id === id ? change(s) : s)) : searches,
   );
+
+/** A deleted search and where it was in the list (for Undo). */
+export interface RemovedSearch {
+  search: SavedSearch;
+  index: number;
+}
+
+/** `searches` with the one with `id` moved to position `to` (clamped); the same array when nothing moves. */
+export function moveSearchTo(searches: SavedSearch[], id: string, to: number): SavedSearch[] {
+  const from = searches.findIndex((s) => s.id === id);
+  const target = Math.max(0, Math.min(searches.length - 1, Math.trunc(to)));
+  if (from < 0 || from === target) return searches;
+  const next = searches.filter((s) => s.id !== id);
+  next.splice(target, 0, searches[from]);
+  return next;
+}
 
 function toastSearchCap(): void {
   showToast({
@@ -344,14 +365,16 @@ export const marketStoreActions = {
       s.lastSeenBumpedAt && Date.parse(s.lastSeenBumpedAt) >= at ? s : { ...s, lastSeenBumpedAt: bumpedAt },
     );
   },
-  /** Deletes a search; returns it (for Undo via `restoreSearch`). */
-  removeSearch(id: string): SavedSearch | null {
-    const search = local.savedSearches.find((s) => s.id === id) ?? null;
-    if (search) setSearches((searches) => searches.filter((s) => s.id !== id));
-    return search;
+  /** Deletes a search; returns it and where it was (for Undo via `restoreSearch`). */
+  removeSearch(id: string): RemovedSearch | null {
+    const index = local.savedSearches.findIndex((s) => s.id === id);
+    if (index < 0) return null;
+    const search = local.savedSearches[index];
+    setSearches((searches) => searches.filter((s) => s.id !== id));
+    return { search, index };
   },
-  /** Puts a deleted search back (Undo), watched again when the watch cap allows. */
-  restoreSearch(search: SavedSearch): void {
+  /** Puts a deleted search back where it was (Undo), watched again when the watch cap allows. */
+  restoreSearch({ search, index }: RemovedSearch): void {
     const searches = local.savedSearches;
     if (searches.some((s) => s.id === search.id)) return;
     if (searches.length >= MAX_SAVED_SEARCHES) {
@@ -359,7 +382,15 @@ export const marketStoreActions = {
       return;
     }
     const watching = search.watching && watchingCount(searches) < MAX_WATCHED_SEARCHES;
-    setSearches((current) => [...current, { ...search, watching }].sort(newestFirst));
+    setSearches((current) => {
+      const next = [...current];
+      next.splice(Math.min(index, next.length), 0, { ...search, watching });
+      return next;
+    });
+  },
+  /** Moves a search to position `to` in the list (clamped); the order is saved. */
+  moveSearch(id: string, to: number): void {
+    setSearches((searches) => moveSearchTo(searches, id, to));
   },
   addPreset(preset: Omit<StatPreset, 'id' | 'builtIn'>): StatPreset {
     const created: StatPreset = { ...preset, id: crypto.randomUUID(), builtIn: false };

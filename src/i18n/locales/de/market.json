@@ -443,7 +443,9 @@
     "toastNewMatches": "Neue Treffer melden",
     "alertsOff": "Benachrichtigungen sind aus (Schalter oben)",
     "alertsFor": "Benachrichtigungen für {{name}}",
-    "delete": "{{name}} löschen"
+    "delete": "{{name}} löschen",
+    "moveUp": "{{name}} nach oben verschieben",
+    "moveDown": "{{name}} nach unten verschieben"
   },
   "store": {
     "anyItem": "Beliebiger Gegenstand",

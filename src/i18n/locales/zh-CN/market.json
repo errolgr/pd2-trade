@@ -424,7 +424,9 @@
     "toastNewMatches": "新匹配时通知",
     "alertsOff": "提醒已关闭（见上方开关）",
     "alertsFor": "{{name}} 的提醒",
-    "delete": "删除 {{name}}"
+    "delete": "删除 {{name}}",
+    "moveUp": "上移 {{name}}",
+    "moveDown": "下移 {{name}}"
   },
   "store": {
     "anyItem": "任意物品",

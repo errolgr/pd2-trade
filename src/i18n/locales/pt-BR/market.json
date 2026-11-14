@@ -462,7 +462,9 @@
     "toastNewMatches": "Notificar novas correspondências",
     "alertsOff": "Alertas desativados (interruptor acima)",
     "alertsFor": "Alertas de {{name}}",
-    "delete": "Excluir {{name}}"
+    "delete": "Excluir {{name}}",
+    "moveUp": "Mover {{name}} para cima",
+    "moveDown": "Mover {{name}} para baixo"
   },
   "store": {
     "anyItem": "Qualquer item",
