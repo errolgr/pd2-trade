@@ -385,10 +385,26 @@ Function PageLeaveReinstall
       ${OrIf} ${FileExists} "$DESKTOP\${PRODUCTNAME}.lnk"
         StrCpy $WixDesktopShortcut 1
       ${EndIf}
-      ReadRegStr $R1 HKLM "$R6" "UninstallString"
+      ; PD2 Trader: start msiexec itself elevated. Unelevated, msiexec asks the Windows Installer service to
+      ; elevate, and UAC then names the unsigned cached package ("C:\WINDOWS\Installer\<random>.msi", publisher
+      ; Unknown); elevated directly, UAC shows Microsoft's signed Windows Installer. ExecShellWait gives no exit
+      ; code, so the product state tells whether the MSI is gone.
+      ${GetFileName} "$R6" $2 ; the uninstall key name is the MSI product code
+      StrCpy $R1 "/x $2"
       ; PD2 Trader: no "Are you sure you want to uninstall this product?" in the middle of an update
       ${IfThen} $PassiveMode = 1 ${|} StrCpy $R1 "$R1 /passive" ${|}
-      ExecWait '$R1' $0
+      ExecShellWait "runas" "$SYSDIR\msiexec.exe" "$R1"
+      ${If} ${Errors} ; UAC declined or msiexec didn't start: same as cancelling msiexec
+        StrCpy $0 1602
+      ${Else}
+        System::Call 'msi::MsiQueryProductStateW(w r2) i .r0'
+        ${If} $0 = -1 ; INSTALLSTATE_UNKNOWN: removed
+          StrCpy $0 0
+        ${Else}
+          StrCpy $0 1603 ; still installed: msiexec failed
+        ${EndIf}
+      ${EndIf}
+      ClearErrors
     ${Else}
       ReadRegStr $4 SHCTX "${MANUPRODUCTKEY}" ""
       ReadRegStr $R1 SHCTX "${UNINSTKEY}" "UninstallString"
