@@ -45,7 +45,11 @@
       "change7d": "Cambio 7 d",
       "last30Days": "Últimos 30 días",
       "openOnPd2Trader": "Abrir en pd2trader.com",
-      "viewOnWeb": "Ver en la web"
+      "viewOnWeb": "Ver en la web",
+      "clean": "No corrupto {{price}} HR",
+      "cleanListings_one": "No corrupto ({{count}} anuncio)",
+      "cleanListings_many": "No corrupto ({{count}} de anuncios)",
+      "cleanListings_other": "No corrupto ({{count}} anuncios)"
     },
     "corruptions": {
       "thisItem": "Corrupción de este objeto",

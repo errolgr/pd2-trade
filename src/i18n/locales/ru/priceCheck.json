@@ -45,7 +45,12 @@
       "change7d": "За 7 дн.",
       "last30Days": "Последние 30 дней",
       "openOnPd2Trader": "Открыть на pd2trader.com",
-      "viewOnWeb": "Открыть на сайте"
+      "viewOnWeb": "Открыть на сайте",
+      "clean": "Без осквернения {{price}} HR",
+      "cleanListings_one": "Без осквернения ({{count}} объявление)",
+      "cleanListings_few": "Без осквернения ({{count}} объявления)",
+      "cleanListings_many": "Без осквернения ({{count}} объявлений)",
+      "cleanListings_other": "Без осквернения ({{count}} объявления)"
     },
     "corruptions": {
       "thisItem": "Corruption этого предмета",

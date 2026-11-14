@@ -45,7 +45,10 @@
       "change7d": "7-T-Änderung",
       "last30Days": "Letzte 30 Tage",
       "openOnPd2Trader": "Auf pd2trader.com öffnen",
-      "viewOnWeb": "Im Web ansehen"
+      "viewOnWeb": "Im Web ansehen",
+      "clean": "Unkorrumpiert {{price}} HR",
+      "cleanListings_one": "Unkorrumpiert ({{count}} Inserat)",
+      "cleanListings_other": "Unkorrumpiert ({{count}} Inserate)"
     },
     "corruptions": {
       "thisItem": "Corruption dieses Items",
