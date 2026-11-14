@@ -69,9 +69,37 @@ function outgoingOffer(id: string, extra: object = {}) {
 }
 
 interface Api {
+  /** Your listings, each with the offers on it: the fake PD2 below serves them as the real one does. */
   incoming: () => Promise<Response> | Response;
   outgoing: () => Promise<Response> | Response;
   patch: (url: string, body: unknown) => Promise<Response> | Response;
+}
+
+/** What the fake PD2 reads of an incomingListing() fixture. */
+interface FixtureListing {
+  _id: string;
+  offers: object[];
+}
+
+/** market/listing as PD2's REST find answers it: no `offers` on the listings, whatever $resolve asks. */
+async function listingsOf(response: Response): Promise<Response> {
+  if (!response.ok) return response;
+  const { data } = (await response.json()) as { data: FixtureListing[] };
+  return apiResponse({ data: data.map(({ offers: _offers, ...listing }) => listing) });
+}
+
+/** market/offer?listing_id[$in]=…: the listings' offers in pages of $limit from $skip. */
+async function offersOf(response: Response, url: string): Promise<Response> {
+  if (!response.ok) return response;
+  const params = new URLSearchParams(url.split('?')[1]);
+  const ids = new Set([...params].filter(([key]) => key.startsWith('listing_id[$in]')).map(([, id]) => id));
+  const { data } = (await response.json()) as { data: FixtureListing[] };
+  const offers = data
+    .filter((listing) => ids.has(listing._id))
+    .flatMap((listing) => listing.offers.map((offer) => ({ ...offer, listing_id: listing._id })));
+  const skip = Number(params.get('$skip') ?? 0);
+  const limit = Number(params.get('$limit') ?? offers.length);
+  return apiResponse({ total: offers.length, data: offers.slice(skip, skip + limit) });
 }
 
 let api: Api;
@@ -109,7 +137,10 @@ beforeEach(() => {
   vi.mocked(tauriFetch).mockImplementation(async (input, init) => {
     const url = String(input);
     if (init?.method === 'PATCH') return api.patch(url, JSON.parse(String(init.body)));
-    if (url.startsWith('https://api.projectdiablo2.com/market/listing?')) return api.incoming();
+    if (url.startsWith('https://api.projectdiablo2.com/market/listing?')) return listingsOf(await api.incoming());
+    if (url.startsWith('https://api.projectdiablo2.com/market/offer?listing_id')) {
+      return offersOf(await api.incoming(), url);
+    }
     if (url.startsWith('https://api.projectdiablo2.com/market/offer?')) return api.outgoing();
     throw new Error(`unexpected fetch ${url}`);
   });
@@ -168,6 +199,16 @@ describe('useTradeOffers fetching', () => {
       userId: 'user-o1',
       timestamp: new Date('2026-10-18T10:00:00Z'),
     });
+  });
+
+  it('reads every offer on your listings when they span more than one market/offer page', async () => {
+    const many = Array.from({ length: 260 }, (_, i) => websiteOffer(`o${i}`));
+    api.incoming = () =>
+      apiResponse({ data: [incomingListing(many.slice(0, 200)), incomingListing(many.slice(200), { _id: 'L2' })] });
+    const { result } = await renderOffers();
+
+    expect(result.current.incomingOffers.map((o) => o.id)).toEqual(many.map((o) => o._id));
+    expect(result.current.incomingOffers.at(-1)).toMatchObject({ listingId: 'L2', itemName: 'Shako' });
   });
 
   it('maps outgoing offers, falling back to the archived listing when the listing is gone', async () => {
