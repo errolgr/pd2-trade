@@ -281,6 +281,15 @@
         "description": "Não foi possível detectar a pasta do Diablo II. Insira-a manualmente."
       },
       "autoDetect": "Detectar",
+      "browse": "Procurar…",
+      "clear": "Limpar (detectar automaticamente)",
+      "check": {
+        "valid": "Instalação do Diablo II encontrada.",
+        "missing": "Esta pasta não existe.",
+        "notInstall": "Não há instalação do Diablo II aqui: escolha a pasta que contém a pasta ProjectD2.",
+        "winePrefix": "Isto é um prefixo do Wine. O Diablo II está instalado em {{path}}",
+        "useInstall": "Usar esta pasta"
+      },
       "label": "Pasta do Diablo II"
     },
     "game": {

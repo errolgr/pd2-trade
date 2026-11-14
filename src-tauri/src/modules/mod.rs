@@ -1,6 +1,7 @@
 pub mod chat_watcher;
 pub mod commands;
 pub mod config;
+pub mod d2_directory;
 pub mod debug_logger;
 pub mod keyboard;
 pub mod opener;

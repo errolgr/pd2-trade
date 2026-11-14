@@ -1,6 +1,8 @@
-use crate::modules::{opener, system};
+use crate::modules::{d2_directory, opener, system};
 use crate::{chat_watcher, debug_logger, keyboard, window};
+use std::path::Path;
 use tauri::Manager;
+use tauri_plugin_dialog::DialogExt;
 
 #[tauri::command]
 pub fn get_diablo_rect(app_handle: tauri::AppHandle) -> Option<window::WindowRect> {
@@ -126,6 +128,33 @@ pub fn get_diablo2_directory(custom_path: Option<String>) -> Option<String> {
 #[tauri::command]
 pub fn auto_detect_diablo2_directory() -> Option<String> {
     chat_watcher::auto_detect_diablo2_directory().and_then(|p| p.to_str().map(|s| s.to_string()))
+}
+
+/// Whether a typed or picked folder is a Diablo II install (or a Wine prefix holding one).
+#[tauri::command]
+pub fn check_diablo2_directory(path: String) -> d2_directory::DirectoryCheck {
+    d2_directory::check(&path)
+}
+
+/// Native folder picker for the Diablo II directory, so it can be changed without typing (the overlay may not
+/// get the keyboard, e.g. under KWin). A picked Wine prefix comes back as the install inside it. None = cancelled.
+/// Async so the blocking wait runs off the main thread, which shows the dialog.
+#[tauri::command]
+pub async fn pick_diablo2_directory(
+    app_handle: tauri::AppHandle,
+    overlay: tauri::WebviewWindow,
+    current: Option<String>,
+) -> Option<String> {
+    let mut dialog = app_handle.dialog().file().set_parent(&overlay);
+    if let Some(dir) = current.as_deref().map(Path::new).filter(|dir| dir.is_dir()) {
+        dialog = dialog.set_directory(dir);
+    }
+    let picked = dialog.blocking_pick_folder()?.into_path().ok()?;
+    Some(
+        d2_directory::resolve(&picked)
+            .to_string_lossy()
+            .into_owned(),
+    )
 }
 
 #[tauri::command]

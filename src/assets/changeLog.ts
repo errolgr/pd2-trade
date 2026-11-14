@@ -6,6 +6,7 @@ export const changeLog = {
     "🔧 Linux (deb/rpm, or an AppImage in a folder you can't write to): updates no longer download again and again only to fail; you get the release page link right away",
     '🔧 Linux: the AppImage starts again on Arch, CachyOS, EndeavourOS, Fedora and other distros with a newer Mesa, instead of exiting with "Could not create default EGL display"',
     '🆕 Builds: a My character button next to the mode switch opens your own character in one click (the default character chosen in Settings › Account)',
+    "🔧 Settings → Diablo II Directory: a Browse… button picks the folder and a clear button goes back to auto-detect, so it can be changed even when typing into the field doesn't work (KDE Plasma). The field says when a folder isn't a Diablo II install, and on Linux a Wine prefix (Lutris' ~/Games/project-diablo-2) is no longer taken for the game folder: the install inside it is used, so whisper notifications work",
   ],
   '0.11.2': [
     '🆕 Market browser: elemental damage pseudo stats over every Adds X-Y fire, cold and lightning line: "Adds #-# Total Elemental Damage" with Min dmg and Max dmg ranges (Adds 4-20 fire + 1-114 lightning = Adds 5-134) and "Average Elemental Damage" (Adds 6-36 fire + 4-114 lightning = 80)',

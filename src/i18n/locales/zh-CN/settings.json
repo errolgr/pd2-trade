@@ -275,6 +275,15 @@
         "description": "无法自动检测 Diablo II 目录，请手动输入。"
       },
       "autoDetect": "自动检测",
+      "browse": "浏览…",
+      "clear": "清空（自动检测）",
+      "check": {
+        "valid": "已找到 Diablo II 安装。",
+        "missing": "此文件夹不存在。",
+        "notInstall": "此处没有 Diablo II 安装：请选择包含 ProjectD2 文件夹的文件夹。",
+        "winePrefix": "这是一个 Wine 前缀。Diablo II 安装在 {{path}}",
+        "useInstall": "使用此文件夹"
+      },
       "label": "Diablo II 目录"
     },
     "game": {
