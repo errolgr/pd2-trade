@@ -3217,6 +3217,34 @@ export const itemTypes = [
         value: 'ceh',
       },
       {
+        label: "Corrupted Amazon's Ear",
+        value: 'ivez',
+      },
+      {
+        label: "Corrupted Assassin's Ear",
+        value: 'ivea',
+      },
+      {
+        label: "Corrupted Barbarian's Ear",
+        value: 'iveb',
+      },
+      {
+        label: "Corrupted Druid's Ear",
+        value: 'ived',
+      },
+      {
+        label: "Corrupted Necromancer's Ear",
+        value: 'iven',
+      },
+      {
+        label: "Corrupted Paladin's Ear",
+        value: 'ivep',
+      },
+      {
+        label: "Corrupted Sorceress's Ear",
+        value: 'ives',
+      },
+      {
         label: 'Demonic Insignia',
         value: 'lucb',
       },
