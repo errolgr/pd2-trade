@@ -1072,7 +1072,7 @@ describe('ItemOverlayWidget matches median', () => {
     await waitFor(() => expect(medianPart()).toBeNull());
   });
 
-  it('hover shows the spread: count, histogram with the median on its axis, stat row and the Live basis', async () => {
+  it('hover shows the spread: count, ask ladder with the median marked, stat row and the Live basis', async () => {
     searchListings.mockResolvedValueOnce(pageWithStats(stats()));
     renderWidget(rareRing());
     fireEvent.click(searchButton());
@@ -1081,8 +1081,14 @@ describe('ItemOverlayWidget matches median', () => {
     const popover = await screen.findByRole('dialog');
     expect(within(popover).getByText('Price spread')).not.toBeNull();
     expect(within(popover).getByText('23 listings')).not.toBeNull();
-    expect(within(popover).getByTestId('price-spread-chart')).not.toBeNull();
-    expect(within(within(popover).getByTestId('price-spread-axis')).getByText('2.50')).not.toBeNull();
+    const ladder = within(within(popover).getByTestId('price-ladder'));
+    const row = (level: string) => {
+      const label = ladder.getByText(level);
+      return [label.previousElementSibling!.textContent, label.nextElementSibling!.nextElementSibling!.textContent];
+    };
+    expect(row('1.25')).toEqual(['', '6']);
+    expect(row('2.5')).toEqual(['▸', '12']);
+    expect(row('4')).toEqual(['', '5']);
     const stat = (label: string) => within(popover).getByText(label).nextElementSibling!.textContent;
     expect(stat('Median')).toBe('2.50 HR');
     expect(stat('Middle half')).toBe('1.50–4.00');

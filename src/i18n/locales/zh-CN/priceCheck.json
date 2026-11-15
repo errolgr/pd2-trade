@@ -89,6 +89,7 @@
         "middleHalf": "中间一半",
         "average": "平均",
         "listings_other": "{{count}} 个挂单",
+        "more": "另有 {{n}} 个，{{price}} HR 起",
         "basisLive": "在售挂单的当前要价。",
         "basisExpired": "已结束挂单（过期、下架或售出）的最后要价，并非成交价。"
       },

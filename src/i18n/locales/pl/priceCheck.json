@@ -110,6 +110,7 @@
         "listings_few": "{{count}} ogłoszenia",
         "listings_many": "{{count}} ogłoszeń",
         "listings_other": "{{count}} ogłoszenia",
+        "more": "+{{n}} więcej od {{price}} HR",
         "basisLive": "Aktualne ceny wywoławcze aktywnych ogłoszeń.",
         "basisExpired": "Ostatnie ceny wywoławcze zakończonych ogłoszeń (wygasłych, usuniętych lub sprzedanych), nie ceny sprzedaży."
       },

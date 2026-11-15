@@ -49,81 +49,43 @@ export function parsePriceStats(raw: unknown): MarketPriceStats | undefined {
   };
 }
 
-/** One bar of a spread chart: listings priced in `[from, to)` (outliers folded into the end bars). */
-export interface SpreadBar {
-  from: number;
-  to: number;
-  count: number;
+/** One row of the price ladder: a histogram bucket's listings. */
+export interface LadderRow extends PriceStatsBucket {
+  /** The median price falls in this bucket. */
+  median: boolean;
+  /** The bucket overlaps the middle half (25th to 75th percentile). */
+  middleHalf: boolean;
 }
 
-export interface SpreadChart {
-  bars: SpreadBar[];
-  /** The axis ends (log scale): the first bar's `from`, the last bar's `to`. */
-  min: number;
-  max: number;
-  /** Where a price sits on the axis, 0..1 (clamped). */
-  at: (price: number) => number;
+export interface PriceLadder {
+  /** The cheapest non-empty buckets, cheapest first (at most LADDER_ROWS). */
+  rows: LadderRow[];
+  /** The most listings in one shown row: a full-width bar. */
+  peak: number;
+  /** The buckets past the shown rows: their listings, and the price the cheapest of them starts at. */
+  more: { count: number; from: number } | null;
 }
 
-/** Ratio of a server histogram step (R10: ×10^0.1). */
-const STEP = 10 ** 0.1;
-const MIN_BARS = 6;
-const MAX_BARS = 16;
-/** Share of listings cut off each end of the axis (folded into its end bars): one far outlier never squashes it. */
-const TAIL = 0.05;
+/** Most rows the ladder shows; pricier buckets are summed into `more`. */
+export const LADDER_ROWS = 8;
 
 /**
- * The stats' histogram as at most MAX_BARS equal bars on a log price axis spanning its 5th to 95th percentile
- * buckets (at least MIN_BARS steps wide, around the middle); listings outside it count in the end bars. Null without
- * buckets.
+ * The stats' histogram as an ask ladder: one row per non-empty bucket, cheapest first, marking the median's bucket
+ * and the ones overlapping the middle half. Null without buckets.
  */
-export function spreadChart(stats: MarketPriceStats): SpreadChart | null {
-  const buckets = stats.histogram.filter((b) => b.count > 0);
-  const total = buckets.reduce((n, b) => n + b.count, 0);
-  if (!total) return null;
-  // A bucket's ends on the log axis: the open-ended last one is one step wide, the one from 0 one step below its top
-  const top = (b: PriceStatsBucket) => b.to ?? b.from * STEP;
-  const bottom = (b: PriceStatsBucket) => (b.from > 0 ? b.from : top(b) / STEP);
-  let seen = 0;
-  let lo = buckets[0];
-  let hi = buckets[buckets.length - 1];
-  let loFound = false;
-  for (const b of buckets) {
-    seen += b.count;
-    if (!loFound && seen > total * TAIL) {
-      lo = b;
-      loFound = true;
-    }
-    if (seen >= total * (1 - TAIL)) {
-      hi = b;
-      break;
-    }
-  }
-  let logMin = Math.log(bottom(lo));
-  let logMax = Math.log(top(hi));
-  const steps = Math.round((logMax - logMin) / Math.log(STEP));
-  if (steps < MIN_BARS) {
-    const widen = ((MIN_BARS - steps) * Math.log(STEP)) / 2;
-    logMin -= widen;
-    logMax += widen;
-  }
-  const n = Math.min(MAX_BARS, Math.max(MIN_BARS, steps));
-  const width = (logMax - logMin) / n;
-  const bars: SpreadBar[] = Array.from({ length: n }, (_, i) => ({
-    from: Math.exp(logMin + i * width),
-    to: Math.exp(logMin + (i + 1) * width),
-    count: 0,
+export function priceLadder(stats: MarketPriceStats): PriceLadder | null {
+  const buckets = stats.histogram.filter((bucket) => bucket.count > 0);
+  if (buckets.length === 0) return null;
+  const { p25, median, p75 } = stats;
+  const rows = buckets.slice(0, LADDER_ROWS).map((bucket) => ({
+    ...bucket,
+    median: median !== null && median >= bucket.from && (bucket.to === null || median < bucket.to),
+    middleHalf: p25 !== null && p75 !== null && bucket.from <= p75 && (bucket.to === null || bucket.to > p25),
   }));
-  for (const b of buckets) {
-    // Each bucket counts in the bar holding its middle (log scale); buckets are never wider than a bar
-    const mid = (Math.log(bottom(b)) + Math.log(top(b))) / 2;
-    const i = Math.min(n - 1, Math.max(0, Math.floor((mid - logMin) / width)));
-    bars[i].count += b.count;
-  }
+  const rest = buckets.slice(LADDER_ROWS);
   return {
-    bars,
-    min: bars[0].from,
-    max: bars[n - 1].to,
-    at: (price) => (price > 0 ? Math.min(1, Math.max(0, (Math.log(price) - logMin) / (logMax - logMin))) : 0),
+    rows,
+    peak: Math.max(...rows.map((row) => row.count)),
+    more: rest.length ? { count: rest.reduce((n, bucket) => n + bucket.count, 0), from: rest[0].from } : null,
   };
 }
