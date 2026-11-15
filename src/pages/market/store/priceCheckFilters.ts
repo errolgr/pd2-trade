@@ -13,7 +13,7 @@ import { buildGetMarketListingQuery, type QualitySearch } from '@/pages/price-ch
 import type { Item, Stat, StatFilterInput } from '@/pages/price-check/lib/interfaces';
 import { StatId } from '@/pages/price-check/lib/stat-mappings';
 import { PSEUDO_KEY_PREFIX } from '@/pages/price-check/lib/utils';
-import { findBaseOption } from '@/pages/market/lib/catalog';
+import { findBaseOption, optionCodes } from '@/pages/market/lib/catalog';
 import { typeCodeForCodes } from '@/pages/market/lib/type-selection';
 import { defaultFilters, mergeFilters } from '@/pages/market/lib/defaults';
 import {
@@ -210,9 +210,13 @@ export function marketQueryToFilters(query: Record<string, unknown>, archive: bo
   const baseCode = query['item.base_code'];
   const baseGroup = prop(baseCode, '$in');
   if (typeof baseCode === 'string' && baseCode) out.baseCode = baseCode;
-  // Grouped bases (`{ $in: ['glw', 'glws'] }`) → their catalog option, else the group the service also accepts
+  // Grouped bases (`{ $in: ['glw', 'glws'] }`) → their catalog option; any other set of bases (a weapon group's, 2H
+  // Melee) → its `$in`, which the service also accepts
   else if (Array.isArray(baseGroup) && baseGroup.length > 0 && baseGroup.every((c) => typeof c === 'string')) {
-    out.baseCode = findBaseOption(baseGroup[0])?.baseCode ?? JSON.stringify({ $in: baseGroup });
+    const option = findBaseOption(baseGroup[0])?.baseCode;
+    const codes = option ? optionCodes(option) : [];
+    const same = codes.length === baseGroup.length && codes.every((c) => baseGroup.includes(c));
+    out.baseCode = option && same ? option : JSON.stringify({ $in: baseGroup });
   }
   const typeCode = query['item.base.type_code'];
   const typeGroup = prop(typeCode, '$in');

@@ -124,6 +124,12 @@
     "type": "Tipo",
     "base": "Base",
     "pickTypeFirst": "Elige primero un tipo",
+    "pickedBases_one": "{{count}} base",
+    "pickedBases_many": "{{count}} de bases",
+    "pickedBases_other": "{{count}} bases",
+    "someBases_one": "{{type}} ({{count}} base)",
+    "someBases_many": "{{type}} ({{count}} de bases)",
+    "someBases_other": "{{type}} ({{count}} bases)",
     "searchOptions": "Buscar…",
     "noOptions": "Sin coincidencias",
     "class": "Clase",
@@ -527,5 +533,15 @@
     "copyName": "Copiar nombre",
     "nameCopied": "Nombre copiado",
     "nameNotCopied": "Nombre no copiado"
+  },
+  "weaponGroups": {
+    "weapons": "Armas",
+    "1h": "Una mano",
+    "2h": "Dos manos",
+    "melee": "Cuerpo a cuerpo",
+    "2h-melee": "Cuerpo a cuerpo a dos manos",
+    "ranged": "A distancia",
+    "1h-ranged": "A distancia a una mano",
+    "2h-ranged": "A distancia a dos manos"
   }
 }

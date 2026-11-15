@@ -1141,7 +1141,7 @@ describe('ItemOverlayWidget extra header behaviour', () => {
     await waitFor(() => expect(modeToggle().textContent).toBe('Base: Ring'));
   });
 
-  it("cycles a rare bow's base → type → type group → base, searching the group's members", async () => {
+  it("cycles a rare bow's base → type → type group → 2H Ranged → Ranged → Weapons → base", async () => {
     renderWidget(rareRing({ name: 'Grim Fletch', type: 'Ceremonial Bow' }));
     expect(modeToggle().textContent).toBe('Base: Ceremonial Bow');
     fireEvent.click(modeToggle());
@@ -1155,15 +1155,42 @@ describe('ItemOverlayWidget extra header behaviour', () => {
     expect(lastFilters().baseCode).toBeUndefined();
 
     fireEvent.click(modeToggle());
+    await waitFor(() => expect(modeToggle().textContent).toBe('Group: 2H Ranged'));
+    fireEvent.click(modeToggle());
+    await waitFor(() => expect(modeToggle().textContent).toBe('Group: Ranged'));
+    fireEvent.click(searchButton());
+    await waitFor(() => expect(lastFilters().typeCode).toContain('tkni'));
+    expect(lastFilters().baseCode).toBeUndefined();
+    fireEvent.click(modeToggle());
+    await waitFor(() => expect(modeToggle().textContent).toBe('Group: Weapons'));
+    fireEvent.click(modeToggle());
     await waitFor(() => expect(modeToggle().textContent).toBe('Base: Ceremonial Bow'));
   });
 
-  it('toggles a rare without a type group (Sorceress Orb) between base and type only', async () => {
+  it('cycles a rare 2H sword through 2H Melee, searching its bases, then Melee and Weapons', async () => {
+    renderWidget(rareRing({ name: 'Doom Edge', type: 'Colossus Blade' }));
+    fireEvent.click(modeToggle());
+    await waitFor(() => expect(modeToggle().textContent).toBe('Type: Sword'));
+    fireEvent.click(modeToggle());
+    await waitFor(() => expect(modeToggle().textContent).toBe('Group: 2H Melee'));
+    fireEvent.click(searchButton());
+    await waitFor(() => expect(searchListings).toHaveBeenCalled());
+    expect(lastFilters().baseCode).toContain('"7gd"');
+    expect(lastFilters().baseCode).not.toContain('"7cr"');
+    fireEvent.click(modeToggle());
+    await waitFor(() => expect(modeToggle().textContent).toBe('Group: Melee'));
+    fireEvent.click(modeToggle());
+    await waitFor(() => expect(modeToggle().textContent).toBe('Group: Weapons'));
+    fireEvent.click(modeToggle());
+    await waitFor(() => expect(modeToggle().textContent).toBe('Base: Colossus Blade'));
+  });
+
+  it('cycles a rare without a type group (Sorceress Orb) from its type to its weapon groups', async () => {
     renderWidget(rareRing({ name: 'Doom Eye', type: 'Eagle Orb' }));
     fireEvent.click(modeToggle());
     await waitFor(() => expect(modeToggle().textContent).toBe('Type: Sorceress Orb'));
     fireEvent.click(modeToggle());
-    await waitFor(() => expect(modeToggle().textContent).toBe('Base: Eagle Orb'));
+    await waitFor(() => expect(modeToggle().textContent).toBe('Group: 1H'));
   });
 
   it('Net Worth opens the currency panel', () => {

@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { currentLocale, useTranslation } from '@/i18n';
 import { CLASSES } from '../lib/catalog';
-import { basesForTypeValue, typeLabel } from '../lib/type-selection';
+import { baseValueLabel, typeValueLabel } from '../lib/type-selection';
 import { isDamageRangeKey, lowDamageRange } from '../lib/stats';
 import type { ActiveFilterSpec, RangeField, TriField } from '../lib/active-filters';
 import type { OnlineFilter, Tri } from '../lib/types';
@@ -119,9 +119,9 @@ export function useActiveFilterText(): (spec: ActiveFilterSpec) => string {
         case 'priceText':
           return `${t('filters.priceNote')}: “${spec.value}”`;
         case 'type':
-          return typeLabel(spec.code) ?? spec.code;
+          return typeValueLabel({ typeCode: spec.code, baseCode: spec.baseCode }) ?? spec.code;
         case 'base':
-          return basesForTypeValue(spec.typeCode).find((b) => b.code === spec.code)?.label ?? spec.code;
+          return baseValueLabel({ typeCode: spec.typeCode, baseCode: spec.code }) ?? spec.code;
         case 'rarity':
           return spec.value.join(', ');
         case 'class':

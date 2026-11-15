@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ItemType as PD2Item } from '@/assets/itemFuzzySearch';
 import type { Item } from '@/pages/price-check/lib/interfaces';
 import type { MarketFilters } from '@/pages/market/lib/types';
+import { optionCodes } from '@/pages/market/lib/catalog';
 import {
   ARCHIVE_STATUSES,
   marketQueryToFilters,
@@ -185,6 +186,10 @@ describe('marketQueryToFilters', () => {
     expect(read({ 'item.base_code': { $in: ['glw', 'glws'] } }).baseCode).toBe('{"$in": ["glw", "glws"]}');
   });
 
+  it("reads a set of bases no option stands for as its `$in`, not its first base's option", () => {
+    expect(read({ 'item.base_code': { $in: ['7gd', '7pa'] } }).baseCode).toBe('{"$in":["7gd","7pa"]}');
+  });
+
   it("reads a type group's members ($in, any order) as the group code, not its first member's type", () => {
     expect(read({ 'item.base.type_code': { $in: ['bow', 'abow'] } }).typeCode).toBe('group:bows');
     expect(read({ 'item.base.type_code': { $in: ['circ', 'helm', 'pelt', 'phlm'] } }).typeCode).toBe('group:helms');
@@ -365,5 +370,25 @@ describe('priceCheckToMarketFilters', () => {
     expect(at(1).baseCode).toBeUndefined();
     expect(at(2)).toMatchObject({ typeCode: 'group:bows' });
     expect(at(2).baseCode).toBeUndefined();
+  });
+
+  it('searches the weapon groups of a rare in search modes 3-5: types, and bases where they split a type', () => {
+    const blade: Item = { name: 'Beast Edge', quality: 'Rare', type: 'Colossus Blade', iLevel: 85, stats: [] };
+    const matchedItemType = { typeLabel: 'Sword', typeValue: 'swor', bases: [] };
+    const at = (searchMode: number) =>
+      priceCheckToMarketFilters(search({ item: blade, selected: new Set(), filters: {}, searchMode, matchedItemType }));
+    // 2H Melee: its types, and its 94 bases as one `$in` the service takes (at most 200 codes)
+    const hands = at(3);
+    expect(new Set(optionCodes(hands.typeCode!))).toEqual(
+      new Set(['2hcs', 'aspe', 'axe', 'hamm', 'pole', 'sc9', 'spea', 'staf', 'swor']),
+    );
+    expect(optionCodes(hands.baseCode!)).toHaveLength(94);
+    expect(optionCodes(hands.baseCode!)).toContain('7gd');
+    expect(optionCodes(hands.baseCode!)).not.toContain('7cr');
+    // Melee and Weapons: whole types
+    expect(optionCodes(at(4).typeCode!)).toHaveLength(21);
+    expect(at(4).baseCode).toBeUndefined();
+    expect(optionCodes(at(5).typeCode!)).toHaveLength(24);
+    expect(at(5).baseCode).toBeUndefined();
   });
 });

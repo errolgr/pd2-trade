@@ -132,6 +132,14 @@
     "type": "Тип",
     "base": "Основа",
     "pickTypeFirst": "Сначала выберите тип",
+    "pickedBases_one": "{{count}} основа",
+    "pickedBases_few": "{{count}} основы",
+    "pickedBases_many": "{{count}} основ",
+    "pickedBases_other": "{{count}} основы",
+    "someBases_one": "{{type}} ({{count}} основа)",
+    "someBases_few": "{{type}} ({{count}} основы)",
+    "someBases_many": "{{type}} ({{count}} основ)",
+    "someBases_other": "{{type}} ({{count}} основы)",
     "searchOptions": "Поиск…",
     "noOptions": "Ничего не найдено",
     "class": "Класс",
@@ -549,5 +557,15 @@
     "copyName": "Копировать название",
     "nameCopied": "Название скопировано",
     "nameNotCopied": "Название не скопировано"
+  },
+  "weaponGroups": {
+    "weapons": "Оружие",
+    "1h": "Одноручное",
+    "2h": "Двуручное",
+    "melee": "Ближний бой",
+    "2h-melee": "Двуручное ближнего боя",
+    "ranged": "Дальний бой",
+    "1h-ranged": "Одноручное дальнего боя",
+    "2h-ranged": "Двуручное дальнего боя"
   }
 }

@@ -9,7 +9,8 @@ import { modifierByName } from '@/assets/modifiers';
 import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import { ItemType as PD2Item } from '@/assets/itemFuzzySearch';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
-import { typeGroupOf, typeGroupSiteValue } from '@/pages/market/lib/type-groups';
+import { inCodes, typeGroupOf, typeGroupSiteValue } from '@/pages/market/lib/type-groups';
+import { searchModeWeaponGroup } from './search-modes';
 
 /** Qualities whose price check searches a base (not a name) and can be switched in the header. */
 export const BASE_QUALITIES: readonly ItemQuality[] = [
@@ -121,7 +122,8 @@ export function buildTradeUrl(
   // `base`, it doesn't JSON.parse it), so an `$in` here would match nothing.
   if (typeof quality === 'string') searchParams.set('quality', quality);
 
-  // Handle search mode: 0 = category (base), 1 = typeLabel, 2 = the type's group (every member type)
+  // Handle search mode: 0 = category (base), 1 = typeLabel, 2 = the type's group (every member type), 3-5 = the
+  // weapon's hand / class / Weapons group (search-modes.ts)
   // Note: Toggle only applies to base item qualities (Rare, Magic, Crafted, Normal, Superior)
   // Uniques and Sets use name search; runewords (which keep their base's quality) their name within the mode's
   // base / type / group, as the header shows (#297)
@@ -136,7 +138,13 @@ export function buildTradeUrl(
     const isBaseQuality = BASE_QUALITIES.includes(item.quality as ItemQuality);
 
     const typeGroup = searchMode === 2 && matchedItemType ? typeGroupOf(matchedItemType.typeValue) : undefined;
-    if (isBaseQuality && typeGroup) {
+    const weapons = isBaseQuality ? searchModeWeaponGroup(searchMode, item.type, matchedItemType) : undefined;
+    if (weapons) {
+      // Modes 3-5: the weapon group's types, and its bases when it takes only some of a type's (2H Melee), as the
+      // site's `$in` values (the site JSON.parses Type and Base)
+      searchParams.set('type', inCodes(weapons.types));
+      if (weapons.bases) searchParams.set('base', inCodes(weapons.bases));
+    } else if (isBaseQuality && typeGroup) {
       // Mode 2: every type of the group, as the site's `$in` (the site doesn't know our group codes); no base
       searchParams.set('type', typeGroupSiteValue(typeGroup));
     } else if (isBaseQuality && searchMode === 1 && matchedItemType) {
@@ -326,7 +334,8 @@ export function buildGetMarketListingQuery(
     }
   });
 
-  // Handle search mode: 0 = category (base), 1 = typeLabel, 2 = the type's group (every member type)
+  // Handle search mode: 0 = category (base), 1 = typeLabel, 2 = the type's group (every member type), 3-5 = the
+  // weapon's hand / class / Weapons group (search-modes.ts)
   // Note: Toggle only applies to base item qualities (Rare, Magic, Crafted, Normal, Superior)
   // Uniques and Sets use name search; runewords (which keep their base's quality) their name within the mode's
   // base / type / group, as the header shows (#297)
@@ -344,7 +353,12 @@ export function buildGetMarketListingQuery(
     const isBaseQuality = BASE_QUALITIES.includes(item.quality as ItemQuality);
 
     const typeGroup = searchMode === 2 && matchedItemType ? typeGroupOf(matchedItemType.typeValue) : undefined;
-    if (isBaseQuality && typeGroup) {
+    const weapons = isBaseQuality ? searchModeWeaponGroup(searchMode, item.type, matchedItemType) : undefined;
+    if (weapons) {
+      // Modes 3-5: the weapon group's types, and its bases when it takes only some of a type's (2H Melee)
+      query['item.base.type_code'] = { $in: [...weapons.types] };
+      if (weapons.bases) query['item.base_code'] = { $in: [...weapons.bases] };
+    } else if (isBaseQuality && typeGroup) {
       // Mode 2: every type of the group, as an `$in` like grouped types (PD2 doesn't know our group codes)
       query['item.base.type_code'] = { $in: [...typeGroup.members] };
     } else if (isBaseQuality && searchMode === 1 && matchedItemType) {
