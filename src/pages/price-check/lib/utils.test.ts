@@ -68,6 +68,13 @@ describe('getTypeFromBaseType', () => {
     );
     expect(Object.fromEntries(ours)).toEqual(Object.fromEntries(site));
   });
+
+  it('resolves every base the trade site lists (an unknown stat-less base is rejected as unsupported)', () => {
+    const unresolved = SITE_ITEM_TYPES.flatMap((t) => t.bases)
+      .filter((b) => !getTypeFromBaseType(b.label))
+      .map((b) => b.label);
+    expect(unresolved).toEqual([]);
+  });
 });
 
 describe('getStatKey', () => {
