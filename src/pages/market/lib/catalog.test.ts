@@ -81,9 +81,33 @@ describe('catalog', () => {
     expect(labels).toContain('Fist Weapon');
     expect(labels.slice(at('Bow Quiver'), at('Bow Quiver') + 2)).toEqual(['Bow Quiver', 'Bows']);
     expect(at('Boots')).toBeLessThan(at('Bows'));
-    // Every site type appears exactly once, plus the five groups
-    expect(TYPE_OPTIONS.filter((o) => !o.code.startsWith('group:'))).toHaveLength(ITEM_TYPES.length);
-    expect(TYPE_OPTIONS).toHaveLength(ITEM_TYPES.length + 5);
+    // Every site type appears exactly once, plus the five groups and the eight weapon groups
+    expect(TYPE_OPTIONS.filter((o) => !o.code.startsWith('group:') && !o.code.startsWith('weapons:'))).toHaveLength(
+      ITEM_TYPES.length,
+    );
+    expect(TYPE_OPTIONS).toHaveLength(ITEM_TYPES.length + 5 + 8);
+  });
+
+  it('lists the weapon groups first, under Weapons, with their bases and labels', () => {
+    expect(TYPE_OPTIONS.slice(0, 8).map((o) => `${'  '.repeat(o.depth)}${o.label}`)).toEqual([
+      'Weapons',
+      '  1H',
+      '  2H',
+      '  Melee',
+      '  2H Melee',
+      '  Ranged',
+      '  1H Ranged',
+      '  2H Ranged',
+    ]);
+    expect(optionCodes('weapons:2h-ranged')).toEqual(['abow', 'bow', 'xbow']);
+    expect(findTypeOption('weapons:melee')).toEqual({ code: 'weapons:melee', label: 'Melee' });
+    // A hand group's Base select: only its bases (the 2H Crystal Sword type's Phase Blade, not the sword one)
+    const twoHandedMelee = basesForType('weapons:2h-melee');
+    const codes = twoHandedMelee.map((b) => b.code);
+    expect(codes).toEqual(expect.arrayContaining(['7gd', '7s8', '7cr2']));
+    expect(codes).not.toContain('7cr');
+    const labels = twoHandedMelee.map((b) => b.label);
+    expect(labels).toEqual([...labels].sort((a, b) => a.localeCompare(b)));
   });
 
   it('expands type group codes to their member types, bases and label', () => {

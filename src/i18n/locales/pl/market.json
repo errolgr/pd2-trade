@@ -132,6 +132,14 @@
     "type": "Typ",
     "base": "Baza",
     "pickTypeFirst": "Najpierw wybierz typ",
+    "pickedBases_one": "{{count}} baza",
+    "pickedBases_few": "{{count}} bazy",
+    "pickedBases_many": "{{count}} baz",
+    "pickedBases_other": "{{count}} bazy",
+    "someBases_one": "{{type}} ({{count}} baza)",
+    "someBases_few": "{{type}} ({{count}} bazy)",
+    "someBases_many": "{{type}} ({{count}} baz)",
+    "someBases_other": "{{type}} ({{count}} bazy)",
     "searchOptions": "Szukaj…",
     "noOptions": "Brak wyników",
     "class": "Klasa",
@@ -549,5 +557,15 @@
     "copyName": "Kopiuj nazwę",
     "nameCopied": "Skopiowano nazwę",
     "nameNotCopied": "Nie skopiowano nazwy"
+  },
+  "weaponGroups": {
+    "weapons": "Broń",
+    "1h": "Jednoręczna",
+    "2h": "Dwuręczna",
+    "melee": "Do walki wręcz",
+    "2h-melee": "Dwuręczna do walki wręcz",
+    "ranged": "Dystansowa",
+    "1h-ranged": "Jednoręczna dystansowa",
+    "2h-ranged": "Dwuręczna dystansowa"
   }
 }

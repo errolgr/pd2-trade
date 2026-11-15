@@ -227,14 +227,19 @@ describe('marketSearchBody', () => {
   });
 
   it('sends several picked types as one `$in` of their type codes, which the service validates as a Type value', () => {
-    const polearmsAndSpears = toggleTypeOption('pole', 'group:spears');
+    const polearmsAndSpears = toggleTypeOption({ typeCode: 'pole' }, 'group:spears').typeCode;
     expect(marketSearchBody(mergeFilters(base, { typeCode: polearmsAndSpears }), 0, 25).filters.typeCode).toBe(
       '{"$in": ["pole", "spea", "aspe"]}',
     );
-    const claws = toggleTypeOption('{"$in": ["h2h", "h2h2"]}', 'knif');
+    const claws = toggleTypeOption({ typeCode: '{"$in": ["h2h", "h2h2"]}' }, 'knif').typeCode;
     expect(marketSearchBody(mergeFilters(base, { typeCode: claws }), 0, 25).filters.typeCode).toBe(
       '{"$in": ["knif", "h2h", "h2h2"]}',
     );
+    // A hand group: its types, and its bases as one `$in` the service also takes (up to 200 codes)
+    const twoHanded = toggleTypeOption({}, 'weapons:2h');
+    const body = marketSearchBody(mergeFilters(base, twoHanded), 0, 25).filters;
+    expect(body.typeCode).toBe(twoHanded.typeCode);
+    expect(JSON.parse(body.baseCode!).$in).toHaveLength(136);
   });
 });
 

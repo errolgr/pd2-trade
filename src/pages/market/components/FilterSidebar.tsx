@@ -15,7 +15,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import { CLASSES, RARITIES, TYPE_OPTIONS, optionCodes } from '../lib/catalog';
-import { basesForTypeValue, isTypeSelected, toggleTypeOption, typeLabel, typeSelection } from '../lib/type-selection';
+import {
+  basesForTypeValue,
+  baseValueLabel,
+  isTypeOptionSelected,
+  pickedBases,
+  toggleTypeOption,
+  typeValueLabel,
+} from '../lib/type-selection';
+import { weaponGroupByCode } from '../lib/weapon-groups';
 import { defaultAgeDays, MAX_FILTER_TEXT, MAX_SELLER_NAME, type SearchDefaults, withSource } from '../lib/defaults';
 import { anniversaryTri, withAnniversary } from '../lib/anniversary';
 import { codeCounts, CODE_FACET_SIZE, type CodeCounts, countsByValue, type MarketFacets } from '../lib/facets';
@@ -187,8 +195,12 @@ export function FilterSidebar({
   ];
   const setReq = (changes: Partial<MarketFilters['requirements']>) =>
     set({ requirements: { ...f.requirements, ...changes } });
-  const bases = useMemo(() => basesForTypeValue(f.typeCode), [f.typeCode]);
-  const types = useMemo(() => typeSelection(f.typeCode), [f.typeCode]);
+  const bases = useMemo(() => {
+    const all = basesForTypeValue(f.typeCode);
+    // With picked bases (1H, 2H…), the bases picked
+    const picked = pickedBases(f);
+    return picked ? all.filter((b) => optionCodes(b.code).every((c) => picked.has(c))) : all;
+  }, [f]);
   const req = f.requirements;
   const counts = useMemo(
     () => ({
@@ -262,17 +274,16 @@ export function FilterSidebar({
               value: o.code,
               label: o.label,
               depth: o.depth,
-              count: optionCount(o.code, counts.typeCode),
+              // The type facet can't count a hand group (it takes only some bases of a type)
+              count: weaponGroupByCode(o.code)?.bases ? undefined : optionCount(o.code, counts.typeCode),
             }))}
             onChange={(typeCode) => set({ typeCode, baseCode: undefined })}
             onToggle={(code) => {
-              const typeCode = toggleTypeOption(f.typeCode, code);
-              // A base stays while a type still offers it
-              const keepBase = basesForTypeValue(typeCode).some((b) => b.code === f.baseCode);
-              set({ typeCode, baseCode: keepBase ? f.baseCode : undefined });
+              const { typeCode, baseCode } = toggleTypeOption(f, code);
+              set({ typeCode, baseCode });
             }}
-            selected={(code) => isTypeSelected(types, code)}
-            valueLabel={typeLabel(f.typeCode)}
+            selected={(code) => isTypeOptionSelected(f, code)}
+            valueLabel={typeValueLabel(f)}
           />
           <SelectField
             label={t('filters.base')}
@@ -281,6 +292,7 @@ export function FilterSidebar({
             anyLabel={f.typeCode ? t('filters.any') : t('filters.pickTypeFirst')}
             options={bases.map((b) => ({ value: b.code, label: b.label, count: optionCount(b.code, counts.baseCode) }))}
             onChange={(baseCode) => set({ baseCode })}
+            valueLabel={baseValueLabel(f)}
           />
           <RarityField value={f.rarity}
             counts={counts.quality}

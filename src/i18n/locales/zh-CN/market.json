@@ -108,6 +108,8 @@
     "type": "类型",
     "base": "底材",
     "pickTypeFirst": "请先选择类型",
+    "pickedBases_other": "{{count}} 个底材",
+    "someBases_other": "{{type}}（{{count}} 个底材）",
     "searchOptions": "搜索…",
     "noOptions": "没有匹配项",
     "class": "职业",
@@ -483,5 +485,15 @@
     "copyName": "复制名称",
     "nameCopied": "名称已复制",
     "nameNotCopied": "名称未复制"
+  },
+  "weaponGroups": {
+    "weapons": "武器",
+    "1h": "单手",
+    "2h": "双手",
+    "melee": "近战",
+    "2h-melee": "双手近战",
+    "ranged": "远程",
+    "1h-ranged": "单手远程",
+    "2h-ranged": "双手远程"
   }
 }

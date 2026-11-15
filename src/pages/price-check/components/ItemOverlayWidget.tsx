@@ -64,6 +64,8 @@ import { statText } from '../lib/tooltip-lines';
 import type { MarketFilters, ScoredListing } from '@/pages/market/lib/types';
 import { withRowPresence } from '@/pages/market/lib/presence';
 import { typeGroupOf } from '@/pages/market/lib/type-groups';
+import { weaponGroupLabel } from '@/pages/market/lib/weapon-groups';
+import { availableSearchModes, searchModeWeaponGroup } from '@/pages/price-check/lib/search-modes';
 import { MarketBackendError, searchMarketListings } from '@/lib/market-search-api';
 import { reportApiError } from '@/lib/error-reporting';
 import { rememberListingPresence, useListingPresence } from '@/hooks/useListingPresence';
@@ -737,20 +739,19 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     return { corruptionKey, corruptionName, priceData };
   }, [item.stats, item.quality, corruptionPrices, pd2Item]);
 
+  // The header's scopes for this item (base → type → group → the weapon groups), equal ones skipped
+  const searchModes = useMemo(() => availableSearchModes(item.type, matchedItemType), [item.type, matchedItemType]);
+
   // Toggle search mode (only for items that support toggle)
   const toggleSearchMode = useCallback(() => {
     if (!shouldUseToggle) return; // Don't toggle for uniques/sets/runewords
-    setSearchMode((prev) => {
-      // Cycle through: 0 -> 1 -> 2 -> 0, skipping type without a matched item type and group without a type group
-      const available = [true, !!matchedItemType, !!matchedItemType && !!typeGroup];
-      let next = (prev + 1) % available.length;
-      while (!available[next]) next = (next + 1) % available.length;
-      return next;
-    });
-  }, [matchedItemType, typeGroup, shouldUseToggle]);
+    setSearchMode((prev) => searchModes[(searchModes.indexOf(prev) + 1) % searchModes.length]);
+  }, [searchModes, shouldUseToggle]);
 
   // Get display text for current search mode
   const getSearchModeDisplay = useCallback(() => {
+    const weapons = searchModeWeaponGroup(searchMode, item.type, matchedItemType);
+    if (weapons) return t('overlay.header.group', { group: weaponGroupLabel(weapons) });
     switch (searchMode) {
       case 0:
         return t('overlay.header.base', { type: item.type });

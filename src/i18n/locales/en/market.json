@@ -116,6 +116,10 @@
     "type": "Type",
     "base": "Base",
     "pickTypeFirst": "Pick a type first",
+    "pickedBases_one": "{{count}} base",
+    "pickedBases_other": "{{count}} bases",
+    "someBases_one": "{{type}} ({{count}} base)",
+    "someBases_other": "{{type}} ({{count}} bases)",
     "searchOptions": "Search…",
     "noOptions": "Nothing matches",
     "class": "Class",
@@ -505,5 +509,15 @@
     "copyName": "Copy name",
     "nameCopied": "Name copied",
     "nameNotCopied": "Name not copied"
+  },
+  "weaponGroups": {
+    "weapons": "Weapons",
+    "1h": "1H",
+    "2h": "2H",
+    "melee": "Melee",
+    "2h-melee": "2H Melee",
+    "ranged": "Ranged",
+    "1h-ranged": "1H Ranged",
+    "2h-ranged": "2H Ranged"
   }
 }

@@ -3,6 +3,13 @@ import { modifierByName } from '@/assets/modifiers';
 import { SITE_BASE_NAMES, SITE_ITEM_TYPES } from './catalog.data';
 import { inCodes, isTypeGroupCode, TYPE_GROUPS, typeGroupByCode, typeGroupMembers, typeGroupOf } from './type-groups';
 import { statLabel } from './stats';
+import {
+  isWeaponGroupCode,
+  WEAPON_GROUPS,
+  weaponGroupBases,
+  weaponGroupByCode,
+  weaponGroupLabel,
+} from './weapon-groups';
 import type { CharClass, CorruptionOption, Rarity } from './types';
 
 export interface CatalogOption {
@@ -14,14 +21,18 @@ export interface CatalogOption {
 /** The site's Type select (without "Any"), sorted by label. */
 export const ITEM_TYPES: CatalogOption[] = SITE_ITEM_TYPES.map(({ code, label }) => ({ code, label }));
 
-/** A row of our Type select: a type group (depth 0) with its member types under it (depth 1), or a lone type. */
+/**
+ * A row of our Type select: a type group (depth 0) with its member types under it (depth 1), or a lone type; the
+ * weapon groups first, under Weapons.
+ */
 export interface TypeOption extends CatalogOption {
   depth: 0 | 1;
 }
 
 /**
- * Our Type select (without "Any"): the site's types sorted by label, with each type group in its place by label
- * and its member types (by label) right under it instead of in their own places.
+ * Our Type select (without "Any"): the weapon groups (Weapons, and the hand / class groups under it; labels in the
+ * app's language), then the site's types sorted by label, with each type group in its place by label and its member
+ * types (by label) right under it instead of in their own places.
  */
 export const TYPE_OPTIONS: TypeOption[] = (() => {
   // One block per top-level row (a lone type, or a group and its members), kept in label order
@@ -34,7 +45,16 @@ export const TYPE_OPTIONS: TypeOption[] = (() => {
     const at = blocks.findIndex(([row]) => row.label.localeCompare(group.label) > 0);
     blocks.splice(at === -1 ? blocks.length : at, 0, [{ code: group.code, label: group.label, depth: 0 }, ...members]);
   }
-  return blocks.flat();
+  const weapons = WEAPON_GROUPS.map(
+    (group, i): TypeOption => ({
+      code: group.code,
+      depth: i === 0 ? 0 : 1,
+      get label() {
+        return weaponGroupLabel(group);
+      },
+    }),
+  );
+  return [...weapons, ...blocks.flat()];
 })();
 
 const BASES_BY_TYPE = new Map(SITE_ITEM_TYPES.map((t) => [t.code, t.bases]));
@@ -87,7 +107,8 @@ export const BASE_GROUPS: BaseGroup[] = [
 
 /**
  * The site's Base select for a Type (sorted by label), after our base groups for it; for a type group, those of
- * every member type together, sorted by label. Empty for an unknown type.
+ * every member type together, sorted by label; for a weapon group, the bases of its types it takes, sorted by label.
+ * Empty for an unknown type.
  */
 export function basesForType(typeCode: string | undefined): CatalogOption[] {
   if (!typeCode) return [];
@@ -95,6 +116,14 @@ export function basesForType(typeCode: string | undefined): CatalogOption[] {
     return typeGroupMembers(typeCode)
       .flatMap((member) => basesForType(member))
       .sort((a, b) => a.label.localeCompare(b.label));
+  const weapons = weaponGroupByCode(typeCode);
+  if (weapons) {
+    const taken = new Set(weaponGroupBases(weapons));
+    return ITEM_TYPES.filter((t) => optionCodes(t.code).some((c) => weapons.types.includes(c)))
+      .flatMap((t) => basesForType(t.code))
+      .filter((b) => optionCodes(b.code).every((c) => taken.has(c)))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }
   const groups = BASE_GROUPS.filter((g) => g.typeCode === typeCode).map(({ code, label }) => ({ code, label }));
   return [...groups, ...(BASES_BY_TYPE.get(typeCode) ?? [])];
 }
@@ -108,10 +137,11 @@ export function baseGroupMatches(query: string): BaseGroup[] {
 
 /**
  * Codes a type/base option stands for: its own code, every member of a `{"$in": [...]}` entry, or every member
- * type of a type group (`group:bows`; none for an unknown group).
+ * type of a type group (`group:bows`) or weapon group (`weapons:melee`; none for an unknown group).
  */
 export function optionCodes(code: string): string[] {
   if (isTypeGroupCode(code)) return typeGroupMembers(code);
+  if (isWeaponGroupCode(code)) return [...(weaponGroupByCode(code)?.types ?? [])];
   if (!code.startsWith('{')) return [code];
   try {
     const parsed = JSON.parse(code) as { $in?: unknown };
@@ -135,11 +165,13 @@ export function findBaseOption(baseCode: string): { typeCode: string; baseCode: 
 
 /**
  * Type option for a raw `item.base.type_code` (grouped types such as Jewelry/Charm resolve to the group) or for
- * a Type value (a type group code resolves to the group).
+ * a Type value (a type group or weapon group code resolves to the group).
  */
 export function findTypeOption(typeCode: string): CatalogOption | null {
   const group = typeGroupByCode(typeCode);
   if (group) return { code: group.code, label: group.label };
+  const weapons = weaponGroupByCode(typeCode);
+  if (weapons) return { code: weapons.code, label: weaponGroupLabel(weapons) };
   return ITEM_TYPES.find((t) => t.code === typeCode || optionCodes(t.code).includes(typeCode)) ?? null;
 }
 

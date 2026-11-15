@@ -13,7 +13,8 @@ export type RangeField = 'sockets' | 'hr' | 'level' | 'strength' | 'dexterity';
 /** What an applied filter is, for its label; `clear` takes it back. */
 export type ActiveFilterSpec =
   | { kind: 'itemName'; value: string }
-  | { kind: 'type'; code: string }
+  // `baseCode`: the Base value, which says the types of picked bases (1H, 2H)
+  | { kind: 'type'; code: string; baseCode: string | undefined }
   | { kind: 'base'; typeCode: string | undefined; code: string }
   | { kind: 'rarity'; value: Rarity[] }
   | { kind: 'class'; value: CharClass }
@@ -53,7 +54,11 @@ export function activeFilters(f: MarketFilters, defaults: SearchDefaults): Activ
 
   // The base belongs to its type: dropping the type drops the base too
   if (f.typeCode)
-    add('type', { kind: 'type', code: f.typeCode }, (g) => ({ ...g, typeCode: undefined, baseCode: undefined }));
+    add('type', { kind: 'type', code: f.typeCode, baseCode: f.baseCode }, (g) => ({
+      ...g,
+      typeCode: undefined,
+      baseCode: undefined,
+    }));
   if (f.baseCode)
     add('base', { kind: 'base', typeCode: f.typeCode, code: f.baseCode }, (g) => ({ ...g, baseCode: undefined }));
   if (f.rarity.length) add('rarity', { kind: 'rarity', value: f.rarity }, (g) => ({ ...g, rarity: [] }));

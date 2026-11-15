@@ -116,6 +116,10 @@
     "type": "Typ",
     "base": "Basis",
     "pickTypeFirst": "Wähle zuerst einen Typ",
+    "pickedBases_one": "{{count}} Basis",
+    "pickedBases_other": "{{count}} Basen",
+    "someBases_one": "{{type}} ({{count}} Basis)",
+    "someBases_other": "{{type}} ({{count}} Basen)",
     "searchOptions": "Suchen…",
     "noOptions": "Keine Treffer",
     "class": "Klasse",
@@ -505,5 +509,15 @@
     "copyName": "Namen kopieren",
     "nameCopied": "Name kopiert",
     "nameNotCopied": "Name nicht kopiert"
+  },
+  "weaponGroups": {
+    "weapons": "Waffen",
+    "1h": "Einhand",
+    "2h": "Zweihand",
+    "melee": "Nahkampf",
+    "2h-melee": "Zweihand-Nahkampf",
+    "ranged": "Fernkampf",
+    "1h-ranged": "Einhand-Fernkampf",
+    "2h-ranged": "Zweihand-Fernkampf"
   }
 }
