@@ -1125,72 +1125,137 @@ describe('ItemOverlayWidget rare appraisal', () => {
 });
 
 describe('ItemOverlayWidget extra header behaviour', () => {
-  it('toggles a rare between searching its exact base and its whole item type', async () => {
-    renderWidget(rareRing());
-    const mode = modeToggle();
-    expect(mode.textContent).toBe('Base: Ring');
-    fireEvent.click(mode);
-    await waitFor(() => expect(modeToggle().textContent).toBe('Type: Jewelry'));
+  /** The open scope menu's rows as `label · size`, the ticked one prefixed `✓ `. */
+  const scopeRows = () =>
+    screen
+      .queryAllByRole('menuitem')
+      .map(
+        (row) =>
+          `${row.querySelector('svg.invisible') ? '' : '✓ '}${[...row.querySelectorAll('span')].map((s) => s.textContent).join(' · ')}`,
+      );
+  /** Opens the header's scope menu (a click: Radix opens on pointer down) and returns its rows. */
+  const openScopes = () => {
+    fireEvent.pointerDown(modeToggle(), { button: 0, ctrlKey: false });
+    return scopeRows();
+  };
+  const pickScope = (label: string) =>
+    fireEvent.click(screen.getAllByRole('menuitem').find((row) => row.textContent?.startsWith(label))!);
+  const scopeLabels = () => scopeRows().map((row) => row.replace(/^✓ /, '').split(' · ')[0]);
 
-    fireEvent.click(searchButton());
+  it('lets a rare pick between searching its exact base and its whole item type, searching on pick', async () => {
+    renderWidget(rareRing());
+    expect(modeToggle().textContent).toBe('Base: Ring');
+    expect(openScopes()).toEqual(['✓ Base: Ring · this base', expect.stringMatching(/^Type: Jewelry · \d+ bases$/)]);
+    pickScope('Type: Jewelry');
     await waitFor(() => expect(searchListings).toHaveBeenCalled());
+    expect(modeToggle().textContent).toBe('Type: Jewelry');
     expect(JSON.stringify(lastFilters())).toContain('amul');
     expect(lastFilters().baseCode).toBeUndefined();
-
-    fireEvent.click(modeToggle());
-    await waitFor(() => expect(modeToggle().textContent).toBe('Base: Ring'));
+    expect(openScopes()[1]).toMatch(/^✓ Type: Jewelry/);
   });
 
-  it("cycles a rare bow's base → type → type group → 2H Ranged → Ranged → Weapons → base", async () => {
+  it("lists a rare bow's base, type, type group, 2H Ranged, Ranged and Weapons, and searches the picked one", async () => {
     renderWidget(rareRing({ name: 'Grim Fletch', type: 'Ceremonial Bow' }));
     expect(modeToggle().textContent).toBe('Base: Ceremonial Bow');
-    fireEvent.click(modeToggle());
-    await waitFor(() => expect(modeToggle().textContent).toBe('Type: Amazon Bow'));
-    fireEvent.click(modeToggle());
-    await waitFor(() => expect(modeToggle().textContent).toBe('Group: Bows'));
-
-    fireEvent.click(searchButton());
+    expect(openScopes()).toEqual([
+      '✓ Base: Ceremonial Bow · this base',
+      expect.stringMatching(/^Type: Amazon Bow · \d+ bases$/),
+      'Group: Bows · 2 types',
+      'Group: 2H Ranged · 3 types',
+      expect.stringMatching(/^Group: Ranged · \d+ types$/),
+      expect.stringMatching(/^Group: Weapons · \d+ types$/),
+    ]);
+    pickScope('Group: Bows');
     await waitFor(() => expect(searchListings).toHaveBeenCalled());
     expect(lastFilters()).toMatchObject({ typeCode: 'group:bows' });
     expect(lastFilters().baseCode).toBeUndefined();
 
-    fireEvent.click(modeToggle());
-    await waitFor(() => expect(modeToggle().textContent).toBe('Group: 2H Ranged'));
-    fireEvent.click(modeToggle());
-    await waitFor(() => expect(modeToggle().textContent).toBe('Group: Ranged'));
-    fireEvent.click(searchButton());
+    openScopes();
+    pickScope('Group: Ranged');
     await waitFor(() => expect(lastFilters().typeCode).toContain('tkni'));
     expect(lastFilters().baseCode).toBeUndefined();
-    fireEvent.click(modeToggle());
-    await waitFor(() => expect(modeToggle().textContent).toBe('Group: Weapons'));
-    fireEvent.click(modeToggle());
-    await waitFor(() => expect(modeToggle().textContent).toBe('Base: Ceremonial Bow'));
+    expect(modeToggle().textContent).toBe('Group: Ranged');
   });
 
-  it('cycles a rare 2H sword through 2H Melee, searching its bases, then Melee and Weapons', async () => {
+  it('lists a rare 2H sword through 2H Melee, which searches its two-handed bases only', async () => {
     renderWidget(rareRing({ name: 'Doom Edge', type: 'Colossus Blade' }));
-    fireEvent.click(modeToggle());
-    await waitFor(() => expect(modeToggle().textContent).toBe('Type: Sword'));
-    fireEvent.click(modeToggle());
-    await waitFor(() => expect(modeToggle().textContent).toBe('Group: 2H Melee'));
-    fireEvent.click(searchButton());
+    expect(openScopes()).toEqual([
+      '✓ Base: Colossus Blade · this base',
+      expect.stringMatching(/^Type: Sword · \d+ bases$/),
+      expect.stringMatching(/^Group: 2H Melee · \d+ bases$/),
+      expect.stringMatching(/^Group: Melee · \d+ types$/),
+      expect.stringMatching(/^Group: Weapons · \d+ types$/),
+    ]);
+    pickScope('Group: 2H Melee');
     await waitFor(() => expect(searchListings).toHaveBeenCalled());
     expect(lastFilters().baseCode).toContain('"7gd"');
     expect(lastFilters().baseCode).not.toContain('"7cr"');
-    fireEvent.click(modeToggle());
-    await waitFor(() => expect(modeToggle().textContent).toBe('Group: Melee'));
-    fireEvent.click(modeToggle());
-    await waitFor(() => expect(modeToggle().textContent).toBe('Group: Weapons'));
-    fireEvent.click(modeToggle());
-    await waitFor(() => expect(modeToggle().textContent).toBe('Base: Colossus Blade'));
   });
 
-  it('cycles a rare without a type group (Sorceress Orb) from its type to its weapon groups', async () => {
+  it('treats a Phase Blade as a one-handed Sword: its base is 7cr and its hand step 1H', async () => {
+    renderWidget(rareRing({ name: 'Doom Edge', type: 'Phase Blade' }));
+    openScopes();
+    expect(scopeLabels()).toEqual(['Base: Phase Blade', 'Type: Sword', 'Group: 1H', 'Group: Melee', 'Group: Weapons']);
+    pickScope('Base: Phase Blade');
+    await waitFor(() => expect(searchListings).toHaveBeenCalled());
+    expect(lastFilters().baseCode).toBe('7cr');
+    openScopes();
+    pickScope('Group: 1H');
+    await waitFor(() => expect(lastFilters().baseCode).toContain('"7cr"'));
+    expect(lastFilters().baseCode).not.toContain('"7gd"');
+  });
+
+  it('lists a helm through its type and its family, and a type with no family (Sorceress Orb) to its weapon groups', () => {
+    const { unmount } = renderWidget(rareRing({ name: 'Doom Visage', type: 'Shako' }));
+    openScopes();
+    expect(scopeLabels()).toEqual(['Base: Shako', 'Type: Helm', expect.stringMatching(/^Group: /)]);
+    expect(scopeRows()[2]).toMatch(/ · \d+ types$/);
+    unmount();
     renderWidget(rareRing({ name: 'Doom Eye', type: 'Eagle Orb' }));
-    fireEvent.click(modeToggle());
-    await waitFor(() => expect(modeToggle().textContent).toBe('Type: Sorceress Orb'));
-    fireEvent.click(modeToggle());
-    await waitFor(() => expect(modeToggle().textContent).toBe('Group: 1H'));
+    openScopes();
+    expect(scopeLabels()).toEqual([
+      'Base: Eagle Orb',
+      'Type: Sorceress Orb',
+      'Group: 1H',
+      'Group: Melee',
+      'Group: Weapons',
+    ]);
+  });
+
+  it('picks a scope with the arrow keys and Enter, and Escape closes the menu', async () => {
+    renderWidget(rareRing({ name: 'Doom Edge', type: 'Colossus Blade' }));
+    openScopes();
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
+
+    fireEvent.keyDown(modeToggle(), { key: 'ArrowDown' });
+    await waitFor(() => expect(document.activeElement?.getAttribute('role')).toBe('menuitem'));
+    fireEvent.keyDown(document.activeElement!, { key: 'ArrowDown' });
+    await waitFor(() => expect(document.activeElement?.textContent).toMatch(/^Type: Sword/));
+    fireEvent.keyDown(document.activeElement!, { key: 'Enter' });
+    await waitFor(() => expect(searchListings).toHaveBeenCalled());
+    expect(modeToggle().textContent).toBe('Type: Sword');
+  });
+
+  it('the mouse wheel on the scope steps narrower and wider without opening the menu', async () => {
+    renderWidget(rareRing({ name: 'Doom Edge', type: 'Colossus Blade' }));
+    fireEvent.wheel(modeToggle(), { deltaY: -100 });
+    expect(modeToggle().textContent).toBe('Base: Colossus Blade');
+    fireEvent.wheel(modeToggle(), { deltaY: 100 });
+    await waitFor(() => expect(modeToggle().textContent).toBe('Type: Sword'));
+    fireEvent.wheel(modeToggle(), { deltaY: 100 });
+    await waitFor(() => expect(modeToggle().textContent).toBe('Group: 2H Melee'));
+    fireEvent.wheel(modeToggle(), { deltaY: -100 });
+    await waitFor(() => expect(modeToggle().textContent).toBe('Type: Sword'));
+    for (let i = 0; i < 6; i++) fireEvent.wheel(modeToggle(), { deltaY: 100 });
+    await waitFor(() => expect(modeToggle().textContent).toBe('Group: Weapons'));
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it('gives a unique no scope menu: its base is plain text', () => {
+    renderWidget({ name: 'Harlequin Crest', quality: 'Unique', type: 'Shako', iLevel: 80, stats: [] });
+    expect(screen.queryByRole('button', { name: MODE_TOGGLE })).toBeNull();
+    expect(screen.getByText('Base: Shako')).toBeTruthy();
   });
 
   it('Net Worth opens the currency panel', () => {

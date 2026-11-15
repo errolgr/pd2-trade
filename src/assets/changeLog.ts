@@ -1,6 +1,7 @@
 export const changeLog = {
   '0.11.4': [
     '🆕 Weapon groups: the price check header widens a weapon past its type to its hand count (2H Melee), Melee or Ranged, then Weapons, and the market browser’s Type filter offers Weapons, 1H, 2H, Melee and Ranged',
+    '✨ Price check: clicking the header’s search scope opens a menu of every scope with its size (the mouse wheel steps through them); Phase Blades are searched as one-handed Swords',
     '✨ Builds: corrupted uniques and set items are valued at what listings with the same corruption ask (a Blackhand Key with +1 to All Skills: about 1.2 HR instead of the plain item\'s 0.08), in item prices and the gear value. Their tooltip says "Priced for its corruption"',
     '✨ Price check: uniques and sets also show the price of uncorrupted listings ("Clean 3.50 HR"), with its own tile in the price breakdown',
   ],

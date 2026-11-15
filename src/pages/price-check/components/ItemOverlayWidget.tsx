@@ -65,15 +65,21 @@ import type { MarketFilters, ScoredListing } from '@/pages/market/lib/types';
 import { withRowPresence } from '@/pages/market/lib/presence';
 import { typeGroupOf } from '@/pages/market/lib/type-groups';
 import { weaponGroupLabel } from '@/pages/market/lib/weapon-groups';
-import { availableSearchModes, searchModeWeaponGroup } from '@/pages/price-check/lib/search-modes';
+import { searchModeWeaponGroup, searchScopes } from '@/pages/price-check/lib/search-modes';
 import { MarketBackendError, searchMarketListings } from '@/lib/market-search-api';
 import { reportApiError } from '@/lib/error-reporting';
 import { rememberListingPresence, useListingPresence } from '@/hooks/useListingPresence';
 import { RunePricePopover } from './RunePricePopover';
-import { getStatKey, PSEUDO_KEY_PREFIX, RANGE_FIELDS } from '../lib/utils';
+import { findItemType, getStatKey, PSEUDO_KEY_PREFIX, RANGE_FIELDS } from '../lib/utils';
 import moment from 'moment';
 import { HoverPopover } from '@/components/custom/hover-popover';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useItems } from '@/hooks/useItems';
 import type { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
@@ -81,7 +87,6 @@ import { imageToast, showToast, useOverlay } from '@/overlay';
 import { getSeasonById, getSeasonDateConfig } from '@/lib/seasons';
 import { basisLabel, DEFAULT_PRICE_WINDOW_HOURS, priceWindowNote, windowLabel } from '@/lib/price-window';
 import { ButtonGroup } from '@/components/ui/button-group';
-import { itemTypes } from '@/common/item-types';
 import { ItemQuality } from '@/common/types/Item';
 import { trackEvent, trackMeasurement } from '@/lib/telemetry';
 import {
@@ -469,10 +474,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   ]);
 
   // Find the matched item type entry
-  const matchedItemType = useMemo(() => {
-    if (!item.type) return null;
-    return itemTypes.find((type) => type.bases.some((b) => b.label.toLowerCase() === item.type.toLowerCase()));
-  }, [item.type]);
+  const matchedItemType = useMemo(() => (item.type ? (findItemType(item.type)?.type ?? null) : null), [item.type]);
   // The matched type's group ("Bows" for Amazon Bow): search mode 2
   const typeGroup = useMemo(
     () => (matchedItemType ? typeGroupOf(matchedItemType.typeValue) : undefined),
@@ -739,34 +741,37 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     return { corruptionKey, corruptionName, priceData };
   }, [item.stats, item.quality, corruptionPrices, pd2Item]);
 
-  // The header's scopes for this item (base → type → group → the weapon groups), equal ones skipped
-  const searchModes = useMemo(() => availableSearchModes(item.type, matchedItemType), [item.type, matchedItemType]);
+  // The header's scopes for this item (base → type → group → the weapon groups), equal ones skipped; uniques, sets
+  // and runewords search their own name only
+  const searchScopeList = useMemo(
+    () => (shouldUseToggle ? searchScopes(item.type, matchedItemType) : []),
+    [item.type, matchedItemType, shouldUseToggle],
+  );
 
-  // Toggle search mode (only for items that support toggle)
-  const toggleSearchMode = useCallback(() => {
-    if (!shouldUseToggle) return; // Don't toggle for uniques/sets/runewords
-    setSearchMode((prev) => searchModes[(searchModes.indexOf(prev) + 1) % searchModes.length]);
-  }, [searchModes, shouldUseToggle]);
+  // The scope menu was last used with the mouse: on close, focus stays off its trigger
+  const scopeMenuPointer = useRef(false);
 
-  // Get display text for current search mode
-  const getSearchModeDisplay = useCallback(() => {
-    const weapons = searchModeWeaponGroup(searchMode, item.type, matchedItemType);
-    if (weapons) return t('overlay.header.group', { group: weaponGroupLabel(weapons) });
-    switch (searchMode) {
-      case 0:
-        return t('overlay.header.base', { type: item.type });
-      case 1:
-        return matchedItemType
-          ? t('overlay.header.type', { type: matchedItemType.typeLabel })
-          : t('overlay.header.base', { type: item.type });
-      case 2:
-        return typeGroup
-          ? t('overlay.header.group', { group: typeGroup.label })
-          : t('overlay.header.base', { type: item.type });
-      default:
-        return t('overlay.header.base', { type: item.type });
-    }
-  }, [searchMode, item.type, matchedItemType, typeGroup, t]);
+  // The mouse wheel on the header's scope steps narrower (up) or wider (down), stopping at the ends
+  const stepSearchMode = useCallback(
+    (step: 1 | -1) =>
+      setSearchMode((prev) => {
+        const at = searchScopeList.findIndex((s) => s.mode === prev);
+        return searchScopeList[Math.min(Math.max(at + step, 0), searchScopeList.length - 1)]?.mode ?? prev;
+      }),
+    [searchScopeList],
+  );
+
+  // A search mode's header text
+  const searchModeLabel = useCallback(
+    (mode: number) => {
+      const weapons = searchModeWeaponGroup(mode, item.type, matchedItemType);
+      if (weapons) return t('overlay.header.group', { group: weaponGroupLabel(weapons) });
+      if (mode === 1 && matchedItemType) return t('overlay.header.type', { type: matchedItemType.typeLabel });
+      if (mode === 2 && typeGroup) return t('overlay.header.group', { group: typeGroup.label });
+      return t('overlay.header.base', { type: item.type });
+    },
+    [item.type, matchedItemType, typeGroup, t],
+  );
 
   const openCurrencyValuation = useCallback(() => openPanel('currency'), [openPanel]);
 
@@ -1350,12 +1355,54 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                 <div className="-ml-1.5 flex flex-wrap items-center gap-0.5 text-lg leading-tight">
                   {shouldUseToggle ? (
                     <HeaderToggle
-                      onClick={toggleSearchMode}
                       title={t('overlay.header.toggleSearchMode')}
                       className="text-muted-foreground"
                       marked={hoveredRelaxation?.kind === 'type' || hoveredRelaxation?.kind === 'typeGroup'}
+                      onWheel={(e) => e.deltaY !== 0 && stepSearchMode(e.deltaY > 0 ? 1 : -1)}
+                      menu={
+                        searchScopeList.length > 1 && (
+                          <DropdownMenuContent
+                            align="start"
+                            aria-label={t('overlay.header.scopeMenu')}
+                            className="min-w-56"
+                            onPointerDown={() => (scopeMenuPointer.current = true)}
+                            onPointerDownOutside={() => (scopeMenuPointer.current = true)}
+                            onCloseAutoFocus={(e) => {
+                              // Closed by the mouse: the scope keeps today's look (no focus ring or tooltip)
+                              if (scopeMenuPointer.current) e.preventDefault();
+                              scopeMenuPointer.current = false;
+                            }}
+                          >
+                            {searchScopeList.map(({ mode, size }) => (
+                              <DropdownMenuItem
+                                key={mode}
+                                onSelect={() => {
+                                  setSearchMode(mode);
+                                  setSearchPending(true);
+                                }}
+                              >
+                                <Check aria-hidden
+                                  className={cn('size-3.5', mode !== searchMode && 'invisible')} />
+                                <span className="min-w-0 flex-1 truncate">{searchModeLabel(mode)}</span>
+                                <span className="ml-3 text-xs tabular-nums text-muted-foreground">
+                                  {size.unit === 'base'
+                                    ? t('overlay.header.scopeThisBase')
+                                    : t(
+                                        size.unit === 'bases'
+                                          ? 'overlay.header.scopeBases'
+                                          : 'overlay.header.scopeTypes',
+                                        {
+                                          count: size.count,
+                                        },
+                                      )}
+                                </span>
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        )
+                      }
                     >
-                      {getSearchModeDisplay()}
+                      {searchModeLabel(searchMode)}
                     </HeaderToggle>
                   ) : (
                     <div className="px-1.5 text-muted-foreground"
@@ -2061,49 +2108,64 @@ function ToolbarButton({
   );
 }
 
-/** Clickable header text (search mode / quality cycling) with a swap animation. */
+/**
+ * Clickable header text (search scope / quality cycling) with a swap animation. With a `menu` (a
+ * `DropdownMenuContent`) a click opens it under the text instead of calling `onClick`; the text looks the same.
+ */
 function HeaderToggle({
   onClick,
+  onWheel,
+  menu,
   title,
   className,
   marked,
   children,
 }: {
-  onClick: () => void;
+  onClick?: () => void;
+  onWheel?: React.WheelEventHandler<HTMLButtonElement>;
+  menu?: React.ReactNode;
   title: string;
   className?: string;
   /** An empty search's hovered suggestion would change this: ringed. */
   marked?: boolean;
   children: React.ReactNode;
 }) {
+  const button = (
+    <button
+      type="button"
+      onClick={onClick}
+      onWheel={onWheel}
+      className={cn(
+        'group/toggle inline-flex cursor-pointer items-center gap-1 overflow-hidden rounded-md px-1.5 py-0.5 outline-none transition-[background-color,color,filter] duration-(--dur-fast) hover:bg-accent/60 hover:brightness-125 focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-[0.98]',
+        className,
+        marked && FILTER_HIGHLIGHT_CLASS,
+      )}
+      style={{ fontFamily: 'DiabloFont' }}
+    >
+      <AnimatePresence mode="popLayout"
+        initial={false}>
+        <motion.span
+          key={String(children)}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: DUR.med, ease: EASE_OUT }}
+        >
+          {children}
+        </motion.span>
+      </AnimatePresence>
+      <Repeat2 aria-hidden
+        className="size-3.5 opacity-40 transition-opacity group-hover/toggle:opacity-90" />
+    </button>
+  );
+  if (!menu) return <Tip label={title}>{button}</Tip>;
   return (
-    <Tip label={title}>
-      <button
-        type="button"
-        onClick={onClick}
-        className={cn(
-          'group/toggle inline-flex cursor-pointer items-center gap-1 overflow-hidden rounded-md px-1.5 py-0.5 outline-none transition-[background-color,color,filter] duration-(--dur-fast) hover:bg-accent/60 hover:brightness-125 focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-[0.98]',
-          className,
-          marked && FILTER_HIGHLIGHT_CLASS,
-        )}
-        style={{ fontFamily: 'DiabloFont' }}
-      >
-        <AnimatePresence mode="popLayout"
-          initial={false}>
-          <motion.span
-            key={String(children)}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: DUR.med, ease: EASE_OUT }}
-          >
-            {children}
-          </motion.span>
-        </AnimatePresence>
-        <Repeat2 aria-hidden
-          className="size-3.5 opacity-40 transition-opacity group-hover/toggle:opacity-90" />
-      </button>
-    </Tip>
+    <DropdownMenu>
+      <Tip label={title}>
+        <DropdownMenuTrigger asChild>{button}</DropdownMenuTrigger>
+      </Tip>
+      {menu}
+    </DropdownMenu>
   );
 }
 
