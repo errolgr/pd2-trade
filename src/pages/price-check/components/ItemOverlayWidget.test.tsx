@@ -386,8 +386,7 @@ describe('ItemOverlayWidget unique price pill', () => {
     fireEvent.mouseEnter(img.parentElement!.parentElement!);
     const popover = await screen.findByRole('dialog');
     expect(within(popover).getByText('Median').parentElement!.textContent).toContain('3.00 HR');
-    expect(within(popover).getByText('Min').parentElement!.textContent).toContain('1.00 HR');
-    expect(within(popover).getByText('Max').parentElement!.textContent).toContain('9.00 HR');
+    expect(within(popover).getByText('Min – Max').parentElement!.textContent).toContain('1.00 – 9.00 HR');
     expect(within(popover).getByText('Samples:').parentElement!.textContent).toContain('42');
     expect(within(popover).getByText('7d Change:').parentElement!.textContent).toContain('+10.0%');
 
