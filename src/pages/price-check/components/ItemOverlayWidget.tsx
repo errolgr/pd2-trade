@@ -1512,16 +1512,15 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                             <PopoverTile label={t('overlay.price.median')}>
                               {averagePriceData.medianPrice.toFixed(2)} HR
                             </PopoverTile>
-                            <PopoverTile label={t('overlay.price.min')}>
-                              {averagePriceData.minPrice.toFixed(2)} HR
-                            </PopoverTile>
-                            <PopoverTile label={t('overlay.price.max')}>
-                              {averagePriceData.maxPrice.toFixed(2)} HR
+                            <PopoverTile
+                              label={t('overlay.price.minMax')}
+                              className={averagePriceData.clean ? undefined : 'col-span-2'}
+                            >
+                              {averagePriceData.minPrice.toFixed(2)} – {averagePriceData.maxPrice.toFixed(2)} HR
                             </PopoverTile>
                             {averagePriceData.clean && (
                               <PopoverTile
                                 label={t('overlay.price.cleanListings', { count: averagePriceData.clean.sampleCount })}
-                                className="col-span-2"
                               >
                                 {averagePriceData.clean.medianPrice.toFixed(2)} HR
                               </PopoverTile>
