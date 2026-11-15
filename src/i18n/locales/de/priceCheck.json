@@ -96,6 +96,7 @@
         "average": "Durchschnitt",
         "listings_one": "{{count}} Inserat",
         "listings_other": "{{count}} Inserate",
+        "more": "+{{n}} weitere ab {{price}} HR",
         "basisLive": "Aktuelle Angebotspreise aktiver Inserate.",
         "basisExpired": "Letzte Angebotspreise beendeter Inserate (abgelaufen, entfernt oder verkauft), keine Verkaufspreise."
       },

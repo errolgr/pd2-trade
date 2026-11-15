@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type MarketPriceStats, parsePriceStats, spreadChart } from './price-stats';
+import { LADDER_ROWS, type MarketPriceStats, parsePriceStats, priceLadder } from './price-stats';
 
 const stats = (
   histogram: MarketPriceStats['histogram'],
@@ -52,56 +52,85 @@ describe('parsePriceStats', () => {
   });
 });
 
-describe('spreadChart', () => {
-  it('no buckets: no chart', () => {
-    expect(spreadChart(stats([]))).toBeNull();
+describe('priceLadder', () => {
+  it('no buckets: no ladder', () => {
+    expect(priceLadder(stats([]))).toBeNull();
+    expect(priceLadder(stats([{ from: 1, to: 1.25, count: 0 }]))).toBeNull();
   });
 
-  it('every listing counted once, in price order; at least 6 bars around a narrow spread', () => {
-    const chart = spreadChart(
+  it('one row per non-empty bucket, cheapest first; the median bucket and the middle half marked', () => {
+    // p25 1.5, median 2.5, p75 4
+    const ladder = priceLadder(
       stats([
-        { from: 2, to: 2.5, count: 7 },
-        { from: 2.5, to: 3.15, count: 3 },
-      ]),
-    )!;
-    expect(chart.bars.length).toBe(6);
-    expect(chart.bars.reduce((n, b) => n + b.count, 0)).toBe(10);
-    expect(chart.min).toBeLessThan(2);
-    expect(chart.max).toBeGreaterThan(3.15);
-    for (let i = 1; i < chart.bars.length; i++) expect(chart.bars[i].from).toBeCloseTo(chart.bars[i - 1].to);
-    // 2–2.5 lands left of 2.5–3.15
-    const at = (price: number) => chart.bars.findIndex((b) => b.from <= price && price < b.to);
-    expect(chart.bars[at(2.2)].count).toBe(7);
-    expect(chart.bars[at(2.8)].count).toBe(3);
-  });
-
-  it('a far outlier is folded into the end bar instead of stretching the axis', () => {
-    const chart = spreadChart(
-      stats([
-        { from: 1, to: 1.25, count: 30 },
-        { from: 1.25, to: 1.6, count: 40 },
-        { from: 1.6, to: 2, count: 29 },
+        { from: 0.01, to: 0.0125, count: 1 },
+        { from: 1.25, to: 1.6, count: 6 },
+        { from: 2, to: 2.5, count: 0 },
+        { from: 2.5, to: 3.15, count: 12 },
+        { from: 4, to: 5, count: 5 },
         { from: 1000, to: null, count: 1 },
       ]),
     )!;
-    expect(chart.max).toBeLessThan(10);
-    expect(chart.bars.reduce((n, b) => n + b.count, 0)).toBe(100);
-    expect(chart.bars[chart.bars.length - 1].count).toBeGreaterThanOrEqual(1);
+    expect(ladder.rows.map((r) => [r.from, r.count, r.median, r.middleHalf])).toEqual([
+      [0.01, 1, false, false],
+      [1.25, 6, false, true],
+      [2.5, 12, true, true],
+      [4, 5, false, true],
+      [1000, 1, false, false],
+    ]);
+    expect(ladder.peak).toBe(12);
+    expect(ladder.more).toBeNull();
   });
 
-  it('a wide spread is at most 16 bars; positions run 0..1 on a log axis, clamped', () => {
-    const chart = spreadChart(
-      stats([
-        { from: 0.01, to: 0.0125, count: 10 },
-        { from: 1, to: 1.25, count: 10 },
-        { from: 400, to: 500, count: 10 },
-      ]),
+  it('a bucket ending at the 25th percentile is outside the middle half; the open-ended one holds a high median', () => {
+    const ladder = priceLadder(
+      stats(
+        [
+          { from: 1.25, to: 1.6, count: 2 },
+          { from: 1.6, to: 2, count: 2 },
+          { from: 1000, to: null, count: 3 },
+        ],
+        { p25: 1.6, median: 1200, p75: 1500 },
+      ),
     )!;
-    expect(chart.bars.length).toBe(16);
-    expect(chart.at(chart.min)).toBeCloseTo(0);
-    expect(chart.at(chart.max)).toBeCloseTo(1);
-    expect(chart.at(Math.sqrt(chart.min * chart.max))).toBeCloseTo(0.5);
-    expect(chart.at(0)).toBe(0);
-    expect(chart.at(1e9)).toBe(1);
+    expect(ladder.rows.map((r) => [r.from, r.median, r.middleHalf])).toEqual([
+      [1.25, false, false],
+      [1.6, false, true],
+      [1000, true, true],
+    ]);
+  });
+
+  it(`shows the cheapest ${LADDER_ROWS} rows and sums the pricier ones into "more"`, () => {
+    const buckets = Array.from({ length: LADDER_ROWS + 3 }, (_, i) => ({ from: i + 1, to: i + 2, count: i + 1 }));
+    const ladder = priceLadder(stats(buckets))!;
+    expect(ladder.rows.map((r) => r.from)).toEqual(buckets.slice(0, LADDER_ROWS).map((b) => b.from));
+    expect(ladder.peak).toBe(LADDER_ROWS);
+    // From the cheapest hidden level
+    expect(ladder.more).toEqual({
+      count: LADDER_ROWS + 1 + (LADDER_ROWS + 2) + (LADDER_ROWS + 3),
+      price: LADDER_ROWS + 1,
+    });
+  });
+
+  it('levels are bucket starts rounded as HR prices are shown; buckets rounding alike share a row', () => {
+    const ladder = priceLadder(
+      stats(
+        [
+          { from: 0.01, to: 0.0125, count: 1 },
+          { from: 0.0125, to: 0.016, count: 2 },
+          { from: 0.016, to: 0.02, count: 1 },
+          { from: 0.02, to: 0.025, count: 3 },
+          { from: 0.125, to: 0.16, count: 4 },
+          { from: 12.5, to: 16, count: 1 },
+        ],
+        { p25: 0.0125, median: 0.02, p75: 0.13 },
+      ),
+    )!;
+    expect(ladder.rows.map((r) => [r.price, r.from, r.to, r.count, r.median])).toEqual([
+      [0.01, 0.01, 0.016, 3, false],
+      [0.02, 0.016, 0.025, 4, true],
+      [0.13, 0.125, 0.16, 4, false],
+      [12.5, 12.5, 16, 1, false],
+    ]);
+    expect(ladder.peak).toBe(4);
   });
 });

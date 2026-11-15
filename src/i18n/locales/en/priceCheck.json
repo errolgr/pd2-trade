@@ -96,6 +96,7 @@
         "average": "Average",
         "listings_one": "{{count}} listing",
         "listings_other": "{{count}} listings",
+        "more": "+{{n}} more from {{price}} HR",
         "basisLive": "Current asking prices of live listings.",
         "basisExpired": "Last asking prices of ended listings (expired, removed or sold), not sale prices."
       },

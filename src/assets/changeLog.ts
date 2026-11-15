@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.11.7': [
+    '✨ Price check: the price spread (hover the median on the Matches line) lists how many listings ask each price range, cheapest first, with the median marked. A handful of listings no longer turns into a row of identical blocks',
+  ],
   '0.11.6': [
     '🔧 Windows: PD2 Trader starts again on PCs without the Microsoft Visual C++ x64 runtime. 0.11.3 to 0.11.5 stopped with "VCRUNTIME140.dll was not found" there',
   ],

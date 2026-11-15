@@ -20,6 +20,7 @@ import { EnterOnce, type EnterTracker } from './EnterOnce';
 import { SellerName } from './SellerName';
 import { OfferBadge } from './OfferBadge';
 import type { ListingOffers } from '../lib/listing-offers';
+import { roundHr } from '../lib/price-stats';
 import { useOpenTrader } from '../hooks/useListingActions';
 import { useTranslation } from '@/i18n';
 
@@ -31,7 +32,7 @@ const SUMMARY_MODS = 4;
 /** "2.5 HR" / "0.75 HR"; null when the listing has no HR price (note only). */
 export function formatHrPrice(hr: number): string | null {
   if (!(hr > 0)) return null;
-  return `${hr >= 10 ? Math.round(hr * 10) / 10 : Math.round(hr * 100) / 100} HR`;
+  return `${roundHr(hr)} HR`;
 }
 
 /**

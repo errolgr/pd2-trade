@@ -1,60 +1,33 @@
+import { Fragment } from 'react';
 import { HoverPopover } from '@/components/custom/hover-popover';
 import { useTranslation } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { formatHrPrice } from '@/pages/market/components/ResultsList';
-import {
-  type MarketPriceStats,
-  MIN_MEDIAN_SAMPLE,
-  type SpreadChart,
-  spreadChart,
-} from '@/pages/market/lib/price-stats';
+import { type MarketPriceStats, MIN_MEDIAN_SAMPLE, priceLadder, roundHr } from '@/pages/market/lib/price-stats';
 
 const hr = (price: number) => price.toFixed(2);
 
-/** Nearest two axis labels' centres may come (share of the axis width): closer, the lower-priority one is dropped. */
-const LABEL_GAP = 0.11;
-
-interface AxisLabel {
-  /** Centre on the axis, 0–1. */
-  at: number;
-  text: string;
-  strong?: boolean;
-}
-
 /**
- * Prices under the chart where they apply: the median (always), the axis ends, then the middle half's edges, each
- * dropped when it would overlap one already placed.
+ * A row's price level, order-book style: where it starts, rounded as HR prices are shown ("2.5 HR" holds 2.5 up to
+ * the next level); "<0.01 HR" for the bucket from 0, "1000+ HR" for the open-ended last one.
  */
-function axisLabels(chart: SpreadChart, stats: MarketPriceStats & { median: number }): AxisLabel[] {
-  const clamp = (at: number) => Math.min(0.94, Math.max(0.06, at));
-  const candidates: AxisLabel[] = [
-    { at: clamp(chart.at(stats.median)), text: hr(stats.median), strong: true },
-    { at: 0.06, text: hr(chart.min) },
-    { at: 0.92, text: `${hr(chart.max)} HR` },
-    ...[stats.p25, stats.p75].flatMap((price) =>
-      price === null ? [] : [{ at: clamp(chart.at(price)), text: hr(price) }],
-    ),
-  ];
-  const placed: AxisLabel[] = [];
-  for (const label of candidates) {
-    if (placed.every((other) => Math.abs(other.at - label.at) >= LABEL_GAP)) placed.push(label);
-  }
-  return placed;
+function levelLabel({ price, from, to }: { price: number; from: number; to: number | null }): string {
+  if (to === null) return `${price}+ HR`;
+  if (from === 0) return `<${roundHr(to)} HR`;
+  return `${price} HR`;
 }
 
 /**
  * "· median 2.5 HR" after the results' match count: the median HR price of every listing the search matches (all
- * pages), with a hover popover of their spread (histogram with prices on its axis, median / middle half / average).
- * Nothing below MIN_MEDIAN_SAMPLE priced matches. `archived`: the search ran over ended listings (the prices are
- * last asks).
+ * pages), with a hover popover of their spread as an ask ladder (listings per price bucket, cheapest first; the
+ * median's bucket marked, the middle half's highlighted) and median / middle half / average. Nothing below
+ * MIN_MEDIAN_SAMPLE priced matches. `archived`: the search ran over ended listings (the prices are last asks).
  */
 export function MatchesMedian({ stats, archived }: { stats: MarketPriceStats; archived: boolean }) {
   const { t } = useTranslation('priceCheck');
   if (stats.count < MIN_MEDIAN_SAMPLE || stats.median === null) return null;
   const median = stats.median;
-  const chart = spreadChart(stats);
-  const peak = chart ? Math.max(...chart.bars.map((b) => b.count)) : 0;
-  const band = chart && stats.p25 !== null && stats.p75 !== null ? [chart.at(stats.p25), chart.at(stats.p75)] : null;
+  const ladder = priceLadder(stats);
 
   return (
     <HoverPopover
@@ -67,61 +40,54 @@ export function MatchesMedian({ stats, archived }: { stats: MarketPriceStats; ar
               {t('overlay.results.spread.listings', { count: stats.count })}
             </span>
           </div>
-          {chart && (
-            <div>
-              <div className="relative h-12"
-                data-testid="price-spread-chart">
-                {band && (
-                  <div
-                    className="absolute inset-y-0 rounded-sm bg-glow/10 ring-1 ring-inset ring-glow/30"
-                    style={{ left: `${band[0] * 100}%`, width: `${Math.max(band[1] - band[0], 0.01) * 100}%` }}
-                  />
-                )}
-                <div className="absolute inset-0 flex items-end gap-px">
-                  {chart.bars.map((bar, i) => {
-                    const mid = chart.at(Math.sqrt(bar.from * bar.to));
-                    const inBand = !!band && mid >= band[0] && mid <= band[1];
-                    return (
-                      <div
-                        key={i}
-                        className={cn('flex-1 rounded-t-[1px]', inBand ? 'bg-glow/70' : 'bg-muted-foreground/35')}
-                        style={{ height: bar.count ? `${Math.max(8, (bar.count / peak) * 100)}%` : 0 }}
-                      />
-                    );
-                  })}
-                </div>
-                <div
-                  className="absolute inset-y-0 w-0.5 -translate-x-1/2 bg-foreground"
-                  style={{ left: `${chart.at(median) * 100}%` }}
-                />
-              </div>
-              <div className="relative mt-1 h-3.5 text-[10px] tabular-nums"
-                data-testid="price-spread-axis">
-                {axisLabels(chart, { ...stats, median }).map((label) => (
+          {ladder && (
+            <div
+              className="grid grid-cols-[0.5rem_auto_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1 text-[11px] tabular-nums"
+              data-testid="price-ladder"
+            >
+              {ladder.rows.map((row) => (
+                <Fragment key={row.from}>
+                  <span className="text-[9px] leading-none text-foreground">{row.median ? '▸' : ''}</span>
                   <span
-                    key={label.text}
                     className={cn(
-                      'absolute -translate-x-1/2 whitespace-nowrap leading-none',
-                      label.strong ? 'font-semibold text-foreground' : 'text-muted-foreground',
+                      'whitespace-nowrap text-right',
+                      row.median ? 'font-semibold text-foreground' : 'text-muted-foreground',
                     )}
-                    style={{ left: `${label.at * 100}%` }}
                   >
-                    {label.text}
+                    {levelLabel(row)}
                   </span>
-                ))}
-              </div>
+                  <div className="h-2.5 overflow-hidden rounded-[3px] bg-muted/40">
+                    <div
+                      className={cn('h-full rounded-[3px]', row.middleHalf ? 'bg-glow/70' : 'bg-muted-foreground/35')}
+                      style={{ width: `${Math.max(6, (row.count / ladder.peak) * 100)}%` }}
+                    />
+                  </div>
+                  <span
+                    className={cn('text-right', row.median ? 'font-semibold text-foreground' : 'text-muted-foreground')}
+                  >
+                    {row.count}
+                  </span>
+                </Fragment>
+              ))}
+              {ladder.more && (
+                <span className="col-span-3 col-start-2 text-muted-foreground">
+                  {t('overlay.results.spread.more', { n: ladder.more.count, price: ladder.more.price })}
+                </span>
+              )}
             </div>
           )}
           <dl className="grid grid-cols-3 gap-2 tabular-nums">
-            <div>
+            <div className="text-left">
               <dt className="text-[10px] uppercase tracking-wider text-muted-foreground">
                 {t('overlay.results.spread.median')}
               </dt>
               <dd className="text-sm font-semibold">{hr(median)} HR</dd>
             </div>
             {stats.p25 !== null && stats.p75 !== null && (
-              <div>
-                <dt className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              <div className="col-start-2 text-center">
+                <dt className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                  <span aria-hidden
+                    className="size-2 rounded-[2px] bg-glow/70" />
                   {t('overlay.results.spread.middleHalf')}
                 </dt>
                 <dd className="text-sm">
@@ -130,7 +96,7 @@ export function MatchesMedian({ stats, archived }: { stats: MarketPriceStats; ar
               </div>
             )}
             {stats.avg !== null && (
-              <div>
+              <div className="col-start-3 text-right">
                 <dt className="text-[10px] uppercase tracking-wider text-muted-foreground">
                   {t('overlay.results.spread.average')}
                 </dt>

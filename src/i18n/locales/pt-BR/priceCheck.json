@@ -103,6 +103,7 @@
         "listings_one": "{{count}} anúncio",
         "listings_many": "{{count}} de anúncios",
         "listings_other": "{{count}} anúncios",
+        "more": "+{{n}} a mais a partir de {{price}} HR",
         "basisLive": "Preços pedidos atuais dos anúncios ativos.",
         "basisExpired": "Últimos preços pedidos de anúncios encerrados (expirados, removidos ou vendidos), não preços de venda."
       },
