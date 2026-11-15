@@ -84,9 +84,10 @@
       "showing": "· 显示 {{shown}} 条",
       "median": "· 中位数",
       "spread": {
-        "title": "全部匹配的价格分布",
-        "middleHalf": "中间一半 {{low}} – {{high}} HR",
-        "average": "平均 {{price}} HR",
+        "title": "价格分布",
+        "median": "中位数",
+        "middleHalf": "中间一半",
+        "average": "平均",
         "listings_other": "{{count}} 个挂单",
         "basisLive": "在售挂单的当前要价。",
         "basisExpired": "已结束挂单（过期、下架或售出）的最后要价，并非成交价。"

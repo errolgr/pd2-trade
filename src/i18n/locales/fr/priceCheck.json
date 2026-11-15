@@ -96,9 +96,10 @@
       "showing": "· {{shown}} affichés",
       "median": "· médiane",
       "spread": {
-        "title": "Répartition des prix de tous les résultats",
-        "middleHalf": "Moitié centrale {{low}} – {{high}} HR",
-        "average": "Moyenne {{price}} HR",
+        "title": "Répartition des prix",
+        "median": "Médiane",
+        "middleHalf": "Moitié centrale",
+        "average": "Moyenne",
         "listings_one": "{{count}} annonce",
         "listings_many": "{{count}} d'annonces",
         "listings_other": "{{count}} annonces",

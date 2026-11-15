@@ -90,9 +90,10 @@
       "showing": "· showing {{shown}}",
       "median": "· median",
       "spread": {
-        "title": "Price spread of all matches",
-        "middleHalf": "Middle half {{low}} – {{high}} HR",
-        "average": "Average {{price}} HR",
+        "title": "Price spread",
+        "median": "Median",
+        "middleHalf": "Middle half",
+        "average": "Average",
         "listings_one": "{{count}} listing",
         "listings_other": "{{count}} listings",
         "basisLive": "Current asking prices of live listings.",
