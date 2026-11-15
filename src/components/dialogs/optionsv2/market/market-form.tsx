@@ -2,15 +2,14 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import React from 'react';
-import { Volume1, Volume2, VolumeX } from 'lucide-react';
 import { Form, FormControl, FormField, FormMessage } from '@/components/ui/form';
 import { ISettings, useOptions } from '@/hooks/useOptions';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
-import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DEFAULT_WHISPER_TEMPLATE } from '@/pages/market/lib/whisper';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
+import { VolumeControl } from '../volume-control';
 import {
   ageDayOptions,
   alertSecondsOptions,
@@ -332,7 +331,6 @@ export function MarketForm() {
             name="marketAlertVolume"
             render={({ field }) => {
               const volume = field.value;
-              const VolumeIcon = volume === 0 ? VolumeX : volume < 50 ? Volume1 : Volume2;
               const soundOff = !form.watch('marketAlertSoundEnabled');
               return (
                 <SettingsRow
@@ -348,22 +346,12 @@ export function MarketForm() {
                   }
                   description={t('market.alerts.volume.description')}
                   control={
-                    <div className="flex w-[240px] items-center gap-3">
-                      <VolumeIcon aria-hidden
-                        className="size-4 shrink-0 text-muted-foreground" />
-                      <FormControl>
-                        <Slider
-                          aria-label={t('market.alerts.volume.ariaLabel')}
-                          min={0}
-                          max={100}
-                          step={1}
-                          value={[volume]}
-                          onValueChange={(value) => field.onChange(value[0])}
-                          disabled={soundOff}
-                          className="flex-1"
-                        />
-                      </FormControl>
-                    </div>
+                    <VolumeControl
+                      value={volume}
+                      onChange={field.onChange}
+                      disabled={soundOff}
+                      ariaLabel={t('market.alerts.volume.ariaLabel')}
+                    />
                   }
                 >
                   <FormMessage />

@@ -1,5 +1,6 @@
 export const changeLog = {
   '0.11.7': [
+    '🆕 Settings: a Test button next to the notification and market alert volume sliders plays the sound at that volume, so you can set it without waiting for a real alert',
     '✨ Price check: the price spread (hover the median on the Matches line) lists how many listings ask each price range, cheapest first, with the median marked. A handful of listings no longer turns into a row of identical blocks',
   ],
   '0.11.6': [

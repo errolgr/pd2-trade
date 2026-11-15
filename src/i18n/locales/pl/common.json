@@ -26,7 +26,9 @@
     "apply": "Zastosuj",
     "signIn": "Zaloguj się",
     "signOut": "Wyloguj się",
-    "tryAgain": "Spróbuj ponownie"
+    "tryAgain": "Spróbuj ponownie",
+    "test": "Testuj",
+    "testSoundTitle": "Odtwórz dźwięk powiadomienia z tą głośnością"
   },
   "status": {
     "loading": "Wczytywanie…",

@@ -4,19 +4,19 @@ import { z } from 'zod';
 import { Form, FormControl, FormField, FormMessage } from '@/components/ui/form';
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { BellOff, Check, Plus, UserX, Volume1, Volume2, VolumeX, X } from 'lucide-react';
+import { BellOff, Check, Plus, UserX, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useOptions } from '@/hooks/useOptions';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
 import { DUR, EASE_OUT, fadeIn, popIn } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { templatePlaceholders } from '@/lib/message-templates';
 import { DEFAULT_TOAST_POPUP_TYPES, isToastTypeOn, toggleToastType } from '@/lib/toast-types';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
+import { VolumeControl } from '../volume-control';
 import { CHAT_TIMING_OPTIONS, optionLabel } from '../setting-options';
 import { ChatTemplatesEditor } from './chat-templates-editor';
 import { Trans, useTranslation } from '@/i18n';
@@ -431,7 +431,6 @@ export function ChatForm() {
             name="whisperNotificationVolume"
             render={({ field }) => {
               const volume = field.value ?? 70;
-              const VolumeIcon = volume === 0 ? VolumeX : volume < 50 ? Volume1 : Volume2;
               return (
                 <SettingsRow
                   disabled={isDisabled}
@@ -445,23 +444,9 @@ export function ChatForm() {
                     />
                   }
                   description={t('chat.sound.notificationVolume.description')}
-                  control={
-                    <div className="flex w-[240px] items-center gap-3">
-                      <VolumeIcon aria-hidden
-                        className="size-4 shrink-0 text-muted-foreground" />
-                      <FormControl>
-                        <Slider
-                          min={0}
-                          max={100}
-                          step={1}
-                          value={[volume]}
-                          onValueChange={(value) => field.onChange(value[0])}
-                          disabled={isDisabled}
-                          className="flex-1"
-                        />
-                      </FormControl>
-                    </div>
-                  }
+                  control={<VolumeControl value={volume}
+                    onChange={field.onChange}
+                    disabled={isDisabled} />}
                 >
                   <FormMessage />
                 </SettingsRow>

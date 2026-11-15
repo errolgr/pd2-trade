@@ -26,7 +26,9 @@
     "apply": "Aplicar",
     "signIn": "Entrar",
     "signOut": "Sair",
-    "tryAgain": "Tentar novamente"
+    "tryAgain": "Tentar novamente",
+    "test": "Testar",
+    "testSoundTitle": "Tocar o som de notificação neste volume"
   },
   "status": {
     "loading": "Carregando…",

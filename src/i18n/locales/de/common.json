@@ -26,7 +26,9 @@
     "apply": "Anwenden",
     "signIn": "Anmelden",
     "signOut": "Abmelden",
-    "tryAgain": "Erneut versuchen"
+    "tryAgain": "Erneut versuchen",
+    "test": "Testen",
+    "testSoundTitle": "Benachrichtigungston mit dieser Lautstärke abspielen"
   },
   "status": {
     "loading": "Wird geladen…",
