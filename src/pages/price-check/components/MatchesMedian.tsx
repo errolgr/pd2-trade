@@ -76,15 +76,15 @@ export function MatchesMedian({ stats, archived }: { stats: MarketPriceStats; ar
               )}
             </div>
           )}
-          <dl className="grid grid-cols-3 gap-2 text-center tabular-nums">
-            <div>
+          <dl className="grid grid-cols-3 gap-2 tabular-nums">
+            <div className="text-left">
               <dt className="text-[10px] uppercase tracking-wider text-muted-foreground">
                 {t('overlay.results.spread.median')}
               </dt>
               <dd className="text-sm font-semibold">{hr(median)} HR</dd>
             </div>
             {stats.p25 !== null && stats.p75 !== null && (
-              <div>
+              <div className="col-start-2 text-center">
                 <dt className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground">
                   <span aria-hidden
                     className="size-2 rounded-[2px] bg-glow/70" />
@@ -96,7 +96,7 @@ export function MatchesMedian({ stats, archived }: { stats: MarketPriceStats; ar
               </div>
             )}
             {stats.avg !== null && (
-              <div>
+              <div className="col-start-3 text-right">
                 <dt className="text-[10px] uppercase tracking-wider text-muted-foreground">
                   {t('overlay.results.spread.average')}
                 </dt>
