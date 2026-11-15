@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.11.6': [
+    '🔧 Windows: PD2 Trader starts again on PCs without the Microsoft Visual C++ x64 runtime. 0.11.3 to 0.11.5 stopped with "VCRUNTIME140.dll was not found" there',
+  ],
   '0.11.5': [
     '✨ Price check: the Matches line shows the median price of every matching listing ("Matches: 23 · median 2.5 HR"); hover it for the price spread',
   ],

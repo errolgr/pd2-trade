@@ -192,6 +192,26 @@ jobs:
           fi
           echo "No libwayland-client in ${images[0]}"
 
+      # 0.11.3-0.11.5 shipped a pd2-trader-installer.exe that imports VCRUNTIME140.dll and fails to start without the
+      # VC++ x64 redistributable (CLI 2.12 stopped asking tauri-build 2.5 to link it statically; src-tauri/.cargo/config.toml).
+      # Runs before publish-release, so such a build leaves the release a draft.
+      - name: Check Windows binary links the VC runtime statically
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $dumpbin = & $vswhere -latest -products * -find 'VC\Tools\MSVC\**\bin\Hostx64\x64\dumpbin.exe' | Select-Object -First 1
+          if (-not $dumpbin) { Write-Output '::error::dumpbin.exe not found'; exit 1 }
+          $exe = 'src-tauri\target\release\pd2-trader-installer.exe'
+          $dependents = & $dumpbin /nologo /dependents $exe
+          if ($LASTEXITCODE -ne 0) { Write-Output "::error::dumpbin failed on $exe"; exit 1 }
+          $vcruntime = $dependents | Where-Object { $_ -match '^\s+(vcruntime|msvcp)\d+\S*\.dll\s*$' } | ForEach-Object { $_.Trim() }
+          if ($vcruntime) {
+            Write-Output "::error::$exe needs $($vcruntime -join ', '); it fails to start without the VC++ redistributable"
+            exit 1
+          }
+          Write-Output "$exe links the VC runtime statically"
+
   ########################################################################
   # 3. Publish Release in pd2-trade
   ########################################################################

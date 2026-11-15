@@ -1,0 +1,6 @@
+[env]
+# Link the Visual C++ runtime into pd2-trader.exe so it starts without the VC++ x64 redistributable installed.
+# tauri-build 2.5 links it statically only when STATIC_VCRUNTIME is "true". @tauri-apps/cli up to 2.11 set it for
+# every build; 2.12 stopped and leaves it to newer tauri-build (`build.windows.staticVCRuntime`). With CLI 2.12 and
+# tauri-build 2.5, 0.11.3-0.11.5 shipped needing VCRUNTIME140.dll. Remove when tauri-build reads the config key.
+STATIC_VCRUNTIME = "true"
