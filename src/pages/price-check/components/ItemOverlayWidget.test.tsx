@@ -601,7 +601,7 @@ describe('ItemOverlayWidget market search', () => {
     expect(screen.getByText('· showing 2')).not.toBeNull();
     expect(screen.queryByText('Loading market listings...')).toBeNull();
 
-    expect(searchListings.mock.calls[0][1]).toEqual({ page: 0, limit: 20 });
+    expect(searchListings.mock.calls[0][1]).toEqual({ page: 0, limit: 20, priceStats: true });
     expect(lastFilters()).toMatchObject({ source: 'live', maxAgeDays: 3, ladder: true, hardcore: false });
     expect(lastFilters()).not.toHaveProperty('status');
     // Every search goes to the market service; PD2 only stands in for it
@@ -991,6 +991,137 @@ describe('ItemOverlayWidget market search', () => {
     expect(rows.map((r) => within(r).getByText(/HR$/).textContent)).toEqual(['1 HR', '2 HR']);
     expect(within(rows[1]).getByRole('button', { name: 'Copy whisper' })).not.toBeNull();
     expect(within(rows[0]).queryByRole('button', { name: 'Copy whisper' })).toBeNull();
+  });
+});
+
+describe('ItemOverlayWidget matches median', () => {
+  const stats = (overrides: Partial<MarketPriceStats> = {}): MarketPriceStats => ({
+    count: 23,
+    avg: 3.1,
+    p25: 1.5,
+    median: 2.5,
+    p75: 4,
+    histogram: [
+      { from: 1.25, to: 1.6, count: 6 },
+      { from: 2.5, to: 3.15, count: 12 },
+      { from: 4, to: 5, count: 5 },
+    ],
+    ...overrides,
+  });
+  /** A first page of listings priced unlike any median below, with the spread of all `total` matches. */
+  const pageWithStats = (priceStats: MarketPriceStats | undefined, total = 23): MarketSearchPage => ({
+    ...servicePage([listing({ hr_price: 9 }), listing({ hr_price: 8 })], total),
+    ...(priceStats && { priceStats }),
+  });
+  /** The "· median …" part of the matches line, or null. */
+  const medianPart = () => screen.queryByText('· median');
+
+  it('appends the median of every match to the matches line, asking for it on the first page only', async () => {
+    // A full first page, so the next one loads
+    const first = Array.from({ length: 20 }, (_, i) => listing({ _id: `m${i}`, hr_price: 9 }));
+    searchListings.mockResolvedValueOnce({ ...servicePage(first, 40), priceStats: stats() });
+    searchListings.mockResolvedValueOnce(servicePage([listing({ hr_price: 7 })], 40));
+    const item = rareRing();
+    const { rerenderItem } = renderWidget(item);
+    fireEvent.click(searchButton());
+    await screen.findAllByText('9 HR');
+    expect(medianPart()!.textContent).toBe('· median 2.5 HR');
+    expect(realSearches()[0][1]).toMatchObject({ page: 0, priceStats: true });
+
+    // The next page is the same search: no stats asked, the median stays
+    inView = true;
+    rerenderItem(item);
+    await screen.findByText('7 HR');
+    expect(realSearches()[1][1]).not.toHaveProperty('priceStats');
+    expect(medianPart()!.textContent).toBe('· median 2.5 HR');
+  });
+
+  it('shows the median from 3 priced matches, hides it below', async () => {
+    searchListings.mockResolvedValueOnce(pageWithStats(stats({ count: 3, median: 1.25 }), 3));
+    renderWidget(rareRing());
+    fireEvent.click(searchButton());
+    await screen.findByText('9 HR');
+    expect(medianPart()!.textContent).toBe('· median 1.25 HR');
+
+    // 5 matches, 2 of them priced
+    searchListings.mockResolvedValueOnce(pageWithStats(stats({ count: 2, median: 1.25 }), 5));
+    fireEvent.click(searchButton());
+    await waitFor(() => expect(realSearches()).toHaveLength(2));
+    await waitFor(() => expect(medianPart()).toBeNull());
+    expect(screen.getByText('5')).not.toBeNull();
+  });
+
+  it('hidden for searches PD2 answers: the service cannot express it, or it failed', async () => {
+    const zorbo = { name: '15% Chance to cast level 20 Zorbo Blast on attack' } as Stat;
+    getMarketListings.mockResolvedValue(page([listing({ hr_price: 6 }), listing({ hr_price: 5 })], 40));
+    renderWidget(rareRing({ stats: [FCR, zorbo] }));
+    fireEvent.click(statCheckbox('15% Chance to cast level 20 Zorbo Blast on attack'));
+    fireEvent.click(searchButton());
+    await screen.findByText('6 HR');
+    expect(searchListings).not.toHaveBeenCalled();
+    expect(medianPart()).toBeNull();
+
+    // A service search shows it; the next one, failing over to PD2, drops it (never a median of one page)
+    fireEvent.click(statCheckbox('15% Chance to cast level 20 Zorbo Blast on attack'));
+    searchListings.mockResolvedValueOnce(pageWithStats(stats()));
+    fireEvent.click(searchButton());
+    await waitFor(() => expect(medianPart()).not.toBeNull());
+    searchListings.mockRejectedValueOnce(new MarketBackendError('down', 'unavailable', 503));
+    fireEvent.click(searchButton());
+    await waitFor(() => expect(getMarketListings).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(medianPart()).toBeNull());
+  });
+
+  it('hover shows the spread: histogram, middle half, average, count and the Live basis', async () => {
+    searchListings.mockResolvedValueOnce(pageWithStats(stats()));
+    renderWidget(rareRing());
+    fireEvent.click(searchButton());
+    await screen.findByText('9 HR');
+    fireEvent.mouseEnter(medianPart()!.parentElement!);
+    const popover = await screen.findByRole('dialog');
+    expect(within(popover).getByText('Price spread of all matches')).not.toBeNull();
+    expect(within(popover).getByText('Middle half 1.50 – 4.00 HR · Average 3.10 HR · 23 listings')).not.toBeNull();
+    expect(within(popover).getByText('Current asking prices of live listings.')).not.toBeNull();
+    expect(within(popover).getByTestId('price-spread-chart')).not.toBeNull();
+  });
+
+  it('over Expired, the basis is the last asks of ended listings', async () => {
+    searchListings.mockResolvedValueOnce(pageWithStats(stats()));
+    renderWidget(rareRing());
+    fireEvent.click(screen.getByRole('radio', { name: 'Expired' }));
+    fireEvent.click(searchButton());
+    await screen.findByText('9 HR');
+    fireEvent.mouseEnter(medianPart()!.parentElement!);
+    const popover = await screen.findByRole('dialog');
+    expect(
+      within(popover).getByText('Last asking prices of ended listings (expired, removed or sold), not sale prices.'),
+    ).not.toBeNull();
+  });
+
+  it('follows the search: new filters and switching Live / Expired bring their own median', async () => {
+    searchListings.mockResolvedValueOnce(pageWithStats(stats({ median: 2.5 })));
+    renderWidget(rareRing());
+    fireEvent.click(searchButton());
+    await waitFor(() => expect(medianPart()?.textContent).toBe('· median 2.5 HR'));
+
+    // A stat ticked: the narrower search's median
+    searchListings.mockResolvedValueOnce(pageWithStats(stats({ median: 4.5 }), 12));
+    fireEvent.click(statCheckbox('+20% Faster Cast Rate'));
+    fireEvent.click(searchButton());
+    await waitFor(() => expect(medianPart()?.textContent).toBe('· median 4.5 HR'));
+    expect(lastFilters().stats).toEqual([expect.objectContaining({ key: 'item_fastercastrate' })]);
+
+    // Expired searches again, with the ended listings' median and basis
+    searchListings.mockResolvedValueOnce(pageWithStats(stats({ median: 1.75 }), 30));
+    fireEvent.click(screen.getByRole('radio', { name: 'Expired' }));
+    await waitFor(() => expect(medianPart()?.textContent).toBe('· median 1.75 HR'));
+    expect(lastFilters()).toMatchObject({ source: 'archive' });
+    fireEvent.mouseEnter(medianPart()!.parentElement!);
+    expect(
+      within(await screen.findByRole('dialog')).getByText(
+        'Last asking prices of ended listings (expired, removed or sold), not sale prices.',
+      ),
+    ).not.toBeNull();
   });
 });
 

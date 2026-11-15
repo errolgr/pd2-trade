@@ -88,6 +88,16 @@
       "source": { "label": "Listings to search", "live": "Live", "expired": "Expired" },
       "matches": "Matches: <value>{{total}}</value>",
       "showing": "· showing {{shown}}",
+      "median": "· median",
+      "spread": {
+        "title": "Price spread of all matches",
+        "middleHalf": "Middle half {{low}} – {{high}} HR",
+        "average": "Average {{price}} HR",
+        "listings_one": "{{count}} listing",
+        "listings_other": "{{count}} listings",
+        "basisLive": "Current asking prices of live listings.",
+        "basisExpired": "Last asking prices of ended listings (expired, removed or sold), not sale prices."
+      },
       "loading": "Loading market listings...",
       "errorTitle": "Couldn't load listings",
       "fetchFailed": "Failed to fetch market listings",

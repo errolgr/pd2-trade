@@ -94,6 +94,17 @@
       "source": { "label": "Annonces à rechercher", "live": "Actives", "expired": "Expirées" },
       "matches": "Résultats : <value>{{total}}</value>",
       "showing": "· {{shown}} affichés",
+      "median": "· médiane",
+      "spread": {
+        "title": "Répartition des prix de tous les résultats",
+        "middleHalf": "Moitié centrale {{low}} – {{high}} HR",
+        "average": "Moyenne {{price}} HR",
+        "listings_one": "{{count}} annonce",
+        "listings_many": "{{count}} d'annonces",
+        "listings_other": "{{count}} annonces",
+        "basisLive": "Prix demandés actuels des annonces actives.",
+        "basisExpired": "Derniers prix demandés des annonces terminées (expirées, retirées ou vendues), pas des prix de vente."
+      },
       "loading": "Chargement des annonces...",
       "errorTitle": "Impossible de charger les annonces",
       "fetchFailed": "Échec du chargement des annonces",

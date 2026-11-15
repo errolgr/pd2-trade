@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.11.5': [
+    '✨ Price check: the Matches line shows the median price of every matching listing ("Matches: 23 · median 2.5 HR"); hover it for the price spread',
+  ],
   '0.11.4': [
     '🆕 Price check: weapons widen to 1H / 2H, Melee / Ranged and all Weapons; the market Type filter has the same groups',
     '✨ Price check: the search scope is a menu of every scope with its size (mouse wheel steps through them)',
