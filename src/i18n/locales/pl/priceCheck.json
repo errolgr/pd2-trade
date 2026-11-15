@@ -102,9 +102,10 @@
       "showing": "· pokazano {{shown}}",
       "median": "· mediana",
       "spread": {
-        "title": "Rozkład cen wszystkich wyników",
-        "middleHalf": "Środkowa połowa {{low}} – {{high}} HR",
-        "average": "Średnia {{price}} HR",
+        "title": "Rozkład cen",
+        "median": "Mediana",
+        "middleHalf": "Środkowa połowa",
+        "average": "Średnia",
         "listings_one": "{{count}} ogłoszenie",
         "listings_few": "{{count}} ogłoszenia",
         "listings_many": "{{count}} ogłoszeń",

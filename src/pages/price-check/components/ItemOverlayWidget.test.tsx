@@ -1072,17 +1072,22 @@ describe('ItemOverlayWidget matches median', () => {
     await waitFor(() => expect(medianPart()).toBeNull());
   });
 
-  it('hover shows the spread: histogram, middle half, average, count and the Live basis', async () => {
+  it('hover shows the spread: count, histogram with the median on its axis, stat row and the Live basis', async () => {
     searchListings.mockResolvedValueOnce(pageWithStats(stats()));
     renderWidget(rareRing());
     fireEvent.click(searchButton());
     await screen.findByText('9 HR');
     fireEvent.mouseEnter(medianPart()!.parentElement!);
     const popover = await screen.findByRole('dialog');
-    expect(within(popover).getByText('Price spread of all matches')).not.toBeNull();
-    expect(within(popover).getByText('Middle half 1.50 – 4.00 HR · Average 3.10 HR · 23 listings')).not.toBeNull();
-    expect(within(popover).getByText('Current asking prices of live listings.')).not.toBeNull();
+    expect(within(popover).getByText('Price spread')).not.toBeNull();
+    expect(within(popover).getByText('23 listings')).not.toBeNull();
     expect(within(popover).getByTestId('price-spread-chart')).not.toBeNull();
+    expect(within(within(popover).getByTestId('price-spread-axis')).getByText('2.50')).not.toBeNull();
+    const stat = (label: string) => within(popover).getByText(label).nextElementSibling!.textContent;
+    expect(stat('Median')).toBe('2.50 HR');
+    expect(stat('Middle half')).toBe('1.50–4.00');
+    expect(stat('Average')).toBe('3.10');
+    expect(within(popover).getByText('Current asking prices of live listings.')).not.toBeNull();
   });
 
   it('over Expired, the basis is the last asks of ended listings', async () => {

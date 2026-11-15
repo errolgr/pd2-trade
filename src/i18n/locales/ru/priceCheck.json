@@ -102,9 +102,10 @@
       "showing": "· показано {{shown}}",
       "median": "· медиана",
       "spread": {
-        "title": "Разброс цен всех найденных",
-        "middleHalf": "Средняя половина {{low}} – {{high}} HR",
-        "average": "В среднем {{price}} HR",
+        "title": "Разброс цен",
+        "median": "Медиана",
+        "middleHalf": "Средняя половина",
+        "average": "Среднее",
         "listings_one": "{{count}} объявление",
         "listings_few": "{{count}} объявления",
         "listings_many": "{{count}} объявлений",

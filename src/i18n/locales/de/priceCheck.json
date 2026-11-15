@@ -90,9 +90,10 @@
       "showing": "· {{shown}} angezeigt",
       "median": "· Median",
       "spread": {
-        "title": "Preisverteilung aller Treffer",
-        "middleHalf": "Mittlere Hälfte {{low}} – {{high}} HR",
-        "average": "Durchschnitt {{price}} HR",
+        "title": "Preisverteilung",
+        "median": "Median",
+        "middleHalf": "Mittlere Hälfte",
+        "average": "Durchschnitt",
         "listings_one": "{{count}} Inserat",
         "listings_other": "{{count}} Inserate",
         "basisLive": "Aktuelle Angebotspreise aktiver Inserate.",
