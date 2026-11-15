@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { itemTypes } from '@/common/item-types';
+import { SITE_ITEM_TYPES } from '@/pages/market/lib/catalog.data';
 import type { Item, Stat } from './interfaces';
 import { buildStatRows } from './stat-rows';
 import { cleanItemType, getStatKey, getTypeFromBaseType } from './utils';
@@ -47,6 +49,24 @@ describe('getTypeFromBaseType', () => {
 
   it('leaves plain codes as strings even when parsing is requested', () => {
     expect(getTypeFromBaseType('Monarch', true)).toEqual({ type: 'shie', base: 'uit', label: 'Monarch' });
+  });
+
+  it('resolves a map to its tier as PD2 lists it (River of Blood is T3, not T2)', () => {
+    expect(getTypeFromBaseType('River of Blood Map')).toEqual({
+      type: 't3m',
+      base: 't31',
+      label: 'River of Blood Map',
+    });
+  });
+
+  it('files every map base under the tier the trade site does (PD2 reshuffles map tiers between seasons)', () => {
+    const tiers = (types: { code: string; bases: readonly string[] }[]) =>
+      new Map(types.filter((t) => /^t\dm$/.test(t.code)).flatMap((t) => t.bases.map((base) => [base, t.code])));
+    const site = tiers(SITE_ITEM_TYPES.map((t) => ({ code: t.code, bases: t.bases.map((b) => b.code) })));
+    const ours = tiers(
+      itemTypes.map((t) => ({ code: t.typeValue, bases: t.bases.map((b) => b.value).filter((b) => b !== 'Any') })),
+    );
+    expect(Object.fromEntries(ours)).toEqual(Object.fromEntries(site));
   });
 });
 
