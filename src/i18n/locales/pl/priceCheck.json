@@ -100,6 +100,18 @@
       "source": { "label": "Przeszukiwane ogłoszenia", "live": "Aktywne", "expired": "Wygasłe" },
       "matches": "Wyniki: <value>{{total}}</value>",
       "showing": "· pokazano {{shown}}",
+      "median": "· mediana",
+      "spread": {
+        "title": "Rozkład cen wszystkich wyników",
+        "middleHalf": "Środkowa połowa {{low}} – {{high}} HR",
+        "average": "Średnia {{price}} HR",
+        "listings_one": "{{count}} ogłoszenie",
+        "listings_few": "{{count}} ogłoszenia",
+        "listings_many": "{{count}} ogłoszeń",
+        "listings_other": "{{count}} ogłoszenia",
+        "basisLive": "Aktualne ceny wywoławcze aktywnych ogłoszeń.",
+        "basisExpired": "Ostatnie ceny wywoławcze zakończonych ogłoszeń (wygasłych, usuniętych lub sprzedanych), nie ceny sprzedaży."
+      },
       "loading": "Wczytywanie ogłoszeń z rynku...",
       "errorTitle": "Nie można wczytać ogłoszeń",
       "fetchFailed": "Nie udało się pobrać ogłoszeń z rynku",

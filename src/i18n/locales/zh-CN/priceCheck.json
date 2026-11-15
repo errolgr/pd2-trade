@@ -82,6 +82,15 @@
       "source": { "label": "搜索范围", "live": "在售", "expired": "已过期" },
       "matches": "匹配：<value>{{total}}</value>",
       "showing": "· 显示 {{shown}} 条",
+      "median": "· 中位数",
+      "spread": {
+        "title": "全部匹配的价格分布",
+        "middleHalf": "中间一半 {{low}} – {{high}} HR",
+        "average": "平均 {{price}} HR",
+        "listings_other": "{{count}} 个挂单",
+        "basisLive": "在售挂单的当前要价。",
+        "basisExpired": "已结束挂单（过期、下架或售出）的最后要价，并非成交价。"
+      },
       "loading": "正在加载市场挂单…",
       "errorTitle": "无法加载挂单",
       "fetchFailed": "获取市场挂单失败",

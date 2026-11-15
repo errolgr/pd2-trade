@@ -94,6 +94,17 @@
       "source": { "label": "Anuncios a buscar", "live": "Activos", "expired": "Caducados" },
       "matches": "Coincidencias: <value>{{total}}</value>",
       "showing": "· mostrando {{shown}}",
+      "median": "· mediana",
+      "spread": {
+        "title": "Distribución de precios de todas las coincidencias",
+        "middleHalf": "Mitad central {{low}} – {{high}} HR",
+        "average": "Media {{price}} HR",
+        "listings_one": "{{count}} anuncio",
+        "listings_many": "{{count}} de anuncios",
+        "listings_other": "{{count}} anuncios",
+        "basisLive": "Precios pedidos actuales de anuncios activos.",
+        "basisExpired": "Últimos precios pedidos de anuncios terminados (caducados, retirados o vendidos), no precios de venta."
+      },
       "loading": "Cargando anuncios del mercado...",
       "errorTitle": "No se pudieron cargar los anuncios",
       "fetchFailed": "No se pudieron obtener los anuncios del mercado",

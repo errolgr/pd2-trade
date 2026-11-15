@@ -88,6 +88,16 @@
       "source": { "label": "Zu durchsuchende Inserate", "live": "Aktiv", "expired": "Abgelaufen" },
       "matches": "Treffer: <value>{{total}}</value>",
       "showing": "· {{shown}} angezeigt",
+      "median": "· Median",
+      "spread": {
+        "title": "Preisverteilung aller Treffer",
+        "middleHalf": "Mittlere Hälfte {{low}} – {{high}} HR",
+        "average": "Durchschnitt {{price}} HR",
+        "listings_one": "{{count}} Inserat",
+        "listings_other": "{{count}} Inserate",
+        "basisLive": "Aktuelle Angebotspreise aktiver Inserate.",
+        "basisExpired": "Letzte Angebotspreise beendeter Inserate (abgelaufen, entfernt oder verkauft), keine Verkaufspreise."
+      },
       "loading": "Marktinserate werden geladen...",
       "errorTitle": "Inserate konnten nicht geladen werden",
       "fetchFailed": "Marktinserate konnten nicht abgerufen werden",

@@ -114,6 +114,8 @@ import { PriceSparkline } from './PriceSparkline';
 import { keyStatMin, matchRareStats } from '../lib/rare-stat-match';
 import type { AppraisedStat } from '@/lib/rare-appraisal-api';
 import { SimulatorButton } from './SimulatorButton';
+import { MatchesMedian } from './MatchesMedian';
+import type { MarketPriceStats } from '@/pages/market/lib/price-stats';
 import { currentLocale, Trans, useTranslation } from '@/i18n';
 
 /** The header's "Any" quality: searches every base quality (e.g. Rare and Crafted together). */
@@ -190,6 +192,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   // Market listings state: the rows as fetched; `marketRows` below merges PD2's current seller presence in
   const [fetchedRows, setFetchedRows] = useState<ScoredListing[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
+  // The price spread of every match of the shown search (market service only: PD2 pages can't tell it), and whether
+  // that search ran over ended listings
+  const [priceStats, setPriceStats] = useState<{ stats: MarketPriceStats; archived: boolean } | null>(null);
   const [marketLoading, setMarketLoading] = useState(false);
   // `message` is the service's error text, when it sent one
   const [marketError, setMarketError] = useState<{ message?: string } | null>(null);
@@ -547,6 +552,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       activeSearch.current = null;
       setFetchedRows([]);
       setTotalCount(0);
+      setPriceStats(null);
       setHasMore(false);
       setMarketLoading(false);
       setMarketError(null);
@@ -809,15 +815,17 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       };
 
       try {
-        let result: { rows: ScoredListing[]; total: number; fetched: number };
+        let result: { rows: ScoredListing[]; total: number; fetched: number; priceStats?: MarketPriceStats };
         if (search.pd2Only) result = await pd2Page();
         else {
           try {
             const page = await searchMarketListings(search.marketFilters, {
               page: search.skip / ITEMS_PER_PAGE,
               limit: ITEMS_PER_PAGE,
+              // The first page carries the spread of every match; later pages are the same search
+              ...(isNewSearch && { priceStats: true }),
             });
-            result = { rows: page.items, total: page.total, fetched: page.fetched };
+            result = { rows: page.items, total: page.total, fetched: page.fetched, priceStats: page.priceStats };
           } catch (e) {
             if (!(e instanceof MarketBackendError) || search.hasPseudo) throw e;
             reportApiError(e, 'market-service', '/api/market/search', e.status, {
@@ -836,6 +844,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         if (isNewSearch) {
           setFetchedRows(result.rows);
           setTotalCount(result.total);
+          setPriceStats(result.priceStats ? { stats: result.priceStats, archived: search.archived } : null);
           setSearched(true);
         } else {
           setFetchedRows((prev) => {
@@ -1831,6 +1840,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                       components={{ value: <span className="font-semibold tabular-nums text-foreground" /> }}
                     />
                   </span>
+                  {priceStats && <MatchesMedian stats={priceStats.stats}
+                    archived={priceStats.archived} />}
                   {marketListings.length < totalCount && (
                     <span className="tabular-nums">
                       {t('overlay.results.showing', { shown: marketListings.length })}

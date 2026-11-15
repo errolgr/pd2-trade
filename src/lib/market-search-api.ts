@@ -6,6 +6,7 @@ import { fetch } from '@/lib/browser-http';
 import { BACKEND_URL } from '@/lib/pkce';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { type MarketFacetName, type MarketFacets, parseFacets } from '@/pages/market/lib/facets';
+import { type MarketPriceStats, parsePriceStats } from '@/pages/market/lib/price-stats';
 import { MAX_FILTER_TEXT, MAX_SELLER_NAME } from '@/pages/market/lib/defaults';
 import type { MarketFilters, MarketListingStatus, ScoredListing } from '@/pages/market/lib/types';
 
@@ -44,6 +45,8 @@ export interface MarketSearchPage {
   fetched: number;
   /** Facet counts, when the search asked for `facets`. */
   facets?: MarketFacets;
+  /** The price spread of every match, when the search asked for `priceStats`. */
+  priceStats?: MarketPriceStats;
 }
 
 /**
@@ -55,6 +58,7 @@ export function marketSearchBody(
   page: number,
   limit: number,
   facets?: readonly MarketFacetName[],
+  priceStats?: boolean,
 ) {
   const f = filters;
   return {
@@ -112,6 +116,7 @@ export function marketSearchBody(
     page,
     limit,
     ...(facets?.length ? { facets } : {}),
+    ...(priceStats ? { priceStats: true } : {}),
   };
 }
 
@@ -147,7 +152,15 @@ function parsePage(body: unknown): MarketSearchPage {
     });
   }
   const facets = 'facets' in body ? parseFacets(body.facets) : undefined;
-  return { items, total: total ?? items.length, totalExact, fetched: (body.items as unknown[]).length, facets };
+  const priceStats = 'priceStats' in body ? parsePriceStats(body.priceStats) : undefined;
+  return {
+    items,
+    total: total ?? items.length,
+    totalExact,
+    fetched: (body.items as unknown[]).length,
+    facets,
+    ...(priceStats && { priceStats }),
+  };
 }
 
 async function errorMessage(response: Response): Promise<string | null> {
@@ -161,8 +174,8 @@ async function errorMessage(response: Response): Promise<string | null> {
 }
 
 /**
- * One page of listings from the market service. Rejects with MarketBackendError (see its kinds) or, when `signal`
- * aborts, with the abort reason.
+ * One page of listings from the market service; with `priceStats`, the price spread of every match. Rejects with
+ * MarketBackendError (see its kinds) or, when `signal` aborts, with the abort reason.
  */
 export async function searchMarketListings(
   filters: MarketFilters,
@@ -171,7 +184,14 @@ export async function searchMarketListings(
     limit,
     signal,
     facets,
-  }: { page: number; limit: number; signal?: AbortSignal; facets?: readonly MarketFacetName[] },
+    priceStats,
+  }: {
+    page: number;
+    limit: number;
+    signal?: AbortSignal;
+    facets?: readonly MarketFacetName[];
+    priceStats?: boolean;
+  },
 ): Promise<MarketSearchPage> {
   if (signal?.aborted) throw signal.reason;
   const controller = new AbortController();
@@ -189,7 +209,7 @@ export async function searchMarketListings(
       response = await fetch(`${BACKEND_URL}/api/market/search`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(marketSearchBody(filters, page, limit, facets)),
+        body: JSON.stringify(marketSearchBody(filters, page, limit, facets, priceStats)),
         signal: controller.signal,
       });
     } catch {
