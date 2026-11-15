@@ -49,43 +49,60 @@ export function parsePriceStats(raw: unknown): MarketPriceStats | undefined {
   };
 }
 
-/** One row of the price ladder: a histogram bucket's listings. */
+/** An HR price as the app shows it: 2 decimals below 10 HR, 1 from 10 up (0.13, 2.5, 12.5). */
+export const roundHr = (hr: number): number => (hr >= 10 ? Math.round(hr * 10) / 10 : Math.round(hr * 100) / 100);
+
+/** One row of the price ladder: the listings of the buckets whose start rounds to `price`. */
 export interface LadderRow extends PriceStatsBucket {
-  /** The median price falls in this bucket. */
+  /** The row's price level: its first bucket's start, rounded as HR prices are shown. */
+  price: number;
+  /** The median price falls in this row. */
   median: boolean;
-  /** The bucket overlaps the middle half (25th to 75th percentile). */
+  /** The row overlaps the middle half (25th to 75th percentile). */
   middleHalf: boolean;
 }
 
 export interface PriceLadder {
-  /** The cheapest non-empty buckets, cheapest first (at most LADDER_ROWS). */
+  /** The cheapest price levels with listings, cheapest first (at most LADDER_ROWS). */
   rows: LadderRow[];
   /** The most listings in one shown row: a full-width bar. */
   peak: number;
-  /** The buckets past the shown rows: their listings, and the price the cheapest of them starts at. */
-  more: { count: number; from: number } | null;
+  /** The levels past the shown rows: their listings, and the price the cheapest of them starts at. */
+  more: { count: number; price: number } | null;
 }
 
-/** Most rows the ladder shows; pricier buckets are summed into `more`. */
+/** Most rows the ladder shows; pricier levels are summed into `more`. */
 export const LADDER_ROWS = 8;
 
 /**
- * The stats' histogram as an ask ladder: one row per non-empty bucket, cheapest first, marking the median's bucket
- * and the ones overlapping the middle half. Null without buckets.
+ * The stats' histogram as an ask ladder: one row per price level with listings, cheapest first. A level is a bucket's
+ * start rounded as HR prices are shown, so neighbouring buckets that round alike (0.01 and 0.0125) share a row. Marks
+ * the median's row and the ones overlapping the middle half. Null without buckets.
  */
 export function priceLadder(stats: MarketPriceStats): PriceLadder | null {
-  const buckets = stats.histogram.filter((bucket) => bucket.count > 0);
-  if (buckets.length === 0) return null;
+  const levels: { price: number; from: number; to: number | null; count: number }[] = [];
+  for (const bucket of stats.histogram) {
+    if (bucket.count <= 0) continue;
+    const price = roundHr(bucket.from);
+    const last = levels.at(-1);
+    if (last?.price === price) {
+      last.to = bucket.to;
+      last.count += bucket.count;
+    } else {
+      levels.push({ price, from: bucket.from, to: bucket.to, count: bucket.count });
+    }
+  }
+  if (levels.length === 0) return null;
   const { p25, median, p75 } = stats;
-  const rows = buckets.slice(0, LADDER_ROWS).map((bucket) => ({
-    ...bucket,
-    median: median !== null && median >= bucket.from && (bucket.to === null || median < bucket.to),
-    middleHalf: p25 !== null && p75 !== null && bucket.from <= p75 && (bucket.to === null || bucket.to > p25),
+  const rows = levels.slice(0, LADDER_ROWS).map((level) => ({
+    ...level,
+    median: median !== null && median >= level.from && (level.to === null || median < level.to),
+    middleHalf: p25 !== null && p75 !== null && level.from <= p75 && (level.to === null || level.to > p25),
   }));
-  const rest = buckets.slice(LADDER_ROWS);
+  const rest = levels.slice(LADDER_ROWS);
   return {
     rows,
     peak: Math.max(...rows.map((row) => row.count)),
-    more: rest.length ? { count: rest.reduce((n, bucket) => n + bucket.count, 0), from: rest[0].from } : null,
+    more: rest.length ? { count: rest.reduce((n, level) => n + level.count, 0), price: rest[0].price } : null,
   };
 }

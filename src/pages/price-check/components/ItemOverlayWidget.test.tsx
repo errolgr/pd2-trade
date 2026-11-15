@@ -1086,9 +1086,9 @@ describe('ItemOverlayWidget matches median', () => {
       const label = ladder.getByText(level);
       return [label.previousElementSibling!.textContent, label.nextElementSibling!.nextElementSibling!.textContent];
     };
-    expect(row('1.25')).toEqual(['', '6']);
-    expect(row('2.5')).toEqual(['▸', '12']);
-    expect(row('4')).toEqual(['', '5']);
+    expect(row('1.25 HR')).toEqual(['', '6']);
+    expect(row('2.5 HR')).toEqual(['▸', '12']);
+    expect(row('4 HR')).toEqual(['', '5']);
     const stat = (label: string) => within(popover).getByText(label).nextElementSibling!.textContent;
     expect(stat('Median')).toBe('2.50 HR');
     expect(stat('Middle half')).toBe('1.50–4.00');

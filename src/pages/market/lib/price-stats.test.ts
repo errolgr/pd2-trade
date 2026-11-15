@@ -104,10 +104,33 @@ describe('priceLadder', () => {
     const ladder = priceLadder(stats(buckets))!;
     expect(ladder.rows.map((r) => r.from)).toEqual(buckets.slice(0, LADDER_ROWS).map((b) => b.from));
     expect(ladder.peak).toBe(LADDER_ROWS);
-    // From the cheapest hidden bucket
+    // From the cheapest hidden level
     expect(ladder.more).toEqual({
       count: LADDER_ROWS + 1 + (LADDER_ROWS + 2) + (LADDER_ROWS + 3),
-      from: LADDER_ROWS + 1,
+      price: LADDER_ROWS + 1,
     });
+  });
+
+  it('levels are bucket starts rounded as HR prices are shown; buckets rounding alike share a row', () => {
+    const ladder = priceLadder(
+      stats(
+        [
+          { from: 0.01, to: 0.0125, count: 1 },
+          { from: 0.0125, to: 0.016, count: 2 },
+          { from: 0.016, to: 0.02, count: 1 },
+          { from: 0.02, to: 0.025, count: 3 },
+          { from: 0.125, to: 0.16, count: 4 },
+          { from: 12.5, to: 16, count: 1 },
+        ],
+        { p25: 0.0125, median: 0.02, p75: 0.13 },
+      ),
+    )!;
+    expect(ladder.rows.map((r) => [r.price, r.from, r.to, r.count, r.median])).toEqual([
+      [0.01, 0.01, 0.016, 3, false],
+      [0.02, 0.016, 0.025, 4, true],
+      [0.13, 0.125, 0.16, 4, false],
+      [12.5, 12.5, 16, 1, false],
+    ]);
+    expect(ladder.peak).toBe(4);
   });
 });

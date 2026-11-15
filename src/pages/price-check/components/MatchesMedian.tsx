@@ -3,21 +3,18 @@ import { HoverPopover } from '@/components/custom/hover-popover';
 import { useTranslation } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { formatHrPrice } from '@/pages/market/components/ResultsList';
-import { type MarketPriceStats, MIN_MEDIAN_SAMPLE, priceLadder } from '@/pages/market/lib/price-stats';
+import { type MarketPriceStats, MIN_MEDIAN_SAMPLE, priceLadder, roundHr } from '@/pages/market/lib/price-stats';
 
 const hr = (price: number) => price.toFixed(2);
 
-/** A bucket edge as the server's R10 series has it (0.0125, 0.016, 3.15, 6.3, 10). */
-const edge = (price: number) => String(Number(price.toPrecision(3)));
-
 /**
- * A row's price level, order-book style: where its bucket starts ("2.5" holds 2.5 up to the next level); "<0.01" for
- * the bucket from 0, "1000+" for the open-ended last one.
+ * A row's price level, order-book style: where it starts, rounded as HR prices are shown ("2.5 HR" holds 2.5 up to
+ * the next level); "<0.01 HR" for the bucket from 0, "1000+ HR" for the open-ended last one.
  */
-function priceLevel({ from, to }: { from: number; to: number | null }): string {
-  if (to === null) return `${edge(from)}+`;
-  if (from === 0) return `<${edge(to)}`;
-  return edge(from);
+function levelLabel({ price, from, to }: { price: number; from: number; to: number | null }): string {
+  if (to === null) return `${price}+ HR`;
+  if (from === 0) return `<${roundHr(to)} HR`;
+  return `${price} HR`;
 }
 
 /**
@@ -53,11 +50,11 @@ export function MatchesMedian({ stats, archived }: { stats: MarketPriceStats; ar
                   <span className="text-[9px] leading-none text-foreground">{row.median ? '▸' : ''}</span>
                   <span
                     className={cn(
-                      'whitespace-nowrap',
+                      'whitespace-nowrap text-right',
                       row.median ? 'font-semibold text-foreground' : 'text-muted-foreground',
                     )}
                   >
-                    {priceLevel(row)}
+                    {levelLabel(row)}
                   </span>
                   <div className="h-2.5 overflow-hidden rounded-[3px] bg-muted/40">
                     <div
@@ -74,7 +71,7 @@ export function MatchesMedian({ stats, archived }: { stats: MarketPriceStats; ar
               ))}
               {ladder.more && (
                 <span className="col-span-3 col-start-2 text-muted-foreground">
-                  {t('overlay.results.spread.more', { n: ladder.more.count, price: edge(ladder.more.from) })}
+                  {t('overlay.results.spread.more', { n: ladder.more.count, price: ladder.more.price })}
                 </span>
               )}
             </div>
@@ -93,7 +90,7 @@ export function MatchesMedian({ stats, archived }: { stats: MarketPriceStats; ar
                     className="size-2 rounded-[2px] bg-glow/70" />
                   {t('overlay.results.spread.middleHalf')}
                 </dt>
-                <dd className="text-sm">
+                <dd className="pl-3 text-sm">
                   {hr(stats.p25)}–{hr(stats.p75)}
                 </dd>
               </div>
