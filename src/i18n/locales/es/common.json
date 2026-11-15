@@ -26,7 +26,9 @@
     "apply": "Aplicar",
     "signIn": "Iniciar sesión",
     "signOut": "Cerrar sesión",
-    "tryAgain": "Intentar de nuevo"
+    "tryAgain": "Intentar de nuevo",
+    "test": "Probar",
+    "testSoundTitle": "Reproducir el sonido de aviso a este volumen"
   },
   "status": {
     "loading": "Cargando…",

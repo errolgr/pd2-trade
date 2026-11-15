@@ -2,12 +2,14 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useOptions, type ISettings } from '@/hooks/useOptions';
+import { playNotificationSound } from '@/hooks/useSocketNotifications';
 import { createOptionsStore, type OptionsStore } from '../test-utils';
 import { MarketForm } from './market-form';
 
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 // vi.mock factories are hoisted above static imports, so the shim must be loaded inside the factory.
 vi.mock('@/components/ui/select', async () => (await import('../test-utils')).selectShim);
+vi.mock('@/hooks/useSocketNotifications', () => ({ playNotificationSound: vi.fn() }));
 
 let store: OptionsStore;
 
@@ -50,5 +52,17 @@ describe('MarketForm', () => {
     await advance(300);
     expect(store.updateSettings.mock.calls.at(-1)?.[0]).toEqual({ marketAlertSoundEnabled: false });
     expect(screen.getByRole('slider').getAttribute('data-disabled')).not.toBeNull();
+  });
+
+  it('Test plays the alert sound at the volume on the slider, before it is saved; not while the sound is off', () => {
+    renderForm({ marketAlertSoundEnabled: true, marketAlertVolume: 70 });
+    fireEvent.keyDown(screen.getByRole('slider'), { key: 'End' });
+    fireEvent.click(screen.getByRole('button', { name: 'Test' }));
+    expect(playNotificationSound).toHaveBeenCalledWith(100);
+    expect(store.updateSettings).not.toHaveBeenCalled();
+
+    cleanup();
+    renderForm({ marketAlertSoundEnabled: false, marketAlertVolume: 70 });
+    expect(screen.getByRole('button', { name: 'Test' }).hasAttribute('disabled')).toBe(true);
   });
 });

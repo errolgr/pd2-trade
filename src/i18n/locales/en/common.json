@@ -26,7 +26,9 @@
     "apply": "Apply",
     "signIn": "Sign in",
     "signOut": "Sign out",
-    "tryAgain": "Try again"
+    "tryAgain": "Try again",
+    "test": "Test",
+    "testSoundTitle": "Play the notification sound at this volume"
   },
   "status": {
     "loading": "Loading…",
