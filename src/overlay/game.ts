@@ -12,8 +12,8 @@ const RECT_REFRESH_MS = 2000;
 
 /** Diablo II's render aspect (PD2's 1068x600). */
 export const GAME_ASPECT = 16 / 9;
-/** Wider than this counts as pillarboxed; absorbs rounding such as 1366x768. */
-const PILLARBOX_TOLERANCE = 1.01;
+/** Wider (pillarboxed) or taller (letterboxed) than 16:9 by more than this; absorbs rounding such as 1366x768. */
+const BOX_TOLERANCE = 1.01;
 
 export interface ScreenRect {
   x: number;
@@ -23,15 +23,22 @@ export interface ScreenRect {
 }
 
 /**
- * The part of the Diablo II window the game draws in and traps the cursor in. Fullscreen on a monitor wider than
- * 16:9 (21:9, 32:9) the window spans the monitor but the game is pillarboxed to a centered 16:9 area, so UI
- * anchored to the window edges would sit in the black bars, out of the cursor's reach. Up to 16:9 (incl. 16:10)
- * and in windowed mode the window rect is returned as is.
+ * The part of the Diablo II window (client area) the game draws in and traps the cursor in: a centered 16:9 area.
+ * Wider than 16:9 (fullscreen on 21:9 or 32:9) the game is pillarboxed; taller (fullscreen on 16:10, or a window
+ * sized freely, e.g. 2370x1390) it is letterboxed. UI anchored to the window edges would sit in the black bars, out
+ * of the cursor's reach. At 16:9 the rect is returned as is.
  */
 export function gamePlayRect(rect: ScreenRect): ScreenRect {
-  if (rect.height <= 0 || rect.width <= rect.height * GAME_ASPECT * PILLARBOX_TOLERANCE) return rect;
-  const width = Math.round(rect.height * GAME_ASPECT);
-  return { x: rect.x + Math.round((rect.width - width) / 2), y: rect.y, width, height: rect.height };
+  if (rect.width <= 0 || rect.height <= 0) return rect;
+  if (rect.width > rect.height * GAME_ASPECT * BOX_TOLERANCE) {
+    const width = Math.round(rect.height * GAME_ASPECT);
+    return { x: rect.x + Math.round((rect.width - width) / 2), y: rect.y, width, height: rect.height };
+  }
+  if (rect.height > (rect.width / GAME_ASPECT) * BOX_TOLERANCE) {
+    const height = Math.round(rect.width / GAME_ASPECT);
+    return { x: rect.x, y: rect.y + Math.round((rect.height - height) / 2), width: rect.width, height };
+  }
+  return rect;
 }
 
 export function viewportRect(): OverlayRect {

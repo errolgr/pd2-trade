@@ -121,7 +121,7 @@ describe('gamePlayRect', () => {
   it.each([
     ['16:9 1920x1080', { x: 0, y: 0, width: 1920, height: 1080 }, { x: 0, y: 0, width: 1920, height: 1080 }],
     ['16:9 1366x768', { x: 0, y: 0, width: 1366, height: 768 }, { x: 0, y: 0, width: 1366, height: 768 }],
-    ['16:10 1920x1200', { x: 0, y: 0, width: 1920, height: 1200 }, { x: 0, y: 0, width: 1920, height: 1200 }],
+    ['16:10 1920x1200', { x: 0, y: 0, width: 1920, height: 1200 }, { x: 0, y: 60, width: 1920, height: 1080 }],
     ['21:9 3440x1440', { x: 0, y: 0, width: 3440, height: 1440 }, { x: 440, y: 0, width: 2560, height: 1440 }],
     ['21:9 2560x1080', { x: 0, y: 0, width: 2560, height: 1080 }, { x: 320, y: 0, width: 1920, height: 1080 }],
     ['21:9 3433x1437 (#128)', { x: 0, y: 0, width: 3433, height: 1437 }, { x: 439, y: 0, width: 2555, height: 1437 }],
@@ -131,10 +131,11 @@ describe('gamePlayRect', () => {
       { x: -5120, y: 200, width: 5120, height: 1440 },
       { x: -3840, y: 200, width: 2560, height: 1440 },
     ],
+    ['windowed 1068x600', { x: 300, y: 100, width: 1068, height: 600 }, { x: 300, y: 100, width: 1068, height: 600 }],
     [
-      'windowed 1068x600 + frame',
-      { x: 300, y: 100, width: 1084, height: 639 },
-      { x: 300, y: 100, width: 1084, height: 639 },
+      'windowed 2370x1390, letterboxed',
+      { x: 2743, y: 31, width: 2370, height: 1390 },
+      { x: 2743, y: 60, width: 2370, height: 1333 },
     ],
   ])('%s', (_name, rect, expected) => {
     expect(gamePlayRect(rect)).toEqual(expected);
