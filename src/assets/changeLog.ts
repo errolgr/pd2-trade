@@ -1,5 +1,6 @@
 export const changeLog = {
   '0.11.7': [
+    '🆕 Horadric Sim is in open beta: no waitlist. Sign in with PD2 and the Sim button in the price check, market and Net Worth (and the try-on hotkey) sends items to the planner',
     '🆕 Settings: a Test button next to the notification and market alert volume sliders plays the sound at that volume, so you can set it without waiting for a real alert',
     "✨ Price check: the price spread (hover the median on the Matches line) lists how many listings ask each price range, cheapest first, with the median's row highlighted. A handful of listings no longer turns into a row of identical blocks",
     '🔧 Price check: maps find listings again. PD2 moved maps between tiers this season (River of Blood Map is T3 now), and the price check still searched their old tier, so it found nothing; the newer maps (Kyovashad and others) are searchable too',
