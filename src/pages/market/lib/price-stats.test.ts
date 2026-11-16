@@ -58,7 +58,7 @@ describe('priceLadder', () => {
     expect(priceLadder(stats([{ from: 1, to: 1.25, count: 0 }]))).toBeNull();
   });
 
-  it('one row per non-empty bucket, cheapest first; the median bucket and the middle half marked', () => {
+  it('one row per non-empty bucket, cheapest first; the median bucket marked', () => {
     // p25 1.5, median 2.5, p75 4
     const ladder = priceLadder(
       stats([
@@ -70,18 +70,18 @@ describe('priceLadder', () => {
         { from: 1000, to: null, count: 1 },
       ]),
     )!;
-    expect(ladder.rows.map((r) => [r.from, r.count, r.median, r.middleHalf])).toEqual([
-      [0.01, 1, false, false],
-      [1.25, 6, false, true],
-      [2.5, 12, true, true],
-      [4, 5, false, true],
-      [1000, 1, false, false],
+    expect(ladder.rows.map((r) => [r.from, r.count, r.median])).toEqual([
+      [0.01, 1, false],
+      [1.25, 6, false],
+      [2.5, 12, true],
+      [4, 5, false],
+      [1000, 1, false],
     ]);
     expect(ladder.peak).toBe(12);
     expect(ladder.more).toBeNull();
   });
 
-  it('a bucket ending at the 25th percentile is outside the middle half; the open-ended one holds a high median', () => {
+  it('the open-ended row holds a median above the last bounded bucket', () => {
     const ladder = priceLadder(
       stats(
         [
@@ -89,13 +89,13 @@ describe('priceLadder', () => {
           { from: 1.6, to: 2, count: 2 },
           { from: 1000, to: null, count: 3 },
         ],
-        { p25: 1.6, median: 1200, p75: 1500 },
+        { median: 1200 },
       ),
     )!;
-    expect(ladder.rows.map((r) => [r.from, r.median, r.middleHalf])).toEqual([
-      [1.25, false, false],
-      [1.6, false, true],
-      [1000, true, true],
+    expect(ladder.rows.map((r) => [r.from, r.median])).toEqual([
+      [1.25, false],
+      [1.6, false],
+      [1000, true],
     ]);
   });
 

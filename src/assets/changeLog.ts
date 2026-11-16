@@ -1,8 +1,9 @@
 export const changeLog = {
   '0.11.7': [
     '🆕 Settings: a Test button next to the notification and market alert volume sliders plays the sound at that volume, so you can set it without waiting for a real alert',
-    '✨ Price check: the price spread (hover the median on the Matches line) lists how many listings ask each price range, cheapest first, with the median marked. A handful of listings no longer turns into a row of identical blocks',
+    "✨ Price check: the price spread (hover the median on the Matches line) lists how many listings ask each price range, cheapest first, with the median's row highlighted. A handful of listings no longer turns into a row of identical blocks",
     '🔧 Price check: maps find listings again. PD2 moved maps between tiers this season (River of Blood Map is T3 now), and the price check still searched their old tier, so it found nothing; the newer maps (Kyovashad and others) are searchable too',
+    '🔧 Quick List and price check: Corrupted Ears (Corrupted Paladin\'s Ear and the rest) no longer fail with "Item is not supported or invalid"',
   ],
   '0.11.6': [
     '🔧 Windows: PD2 Trader starts again on PCs without the Microsoft Visual C++ x64 runtime. 0.11.3 to 0.11.5 stopped with "VCRUNTIME140.dll was not found" there',
