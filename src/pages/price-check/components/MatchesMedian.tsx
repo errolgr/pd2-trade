@@ -58,7 +58,10 @@ export function MatchesMedian({ stats, archived }: { stats: MarketPriceStats; ar
                   </span>
                   <div className="h-2.5 overflow-hidden rounded-[3px] bg-muted/40">
                     <div
-                      className={cn('h-full rounded-[3px]', row.median ? 'bg-glow/70' : 'bg-muted-foreground/35')}
+                      className={cn(
+                        'h-full rounded-[3px]',
+                        row.median ? 'bg-linear-to-r from-glow/50 to-glow/85' : 'bg-muted-foreground/35',
+                      )}
                       style={{ width: `${Math.max(6, (row.count / ladder.peak) * 100)}%` }}
                     />
                   </div>
