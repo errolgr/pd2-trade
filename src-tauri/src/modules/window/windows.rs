@@ -14,11 +14,13 @@ use windows_sys::Win32::{
     UI::Accessibility::{SetWinEventHook, UnhookWinEvent, HWINEVENTHOOK},
     UI::Shell::{DefSubclassProc, RemoveWindowSubclass, SetWindowSubclass},
     UI::WindowsAndMessaging::{
-        BringWindowToTop, FindWindowW, GetClientRect, GetForegroundWindow, GetWindowLongW,
-        GetWindowRect, GetWindowThreadProcessId, IsIconic, SetForegroundWindow, SetWindowLongW,
-        SetWindowPos, ShowWindow, EVENT_SYSTEM_FOREGROUND, GWL_EXSTYLE, STYLESTRUCT,
-        SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER, SW_RESTORE,
-        WINEVENT_OUTOFCONTEXT, WM_NCDESTROY, WM_STYLECHANGING, WS_EX_APPWINDOW, WS_EX_TOOLWINDOW,
+        BringWindowToTop, FindWindowW, GetClientRect, GetClipCursor, GetForegroundWindow,
+        GetSystemMetrics, GetWindowLongW, GetWindowRect, GetWindowThreadProcessId, IsIconic,
+        SetForegroundWindow, SetWindowLongW, SetWindowPos, ShowWindow, EVENT_SYSTEM_FOREGROUND,
+        GWL_EXSTYLE, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN,
+        STYLESTRUCT, SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER,
+        SW_RESTORE, WINEVENT_OUTOFCONTEXT, WM_NCDESTROY, WM_STYLECHANGING, WS_EX_APPWINDOW,
+        WS_EX_TOOLWINDOW,
     },
 };
 
@@ -73,6 +75,48 @@ fn client_rect(hwnd: HWND) -> Option<WindowRect> {
 
 pub fn get_diablo_rect(_app: &AppHandle) -> Option<WindowRect> {
     client_rect(find_diablo_hwnd()?)
+}
+
+/// The area a windowed game confines the cursor to, given the current cursor `clip`, the `desktop` (virtual
+/// screen, the clip when nothing confines the cursor) and the game's client area. None when the cursor isn't
+/// confined, the clip isn't inside the game (another app's), or the game is fullscreen: D2GL clips to the drawn area
+/// there too, but a panel over a fullscreen game takes the foreground, which releases the clip, so the whole monitor
+/// stays reachable.
+fn cursor_lock(
+    clip: WindowRect,
+    desktop: WindowRect,
+    game: WindowRect,
+    fullscreen: bool,
+) -> Option<WindowRect> {
+    let inside_game = clip.x >= game.x
+        && clip.y >= game.y
+        && clip.x + clip.width <= game.x + game.width
+        && clip.y + clip.height <= game.y + game.height;
+    (!fullscreen && clip != desktop && inside_game).then_some(clip)
+}
+
+/// Where the cursor is locked while a windowed Diablo II holds it (D2GL without "Unlock Cursor"): the drawn game
+/// area, which panels have to stay inside to be reachable. None without the game or when the cursor is free.
+pub fn get_cursor_lock() -> Option<WindowRect> {
+    let game = client_rect(find_diablo_hwnd()?)?;
+    let mut clip = RECT {
+        left: 0,
+        top: 0,
+        right: 0,
+        bottom: 0,
+    };
+    if unsafe { GetClipCursor(&mut clip) } == 0 {
+        return None;
+    }
+    let desktop = unsafe {
+        WindowRect {
+            x: GetSystemMetrics(SM_XVIRTUALSCREEN),
+            y: GetSystemMetrics(SM_YVIRTUALSCREEN),
+            width: GetSystemMetrics(SM_CXVIRTUALSCREEN),
+            height: GetSystemMetrics(SM_CYVIRTUALSCREEN),
+        }
+    };
+    cursor_lock(to_window_rect(clip), desktop, game, diablo_fullscreen())
 }
 
 /// Diablo II fills its monitor exactly, as D2GL's fullscreen mode sizes it (a borderless window at the monitor
@@ -319,6 +363,48 @@ mod tests {
     const DIABLO: HWND = 20;
     const TRAY_MENU_OWNER: HWND = 30;
     const BROWSER: HWND = 40;
+
+    const fn rect(x: i32, y: i32, width: i32, height: i32) -> WindowRect {
+        WindowRect {
+            x,
+            y,
+            width,
+            height,
+        }
+    }
+    /// The cursor clip when nothing confines it.
+    const DESKTOP: WindowRect = rect(0, 0, 5120, 1440);
+    /// Client area of a windowed game, letterboxed by D2GL.
+    const WINDOWED: WindowRect = rect(2743, 31, 2370, 1390);
+
+    #[test]
+    fn a_windowed_game_that_locks_the_cursor_limits_the_reach() {
+        let drawn = rect(2743, 60, 2370, 1333);
+        assert_eq!(cursor_lock(drawn, DESKTOP, WINDOWED, false), Some(drawn));
+    }
+
+    #[test]
+    fn an_unlocked_cursor_reaches_everywhere() {
+        assert_eq!(cursor_lock(DESKTOP, DESKTOP, WINDOWED, false), None);
+    }
+
+    #[test]
+    fn another_app_locking_the_cursor_is_not_the_game() {
+        assert_eq!(
+            cursor_lock(rect(0, 0, 1920, 1080), DESKTOP, WINDOWED, false),
+            None
+        );
+    }
+
+    #[test]
+    fn a_fullscreen_game_never_limits_the_reach() {
+        // D2GL clips to the pillarboxed play area, but a panel over a fullscreen game takes the foreground, which
+        // releases the clip: the black bars stay reachable.
+        assert_eq!(
+            cursor_lock(rect(1279, 0, 2563, 1440), DESKTOP, DESKTOP, true),
+            None
+        );
+    }
 
     #[test]
     fn the_overlay_is_always_a_tool_window_without_a_taskbar_entry() {

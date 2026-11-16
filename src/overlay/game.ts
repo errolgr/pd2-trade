@@ -93,23 +93,34 @@ export async function getCursorPoint(): Promise<{ x: number; y: number }> {
   return lastPointer ?? { x: window.innerWidth / 2, y: window.innerHeight / 2 };
 }
 
-async function fetchGameRect(): Promise<OverlayRect> {
-  const rect = await invoke<ScreenRect | null>('get_diablo_rect');
-  if (!rect) return viewportRect();
+const sameLock = (a: OverlayRect | null, b: OverlayRect | null) => (a && b ? sameRect(a, b) : a === b);
+
+/** The game's play area and where it locks the cursor (Rust window::get_cursor_lock), in overlay CSS px. */
+async function fetchGameArea(): Promise<{ gameRect: OverlayRect; cursorLock: OverlayRect | null }> {
+  const [rect, lock] = await Promise.all([
+    invoke<ScreenRect | null>('get_diablo_rect'),
+    invoke<ScreenRect | null>('get_cursor_lock'),
+  ]);
+  if (!rect) return { gameRect: viewportRect(), cursorLock: null };
   const win = getCurrentWindow();
   const [outer, ratio] = await Promise.all([win.outerPosition(), overlayPixelRatio(win)]);
-  return screenToOverlayRect(gamePlayRect(rect), outer, ratio);
+  return {
+    gameRect: screenToOverlayRect(gamePlayRect(rect), outer, ratio),
+    cursorLock: lock ? screenToOverlayRect(lock, outer, ratio) : null,
+  };
 }
 
 /**
  * Game rect (CSS px relative to the overlay: the game's play area, see gamePlayRect; the viewport when there is no
- * game / in a browser) and
+ * game / in a browser), where a windowed game locks the cursor (null while it is free or the game fullscreen) and
  * debounced game focus: false only after GAME_BLUR_DEBOUNCE_MS outside the game context (Rust window::focus:
  * Diablo in front, or the overlay entered from it). The overlay having focus on its own isn't the game: Settings
  * opened from the tray takes focus to type without bringing the in-game panels back.
  */
-export function useGameState(): { gameRect: OverlayRect; gameFocused: boolean } {
+export function useGameState(): { gameRect: OverlayRect; gameFocused: boolean; cursorLock: OverlayRect | null } {
   const [gameRect, setGameRect] = useState<OverlayRect>(viewportRect);
+  const [cursorLock, setCursorLock] = useState<OverlayRect | null>(null);
+  const lockRef = useRef(cursorLock);
   // Tauri: hidden until the game context is known, so in-game panels don't flash at startup outside the game
   const [gameFocused, setGameFocused] = useState(() => !isTauri());
   const rectRef = useRef(gameRect);
@@ -136,10 +147,18 @@ export function useGameState(): { gameRect: OverlayRect; gameFocused: boolean } 
     let blurTimer: ReturnType<typeof setTimeout> | undefined;
     let refreshTimer: ReturnType<typeof setInterval> | null = null;
 
+    const applyLock = (next: OverlayRect | null) => {
+      if (disposed || sameLock(lockRef.current, next)) return;
+      lockRef.current = next;
+      setCursorLock(next);
+    };
     const refreshRect = () => {
-      fetchGameRect()
-        .then(applyRect)
-        .catch((error) => console.warn('[overlay] get_diablo_rect failed:', error));
+      fetchGameArea()
+        .then((area) => {
+          applyRect(area.gameRect);
+          applyLock(area.cursorLock);
+        })
+        .catch((error) => console.warn('[overlay] fetching the game area failed:', error));
     };
     const setRefreshing = (on: boolean) => {
       if (on && !refreshTimer) refreshTimer = setInterval(refreshRect, RECT_REFRESH_MS);
@@ -198,5 +217,5 @@ export function useGameState(): { gameRect: OverlayRect; gameFocused: boolean } 
     };
   }, []);
 
-  return { gameRect, gameFocused };
+  return { gameRect, gameFocused, cursorLock };
 }

@@ -189,6 +189,12 @@ pub fn diablo_fullscreen() -> bool {
     false
 }
 
+/// Windows only (D2GL's cursor lock in windowed mode, see windows.rs): never reported here, so panels may use the
+/// whole overlay.
+pub fn get_cursor_lock() -> Option<WindowRect> {
+    None
+}
+
 /// Work area (monitor minus panels/taskbar) of the monitor containing the Diablo II window (by its center), else
 /// the primary monitor's. Matches Windows, where covering the taskbar greys it out.
 pub fn get_appropriate_window_bounds(app: &AppHandle) -> Option<WindowRect> {
