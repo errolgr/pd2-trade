@@ -20,7 +20,7 @@ function levelLabel({ price, from, to }: { price: number; from: number; to: numb
 /**
  * "· median 2.5 HR" after the results' match count: the median HR price of every listing the search matches (all
  * pages), with a hover popover of their spread as an ask ladder (listings per price bucket, cheapest first; the
- * median's bucket marked, the middle half's highlighted) and median / middle half / average. Nothing below
+ * median's bucket highlighted) and median / middle half / average. Nothing below
  * MIN_MEDIAN_SAMPLE priced matches. `archived`: the search ran over ended listings (the prices are last asks).
  */
 export function MatchesMedian({ stats, archived }: { stats: MarketPriceStats; archived: boolean }) {
@@ -58,7 +58,7 @@ export function MatchesMedian({ stats, archived }: { stats: MarketPriceStats; ar
                   </span>
                   <div className="h-2.5 overflow-hidden rounded-[3px] bg-muted/40">
                     <div
-                      className={cn('h-full rounded-[3px]', row.middleHalf ? 'bg-glow/70' : 'bg-muted-foreground/35')}
+                      className={cn('h-full rounded-[3px]', row.median ? 'bg-glow/70' : 'bg-muted-foreground/35')}
                       style={{ width: `${Math.max(6, (row.count / ladder.peak) * 100)}%` }}
                     />
                   </div>
@@ -85,9 +85,7 @@ export function MatchesMedian({ stats, archived }: { stats: MarketPriceStats; ar
             </div>
             {stats.p25 !== null && stats.p75 !== null && (
               <div className="col-start-2 text-center">
-                <dt className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-                  <span aria-hidden
-                    className="size-2 rounded-[2px] bg-glow/70" />
+                <dt className="text-[10px] uppercase tracking-wider text-muted-foreground">
                   {t('overlay.results.spread.middleHalf')}
                 </dt>
                 <dd className="text-sm">

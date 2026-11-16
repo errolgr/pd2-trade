@@ -58,8 +58,6 @@ export interface LadderRow extends PriceStatsBucket {
   price: number;
   /** The median price falls in this row. */
   median: boolean;
-  /** The row overlaps the middle half (25th to 75th percentile). */
-  middleHalf: boolean;
 }
 
 export interface PriceLadder {
@@ -77,7 +75,7 @@ export const LADDER_ROWS = 8;
 /**
  * The stats' histogram as an ask ladder: one row per price level with listings, cheapest first. A level is a bucket's
  * start rounded as HR prices are shown, so neighbouring buckets that round alike (0.01 and 0.0125) share a row. Marks
- * the median's row and the ones overlapping the middle half. Null without buckets.
+ * the median's row. Null without buckets.
  */
 export function priceLadder(stats: MarketPriceStats): PriceLadder | null {
   const levels: { price: number; from: number; to: number | null; count: number }[] = [];
@@ -93,11 +91,10 @@ export function priceLadder(stats: MarketPriceStats): PriceLadder | null {
     }
   }
   if (levels.length === 0) return null;
-  const { p25, median, p75 } = stats;
+  const { median } = stats;
   const rows = levels.slice(0, LADDER_ROWS).map((level) => ({
     ...level,
     median: median !== null && median >= level.from && (level.to === null || median < level.to),
-    middleHalf: p25 !== null && p75 !== null && level.from <= p75 && (level.to === null || level.to > p25),
   }));
   const rest = levels.slice(LADDER_ROWS);
   return {
