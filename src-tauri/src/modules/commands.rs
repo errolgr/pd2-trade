@@ -9,6 +9,12 @@ pub fn get_diablo_rect(app_handle: tauri::AppHandle) -> Option<window::WindowRec
     window::get_diablo_rect(&app_handle)
 }
 
+/// Where a windowed Diablo II locks the cursor (physical px); None when the cursor is free or the game fullscreen.
+#[tauri::command]
+pub fn get_cursor_lock() -> Option<window::WindowRect> {
+    window::get_cursor_lock()
+}
+
 #[tauri::command]
 pub fn press_key(sequence: String) -> Result<(), String> {
     keyboard::press_key(sequence)
