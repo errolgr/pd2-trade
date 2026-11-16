@@ -7,18 +7,18 @@ use tauri::AppHandle;
 use windows_sys::Win32::{
     Foundation::{HWND, LPARAM, LRESULT, POINT, RECT, WPARAM},
     Graphics::Gdi::{
-        GetMonitorInfoW, MonitorFromPoint, MonitorFromWindow, HMONITOR, MONITORINFO,
-        MONITOR_DEFAULTTONEAREST, MONITOR_DEFAULTTOPRIMARY,
+        ClientToScreen, GetMonitorInfoW, MonitorFromPoint, MonitorFromWindow, HMONITOR,
+        MONITORINFO, MONITOR_DEFAULTTONEAREST, MONITOR_DEFAULTTOPRIMARY,
     },
     System::Threading::{AttachThreadInput, GetCurrentThreadId},
     UI::Accessibility::{SetWinEventHook, UnhookWinEvent, HWINEVENTHOOK},
     UI::Shell::{DefSubclassProc, RemoveWindowSubclass, SetWindowSubclass},
     UI::WindowsAndMessaging::{
-        BringWindowToTop, FindWindowW, GetForegroundWindow, GetWindowLongW, GetWindowRect,
-        GetWindowThreadProcessId, IsIconic, SetForegroundWindow, SetWindowLongW, SetWindowPos,
-        ShowWindow, EVENT_SYSTEM_FOREGROUND, GWL_EXSTYLE, STYLESTRUCT, SWP_FRAMECHANGED,
-        SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER, SW_RESTORE, WINEVENT_OUTOFCONTEXT,
-        WM_NCDESTROY, WM_STYLECHANGING, WS_EX_APPWINDOW, WS_EX_TOOLWINDOW,
+        BringWindowToTop, FindWindowW, GetClientRect, GetForegroundWindow, GetWindowLongW,
+        GetWindowRect, GetWindowThreadProcessId, IsIconic, SetForegroundWindow, SetWindowLongW,
+        SetWindowPos, ShowWindow, EVENT_SYSTEM_FOREGROUND, GWL_EXSTYLE, STYLESTRUCT,
+        SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER, SW_RESTORE,
+        WINEVENT_OUTOFCONTEXT, WM_NCDESTROY, WM_STYLECHANGING, WS_EX_APPWINDOW, WS_EX_TOOLWINDOW,
     },
 };
 
@@ -52,8 +52,27 @@ fn window_rect(hwnd: HWND) -> Option<WindowRect> {
     (ok != 0).then(|| to_window_rect(r))
 }
 
+/// Client area in screen coordinates: the surface the game draws on (16:9, boxed by D2GL when the client isn't).
+/// Unlike the window rect, it leaves out a windowed game's title bar and borders.
+fn client_rect(hwnd: HWND) -> Option<WindowRect> {
+    let mut r = RECT {
+        left: 0,
+        top: 0,
+        right: 0,
+        bottom: 0,
+    };
+    let mut origin = POINT { x: 0, y: 0 };
+    let ok = unsafe { GetClientRect(hwnd, &mut r) != 0 && ClientToScreen(hwnd, &mut origin) != 0 };
+    ok.then(|| WindowRect {
+        x: origin.x,
+        y: origin.y,
+        width: r.right - r.left,
+        height: r.bottom - r.top,
+    })
+}
+
 pub fn get_diablo_rect(_app: &AppHandle) -> Option<WindowRect> {
-    window_rect(find_diablo_hwnd()?)
+    client_rect(find_diablo_hwnd()?)
 }
 
 /// Diablo II fills its monitor exactly, as D2GL's fullscreen mode sizes it (a borderless window at the monitor
