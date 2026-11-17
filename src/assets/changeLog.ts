@@ -1,19 +1,16 @@
 export const changeLog = {
+  // 0.12.0 never shipped (its publish run was cancelled): its notes are 0.12.1's, the release users get
   '0.12.1': [
-    '✨ Market: Wanted filters like listings. Sockets, Corrupted, Ethereal and Desecrated narrow buy requests, and "Would take these items" shows the requests an item of your search could fill',
-    '✨ Buy requests show everything they ask for: Uncorrupted, Non-ethereal, Desecrated, Unidentified and sockets, on the cards, in the request and while posting',
-    '✨ Market: the Class filter is gone',
-    '🔧 Buy requests: "Others want this too" no longer misses requests over a nice-to-have stat, and Fits my stash checks the realm you\'re browsing',
-  ],
-  '0.12.0': [
     '🆕 Market: buy requests. Post one from any search ("Want to buy"); browse everyone\'s under Wanted; sellers answer with a whisper or an offer',
     '🆕 Buy request answers arrive as notifications and show in the chat thread with that player',
     '🆕 Price check and Quick List: a buyers chip shows open buy requests your item fills',
     '✨ Market: Watch offers to post the search as a buy request too',
+    '✨ Market: Wanted filters like listings. Sockets, Corrupted, Ethereal and Desecrated narrow buy requests, and "Would take these items" shows the requests an item of your search could fill',
     '🆕 "+# Total Damage" pseudo stat (min + max damage) in the market and price check',
     '✨ Market: median price in the results header; hover for the price spread',
     '✨ Market: "Sold archive" is now "Archive": sold, removed and expired listings, with a Status filter',
     '✨ Market and price check: no 3-day default window; searches cover the whole season (set a default in Settings › Market)',
+    '✨ Market: the Class filter is gone',
     '✨ Price check: ended listings show a short status ("sold 2d")',
     '🆕 Auto-delist: "Never delist" skips stackable currency, items you pick, or a single listing (Settings › Market)',
   ],
