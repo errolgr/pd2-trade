@@ -178,8 +178,8 @@ export function WtbPostDrawer({
   const validAmount = isValidOfferAmount(amount);
   const blocker = postBlocker(filters, niceToHaveIds);
   // Others asking for what this request would take (never the user's own, so not the one being edited): read as
-  // soon as the filters name an item, also before the request can be posted
-  const overlapBody = useMemo(() => othersOverlapBody(filters), [filters]);
+  // soon as the filters name an item, also before the request can be posted; its nice-to-have rows narrow nothing
+  const overlapBody = useMemo(() => othersOverlapBody(filters, niceToHaveIds), [filters, niceToHaveIds]);
   const others = othersBoxModel(useWtbOverlap(overlapBody, token, OTHERS_DEBOUNCE_MS), filters, {
     userId,
     editingId: editing?.id ?? null,

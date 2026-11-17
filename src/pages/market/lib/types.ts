@@ -117,6 +117,8 @@ export interface WantedFilters {
   /** Lowest offer, in `offerCurrency` (HR when unset). */
   minOffer?: number;
   offerCurrency?: WtbCurrency;
+  /** Requests an item of this search could fill (overlap), not only those asking for these filters. */
+  overlap?: boolean;
   /** Only requests the user's stash fits. */
   fitsStash?: boolean;
   /** Only the user's own requests (every status). */
