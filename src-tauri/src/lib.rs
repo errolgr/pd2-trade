@@ -134,6 +134,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::get_diablo_rect,
+            commands::get_cursor_lock,
             commands::press_key,
             commands::is_diablo_focused,
             commands::input_idle_ms,

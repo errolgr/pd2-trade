@@ -6,6 +6,7 @@ import { useOptions } from '@/hooks/useOptions';
 import { useNetWorth } from '@/hooks/useNetWorth';
 import { useWealthRank } from '@/hooks/useWealthRank';
 import { usePanel, useOverlay } from '@/overlay';
+import { reachBounds } from '@/overlay/OverlayProvider';
 import { overlayPixelRatio, screenToOverlayRect } from '@/overlay/game';
 import { loadPanelRect } from '@/overlay/layout-storage';
 import { cn } from '@/lib/utils';
@@ -51,7 +52,7 @@ const NetWorthTicker: React.FC = () => {
   const { t } = useTranslation('netWorth');
   const { settings, updateSettings } = useOptions();
   const { latest, status, lastSnapshotAt, currentSession } = useNetWorth();
-  const { gameRect, togglePanel } = useOverlay();
+  const { gameRect, cursorLock, togglePanel } = useOverlay();
   const { rect, setRect } = usePanel<'netWorthTicker'>();
   const pillRef = useRef<HTMLButtonElement>(null);
   const [pillSize, setPillSize] = useState<{ width: number; height: number } | null>(null);
@@ -103,7 +104,8 @@ const NetWorthTicker: React.FC = () => {
   const migrationRef = useRef<'unchecked' | 'running' | 'done'>('unchecked');
   const [migrated, setMigrated] = useState(false);
 
-  // Keep the panel exactly the pill's size, at its anchor on the game or (custom) where it is, inside the overlay
+  // Keep the panel exactly the pill's size, at its anchor on the game or (custom) where it is, inside reachBounds
+  // (the cursor lock of a windowed game, else the overlay)
   useLayoutEffect(() => {
     if (!pillSize || drag.dragging.current) return;
     if (anchor === 'custom' && migrationRef.current === 'unchecked') {
@@ -123,7 +125,10 @@ const NetWorthTicker: React.FC = () => {
       anchor === 'custom'
         ? rectRef.current
         : tickerPosition(anchor, pillSize, gameRect, chatDockRect(gameRect, dockOffset, dockButtons));
-    const next = { ...clampToArea({ ...origin, ...pillSize }, overlayViewport()), ...pillSize };
+    const next = {
+      ...clampToArea({ ...origin, ...pillSize }, reachBounds(cursorLock, overlayViewport())),
+      ...pillSize,
+    };
     const current = rectRef.current;
     if (
       next.x !== current.x ||
@@ -136,6 +141,7 @@ const NetWorthTicker: React.FC = () => {
   }, [
     anchor,
     gameRect,
+    cursorLock,
     dockOffset,
     dockButtons,
     pillSize,

@@ -2,6 +2,7 @@ import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 're
 import { ArrowDown, ArrowUp, ChevronDown, Lock, LockOpen } from 'lucide-react';
 import { useOptions } from '@/hooks/useOptions';
 import { usePanel, useOverlay } from '@/overlay';
+import { reachBounds } from '@/overlay/OverlayProvider';
 import { overlayViewport, useDragToMove } from '@/overlay/useDragToMove';
 import { cn } from '@/lib/utils';
 import { Tip } from '@/components/ui/tooltip';
@@ -53,7 +54,7 @@ interface BoxSize {
 const CorruptedZoneTimer: React.FC = () => {
   const { t } = useTranslation('app');
   const { settings, updateSettings } = useOptions();
-  const { gameRect } = useOverlay();
+  const { gameRect, cursorLock } = useOverlay();
   const { rect, setRect } = usePanel<'corruptedZoneTimer'>();
   const boxRef = useRef<HTMLDivElement>(null);
   const pillRef = useRef<HTMLButtonElement>(null);
@@ -143,8 +144,9 @@ const CorruptedZoneTimer: React.FC = () => {
     updateSettings({ corruptedZoneTimerListDirection: up ? 'up' : 'down' });
   };
 
-  // Keep the panel exactly the content's size, in the overlay, with the pill at its anchor on the game or (custom)
-  // where it is: the box grows away from the pill, so the edge on the pill's side stays put
+  // Keep the panel exactly the content's size, inside reachBounds (the cursor lock of a windowed game, else the
+  // overlay), with the pill at its anchor on the game or (custom) where it is: the box grows away from the pill, so
+  // the edge on the pill's side stays put
   const restoredRef = useRef(false);
   useLayoutEffect(() => {
     if (!boxSize || drag.dragging.current) return;
@@ -167,7 +169,7 @@ const CorruptedZoneTimer: React.FC = () => {
       );
       origin = { x: pill.x, y: listAbove ? pill.y + boxSize.pill - size.height : pill.y };
     }
-    const next = { ...clampToArea({ ...origin, ...size }, overlayViewport()), ...size };
+    const next = { ...clampToArea({ ...origin, ...size }, reachBounds(cursorLock, overlayViewport())), ...size };
     if (
       next.x !== current.x ||
       next.y !== current.y ||
@@ -176,7 +178,7 @@ const CorruptedZoneTimer: React.FC = () => {
     ) {
       setRect(next);
     }
-  }, [anchor, listAbove, gameRect, dockOffset, dockButtons, boxSize, setRect, drag.dragging]);
+  }, [anchor, listAbove, gameRect, cursorLock, dockOffset, dockButtons, boxSize, setRect, drag.dragging]);
 
   const followedKey = (settings.corruptedZoneFollowed ?? []).join('\n');
   const onlyFollowed = settings.corruptedZoneTimerZones === 'followed' && followedKey !== '';

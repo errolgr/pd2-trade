@@ -93,7 +93,7 @@ export interface OverlayRect {
 export type Placement =
   | 'gameCenter' // centered on the game rect
   | 'gameRight' // right-aligned to game rect, full game height (item search)
-  | 'screenCenter' // centered on the overlay (= monitor)
+  | 'screenCenter' // centered on the overlay (= monitor), or the cursor lock of a windowed game
   | 'cursor' // top-left at the current OS cursor (clamped)
   | { x: number; y: number }; // CSS px relative to overlay
 

@@ -13,6 +13,7 @@ import {
   computePlacement,
   initialOverlayState,
   overlayReducer,
+  reachBounds,
   useOverlay,
   type OverlayApi,
   type OverlayState,
@@ -29,8 +30,13 @@ import {
 import { LAYOUT_STORAGE_KEY, savePanelRect } from './layout-storage';
 import type { PanelDef, PanelDefs, PanelId } from './types';
 
+type Rect = { x: number; y: number; width: number; height: number };
 const game = vi.hoisted(() => ({
-  state: { gameRect: { x: 100, y: 50, width: 1280, height: 720 }, gameFocused: true },
+  state: {
+    gameRect: { x: 100, y: 50, width: 1280, height: 720 },
+    gameFocused: true,
+    cursorLock: null as Rect | null,
+  },
   cursor: { x: 300, y: 200 },
   listeners: new Set<() => void>(),
 }));
@@ -168,7 +174,7 @@ const shown = (id: PanelId) => !!frame(id) && frame(id)!.style.display !== 'none
 
 beforeEach(() => {
   tauri.on = false;
-  game.state = { gameRect: { x: 100, y: 50, width: 1280, height: 720 }, gameFocused: true };
+  game.state = { gameRect: { x: 100, y: 50, width: 1280, height: 720 }, gameFocused: true, cursorLock: null };
   for (const k of Object.keys(mounts)) delete mounts[k];
   localStorage.clear();
   vi.clearAllMocks();
@@ -253,6 +259,55 @@ describe('computePlacement', () => {
       y: 980,
     });
     expect(computePlacement({ x: -40, y: 20.6 }, size, gameRect, viewport)).toMatchObject({ x: 0, y: 21 });
+  });
+
+  describe('windowed game off-centre on the monitor', () => {
+    // Work area 5120x1392, D2GL windowed 2370x1390 at x=2743, which locks the cursor to its drawn area
+    const overlay = { x: 0, y: 0, width: 5120, height: 1392 };
+    const windowed = { x: 2743, y: 0, width: 2370, height: 1390 };
+    const locked = reachBounds(windowed, overlay);
+    const panel = { width: 900, height: 700 };
+
+    it('centres screenCenter panels in the cursor lock', () => {
+      expect(computePlacement('screenCenter', panel, windowed, locked)).toEqual({
+        x: 3478,
+        y: 345,
+        width: 900,
+        height: 700,
+      });
+    });
+
+    it('keeps explicit and cursor placements inside the cursor lock', () => {
+      expect(computePlacement({ x: 1500, y: 200 }, panel, windowed, locked)).toMatchObject({ x: 2743, y: 200 });
+      expect(computePlacement('cursor', panel, windowed, locked, { x: 5000, y: 1300 })).toMatchObject({
+        x: 4213,
+        y: 690,
+      });
+    });
+
+    it('places panels anywhere on the overlay while the cursor is free (fullscreen, Unlock Cursor)', () => {
+      const free = reachBounds(null, overlay);
+      expect(computePlacement('screenCenter', panel, windowed, free)).toMatchObject({ x: 2110, y: 346 });
+      expect(computePlacement({ x: 1500, y: 200 }, panel, windowed, free)).toMatchObject({ x: 1500, y: 200 });
+    });
+  });
+});
+
+describe('reachBounds', () => {
+  const overlay = { x: 0, y: 0, width: 1920, height: 1032 };
+
+  it('is the part of the cursor lock on the overlay', () => {
+    expect(reachBounds({ x: 1000, y: 500, width: 1280, height: 720 }, overlay)).toEqual({
+      x: 1000,
+      y: 500,
+      width: 920,
+      height: 532,
+    });
+  });
+
+  it('is the whole overlay while the cursor is free or the lock is off it', () => {
+    expect(reachBounds(null, overlay)).toEqual(overlay);
+    expect(reachBounds({ x: -2000, y: 0, width: 1280, height: 720 }, overlay)).toEqual(overlay);
   });
 });
 
@@ -346,6 +401,43 @@ describe('OverlayProvider', () => {
     mount();
     act(() => api.openPanel('currency'));
     expect(frame('currency')!.style).toMatchObject({ left: '1720px', top: '10px' });
+  });
+
+  it('restores a persisted rect from fullscreen inside a windowed game', () => {
+    window.innerWidth = 5120;
+    window.innerHeight = 1392;
+    // Saved in fullscreen (pillarboxed play area x=1280..3840); now windowed on the right
+    savePanelRect('currency', { x: 1500, y: 200, width: 200, height: 100 });
+    const windowed = { x: 2743, y: 0, width: 2370, height: 1390 };
+    setGame({ gameRect: windowed, cursorLock: windowed });
+    mount();
+    act(() => api.openPanel('currency'));
+    expect(frame('currency')!.style).toMatchObject({ left: '2743px', top: '200px' });
+    expect(JSON.parse(localStorage.getItem(LAYOUT_STORAGE_KEY)!).currency).toMatchObject({ x: 1500 });
+  });
+
+  it('moves open panels into the game when it switches from fullscreen to windowed', () => {
+    window.innerWidth = 5120;
+    window.innerHeight = 1392;
+    setGame({ gameRect: { x: 1280, y: 0, width: 2560, height: 1440 } });
+    mount();
+    act(() => api.openPanel('currency', undefined, { placement: { x: 1500, y: 200 } }));
+    expect(frame('currency')!.style.left).toBe('1500px');
+
+    const windowed = { x: 2743, y: 0, width: 2370, height: 1390 };
+    setGame({ gameRect: windowed, cursorLock: windowed });
+    expect(frame('currency')!.style).toMatchObject({ left: '2743px', top: '200px' });
+  });
+
+  it('keeps a panel parked in the black bars of a fullscreen game wider than 16:9 where it was left', () => {
+    window.innerWidth = 5120;
+    window.innerHeight = 1392;
+    // Pillarboxed play area x=1280..3840; a panel over a fullscreen game frees the cursor, so the bars are reachable
+    savePanelRect('currency', { x: 4500, y: 200, width: 200, height: 100 });
+    setGame({ gameRect: { x: 1280, y: 0, width: 2560, height: 1440 } });
+    mount();
+    act(() => api.openPanel('currency'));
+    expect(frame('currency')!.style).toMatchObject({ left: '4500px', top: '200px' });
   });
 
   it('persists programmatic rect changes only for persisted panels', () => {

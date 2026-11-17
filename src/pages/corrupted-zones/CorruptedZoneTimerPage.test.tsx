@@ -161,6 +161,18 @@ describe('CorruptedZoneTimer', () => {
     expect(setRect).toHaveBeenLastCalledWith({ x: 40, y, width: 301, height: 28 });
   });
 
+  it('keeps the schedule of a custom timer inside the cursor lock of a windowed game', () => {
+    settings = { corruptedZoneTimerAnchor: 'custom' };
+    // Game high on the monitor (y 50..550): the pill is in the overlay's upper half, so the list opens downwards
+    const lock = { x: 100, y: 50, width: 1280, height: 500 };
+    vi.mocked(useOverlay).mockImplementation(() => ({ gameRect: lock, cursorLock: lock }) as unknown as OverlayApi);
+    panelRect = { x: 200, y: 450, width: 301, height: 28 };
+    render(<CorruptedZoneTimerPage />);
+    expect(setRect).not.toHaveBeenCalled();
+    clickPill();
+    expect(setRect).toHaveBeenLastCalledWith({ x: 200, y: 550 - 180, width: 400, height: 180 });
+  });
+
   it('restores a custom timer saved with its list open upwards onto its pill', () => {
     settings = { corruptedZoneTimerAnchor: 'custom' };
     panelRect = { x: 40, y: 748, width: 400, height: 180 }; // pill at the bottom, y 900

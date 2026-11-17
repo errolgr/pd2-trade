@@ -4,6 +4,7 @@ export const changeLog = {
     '✨ Market: "Sold archive" is now "Archive" and shows the same listings as the projectdiablo2.com Archive: sold, removed and expired, not only sold ones. A Status filter in the Listing section narrows it, and each result says how it ended',
     '✨ Market and price check: searches show every listing of the season by default instead of only the last 3 days (14 in the archive). Pick a "Listed within" window to narrow one, or set a default in Settings › Market',
     '✨ Price check: ended listings show how they ended and how long they were up in a short form ("sold 2d"); hover it for the full sentence',
+    '🔧 Windowed D2GL with the cursor locked: panels open over the game and ones left outside it move inside, where the cursor can reach them. The zone timer and net worth ticker sit on the game picture, not in the title bar or black bars',
   ],
   '0.11.7': [
     '🆕 Horadric Sim is in open beta: no waitlist. Sign in with PD2 and the Sim button in the price check, market and Net Worth (and the try-on hotkey) sends items to the planner',

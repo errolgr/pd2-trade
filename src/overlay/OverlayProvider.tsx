@@ -119,12 +119,26 @@ export function isPanelVisible(def: PanelDef, panel: PanelState | undefined, gam
 const isGameAnchored = (placement: Placement): placement is 'gameCenter' | 'gameRight' =>
   placement === 'gameCenter' || placement === 'gameRight';
 
-/** Placement → rect (CSS px), clamped fully into the viewport. `cursor` must be provided for 'cursor'. */
+/**
+ * Where panels have to stay to be reachable: the part of a windowed game's cursor lock (D2GL without Unlock Cursor,
+ * see useGameState) on the overlay; the whole overlay while the cursor is free or the lock is off it.
+ */
+export function reachBounds(cursorLock: OverlayRect | null, viewport: OverlayRect): OverlayRect {
+  if (!cursorLock) return viewport;
+  const x = Math.max(cursorLock.x, viewport.x);
+  const y = Math.max(cursorLock.y, viewport.y);
+  const right = Math.min(cursorLock.x + cursorLock.width, viewport.x + viewport.width);
+  const bottom = Math.min(cursorLock.y + cursorLock.height, viewport.y + viewport.height);
+  if (right <= x || bottom <= y) return viewport;
+  return { x, y, width: right - x, height: bottom - y };
+}
+
+/** Placement → rect (CSS px), clamped fully into `bounds` (reachBounds). `cursor` must be provided for 'cursor'. */
 export function computePlacement(
   placement: Placement,
   size: { width: number; height: number },
   game: OverlayRect,
-  viewport: OverlayRect,
+  bounds: OverlayRect,
   cursor?: { x: number; y: number },
 ): OverlayRect {
   let rect: OverlayRect;
@@ -140,19 +154,19 @@ export function computePlacement(
         break;
       case 'screenCenter':
         rect = {
-          x: viewport.x + (viewport.width - size.width) / 2,
-          y: viewport.y + (viewport.height - size.height) / 2,
+          x: bounds.x + (bounds.width - size.width) / 2,
+          y: bounds.y + (bounds.height - size.height) / 2,
           ...size,
         };
         break;
       case 'cursor': {
-        const at = cursor ?? { x: viewport.width / 2, y: viewport.height / 2 };
+        const at = cursor ?? { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
         rect = { x: at.x, y: at.y, ...size };
         break;
       }
     }
   }
-  const clamped = clampRectInto(rect, viewport);
+  const clamped = clampRectInto(rect, bounds);
   return {
     x: Math.round(clamped.x),
     y: Math.round(clamped.y),
@@ -167,7 +181,7 @@ export function computePlacement(
 
 /**
  * Stable across panel state changes (open/close/front/setRect): hotkey and listener effects that depend on it
- * do not re-run on every transition. Only gameRect/gameFocused changes produce a new value.
+ * do not re-run on every transition. Only gameRect/gameFocused/cursorLock changes produce a new value.
  */
 export interface OverlayApi {
   /** Opens or, if open, updates payload + brings to front (OpenOptions.keepPayload: only brings to front). */
@@ -182,6 +196,8 @@ export interface OverlayApi {
   gameRect: OverlayRect;
   /** Debounced: false only after 500ms of Diablo (and us) not being foreground. */
   gameFocused: boolean;
+  /** Where a windowed game locks the cursor (CSS px), null while it is free; see reachBounds. */
+  cursorLock: OverlayRect | null;
 }
 
 /** Same delay the old per-window focus-loss handler used before hiding its window. */
@@ -220,12 +236,12 @@ export function usePanelOpen(id: PanelId): boolean {
 export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.ReactNode }> = ({ defs, children }) => {
   const [state, setState] = useState(() => initialOverlayState(defs));
   const stateRef = useRef(state);
-  const { gameRect, gameFocused } = useGameState();
-  const gameRef = useRef({ gameRect, gameFocused });
+  const { gameRect, gameFocused, cursorLock } = useGameState();
+  const gameRef = useRef({ gameRect, gameFocused, cursorLock });
   // Layout effect: callbacks and the reflow effect below read the committed game state
   useLayoutEffect(() => {
-    gameRef.current = { gameRect, gameFocused };
-  }, [gameRect, gameFocused]);
+    gameRef.current = { gameRect, gameFocused, cursorLock };
+  }, [gameRect, gameFocused, cursorLock]);
   const placeTokens = useRef<Partial<Record<PanelId, number>>>({});
 
   // Synchronous reducer so back-to-back calls (open then toggle in one tick) see each other's result.
@@ -257,16 +273,17 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
         // A new placement supersedes any in-flight one.
         const token = (placeTokens.current[id] ?? 0) + 1;
         placeTokens.current[id] = token;
-        const viewport = viewportRect();
+        const bounds = reachBounds(gameRef.current.cursorLock, viewportRect());
         const saved = !opts.placement && def.persist ? loadPanelRect(id) : null;
         const placement = opts.placement ?? def.placement;
         if (saved) {
-          apply({ type: 'open', id, payload, rect: clampRectInto(saved, viewport) });
+          apply({ type: 'open', id, payload, rect: clampRectInto(saved, bounds) });
         } else if (placement === 'cursor') {
           apply({ type: 'open', id, payload, placing: true });
           getCursorPoint().then((cursor) => {
             if (placeTokens.current[id] !== token) return;
-            const rect = computePlacement('cursor', def.size, gameRef.current.gameRect, viewportRect(), cursor);
+            const { gameRect: game, cursorLock: lock } = gameRef.current;
+            const rect = computePlacement('cursor', def.size, game, reachBounds(lock, viewportRect()), cursor);
             apply({ type: 'place', id, rect });
           });
         } else {
@@ -274,7 +291,7 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
             type: 'open',
             id,
             payload,
-            rect: computePlacement(placement, def.size, gameRef.current.gameRect, viewport),
+            rect: computePlacement(placement, def.size, gameRef.current.gameRect, bounds),
             anchor: isGameAnchored(placement) ? placement : null,
           });
         }
@@ -289,21 +306,23 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
     [apply, defs],
   );
 
-  // Open panels stay on screen: game-anchored ones (default game* placement, not moved by the user) follow the
-  // game window; the rest are clamped into the overlay when it shrinks. Only the live rect changes: the saved
-  // layout is kept for when the monitor is back.
+  // Open panels stay reachable: game-anchored ones (default game* placement, not moved by the user) follow the
+  // game window; the rest are clamped into reachBounds when a windowed game locks the cursor (e.g. after switching
+  // from fullscreen) or the overlay shrinks. This only moves the live rect; it is saved again only when the panel
+  // commits a rect there (dragged, or a self-sizing one such as the ticker resizing).
   const reflowPanels = useCallback(() => {
-    const viewport = viewportRect();
+    const { gameRect: game, cursorLock: lock } = gameRef.current;
+    const bounds = reachBounds(lock, viewportRect());
     for (const [id, panel] of Object.entries(stateRef.current.panels) as [PanelId, PanelState][]) {
       if (!panel.open || panel.placing) continue;
       const rect = panel.anchor
-        ? computePlacement(panel.anchor, defs[id].size, gameRef.current.gameRect, viewport)
-        : clampRectInto(panel.rect, viewport);
+        ? computePlacement(panel.anchor, defs[id].size, game, bounds)
+        : clampRectInto(panel.rect, bounds);
       if (!sameRect(rect, panel.rect)) apply({ type: 'place', id, rect });
     }
   }, [apply, defs]);
 
-  useEffect(() => reflowPanels(), [reflowPanels, gameRect]);
+  useEffect(() => reflowPanels(), [reflowPanels, gameRect, cursorLock]);
 
   useEffect(() => {
     window.addEventListener('resize', reflowPanels);
@@ -336,8 +355,8 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
 
   // No `state` here: panel transitions must not re-render (and re-run the effects of) every consumer.
   const api = useMemo<OverlayApi>(
-    () => ({ openPanel, closePanel, togglePanel, isOpen, bringToFront, gameRect, gameFocused }),
-    [openPanel, closePanel, togglePanel, isOpen, bringToFront, gameRect, gameFocused],
+    () => ({ openPanel, closePanel, togglePanel, isOpen, bringToFront, gameRect, gameFocused, cursorLock }),
+    [openPanel, closePanel, togglePanel, isOpen, bringToFront, gameRect, gameFocused, cursorLock],
   );
   const internals = useMemo<OverlayInternals>(
     () => ({ defs, state, gameFocused, commitRect }),
