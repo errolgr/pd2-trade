@@ -655,6 +655,10 @@
         "label": "Volume do alerta do mercado: <num>{{value}}%</num>",
         "description": "Volume do som de alerta do mercado (0-100%).",
         "ariaLabel": "Volume do alerta do mercado"
+      },
+      "wtbPrompt": {
+        "label": "Sugerir pedido de compra ao criar alerta",
+        "description": "Ao ativar um alerta para uma busca, sugere publicar também um pedido de compra para ela."
       }
     }
   },

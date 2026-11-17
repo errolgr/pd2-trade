@@ -65,6 +65,8 @@ export interface NotificationEntry {
   at: number;
   /** The toast's action, still runnable from the log. */
   action?: LoggedAction;
+  /** The toast's second action (a buy request response's Whisper back), a button of its own in the log. */
+  secondaryAction?: LoggedAction;
   /** A market listing: Details opens it in the listing drawer. */
   listing?: ListingPanelPayload;
   tone?: 'success' | 'warning' | 'error' | 'muted';
@@ -126,13 +128,15 @@ export function missedSummary(log: readonly NotificationEntry[]): MissedSummary 
   };
 }
 
+const loggedActionSchema = z.object({ label: z.string(), type: z.nativeEnum(ToastActionType), data: z.unknown() });
 const savedEntrySchema = z.object({
   id: z.string(),
   kind: z.enum(NOTIFICATION_KINDS),
   title: z.string(),
   description: z.string().optional(),
   at: z.number(),
-  action: z.object({ label: z.string(), type: z.nativeEnum(ToastActionType), data: z.unknown() }).optional(),
+  action: loggedActionSchema.optional(),
+  secondaryAction: loggedActionSchema.optional(),
   listing: z.object({ listingId: z.string(), savedSearchId: z.string().optional() }).passthrough().optional(),
   tone: z.enum(['success', 'warning', 'error', 'muted']).optional(),
   count: z.number().int().positive().catch(1),

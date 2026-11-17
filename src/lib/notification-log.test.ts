@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ToastActionType } from '@/common/types/Events';
 import {
   addEntry,
   GROUP_WINDOW_MS,
@@ -93,6 +94,36 @@ describe('parseLog', () => {
       { ...good, missed: true },
       { ...older, count: 1, missed: false },
     ]);
+  });
+
+  it("keeps an entry's actions, and reads an entry saved before second actions as having none", () => {
+    const action = { label: 'View request', type: ToastActionType.OPEN_MARKET_PANEL, data: { requestId: 'r1' } };
+    const secondaryAction = { label: 'Whisper back', type: ToastActionType.WTB_WHISPER_BACK, data: { id: 'w1' } };
+    const both = {
+      id: 'a',
+      kind: 'market',
+      title: 'Response',
+      at: T0,
+      action,
+      secondaryAction,
+      count: 1,
+      missed: false,
+    };
+    const old = { id: 'b', kind: 'market', title: 'Response', at: T0 - 1, action, count: 1, missed: false };
+    const parsed = parseLog(JSON.stringify({ entries: [both, old] }));
+    expect(parsed).toEqual([both, old]);
+    expect(parsed[1].secondaryAction).toBeUndefined();
+  });
+
+  it('drops an entry whose second action is malformed', () => {
+    const bad = {
+      id: 'a',
+      kind: 'market',
+      title: 'x',
+      at: T0,
+      secondaryAction: { label: 'Whisper back', type: 'NOPE' },
+    };
+    expect(parseLog(JSON.stringify({ entries: [bad] }))).toEqual([]);
   });
 
   it('reads a broken or foreign file as empty', () => {

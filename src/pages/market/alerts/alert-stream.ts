@@ -5,6 +5,7 @@
  * the last one that search saw) and deduping alerts by search and listing.
  */
 import type { MarketAlert, MarketListingSummary, MarketMatch } from './market-api';
+import { isWtbResponse, type WtbResponse } from '../lib/wtb';
 
 export interface SseEvent {
   event: string;
@@ -115,7 +116,7 @@ export function watchAlert(target: WatchTarget, listing: MarketListingSummary, m
 const time = (iso: string | null | undefined) => (iso ? Date.parse(iso) : NaN);
 
 export interface WatchStreamOptions {
-  /** The distinct `q` of the watched searches (1-10). */
+  /** The distinct `q` of the watched searches (0-10; none only signed in: then just buy request responses). */
   queries: readonly string[];
   /** Opens the stream; rejects with `{ status, retryAfterMs? }` on a non-2xx answer. */
   open: (queries: readonly string[], signal: AbortSignal) => Promise<Response>;
@@ -127,6 +128,10 @@ export interface WatchStreamOptions {
   onAlerts: (alerts: MarketAlert[], source: 'live' | 'catch-up') => void;
   /** The newest bump a search has seen (an alert, or what its first catch-up found). */
   onSeen: (searchId: string, bumpedAt: string) => void;
+  /** Signed in: a response to one of the user's buy requests (`wtb.response`), once per response id. */
+  onWtbResponse?: (response: WtbResponse) => void;
+  /** Each (re)connect's `hello`: what was missed while away is caught up (responses: `listWtbResponses`). */
+  onConnected?: () => void;
   signal: AbortSignal;
   /** Shared across restarts so an alert never shows twice. */
   seen?: Set<string>;
@@ -158,7 +163,6 @@ const retryAfterOf = (error: unknown) =>
   error && typeof error === 'object' && 'retryAfterMs' in error && typeof error.retryAfterMs === 'number'
     ? error.retryAfterMs
     : null;
-
 
 /**
  * Keeps the watch stream open until `signal` aborts or the server rejects the searches (400/414: the same
@@ -234,6 +238,21 @@ export async function runWatchStream(options: WatchStreamOptions): Promise<void>
     deliver(alerts, 'live');
   };
 
+  // A response to one of the user's buy requests: deduped by the response id (a repeat contact updates the same
+  // response and is not pushed again; a reconnect may replay one)
+  const onResponse = (data: string) => {
+    let response: WtbResponse;
+    try {
+      response = JSON.parse(data) as WtbResponse;
+    } catch (error) {
+      console.warn('[market alerts] bad wtb.response event:', error);
+      return;
+    }
+    if (!isWtbResponse(response) || seen.has(`wtb:${response.id}`)) return;
+    seen.add(`wtb:${response.id}`);
+    options.onWtbResponse?.(response);
+  };
+
   while (!signal.aborted) {
     const current = new AbortController();
     const abortConnection = () => current.abort();
@@ -256,8 +275,11 @@ export async function runWatchStream(options: WatchStreamOptions): Promise<void>
       const decoder = new TextDecoder();
       const parser = createSseParser(
         (event) => {
-          if (event.event === 'hello') void catchUp();
-          else if (event.event === 'market.match') onMatch(event.data);
+          if (event.event === 'hello') {
+            void catchUp();
+            options.onConnected?.();
+          } else if (event.event === 'market.match') onMatch(event.data);
+          else if (event.event === 'wtb.response') onResponse(event.data);
         },
         (ms) => {
           serverRetryMs = ms;

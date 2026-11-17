@@ -18,12 +18,18 @@ import {
   openLiveSearchStream,
   watchQuery,
 } from './market-api';
+import { listWtbResponses } from './wtb-api';
+import { notify } from '@/overlay';
+import type { WtbResponse } from '@/pages/market/lib/wtb';
 import type * as MarketApi from './market-api';
 import { useMarketAlerts } from './useMarketAlerts';
 
-const h = vi.hoisted(() => ({ settings: {} as Record<string, unknown> }));
+const h = vi.hoisted(() => ({ settings: {} as Record<string, unknown>, updateSettings: vi.fn(async () => {}) }));
 
-vi.mock('@/hooks/useOptions', () => ({ useOptions: () => ({ settings: h.settings, isLoading: false }) }));
+vi.mock('@/hooks/useOptions', () => ({
+  useOptions: () => ({ settings: h.settings, isLoading: false, updateSettings: h.updateSettings }),
+}));
+vi.mock('./wtb-api', () => ({ listWtbResponses: vi.fn() }));
 vi.mock('@/hooks/useSocketNotifications', () => ({ playNotificationSound: vi.fn() }));
 // notify() logs and toasts when asked: the toast half goes through the showToast mock
 vi.mock('@/overlay', () => {
@@ -116,6 +122,9 @@ beforeEach(() => {
   vi.mocked(openLiveSearchStream).mockReset().mockResolvedValue(stream(HELLO));
   vi.mocked(fetchNewestListings).mockReset().mockResolvedValue([]);
   vi.mocked(listServerSavedSearches).mockReset().mockResolvedValue([]);
+  vi.mocked(listWtbResponses).mockReset().mockResolvedValue({ items: [], nextCursor: null });
+  vi.mocked(notify).mockClear();
+  h.updateSettings.mockClear();
   h.settings = {};
   vi.spyOn(console, 'warn').mockImplementation(() => {});
 });
@@ -132,7 +141,12 @@ describe('useMarketAlerts', () => {
     const shako = search('s1', true);
     const spirit = search('s2', true);
     savedFile({
-      savedSearches: [shako, spirit, search('s3', false), search('s4', true, { filters: filters('x', { source: 'archive' }) })],
+      savedSearches: [
+        shako,
+        spirit,
+        search('s3', false),
+        search('s4', true, { filters: filters('x', { source: 'archive' }) }),
+      ],
     });
     vi.mocked(openLiveSearchStream).mockResolvedValue(
       stream(HELLO + match(shako, 'l1', '2026-10-21T08:01:00Z') + match(shako, 'l1', '2026-10-21T08:01:00Z')),
@@ -141,7 +155,11 @@ describe('useMarketAlerts', () => {
     await settle();
     await settle();
 
-    expect(openLiveSearchStream).toHaveBeenCalledExactlyOnceWith([q(shako), q(spirit)].sort(), expect.any(AbortSignal));
+    expect(openLiveSearchStream).toHaveBeenCalledExactlyOnceWith(
+      [q(shako), q(spirit)].sort(),
+      expect.any(AbortSignal),
+      undefined,
+    );
     expect(listServerSavedSearches).not.toHaveBeenCalled();
     expect(showToast).toHaveBeenCalledTimes(1);
     expect(vi.mocked(showToast).mock.calls[0][0]).toMatchObject({
@@ -244,7 +262,13 @@ describe('useMarketAlerts', () => {
   it('imports the saved searches kept on pd2trader.com once when signed in', async () => {
     h.settings = { pd2Token: 'tok' };
     vi.mocked(listServerSavedSearches).mockResolvedValue([
-      { id: 'srv1', name: 'Server Shako', filters: filters('Harlequin Crest'), alert: true, createdAt: '2026-10-20T00:00:00Z' },
+      {
+        id: 'srv1',
+        name: 'Server Shako',
+        filters: filters('Harlequin Crest'),
+        alert: true,
+        createdAt: '2026-10-20T00:00:00Z',
+      },
       { id: 'srv2', name: 'Bookmark', filters: filters('Spirit'), alert: false, createdAt: '2026-10-19T00:00:00Z' },
     ]);
     const { rerender } = renderHook(() => useMarketAlerts());
@@ -260,7 +284,11 @@ describe('useMarketAlerts', () => {
     });
     expect(written().at(-1)).toMatchObject({ savedSearchesImported: true });
     // The imported watch streams right away
-    expect(openLiveSearchStream).toHaveBeenCalledWith([watchQuery(filters('Harlequin Crest'))], expect.any(AbortSignal));
+    expect(openLiveSearchStream).toHaveBeenCalledWith(
+      [watchQuery(filters('Harlequin Crest'))],
+      expect.any(AbortSignal),
+      'tok',
+    );
 
     h.settings = { pd2Token: 'tok2' };
     rerender();
@@ -287,5 +315,64 @@ describe('useMarketAlerts', () => {
     expect(listServerSavedSearches).toHaveBeenLastCalledWith('tok2');
     expect(getMarketPrefs().savedSearches.map((s) => s.id)).toEqual(['srv1', 'local']);
     expect(getMarketPrefs().savedSearchesImported).toBe(true);
+  });
+});
+
+describe('buy request responses on the stream', () => {
+  const response = (id: string, createdAt: string): WtbResponse => ({
+    id,
+    requestId: 'req1',
+    request: {
+      id: 'req1',
+      title: 'Rare Circlet',
+      offer: { amount: 2, currency: 'HR', hr: 2 },
+      status: 'open',
+      buyer: { userId: 'me', name: 'me' },
+      whisperTo: 'MeAcc',
+    },
+    seller: { userId: 'hammer', name: 'HammerTime', account: 'HammerAcc' },
+    item: { name: 'Grim Visage', quality: 'Rare', baseCode: 'ci0' },
+    met: [],
+    channel: 'whisper',
+    createdAt,
+    dismissed: false,
+  });
+  const event = (r: ReturnType<typeof response>) => `event: wtb.response\ndata: ${JSON.stringify(r)}\n\n`;
+
+  it('signed in, the stream runs without a watched search: each response toasts once, with the sound', async () => {
+    h.settings = { pd2Token: 'tok', wtbResponsesSeenAt: '2026-10-21T07:00:00Z' };
+    savedFile({ savedSearches: [] });
+    const r = response('r1', '2026-10-21T08:05:00Z');
+    vi.mocked(openLiveSearchStream).mockResolvedValue(stream(HELLO + event(r) + event(r)));
+    renderHook(() => useMarketAlerts());
+    await settle();
+    await settle();
+    expect(openLiveSearchStream).toHaveBeenCalledWith([], expect.any(AbortSignal), 'tok');
+    const toasted = vi.mocked(notify).mock.calls.filter((call) => call[2].toast);
+    expect(toasted).toHaveLength(1);
+    expect(toasted[0][1]).toMatchObject({
+      title: '🛒 A seller can fill your buy request',
+      action: { data: { requestId: 'req1' } },
+    });
+    expect(toasted[0][2]).toEqual({ toast: true, groupKey: 'wtb:req1' });
+    expect(playNotificationSound).toHaveBeenCalled();
+    expect(h.updateSettings).toHaveBeenCalledWith({ wtbResponsesSeenAt: '2026-10-21T08:05:00Z' });
+  });
+
+  it('on (re)connect, responses that came while away go to the log as missed, never toasted', async () => {
+    h.settings = { pd2Token: 'tok', wtbResponsesSeenAt: '2026-10-21T07:00:00Z' };
+    savedFile({ savedSearches: [] });
+    vi.mocked(listWtbResponses).mockResolvedValue({
+      items: [response('new', '2026-10-21T07:30:00Z'), response('old', '2026-10-21T06:00:00Z')],
+      nextCursor: null,
+    });
+    vi.mocked(openLiveSearchStream).mockResolvedValue(stream(HELLO));
+    renderHook(() => useMarketAlerts());
+    await settle();
+    await settle();
+    expect(listWtbResponses).toHaveBeenCalledWith('tok', { direction: 'received', limit: 20 });
+    expect(notify).toHaveBeenCalledTimes(1);
+    expect(notify).toHaveBeenCalledWith('market', expect.anything(), { toast: false, groupKey: 'wtb:req1' });
+    expect(showToast).not.toHaveBeenCalled();
   });
 });

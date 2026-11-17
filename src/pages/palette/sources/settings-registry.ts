@@ -634,6 +634,15 @@ export const SETTINGS_REGISTRY: readonly SettingEntry[] = [
     groupKeys: ['settings:market.alerts.group'],
     keywords: [...SOUND_KEYWORDS, 'alert'],
   },
+  {
+    kind: 'boolean',
+    key: 'marketWtbPromptEnabled',
+    section: 'Market',
+    labelKey: 'settings:market.alerts.wtbPrompt.label',
+    groupKeys: ['settings:market.alerts.group'],
+    keywords: ['buy request', 'wtb', 'want to buy', 'watch', 'prompt'],
+    value: (s) => s.marketWtbPromptEnabled ?? true,
+  },
 
   // Net worth
   {

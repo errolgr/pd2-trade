@@ -12,7 +12,7 @@ import type { ItemType as PD2Item } from '@/assets/itemFuzzySearch';
 import { buildGetMarketListingQuery, type QualitySearch } from '@/pages/price-check/lib/tradeUrlBuilder';
 import type { Item, Stat, StatFilterInput } from '@/pages/price-check/lib/interfaces';
 import { StatId } from '@/pages/price-check/lib/stat-mappings';
-import { PSEUDO_KEY_PREFIX } from '@/pages/price-check/lib/utils';
+import { PSEUDO_KEY_PREFIX, getStatKey } from '@/pages/price-check/lib/utils';
 import { findBaseOption, optionCodes } from '@/pages/market/lib/catalog';
 import { typeCodeForCodes } from '@/pages/market/lib/type-selection';
 import { defaultFilters, mergeFilters } from '@/pages/market/lib/defaults';
@@ -315,4 +315,39 @@ export function priceCheckServiceSearch(
 /** The price check's current search as market filters ("Open in market"). */
 export function priceCheckToMarketFilters(search: PriceCheckSearch): Partial<MarketFilters> {
   return priceCheckMarketSearch(search).filters;
+}
+
+/** The price-checked item as buy requests see it (see priceCheckItemProfile). */
+export interface PriceCheckItemProfile {
+  /** Its search without stat rows, in the user's realm: what overlapping requests are asked for. */
+  filters: MarketFilters;
+  /** Every stat row of the item at its own value (min = max = the roll). */
+  rows: StatFilter[];
+}
+
+/**
+ * The item for buy requests: its search scope (type / base / name / quality, no stat rows) and every one of its stat
+ * rows pinned at the item's value, both through the price check's own market mapping.
+ */
+export function priceCheckItemProfile(
+  search: Omit<PriceCheckSearch, 'selected' | 'filters' | 'archive' | 'corruptedState' | 'corruptionNames'>,
+  stats: readonly Stat[],
+): PriceCheckItemProfile {
+  const base = { ...search, archive: false, corruptedState: 0, corruptionNames: [] };
+  const inputs: Record<string, StatFilterInput> = Object.fromEntries(
+    stats.map((s) => [
+      getStatKey(s),
+      {
+        min: String(s.value ?? 0),
+        max: String(s.value ?? 0),
+        ...(s.maxValue !== undefined && { maxMin: String(s.maxValue), maxMax: String(s.maxValue) }),
+      },
+    ]),
+  );
+  const order = { by: 'bumped', dir: 'desc' } as const;
+  return {
+    filters: priceCheckServiceSearch({ ...base, selected: new Set(), filters: {} }, order).filters,
+    rows: priceCheckServiceSearch({ ...base, selected: new Set(Object.keys(inputs)), filters: inputs }, order).filters
+      .stats,
+  };
 }

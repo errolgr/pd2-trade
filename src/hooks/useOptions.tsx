@@ -131,6 +131,9 @@ export interface ISettings {
   marketShowPriceHistory?: boolean; // price history chart in the listing detail
   marketShowSellerCard?: boolean; // seller card (presence, other listings) in the listing detail
   marketAlertToastSeconds?: number; // how long a Watch / saved-search alert popup stays up
+  marketWtbPromptEnabled?: boolean; // after Watch starts, offer to post a buy request for the same search ("Don't ask again" = false)
+  wtbBuyersHintSeen?: boolean; // the buyers chip's one-time "what's this" hint was dismissed (or the chip opened)
+  wtbResponsesSeenAt?: string; // ISO time of the newest buy request response told about (later ones were missed)
   myListingsView?: 'cards' | 'rows'; // My Listings: big cards or compact rows
   myListingsSort?: ListingsSort; // My Listings order (both views)
   hotkeyModifierSnapshot?: 'ctrl' | 'alt';
@@ -231,6 +234,7 @@ const DEFAULT_SETTINGS: ISettings = {
   marketShowPriceHistory: true,
   marketShowSellerCard: true,
   marketAlertToastSeconds: 8,
+  marketWtbPromptEnabled: true,
   myListingsView: 'cards',
   myListingsSort: DEFAULT_LISTINGS_SORT,
   hotkeyModifierSnapshot: 'ctrl',

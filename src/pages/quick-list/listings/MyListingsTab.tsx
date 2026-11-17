@@ -20,6 +20,7 @@ import { useOptions } from '@/hooks/useOptions';
 import { useDealIndicators } from '@/pages/market/enrich/useDealIndicators';
 import { useNow } from '@/pages/market/enrich/useNow';
 import { indexListingOffers } from '@/pages/market/lib/listing-offers';
+import { useListingWtbMatches } from '@/pages/market/wtb/useWtbData';
 import { PD2Website } from '@/common/constants';
 import { openUrl } from '@/lib/browser-opener';
 import { trackEvent, trackMeasurement } from '@/lib/telemetry';
@@ -149,6 +150,8 @@ const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange, focus
 
   const offers = useMemo(() => indexListingOffers([], incomingOffers ?? []), [incomingOffers]);
   const deals = useDealIndicators(listings ?? []);
+  // Open buy requests matching the user's listings ("{n} buyers"), one cached `/match` call for all of them
+  const buyers = useListingWtbMatches(listings, listings ? { ladder, hardcore } : null, settings?.pd2Token || null);
   const ctx: ListingContext = useMemo(() => ({ now, offers, deals }), [now, offers, deals]);
 
   const searched = useMemo(() => {
@@ -309,6 +312,7 @@ const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange, focus
     now,
     deal: deals.get(listing._id),
     offers: offers.get(listing._id),
+    buyers: buyers.get(listing._id),
     editing: editingId === listing._id,
     bumping: bumpingId === listing._id,
     deleting: deletingId === listing._id,

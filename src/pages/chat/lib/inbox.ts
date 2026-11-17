@@ -19,6 +19,8 @@ import { otherParticipant, participantName } from '../components/chat-parts';
 import { knownAccounts, linkSender, whisperThreadId } from './identity';
 import { linkMention, messagePreview } from './market-links';
 import { whisperedItemName } from '@/pages/delist/trade-match';
+import type { WtbResponse } from '@/pages/market/lib/wtb';
+import { offersSeenUpTo } from './offers-seen';
 
 /** 'archived' shows only archived threads; the others leave them out. */
 export type InboxFilter = 'all' | 'selling' | 'buying' | 'archived';
@@ -51,13 +53,15 @@ export interface InboxThread {
   people: WhisperPerson[];
   /** Website offers with this user, both directions. */
   offers: TradeOffer[];
+  /** Buy request responses with this user: theirs to your requests (`received`, unread until seen), yours to theirs. */
+  wtb: { response: WtbResponse; received: boolean; unread: boolean }[];
   /** Every in-game account known for the website user (see knownAccounts); whispers from them link here. */
   accounts: string[];
   latest?: InboxPreview;
   unread: number;
-  /** Has incoming offers or open incoming trade whispers. */
+  /** Has incoming offers, open incoming trade whispers or your answers to their buy requests. */
   selling: boolean;
-  /** Has outgoing offers or open outgoing trade whispers. */
+  /** Has outgoing offers, open outgoing trade whispers or answers to your buy requests. */
   buying: boolean;
   /** Client-only preferences (lib/chat-prefs). */
   pinned: boolean;
@@ -79,6 +83,8 @@ export interface InboxInput {
    * useResolvedSellers) brings its registered game accounts along, letting whispers link in via linkSender.
    */
   contacts?: readonly { userId: string; name: string; user?: Participant }[];
+  /** Buy request responses: on your requests (`received`) and yours to others' (`made`). */
+  wtb?: { received: readonly WtbResponse[]; made: readonly WtbResponse[] };
 }
 
 /** Pinned threads first (newest first among them), then the rest newest first (threads without any message last). */
@@ -90,6 +96,7 @@ export function buildInbox({
   now,
   prefs = EMPTY_PREFS,
   contacts = [],
+  wtb,
 }: InboxInput): InboxThread[] {
   const threads = new Map<string, InboxThread>();
   const byUser = new Map<string, InboxThread>();
@@ -103,6 +110,7 @@ export function buildInbox({
   const blank = () => ({
     people: [],
     offers: [],
+    wtb: [],
     accounts: [],
     unread: 0,
     selling: false,
@@ -162,9 +170,36 @@ export function buildInbox({
       );
   }
 
+  // Buy request responses: received ones (your request) in the seller's thread, made ones in the buyer's
+  const wtbAccounts = new Map<string, { accountName: string }[]>();
+  const wtbEntries = [
+    ...(wtb?.received ?? []).map((response) => ({ response, received: true })),
+    ...(wtb?.made ?? []).map((response) => ({ response, received: false })),
+  ];
+  for (const { response, received } of wtbEntries) {
+    const other = received
+      ? { userId: response.seller.userId, name: response.seller.name, account: response.seller.account }
+      : {
+          userId: response.request.buyer.userId,
+          name: response.request.buyer.name,
+          account: response.request.whisperTo,
+        };
+    if (!other.userId || other.userId === currentUserId) continue;
+    const thread =
+      byUser.get(other.userId) ??
+      add({ id: `user:${other.userId}`, name: other.name, userId: other.userId, ...blank() });
+    thread.wtb.push({ response, received, unread: false });
+    if (other.account)
+      wtbAccounts.set(thread.id, [...(wtbAccounts.get(thread.id) ?? []), { accountName: other.account }]);
+  }
+
   // Accounts once every offer is in: a conversation partner may only show accounts on their offers
   const candidates = [...threads.values()].map((thread) => {
-    thread.accounts = knownAccounts(thread.participant, [...thread.offers, ...(contactAccounts.get(thread.id) ?? [])]);
+    thread.accounts = knownAccounts(thread.participant, [
+      ...thread.offers,
+      ...(contactAccounts.get(thread.id) ?? []),
+      ...(wtbAccounts.get(thread.id) ?? []),
+    ]);
     return { threadId: thread.id, accounts: thread.accounts };
   });
 
@@ -207,12 +242,40 @@ export function buildInbox({
         source: 'website',
       });
     }
+    for (const { response, received } of thread.wtb) {
+      const item = response.item?.name;
+      const title = response.request.title;
+      items.push({
+        text: received
+          ? item
+            ? t('chat:inbox.wtbReceivedItem', { item, title })
+            : t('chat:inbox.wtbReceived', { title })
+          : item
+            ? t('chat:inbox.wtbMadeItem', { item, title })
+            : t('chat:inbox.wtbMade', { title }),
+        at: Date.parse(response.createdAt) || 0,
+        own: !received,
+        source: 'website',
+      });
+    }
     thread.latest = items.reduce<InboxPreview | undefined>((a, b) => (a && a.at >= b.at ? a : b), undefined);
+    // Responses to your requests are unread until the thread is on screen (offers-seen, like trade whispers)
+    const seenUpTo = thread.wtb.length > 0 ? offersSeenUpTo(prefs, threadAliases(thread)) : 0;
+    for (const entry of thread.wtb) entry.unread = entry.received && Date.parse(entry.response.createdAt) > seenUpTo;
     thread.unread =
-      (thread.conversation?.unread_count || 0) + thread.people.reduce((sum, p) => sum + unreadWhispers(p), 0);
+      (thread.conversation?.unread_count || 0) +
+      thread.people.reduce((sum, p) => sum + unreadWhispers(p), 0) +
+      thread.wtb.filter((entry) => entry.unread).length;
     const openTrades = thread.people.flatMap((p) => p.trades.filter((t) => isOpenTrade(t, now)));
-    thread.selling = thread.offers.some((o) => o.isIncoming) || openTrades.some((t) => t.isIncoming);
-    thread.buying = thread.offers.some((o) => !o.isIncoming) || openTrades.some((t) => !t.isIncoming);
+    // Trade roles: an answer to your buy request means you're buying; your answer to theirs, selling
+    thread.selling =
+      thread.offers.some((o) => o.isIncoming) ||
+      openTrades.some((t) => t.isIncoming) ||
+      thread.wtb.some((entry) => !entry.received);
+    thread.buying =
+      thread.offers.some((o) => !o.isIncoming) ||
+      openTrades.some((t) => !t.isIncoming) ||
+      thread.wtb.some((entry) => entry.received);
     const threadPrefs = prefsFor(prefs, threadAliases(thread));
     thread.pinned = threadPrefs.pinnedAt !== undefined;
     thread.muted = !!threadPrefs.muted;

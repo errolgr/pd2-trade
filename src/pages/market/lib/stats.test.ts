@@ -157,3 +157,17 @@ describe('elemental damage (Adds X-Y)', () => {
     expect(lowDamageRange(key)).toEqual({ min: 2, max: 6 });
   });
 });
+
+describe('statLabel of an alias group member', () => {
+  it('takes the label of the a|b option listing that name', () => {
+    expect(statLabel('max_damage')).toBe('+{X} to Maximum Damage');
+    expect(statLabel('item_throw_maxdamage')).toBe('+{X} to Maximum Damage');
+  });
+
+  it('leaves exact matches as they were', () => {
+    expect(statLabel('max_damage|maxdamage|secondary_maxdamage|item_throw_maxdamage')).toBe('+{X} to Maximum Damage');
+    expect(statLabel('item_fastercastrate')).toBe('+{X} Faster Cast Rate');
+    expect(statLabel('damage')).toBe('Adds {X}-{Y} Damage');
+    expect(statLabel('not_a_stat')).toBe('not_a_stat');
+  });
+});

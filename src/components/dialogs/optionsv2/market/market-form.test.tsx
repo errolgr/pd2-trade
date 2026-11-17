@@ -66,4 +66,13 @@ describe('MarketForm', () => {
     renderForm({ marketAlertSoundEnabled: false, marketAlertVolume: 70 });
     expect(screen.getByRole('button', { name: 'Test' }).hasAttribute('disabled')).toBe(true);
   });
+
+  it('turns the buy request offer after Watch off (on by default)', async () => {
+    renderForm({});
+    const toggle = screen.getByRole('switch', { name: 'Offer a Buy Request After Watch' });
+    expect(toggle.getAttribute('aria-checked')).toBe('true');
+    fireEvent.click(toggle);
+    await advance(300);
+    expect(store.updateSettings.mock.calls.at(-1)?.[0]).toEqual({ marketWtbPromptEnabled: false });
+  });
 });

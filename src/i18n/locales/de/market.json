@@ -74,6 +74,13 @@
       "archive": "Archivsuchen können nicht beobachtet werden",
       "watching": "Beobachtet: klicken, um die Benachrichtigungen für neue passende Inserate zu beenden",
       "watch": "Beobachten: Benachrichtigung und Ton für jedes neue passende Inserat"
+    },
+    "wtbPrompt": {
+      "title": "Auch ein Kaufgesuch erstellen?",
+      "description": "Verkäufer, die es haben, können dich anschreiben.",
+      "post": "Kaufgesuch erstellen",
+      "notNow": "Nicht jetzt",
+      "never": "Nicht mehr fragen"
     }
   },
   "alerts": {
@@ -100,7 +107,14 @@
       "label": "Inseratquelle",
       "live": "Aktive Inserate",
       "archive": "Archiv",
-      "archiveTitle": "Beendete Inserate: verkauft, entfernt und abgelaufen (Archiv von projectdiablo2.com)"
+      "archiveTitle": "Beendete Inserate: verkauft, entfernt und abgelaufen (Archiv von projectdiablo2.com)",
+      "wanted": "Gesucht",
+      "wantedTitle": "Kaufgesuche, die danach suchen",
+      "short": {
+        "live": "Aktiv",
+        "archive": "Archiv",
+        "wanted": "Gesucht"
+      }
     },
     "status": {
       "label": "Status",
@@ -121,7 +135,11 @@
       "listing": "Inserat",
       "price": "Preis",
       "seller": "Verkäufer",
-      "requirements": "Anforderungen"
+      "requirements": "Anforderungen",
+      "offer": "Angebot",
+      "buyer": "Käufer",
+      "requests": "Gesuche",
+      "realm": "Realm"
     },
     "type": "Typ",
     "base": "Basis",
@@ -178,7 +196,12 @@
     "modeLabel": "Softcore oder Hardcore",
     "applied": {
       "not": "Nicht {{name}}"
-    }
+    },
+    "minOffer": "Mindestangebot",
+    "buyer": "Käufer",
+    "buyerPlaceholder": "Benutzername oder Account",
+    "fitsStash": "Passt zu meiner Truhe",
+    "mineOnly": "Nur meine"
   },
   "controls": {
     "min": "min",
@@ -435,7 +458,8 @@
     "anyOf": "eines von ({{rows}})",
     "noneOf": "keines von ({{rows}})",
     "seller": "Verkäufer {{name}}",
-    "archive": " · Archiv"
+    "archive": " · Archiv",
+    "wanted": " · gesucht"
   },
   "saved": {
     "savedToast": "Suche gespeichert",
@@ -530,5 +554,214 @@
     "ranged": "Fernkampf",
     "1h-ranged": "Einhand-Fernkampf",
     "2h-ranged": "Zweihand-Fernkampf"
+  },
+  "wtb": {
+    "chip": {
+      "label_one": "{{count}} Käufer · bis {{offer}}",
+      "label_other": "{{count}} Käufer · bis {{offer}}",
+      "tooltip_one": "{{count}} Spieler hat eine Kaufanfrage gestellt, die dieses Item erfüllt. Klicke, um die Angebote zu sehen.",
+      "tooltip_other": "{{count}} Spieler haben eine Kaufanfrage gestellt, die dieses Item erfüllt. Klicke, um ihre Angebote zu sehen.",
+      "hintNew": "Neu",
+      "hint": "Kaufanfragen: Spieler, die ein Item wie dieses suchen. Klicke, um zu sehen, wer was zahlt.",
+      "hintOk": "Verstanden",
+      "title": "Kaufanfragen für dieses Item",
+      "subtitle": "Spieler, die gepostet haben, was sie suchen. Flüstere sie an, um zu verkaufen.",
+      "almost_one": "Fast ({{count}}) — Käufer 1 Wert entfernt",
+      "almost_other": "Fast ({{count}}) — Käufer 1 Wert entfernt",
+      "needs": "braucht {{stat}} ({{value}})",
+      "needsNone": "braucht {{stat}} (hast du nicht)",
+      "allRequests": "Alle Anfragen"
+    },
+    "whisperBuyer": "{{name}} anflüstern",
+    "copyWhisper": "Flüstern kopieren",
+    "listAt": "Für {{offer}} einstellen",
+    "listItAt": "Für {{offer}} einstellen",
+    "nice": "Optional",
+    "must": "Pflicht",
+    "corrupted": "Korrumpiert",
+    "youHaveOne": "Du hast einen",
+    "yours": "deins",
+    "daysLeft_one": "Noch {{count}} Tag",
+    "daysLeft_other": "Noch {{count}} Tage",
+    "drawer": {
+      "title": "Kaufgesuch",
+      "buyer": "Käufer",
+      "personalStash": "Persönliche Truhe · {{name}}",
+      "sharedStash": "Geteilte Truhe · Seite {{page}}",
+      "openToOffersLeft_one": "Offen für Angebote · noch {{count}} Tag",
+      "openToOffersLeft_other": "Offen für Angebote · noch {{count}} Tage",
+      "wantsYourItem": "Sucht · dein Gegenstand",
+      "wants": "Sucht",
+      "met": "Erfüllt",
+      "fromStash": "Aus deiner Truhe",
+      "own": "Das ist dein Gesuch. Verwalte es unter Meine."
+    },
+    "post": {
+      "title": "Kaufgesuch erstellen",
+      "editTitle": "Kaufgesuch bearbeiten",
+      "filtersHint": "Nutzt die Filter links. Bearbeite sie dort.",
+      "summary": "Was du suchst",
+      "toggleNice": "Pflicht oder optional: {{stat}}",
+      "excluded": "Nicht",
+      "anyOf": "Eins von",
+      "niceHint": "Klicke auf Pflicht / Optional, um einen Wert optional zu machen.",
+      "yourOffer": "Dein Angebot",
+      "soldLately": "Zuletzt verkauft · {{low}} – {{high}} HR",
+      "amount": "Menge",
+      "currency": "Währung",
+      "invalidAmount": "Angebot über 0 und höchstens 1000, mit bis zu 2 Nachkommastellen.",
+      "openToOffers": "Offen für Gegenangebote",
+      "expires": "Läuft ab",
+      "days_one": "{{count}} T.",
+      "days_other": "{{count}} T.",
+      "alsoWatch": "Auch beobachten: Benachrichtige mich, wenn einer eingestellt wird",
+      "alreadyWatching": "Diese Suche wird schon beobachtet",
+      "preview": "Verkäufer sehen",
+      "previewLine": "Ein Spieler zahlt {{offer}} dafür",
+      "previewHint": "in ihrem Preischeck, wenn ihr Gegenstand passt",
+      "submit": "Gesuch erstellen",
+      "save": "Änderungen speichern",
+      "signIn": "Zum Erstellen anmelden",
+      "postedToast": "Kaufgesuch erstellt",
+      "savedToast": "Kaufgesuch gespeichert",
+      "signInAgain": "Melde dich erneut an, um zu erstellen",
+      "capTitle": "Zu viele Kaufgesuche",
+      "capDescription_one": "Du kannst bis zu {{count}} offenes oder pausiertes Gesuch haben. Schließe zuerst eins (Gesucht → Meine).",
+      "capDescription_other": "Du kannst bis zu {{count}} offene oder pausierte Gesuche haben. Schließe zuerst eins (Gesucht → Meine).",
+      "postFailed": "Gesuch konnte nicht erstellt werden",
+      "saveFailed": "Gesuch konnte nicht gespeichert werden",
+      "blocked": {
+        "item": "Wähle in den Filtern einen Gegenstandsnamen, eine Basis oder einen Typ.",
+        "detail": "Füge mindestens einen Pflichtwert, eine Sockelanzahl oder Ätherisch hinzu."
+      },
+      "previewLineNoOffer": "Ein Spieler will das kaufen",
+      "expiryNext": "Laufzeit · gilt für den nächsten Push"
+    },
+    "button": {
+      "text": "Kaufgesuch",
+      "label": "Kaufgesuch: ein Kaufgesuch für diese Suche erstellen",
+      "archive": "Für verkaufte Angebote gibt es keine Gesuche"
+    },
+    "status": {
+      "live_one": "Aktiv · noch {{count}} T.",
+      "live_other": "Aktiv · noch {{count}} T.",
+      "paused": "Pausiert",
+      "expired": "Abgelaufen",
+      "closed": "Geschlossen"
+    },
+    "mine": {
+      "noMatches": "Noch keine Treffer",
+      "views_one": "In {{count}} Preischeck gezeigt",
+      "views_other": "In {{count}} Preischecks gezeigt",
+      "contacts_one": "{{count}} Verkäufer hat dich kontaktiert",
+      "contacts_other": "{{count}} Verkäufer haben dich kontaktiert",
+      "edit": "Bearbeiten",
+      "pause": "Pausieren",
+      "resume": "Fortsetzen",
+      "close": "Schließen",
+      "updateFailed": "Gesuch konnte nicht aktualisiert werden"
+    },
+    "sort": {
+      "label": "Gesuche sortieren",
+      "newest": "Neueste",
+      "offer": "Höchstes Angebot"
+    },
+    "signInStash": "Passt zu meiner Truhe liest deine Truhe auf projectdiablo2.com.",
+    "signInMine": "Deine Kaufgesuche nutzen dein projectdiablo2.com-Konto.",
+    "loadFailed": "Kaufgesuche konnten nicht geladen werden",
+    "stashFailed": "Deine Truhe konnte nicht gelesen werden",
+    "listLabel": "Kaufgesuche",
+    "empty": {
+      "allTitle": "Keine Kaufgesuche",
+      "allDescription": "Noch sucht niemand danach. Erstelle eins aus einer Suche mit Kaufgesuch.",
+      "stashTitle": "Nichts in deiner Truhe passt",
+      "stashDescription": "Gerade passt kein offenes Gesuch zu einem Gegenstand in deiner Truhe.",
+      "mineTitle": "Noch keine Kaufgesuche",
+      "mineDescription": "Suche, was du willst, und erstelle dann ein Gesuch mit Kaufgesuch."
+    },
+    "cta": {
+      "title": "Kein solches {{item}} ist eingestellt",
+      "titleAny": "Nichts dergleichen ist eingestellt",
+      "live": "Aktive Angebote",
+      "stats_one": "{{count}} Wert",
+      "stats_other": "{{count}} Werte",
+      "corrupted": "korrumpiert",
+      "post": "Kaufgesuch erstellen",
+      "helper": "Verkäufer, die einen passenden Gegenstand preisprüfen, sehen dein Angebot.",
+      "orLoosen": "Oder lockern"
+    },
+    "badge": {
+      "buyers_one": "{{count}} Käufer",
+      "buyers_other": "{{count}} Käufer",
+      "tooltip": "Gesucht: {{name}} zahlt {{offer}}"
+    },
+    "card": {
+      "subtitle": "Kaufgesuch · {{kind}}",
+      "subtitleAny": "Kaufgesuch",
+      "pays": "Zahlt",
+      "openToOffers": "offen für Angebote",
+      "approxHr": "≈ {{hr}} HR",
+      "postedAge": "erstellt {{age}}",
+      "bumpedAge": "gepusht {{age}}",
+      "expiredAgo": "Vor {{age}} abgelaufen"
+    },
+    "others": {
+      "title": "Andere wollen das auch",
+      "sameStats": "gleiche Werte",
+      "titleCount": "Das wollen auch andere · {{count}}",
+      "seeAll": "Alle {{count}} ansehen",
+      "open": "Gesuch von {{name}} öffnen ({{offer}})",
+      "more_one": "+{{count}} weitere",
+      "more_other": "+{{count}} weitere"
+    },
+    "demand": {
+      "offersUpTo": "Angebote bis {{offers}}",
+      "openOffers": "Offene Kaufangebote {{low}}–{{high}} HR ({{count}})",
+      "openOffersNoHr": "Offene Kaufangebote ({{count}})",
+      "viewRequests": "Gesuche ansehen",
+      "buying_one": "{{count}} Spieler kauft das",
+      "buying_other": "{{count}} Spieler kaufen das",
+      "buyingIncludingYours_one": "{{count}} Spieler kauft das, du eingeschlossen",
+      "buyingIncludingYours_other": "{{count}} Spieler kaufen das, du eingeschlossen",
+      "soldLately_one": "Zuletzt verkauft {{low}}–{{high}} HR ({{count}} Verkauf)",
+      "soldLately_other": "Zuletzt verkauft {{low}}–{{high}} HR ({{count}} Verkäufe)"
+    },
+    "results": {
+      "count_one": "{{count}} Gesuch",
+      "count_other": "{{count}} Gesuche",
+      "fitting_one": "{{count}} passt zu deiner Truhe",
+      "fitting_other": "{{count}} passen zu deiner Truhe"
+    },
+    "bump": {
+      "label": "Pushen",
+      "in": "Pushen in {{h}} Std. {{m}} Min.",
+      "revive": "Pushen zum Reaktivieren",
+      "done_one": "Nach oben gepusht · läuft in {{count}} T ab",
+      "done_other": "Nach oben gepusht · läuft in {{count}} T ab",
+      "tooSoon": "Noch nicht pushbar",
+      "tooSoonDescription": "Du kannst in {{h}} Std. {{m}} Min. wieder pushen."
+    },
+    "mineSections": {
+      "active": "Aktiv ({{count}})",
+      "expired": "Abgelaufen ({{count}})"
+    },
+    "response": {
+      "title": "🛒 Ein Verkäufer kann dein Kaufgesuch erfüllen",
+      "body": "{{seller}} hat einen Treffer für {{title}} · dein Angebot {{offer}}",
+      "bodyNoItem": "{{seller}} hat dich wegen {{title}} angeflüstert",
+      "viewRequest": "Gesuch ansehen",
+      "whisperBack": "Zurückflüstern",
+      "requestGone": "Dieses Kaufgesuch ist nicht mehr offen"
+    },
+    "responses": {
+      "title_one": "Antworten · {{count}}",
+      "title_other": "Antworten · {{count}}",
+      "noItem": "Hat dich angeflüstert (kein Item genannt)",
+      "dismiss": "Ausblenden",
+      "markFilled": "Als erfüllt markieren",
+      "confirmClose": "Dieses Gesuch schließen?",
+      "confirmCloseDescription": "{{title}} · erfüllt von {{seller}}",
+      "close": "Gesuch schließen"
+    }
   }
 }

@@ -116,7 +116,15 @@ import type { AppraisedStat } from '@/lib/rare-appraisal-api';
 import { SimulatorButton } from './SimulatorButton';
 import { MatchesMedian } from './MatchesMedian';
 import type { MarketPriceStats } from '@/pages/market/lib/price-stats';
+import { useWtbItemMatches, useWtbSession } from '@/pages/market/wtb/useWtbData';
+import { WtbBuyersChip } from '@/pages/market/wtb/WtbBuyersChip';
+import { itemStatValues, statValueOf } from '@/pages/market/wtb/wtb-chip';
+import { wtbOverlapBody } from '@/pages/market/lib/wtb';
+import { priceCheckItemProfile } from '@/pages/market/store/priceCheckFilters';
 import { currentLocale, Trans, useTranslation } from '@/i18n';
+
+/** Overlapping requests read for the buyers chip's "Almost" (requests one stat away). */
+const WTB_NEAR_LOOKUP = 50;
 
 /** The header's "Any" quality: searches every base quality (e.g. Rare and Crafted together). */
 const ANY_QUALITY = 'any' as const;
@@ -269,6 +277,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const rareResponse = rareAppraisal.status === 'done' ? rareAppraisal.response : null;
   const appraisal = rareResponse?.appraisal ?? null;
   const appraisalNoteText = rareResponse?.reason ? appraisalNote(rareResponse.reason) : null;
+
+  // Open buy requests this item fills (pd2trader.com): the buyers chip beside the name
+  const wtb = useWtbSession();
+  const itemText = useMemo(() => JSON.stringify(item), [item]);
+  const wtbMatches = useWtbItemMatches(itemText, wtb.realm, wtb.token);
 
   /**
    * Extract Rainbow Facet data from item stats
@@ -1080,6 +1093,37 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     }
   };
 
+  // Buy requests: the item's search scope (overlapping requests, "Almost") and its stat values (what it meets)
+  const wtbProfile = useMemo(() => {
+    const profile = priceCheckItemProfile(
+      {
+        item,
+        pd2Item,
+        settings,
+        statMapper,
+        searchMode: shouldUseToggle ? searchMode : 0,
+        matchedItemType,
+        qualityOverride: searchedQuality,
+      },
+      sortedStats,
+    );
+    return {
+      valueOf: statValueOf(itemStatValues(profile.rows)),
+      nearBody: wtb.realm ? wtbOverlapBody({ ...profile.filters, ...wtb.realm }, { limit: WTB_NEAR_LOOKUP }) : null,
+    };
+  }, [
+    item,
+    pd2Item,
+    settings,
+    statMapper,
+    shouldUseToggle,
+    searchMode,
+    matchedItemType,
+    searchedQuality,
+    sortedStats,
+    wtb.realm,
+  ]);
+
   // Same search in the in-game market browser (pool search, pseudo stats, alerts)
   const openInMarket = () => {
     trackEvent('item_overlay_open_in_market', { archived: searchArchived });
@@ -1359,6 +1403,17 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               >
                 <span className="min-w-0 truncate">{displayTitle}</span>
                 {item.isRuneword && <Badge className="font-sans text-[10px] uppercase tracking-wider">Runeword</Badge>}
+                <span className="ml-auto" />
+                <WtbBuyersChip
+                  matches={wtbMatches}
+                  itemText={itemText}
+                  contactItem={{ text: itemText }}
+                  valueOf={wtbProfile.valueOf}
+                  nearBody={wtbProfile.nearBody}
+                  realm={wtb.realm}
+                  token={wtb.token}
+                  source="priceCheck"
+                />
               </h1>
               {item.type && (
                 <div className="-ml-1.5 flex flex-wrap items-center gap-0.5 text-lg leading-tight">

@@ -16,6 +16,8 @@ import { resetMyListings } from './my-listings-store';
 vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
 vi.mock('framer-motion', () => import('@/pages/quick-list/motion-mock'));
 vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
+// The "{n} buyers" /match call (pd2trader.com) is not what these tests cover
+vi.mock('@/pages/market/wtb/useWtbData', () => ({ useListingWtbMatches: () => new Map() }));
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
 vi.mock('@/lib/telemetry', () => ({ trackEvent: vi.fn(), trackMeasurement: vi.fn() }));

@@ -50,6 +50,14 @@ import { showToast, usePanel } from '@/overlay';
 import { subscribeListingDeleted } from '@/hooks/pd2website/listing-events';
 import { exactStashMatches } from '../lib/exact-stash-match';
 import { useTranslation } from '@/i18n';
+import { wtbOverlapBody, type WtbListPrice } from '@/pages/market/lib/wtb';
+import { useWtbItemMatches, useWtbSession } from '@/pages/market/wtb/useWtbData';
+import { WtbBuyersChip } from '@/pages/market/wtb/WtbBuyersChip';
+import { stashItemSearch } from '@/pages/market/wtb/wtb-chip';
+import { itemRowValue } from '@/pages/market/wtb/wtb-text';
+
+/** Overlapping requests read for the buyers chip's "Almost" (requests one stat away). */
+const WTB_NEAR_LOOKUP = 50;
 
 interface ListItemShortcutFormProps {
   item: PriceCheckItem | null;
@@ -108,9 +116,30 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   const { close: handleClose, payload, payloadVersion } = usePanel<'quickList'>();
   // openPanel('quickList', { listingId, edit }) (the palette): the Manage tab, on that listing
   const focusListing = useMemo<ListingFocus | null>(
-    () =>
-      payload?.listingId ? { listingId: payload.listingId, edit: payload.edit, version: payloadVersion } : null,
+    () => (payload?.listingId ? { listingId: payload.listingId, edit: payload.edit, version: payloadVersion } : null),
     [payload, payloadVersion],
+  );
+  /** A stash item to list as is (the market's "List at {offer}" for a buy request it fits): no stash search. */
+  const directItem = payload?.stashItem ?? null;
+  // A buyer's offer to list the item at (the market's "List it at {offer}"), applied once its form is set up
+  const prefill = payload?.item || payload?.stashItem ? payload.prefill : undefined;
+
+  // Open buy requests this stash item matches: the compact "a buyer wants this" banner over the price field
+  const wtb = useWtbSession();
+  const itemText = useMemo(() => (item && isStashItem(item) ? JSON.stringify(item) : null), [item]);
+  const wtbMatches = useWtbItemMatches(itemText, wtb.realm, wtb.token);
+  /** "List at {offer}": the offer as the HR price, or as the note when it has no HR value. */
+  const applyListPrice = useCallback(
+    (price: WtbListPrice) => {
+      if ('price' in price) {
+        form.setValue('type', 'exact');
+        form.setValue('price', price.price, { shouldValidate: true });
+      } else {
+        form.setValue('type', 'note');
+        form.setValue('note', price.note, { shouldValidate: true });
+      }
+    },
+    [form],
   );
 
   // Complete reset function for new items
@@ -211,9 +240,14 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     }
   }, [authData, pendingListings]);
 
-  // Find matching items when component mounts or item changes
+  // Find matching items when component mounts or item changes; a stash item handed over directly is the match
   useEffect(() => {
-    if (item && authData) {
+    if (directItem) {
+      resetAllState();
+      stashCandidatesRef.current = [directItem];
+      setMatchingItems([directItem]);
+      setSelectedItem(directItem);
+    } else if (item && authData) {
       // Check if this item is already queued
       const existingQueued = pendingListings.find((p) => JSON.stringify(p.item) === JSON.stringify(item));
       if (existingQueued) {
@@ -227,14 +261,14 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       // If item is cleared/null, reset state (but keep queued items)
       resetAllState();
     }
-    // Only depend on item and authData to avoid infinite loops
+    // Only depend on the item and authData to avoid infinite loops
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item, authData]);
+  }, [item, directItem, authData]);
 
   const pd2MarketQuery = useMemo(() => {
-    if (!item || !authData || matchingItems.length === 0) return null;
+    if ((!item && !directItem) || !authData || matchingItems.length === 0) return null;
     return buildGetMarketListingByStashItemQuery(matchingItems, authData.user._id);
-  }, [matchingItems, authData, item]);
+  }, [matchingItems, authData, item, directItem]);
 
   const getMarketListingsForStashItems = useCallback(async () => {
     if (!pd2MarketQuery) return;
@@ -796,9 +830,9 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     [selectedItem, currentListings],
   );
 
-  // Prepopulate form fields when selecting a listed item
+  // Prepopulate form fields when selecting a listed item; a buyer's offer to list at goes over them
   useEffect(() => {
-    if (!selectedItem || !item) return;
+    if (!selectedItem || (!item && !directItem)) return;
 
     const resetValues: ShortcutFormData = currentListingForSelected
       ? {
@@ -813,20 +847,21 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       : { type: 'exact', note: '', price: '', currency: 'HR' };
 
     form.reset(resetValues);
-  }, [selectedItem, currentListingForSelected, form, item]);
+    if (prefill) applyListPrice(prefill);
+  }, [selectedItem, currentListingForSelected, form, item, directItem, prefill, applyListPrice]);
 
   // State for active tab
-  const [activeTab, setActiveTab] = useState(item && isStashItem(item) ? 'list-item' : 'listed-items');
+  const [activeTab, setActiveTab] = useState(directItem || (item && isStashItem(item)) ? 'list-item' : 'listed-items');
 
   // Auto-switch to list-item tab when a new valid stash item is detected
   // Otherwise default to Manage tab
   useEffect(() => {
-    if (item && isStashItem(item)) {
+    if (directItem || (item && isStashItem(item))) {
       setActiveTab('list-item');
     } else {
       setActiveTab('listed-items');
     }
-  }, [item, resetAllState]);
+  }, [item, directItem, resetAllState]);
   useEffect(() => {
     if (focusListing) setActiveTab('listed-items');
   }, [focusListing]);
@@ -970,9 +1005,29 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     );
   };
 
+  // Beside the item's name: buyers whose request it fills, "List at {offer}" filling the price; `stashItem` (the
+  // one listed) gives the values the buyers' stats are read against
+  const wtbChip = (stashItem: GameStashItem | null) => (
+    <WtbBuyersChip
+      matches={wtbMatches}
+      itemText={itemText}
+      contactItem={stashItem ? { item: stashItem } : itemText ? { text: itemText } : null}
+      valueOf={(row) => (stashItem ? itemRowValue(stashItem, row) : null)}
+      nearBody={
+        stashItem && wtb.realm
+          ? wtbOverlapBody(stashItemSearch(stashItem, wtb.realm), { limit: WTB_NEAR_LOOKUP })
+          : null
+      }
+      realm={wtb.realm}
+      token={wtb.token}
+      source="listItem"
+      onListAt={applyListPrice}
+    />
+  );
+
   // Logic to determine what to render inside the "List Item" tab
   const renderListItemContent = () => {
-    if (!item) {
+    if (!item && !directItem) {
       return (
         <EmptyState icon={<PackageSearch />}
           title={t('shortcut.noItemTitle')}
@@ -1027,6 +1082,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           </span>
           <div className="flex flex-col items-center gap-2 text-center">
             <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+              {wtbChip(null)}
               <span>{t('shortcut.noItemsFound', { name: item.name || item.type })}</span>
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
@@ -1063,7 +1119,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     }
 
     // 5. Default: Item Selection Form
-    if (item) {
+    if (item || directItem) {
       const queueMode = matchingItems.length > 0 && !selectedItem && showQueueOption;
       return (
         <Form {...form}>
@@ -1085,6 +1141,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
               onCollapseAll={collapseAllStats}
               onBump={handleBump}
               onRefresh={handleRefresh}
+              buyers={wtbChip(selectedItem ?? matchingItems[0] ?? null)}
             />
 
             <div className="flex-shrink-0 space-y-2">

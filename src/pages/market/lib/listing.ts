@@ -25,9 +25,13 @@ export function listingAge(
   listing: Pick<MarketListingEntry, 'bumped_at' | 'updated_at'>,
   now: Date = new Date(),
 ): string {
-  const at = Date.parse(listing.bumped_at || listing.updated_at || '');
+  return ageText(Date.parse(listing.bumped_at || listing.updated_at || ''), now.getTime());
+}
+
+/** Compact age of a moment (epoch ms) as listings show it: `now`, `5m`, `3h`, `2d`, `5w`; empty when unknown. */
+export function ageText(at: number, now: number): string {
   if (Number.isNaN(at)) return '';
-  const ms = now.getTime() - at;
+  const ms = now - at;
   return ms < 60_000 ? t('market:age.now') : compactDuration(ms);
 }
 

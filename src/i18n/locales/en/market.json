@@ -74,6 +74,13 @@
       "archive": "Archive searches cannot be watched",
       "watching": "Watching: click to stop the popups for new listings matching this search",
       "watch": "Watch: get a popup and a sound for every new listing matching this search"
+    },
+    "wtbPrompt": {
+      "title": "Also post a buy request?",
+      "description": "Sellers who have it can message you.",
+      "post": "Post buy request",
+      "notNow": "Not now",
+      "never": "Don't ask again"
     }
   },
   "alerts": {
@@ -100,7 +107,14 @@
       "label": "Listing source",
       "live": "Live listings",
       "archive": "Archive",
-      "archiveTitle": "Ended listings: sold, removed and expired (projectdiablo2.com's archive)"
+      "archiveTitle": "Ended listings: sold, removed and expired (projectdiablo2.com's archive)",
+      "wanted": "Wanted",
+      "wantedTitle": "Buy requests asking for this",
+      "short": {
+        "live": "Live",
+        "archive": "Archive",
+        "wanted": "Wanted"
+      }
     },
     "status": {
       "label": "Status",
@@ -121,7 +135,11 @@
       "listing": "Listing",
       "price": "Price",
       "seller": "Seller",
-      "requirements": "Requirements"
+      "requirements": "Requirements",
+      "offer": "Offer",
+      "buyer": "Buyer",
+      "requests": "Requests",
+      "realm": "Realm"
     },
     "type": "Type",
     "base": "Base",
@@ -178,7 +196,12 @@
     "modeLabel": "Softcore or hardcore",
     "applied": {
       "not": "Not {{name}}"
-    }
+    },
+    "minOffer": "Min offer",
+    "buyer": "Buyer",
+    "buyerPlaceholder": "Username or account",
+    "fitsStash": "Fits my stash",
+    "mineOnly": "Mine only"
   },
   "controls": {
     "min": "min",
@@ -435,7 +458,8 @@
     "anyOf": "any of ({{rows}})",
     "noneOf": "none of ({{rows}})",
     "seller": "seller {{name}}",
-    "archive": " · archive"
+    "archive": " · archive",
+    "wanted": " · wanted"
   },
   "saved": {
     "savedToast": "Search saved",
@@ -530,5 +554,214 @@
     "ranged": "Ranged",
     "1h-ranged": "1H Ranged",
     "2h-ranged": "2H Ranged"
+  },
+  "wtb": {
+    "chip": {
+      "label_one": "{{count}} buyer · up to {{offer}}",
+      "label_other": "{{count}} buyers · up to {{offer}}",
+      "tooltip_one": "{{count}} player posted a buy request this item fills. Click to see their offers.",
+      "tooltip_other": "{{count}} players posted a buy request this item fills. Click to see their offers.",
+      "hintNew": "New",
+      "hint": "Buy requests: players looking for an item like this. Click to see who and what they pay.",
+      "hintOk": "Got it",
+      "title": "Buy requests for this item",
+      "subtitle": "Players who posted what they want. Whisper them to sell.",
+      "almost_one": "Almost ({{count}}) — buyers 1 stat away",
+      "almost_other": "Almost ({{count}}) — buyers 1 stat away",
+      "needs": "needs {{stat}} ({{value}})",
+      "needsNone": "needs {{stat}} (you have none)",
+      "allRequests": "All requests"
+    },
+    "whisperBuyer": "Whisper {{name}}",
+    "copyWhisper": "Copy whisper",
+    "listAt": "List at {{offer}}",
+    "listItAt": "List it at {{offer}}",
+    "nice": "Nice",
+    "must": "Must",
+    "corrupted": "Corrupted",
+    "youHaveOne": "You have one",
+    "yours": "yours",
+    "daysLeft_one": "{{count}} day left",
+    "daysLeft_other": "{{count}} days left",
+    "drawer": {
+      "title": "Buy request",
+      "buyer": "Buyer",
+      "personalStash": "Personal stash · {{name}}",
+      "sharedStash": "Shared stash · page {{page}}",
+      "openToOffersLeft_one": "Open to offers · {{count}} day left",
+      "openToOffersLeft_other": "Open to offers · {{count}} days left",
+      "wantsYourItem": "Wants · your item",
+      "wants": "Wants",
+      "met": "Met",
+      "fromStash": "From your stash",
+      "own": "This is your request. Manage it under Mine."
+    },
+    "post": {
+      "title": "Post buy request",
+      "editTitle": "Edit buy request",
+      "filtersHint": "Uses the filters on the left. Edit them there.",
+      "summary": "What you want",
+      "toggleNice": "Must or nice to have: {{stat}}",
+      "excluded": "Not",
+      "anyOf": "Any of",
+      "niceHint": "Click Must / Nice to make a stat optional.",
+      "yourOffer": "Your offer",
+      "soldLately": "Sold lately · {{low}} – {{high}} HR",
+      "amount": "Amount",
+      "currency": "Currency",
+      "invalidAmount": "Offer more than 0 and at most 1000, with up to 2 decimals.",
+      "openToOffers": "Open to counter-offers",
+      "expires": "Expires",
+      "days_one": "{{count}}d",
+      "days_other": "{{count}}d",
+      "alsoWatch": "Also Watch: alert me if one gets listed",
+      "alreadyWatching": "Already watching this search",
+      "preview": "Sellers will see",
+      "previewLine": "A player will pay {{offer}} for this",
+      "previewHint": "in their price check, when their item matches",
+      "submit": "Post request",
+      "save": "Save changes",
+      "signIn": "Sign in to post",
+      "postedToast": "Buy request posted",
+      "savedToast": "Buy request saved",
+      "signInAgain": "Sign in again to post",
+      "capTitle": "Too many buy requests",
+      "capDescription_one": "You can have up to {{count}} open or paused request. Close one first (Wanted → Mine).",
+      "capDescription_other": "You can have up to {{count}} open or paused requests. Close one first (Wanted → Mine).",
+      "postFailed": "Couldn't post the request",
+      "saveFailed": "Couldn't save the request",
+      "blocked": {
+        "item": "Pick an item name, base or type in the filters.",
+        "detail": "Add at least one required stat, socket count or ethereal."
+      },
+      "previewLineNoOffer": "A player wants to buy this",
+      "expiryNext": "Duration · used for the next bump"
+    },
+    "button": {
+      "text": "Want to buy",
+      "label": "Want to buy: post a buy request for this search",
+      "archive": "Sold listings can't be asked for"
+    },
+    "status": {
+      "live_one": "Live · {{count}}d left",
+      "live_other": "Live · {{count}}d left",
+      "paused": "Paused",
+      "expired": "Expired",
+      "closed": "Closed"
+    },
+    "mine": {
+      "noMatches": "No matches yet",
+      "views_one": "Shown in {{count}} price check",
+      "views_other": "Shown in {{count}} price checks",
+      "contacts_one": "{{count}} seller contacted you",
+      "contacts_other": "{{count}} sellers contacted you",
+      "edit": "Edit",
+      "pause": "Pause",
+      "resume": "Resume",
+      "close": "Close",
+      "updateFailed": "Couldn't update the request"
+    },
+    "sort": {
+      "label": "Sort requests",
+      "newest": "Newest",
+      "offer": "Highest offer"
+    },
+    "signInStash": "Fits my stash reads your stash on projectdiablo2.com.",
+    "signInMine": "Your buy requests use your projectdiablo2.com account.",
+    "loadFailed": "Couldn't load buy requests",
+    "stashFailed": "Couldn't read your stash",
+    "listLabel": "Buy requests",
+    "empty": {
+      "allTitle": "No buy requests",
+      "allDescription": "Nobody is asking for this yet. Post one from a search with Want to buy.",
+      "stashTitle": "Nothing in your stash fits",
+      "stashDescription": "No open request matches an item in your stash right now.",
+      "mineTitle": "No buy requests yet",
+      "mineDescription": "Search for what you want, then post a buy request with Want to buy."
+    },
+    "cta": {
+      "title": "No {{item}} like this is listed",
+      "titleAny": "Nothing like this is listed",
+      "live": "Live listings",
+      "stats_one": "{{count}} stat",
+      "stats_other": "{{count}} stats",
+      "corrupted": "corrupted",
+      "post": "Post a buy request",
+      "helper": "Sellers who price-check a matching item will see your offer.",
+      "orLoosen": "Or loosen"
+    },
+    "badge": {
+      "buyers_one": "{{count}} buyer",
+      "buyers_other": "{{count}} buyers",
+      "tooltip": "Wanted: {{name}} will pay {{offer}}"
+    },
+    "card": {
+      "subtitle": "Buy request · {{kind}}",
+      "subtitleAny": "Buy request",
+      "pays": "Pays",
+      "openToOffers": "open to offers",
+      "approxHr": "≈ {{hr}} HR",
+      "postedAge": "posted {{age}}",
+      "bumpedAge": "bumped {{age}}",
+      "expiredAgo": "Expired {{age}} ago"
+    },
+    "others": {
+      "title": "Others want this too",
+      "sameStats": "same stats",
+      "titleCount": "Others want this too · {{count}}",
+      "seeAll": "See all {{count}}",
+      "open": "Open {{name}}'s request ({{offer}})",
+      "more_one": "+{{count}} more",
+      "more_other": "+{{count}} more"
+    },
+    "demand": {
+      "offersUpTo": "Offers up to {{offers}}",
+      "openOffers": "Open buy offers {{low}}–{{high}} HR ({{count}})",
+      "openOffersNoHr": "Open buy offers ({{count}})",
+      "viewRequests": "View requests",
+      "buying_one": "{{count}} player is buying this",
+      "buying_other": "{{count}} players are buying this",
+      "buyingIncludingYours_one": "{{count}} player is buying this, including you",
+      "buyingIncludingYours_other": "{{count}} players are buying this, including you",
+      "soldLately_one": "Sold lately {{low}}–{{high}} HR ({{count}} sale)",
+      "soldLately_other": "Sold lately {{low}}–{{high}} HR ({{count}} sales)"
+    },
+    "results": {
+      "count_one": "{{count}} request",
+      "count_other": "{{count}} requests",
+      "fitting_one": "{{count}} fits your stash",
+      "fitting_other": "{{count}} fit your stash"
+    },
+    "bump": {
+      "label": "Bump",
+      "in": "Bump in {{h}}h {{m}}m",
+      "revive": "Bump to revive",
+      "done_one": "Bumped to the top · expires in {{count}}d",
+      "done_other": "Bumped to the top · expires in {{count}}d",
+      "tooSoon": "Not bumpable yet",
+      "tooSoonDescription": "You can bump it again in {{h}}h {{m}}m."
+    },
+    "mineSections": {
+      "active": "Active ({{count}})",
+      "expired": "Expired ({{count}})"
+    },
+    "response": {
+      "title": "🛒 A seller can fill your buy request",
+      "body": "{{seller}} has a match for {{title}} · your offer {{offer}}",
+      "bodyNoItem": "{{seller}} whispered you about {{title}}",
+      "viewRequest": "View request",
+      "whisperBack": "Whisper back",
+      "requestGone": "That buy request is no longer open"
+    },
+    "responses": {
+      "title_one": "Responses · {{count}}",
+      "title_other": "Responses · {{count}}",
+      "noItem": "Whispered you (no item named)",
+      "dismiss": "Dismiss",
+      "markFilled": "Mark filled",
+      "confirmClose": "Close this request?",
+      "confirmCloseDescription": "{{title}} · filled by {{seller}}",
+      "close": "Close request"
+    }
   }
 }

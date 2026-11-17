@@ -67,9 +67,12 @@ export function searchDefaults(s: SearchDefaultSettings): SearchDefaults {
   };
 }
 
-/** A source's default age window: the user's for live listings, none for the archive. */
+/**
+ * A source's default age window: the user's for live listings (none = any age), none for the archive. Wanted has
+ * no age window: it keeps the live one, so switching back to listings finds it as it was.
+ */
 export function defaultAgeDays(source: MarketFilters['source'], defaults: SearchDefaults): number | undefined {
-  return source === 'live' ? defaults.maxAgeDays : undefined;
+  return source === 'archive' ? undefined : defaults.maxAgeDays;
 }
 
 /** Fresh filters for the user's realm: the site's empty Trade search, or the user's `defaults`. */

@@ -88,6 +88,12 @@ describe('local preferences (market-prefs.json)', () => {
     expect(parseMarketPrefs('null')).toEqual(EMPTY_MARKET_PREFS);
   });
 
+  it('keeps the Wanted source and its filters in the last search', () => {
+    const wanted = { ...filters('Shako'), source: 'wanted', wanted: { minOffer: 2, offerCurrency: 'Ber', mine: true } };
+    const prefs = parseMarketPrefs(JSON.stringify({ lastFilters: wanted }));
+    expect(prefs.lastFilters).toEqual(wanted);
+  });
+
   it('shows cards unless the user picked rows', () => {
     expect(EMPTY_MARKET_PREFS.viewMode).toBe('cards');
     expect(parseMarketPrefs('{}').viewMode).toBe('cards');

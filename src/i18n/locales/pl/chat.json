@@ -38,7 +38,11 @@
     "offer": "Oferta: {{price}}",
     "offerFor": "Oferta: {{price}} za {{item}}",
     "yourOffer": "Twoja oferta: {{price}}",
-    "yourOfferFor": "Twoja oferta: {{price}} za {{item}}"
+    "yourOfferFor": "Twoja oferta: {{price}} za {{item}}",
+    "wtbReceivedItem": "Ma {{item}} na twoją prośbę {{title}}",
+    "wtbReceived": "Szepnął w sprawie twojej prośby {{title}}",
+    "wtbMadeItem": "Zaoferowałeś {{item}} na ich prośbę {{title}}",
+    "wtbMade": "Szepnąłeś w sprawie ich prośby {{title}}"
   },
   "links": {
     "marketListing": "Ogłoszenie na rynku {{id}}..."
@@ -189,7 +193,19 @@
     "more_one": "jeszcze {{count}}",
     "more_few": "jeszcze {{count}}",
     "more_many": "jeszcze {{count}}",
-    "more_other": "jeszcze {{count}}"
+    "more_other": "jeszcze {{count}}",
+    "buyRequestReceived": "Prośba o kupno",
+    "buyRequestMade": "Ich prośba o kupno",
+    "forRequest": "na {{title}}",
+    "whisperBack": "Odpisz szeptem",
+    "whisperBackTitle": "Skopiuj odpowiedź szeptem do sprzedającego",
+    "whisper": "Szepnij",
+    "whisperBuyerTitle": "Skopiuj ponownie swój szept do kupującego",
+    "viewRequest": "Zobacz prośbę",
+    "viewRequestTitle": "Otwórz prośbę o kupno na rynku",
+    "markFilled": "Oznacz jako spełnioną",
+    "markFilledTitle": "Zamknij swoją prośbę: ten sprzedający ją spełnił",
+    "markFilledFailed": "Nie udało się zamknąć prośby"
   },
   "thread": {
     "muted": "Wyciszona",
@@ -227,9 +243,9 @@
     "empty": {
       "allTitle": "Brak rozmów",
       "sellingTitle": "Obecnie nic nie sprzedajesz",
-      "sellingDescription": "Tu pojawią się oferty na twoje ogłoszenia i szepty handlowe od kupujących.",
+      "sellingDescription": "Tu pojawiają się oferty na twoje ogłoszenia, szepty od kupujących i prośby o kupno, na które odpowiedziałeś.",
       "buyingTitle": "Obecnie nic nie kupujesz",
-      "buyingDescription": "Tu pojawią się twoje oferty i wysłane szepty handlowe.",
+      "buyingDescription": "Tu pojawiają się twoje oferty, wysłane szepty handlowe i sprzedający odpowiadający na twoje prośby o kupno.",
       "archivedTitle": "Brak zarchiwizowanych czatów",
       "archivedDescription": "Zarchiwizuj czat z jego menu ⋯; nowa wiadomość go przywróci."
     },

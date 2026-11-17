@@ -7,7 +7,7 @@ import { getNotificationLog, resetNotificationLog } from '@/lib/notification-log
 import { openUrl } from '@/lib/browser-opener';
 import { installUpdateAndRelaunch } from '@/lib/updater';
 import { ToastActionType } from '@/common/types/Events';
-import { ToastLayer, confirmToast, notify, setToastBridge, showToast, undoToast } from './toast';
+import { ToastLayer, confirmToast, notify, setToastActionHandler, setToastBridge, showToast, undoToast } from './toast';
 import { intentToast } from '@/hooks/useOverlayIntents';
 import { fetchMarketListing } from '@/pages/market/alerts/market-api';
 import { listing, mod } from '@/pages/market/lib/test-utils';
@@ -267,6 +267,43 @@ describe('showToast action toasts', () => {
     );
     await click(screen.getByText('View'));
     expect(openMarket).toHaveBeenCalledWith({ savedSearchId: 's1', focusListingId: 'l1', tab: 'search' });
+  });
+
+  describe('a toast with a second action (a buy request response)', () => {
+    const response = {
+      title: 'A seller can fill your buy request',
+      description: 'FrozenOrb whispered you about Rare Circlet',
+      action: { label: 'View request', type: ToastActionType.OPEN_MARKET_PANEL, data: { requestId: 'r1' } },
+      secondaryAction: { label: 'Whisper back', type: ToastActionType.WTB_WHISPER_BACK, data: { id: 'w1' } },
+    };
+    afterEach(() => setToastActionHandler(ToastActionType.WTB_WHISPER_BACK, null));
+
+    it('puts both buttons on a row below the full-width text; a one-action toast keeps them beside it', async () => {
+      await renderLayer();
+      await show(() => showToast(response));
+      expect(toastEl(response.description)?.className).toContain('!flex-wrap');
+      expect(screen.getByText(response.description).closest('[data-content]')?.className).toContain('flex-1');
+      await show(() => showToast({ ...response, description: 'single', secondaryAction: undefined }));
+      expect(toastEl('single')?.className).not.toContain('!flex-wrap');
+    });
+
+    it('Whisper back runs its handler; View request opens the market', async () => {
+      const whisperBack = vi.fn();
+      const openMarket = vi.fn();
+      setToastActionHandler(ToastActionType.WTB_WHISPER_BACK, whisperBack);
+      setToastBridge({ openChat: vi.fn(), openMarket, openListing: vi.fn(), openSim: vi.fn() });
+      await renderLayer();
+      await show(() => showToast(response));
+      await click(screen.getByText('Whisper back'));
+      expect(whisperBack).toHaveBeenCalledWith({ id: 'w1' });
+      expect(openMarket).not.toHaveBeenCalled();
+      await advance(1000);
+      expect(toastEl(response.description)).toBeNull();
+
+      await show(() => showToast(response));
+      await click(screen.getByText('View request'));
+      expect(openMarket).toHaveBeenCalledWith({ requestId: 'r1' });
+    });
   });
 
   it("a finished sim's Open opens the Sim panel on its report", async () => {
@@ -547,5 +584,12 @@ describe('notify: missed or seen', () => {
     player({ focused: true, idleMs: 0 });
     await act(async () => notify('offer', offer, { toast: false }));
     expect(missed()).toEqual([true]);
+  });
+
+  it('logs both of the toast actions', async () => {
+    const action = { label: 'View request', type: ToastActionType.OPEN_MARKET_PANEL, data: { requestId: 'r1' } };
+    const secondaryAction = { label: 'Whisper back', type: ToastActionType.WTB_WHISPER_BACK, data: { id: 'w1' } };
+    await act(async () => notify('market', { ...offer, action, secondaryAction }, { toast: false }));
+    expect(getNotificationLog()[0]).toMatchObject({ action, secondaryAction });
   });
 });

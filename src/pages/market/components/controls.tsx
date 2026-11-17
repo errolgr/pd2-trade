@@ -146,7 +146,8 @@ export function Segmented<T extends string>({
   selectedClassName,
 }: {
   value: T;
-  options: { value: T; label: React.ReactNode; title?: string; facet?: SegmentFacet }[];
+  /** `ariaLabel`: the option's full name when `label` is a short one. */
+  options: { value: T; label: React.ReactNode; ariaLabel?: string; title?: string; facet?: SegmentFacet }[];
   onChange: (value: T) => void;
   label: string;
   className?: string;
@@ -165,7 +166,7 @@ export function Segmented<T extends string>({
             type="button"
             role="radio"
             aria-checked={value === o.value}
-            aria-label={o.facet?.text}
+            aria-label={o.facet?.text ?? o.ariaLabel}
             onClick={() => onChange(o.value)}
             className={cn(
               'relative min-w-0 flex-1 truncate rounded-[5px] px-1.5 text-[11px] font-medium text-muted-foreground outline-none transition-[color,background-color,opacity] duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',

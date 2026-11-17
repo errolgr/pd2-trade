@@ -12,6 +12,7 @@ import { offerNotificationLanding } from '@/pages/chat/chat-feed';
 import { LinkedMessageContent } from '@/pages/chat/components/MessageContent';
 import { findMarketLinks } from '@/pages/chat/lib/market-links';
 import { ListingToastBody } from '@/pages/market/alerts/ListingToastBody';
+import { WtbItemArt } from '@/pages/market/wtb/WtbItemArt';
 import { useOverlay, usePanelOpen } from './OverlayProvider';
 import type { PanelPayloads } from './types';
 import { t } from '@/i18n';
@@ -39,6 +40,20 @@ interface ToastBridge {
 let bridge: ToastBridge | null = null;
 export function setToastBridge(next: ToastBridge | null): void {
   bridge = next;
+}
+
+/**
+ * Toast actions that need app state below the overlay (the whisper history): their handler is set by whoever owns
+ * that state (WTB_WHISPER_BACK: useMarketAlerts).
+ */
+const actionHandlers = new Map<ToastActionType, (data: unknown) => void | Promise<void>>();
+
+export function setToastActionHandler(
+  type: ToastActionType,
+  handler: ((data: unknown) => void | Promise<void>) | null,
+): void {
+  if (handler) actionHandlers.set(type, handler);
+  else actionHandlers.delete(type);
 }
 
 const marketListingUrl = (listingId: string) => `https://www.projectdiablo2.com/market/listing/${listingId}`;
@@ -80,6 +95,9 @@ async function runToastAction(action: NonNullable<CustomToastPayload['action']>)
             ? { slug: action.data.slug, url: action.data.url }
             : undefined,
         );
+        break;
+      case ToastActionType.WTB_WHISPER_BACK:
+        await actionHandlers.get(action.type)?.(action.data);
         break;
       default:
         console.warn('Unknown toast action type:', action.type);
@@ -173,9 +191,23 @@ export function showToast(payload: ToastPayload, watch?: ToastWatch): void {
       description
     );
   const show = tone === 'error' ? toast.error : toast;
+  const body = listing ? <ListingToastBody listingId={listing.listingId}>{text}</ListingToastBody> : text;
+  const { secondaryAction, art } = custom;
   show(wrap(custom.title || DEFAULT_TITLE), {
     ...(tone === 'muted' && { className: '[--toast-accent:var(--muted-foreground)] opacity-80' }),
-    description: wrap(listing ? <ListingToastBody listingId={listing.listingId}>{text}</ListingToastBody> : text),
+    ...(secondaryAction && { classNames: STACKED_ACTIONS_CLASS_NAMES }),
+    description: wrap(
+      art ? (
+        <span className="flex items-start gap-2">
+          <WtbItemArt filters={art}
+            className="size-9"
+            artClassName="max-h-8 max-w-8" />
+          <span className="min-w-0">{body}</span>
+        </span>
+      ) : (
+        body
+      ),
+    ),
     duration: custom.duration,
     closeButton: true,
     action: {
@@ -183,8 +215,13 @@ export function showToast(payload: ToastPayload, watch?: ToastWatch): void {
       // sonner dismisses the toast after onClick
       onClick: () => void runToastAction(action),
     },
-    // Before the action button: the listing drawer (tooltip, price, seller, offer/whisper) without the market
-    ...(listing && { cancel: { label: t('app:toast.details'), onClick: () => bridge?.openListing(listing) } }),
+    // Before the action button: the listing drawer (tooltip, price, seller, offer/whisper) without the market,
+    // else the toast's own second action
+    ...(listing
+      ? { cancel: { label: t('app:toast.details'), onClick: () => bridge?.openListing(listing) } }
+      : secondaryAction && {
+          cancel: { label: secondaryAction.label, onClick: () => void runToastAction(secondaryAction) },
+        }),
     ...watchOptions,
   });
 }
@@ -204,6 +241,7 @@ function entryOf(
     title: payload.title || DEFAULT_TITLE,
     description: payload.description,
     action: custom.action ?? undefined,
+    secondaryAction: custom.secondaryAction,
     listing: custom.listing,
     tone,
     groupKey,
@@ -385,6 +423,18 @@ const ACTION_BUTTON_CLASS =
   '!h-7 !rounded-md !bg-primary !px-2.5 !text-xs !font-semibold !text-primary-foreground transition-[filter,scale] duration-(--dur-fast) hover:brightness-110 active:scale-95';
 const CANCEL_BUTTON_CLASS =
   '!h-7 !rounded-md !bg-muted !px-2.5 !text-xs !font-medium !text-muted-foreground transition-[color,scale] duration-(--dur-fast) hover:!text-foreground active:scale-95';
+
+/**
+ * A toast with a second action: the text keeps the full width and both buttons go on a row of their own below it,
+ * right-aligned (side by side with the text, they squeeze it into a narrow column). The content takes the toast's
+ * width less an icon's (1rem + the 0.75rem gap), so the buttons always wrap; sonner gives every button an auto
+ * start margin, so only the first one (cancel) keeps it.
+ */
+const STACKED_ACTIONS_CLASS_NAMES = {
+  toast: '!flex-wrap !gap-y-2.5',
+  content: 'min-w-[calc(100%-1.75rem)] flex-1',
+  actionButton: '!ml-0',
+};
 
 /**
  * Map sonner's palette variables onto the active theme tokens, so plain and richColors toasts

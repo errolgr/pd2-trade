@@ -649,6 +649,10 @@
         "label": "Market Alert Volume: <num>{{value}}%</num>",
         "description": "Volume of the market alert sound (0-100%).",
         "ariaLabel": "Market alert volume"
+      },
+      "wtbPrompt": {
+        "label": "Offer a Buy Request After Watch",
+        "description": "When you start watching a search, offer to also post a buy request for it."
       }
     }
   },
