@@ -120,6 +120,7 @@ export const AUTO_SNAPSHOT_OPTIONS: SettingOption[] = [
 
 // Market
 export const AUTO_DELIST_VALUES = ['off', 'ask', 'auto'] as const;
+export const DELIST_EXCEPTION_VALUES = ['none', 'stackable', 'selected'] as const;
 export const LISTINGS_VIEW_VALUES = ['cards', 'rows'] as const;
 export const SORT_VALUES = ['newest', 'cheapest', 'priciest'] as const;
 export const SELLER_VALUES = ['all', 'online', 'in-game'] as const;
@@ -132,6 +133,10 @@ const ALERT_SECONDS = [5, 8, 15, 30] as const;
 export const AUTO_DELIST_OPTIONS: SettingOption[] = keyed(
   AUTO_DELIST_VALUES,
   'settings:market.listings.autoDelist.options',
+);
+export const DELIST_EXCEPTION_OPTIONS: SettingOption[] = keyed(
+  DELIST_EXCEPTION_VALUES,
+  'settings:market.listings.autoDelist.exceptionMode.options',
 );
 export const LISTINGS_VIEW_OPTIONS: SettingOption[] = keyed(
   LISTINGS_VIEW_VALUES,

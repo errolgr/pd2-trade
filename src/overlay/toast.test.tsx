@@ -512,6 +512,20 @@ describe('confirmToast', () => {
     await click(screen.getByText('Confirm'));
     expect(console.error).toHaveBeenCalledWith('[overlay] confirm action failed:', expect.any(Error));
   });
+
+  it('runs the link choice instead of onConfirm, and dismisses', async () => {
+    const onConfirm = vi.fn();
+    const onLink = vi.fn();
+    const dismissSpy = vi.spyOn(toast, 'dismiss');
+    await renderLayer();
+    await show(() =>
+      confirmToast({ title: 'A', description: 'linked', onConfirm, link: { label: 'Never ask', onClick: onLink } }),
+    );
+    await click(within(toastEl('linked')!).getByText('Never ask'));
+    expect(onLink).toHaveBeenCalledTimes(1);
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(dismissSpy).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('undoToast', () => {

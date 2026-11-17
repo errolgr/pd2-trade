@@ -4,6 +4,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/comp
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tip } from '@/components/ui/tooltip';
+import { Checkbox } from '@/components/ui/checkbox';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Loader2, NotebookPen } from 'lucide-react';
 import { DUR, EASE_OUT, fadeIn, slideInRight } from '@/lib/motion';
@@ -20,6 +21,7 @@ import MacroManagerSheet, {
   NoteMacro,
   MacroTemplate,
 } from './MacroManagerSheet';
+import { baseCodeOf, exceptionOf, exemptionsOf, isExcepted, isStackableCurrency } from '@/pages/delist/delist-exemptions';
 
 interface ListingFormFieldsProps {
   form: UseFormReturn<ShortcutFormData>;
@@ -46,6 +48,29 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
   const [placeholderValues, setPlaceholderValues] = React.useState<Record<string, string>>({});
   const pendingPlaceholders = pendingMacro ? getPlaceholders(pendingMacro.text) : [];
   const isAlreadyListed = selectedItem && currentListings.find((c) => c.item.hash === selectedItem.hash);
+
+  // Auto-delist exemption: this listing, or every listing of its base ("Remember for all …"); each box starts from
+  // what applies under Settings → "Never delist" now
+  const autoDelistOn = (settings?.stashAutoDelist ?? 'ask') !== 'off';
+  const exemptions = exemptionsOf(settings ?? {});
+  const baseCode = selectedItem ? baseCodeOf(selectedItem) : null;
+  const exception = selectedItem ? exceptionOf(selectedItem) : null;
+  const stackableSkipped = exemptions.mode === 'stackable' && isStackableCurrency(baseCode);
+  const rememberDefault = exemptions.mode !== 'none' && isExcepted(baseCode, exemptions.exceptions);
+  const skipDefault =
+    stackableSkipped ||
+    rememberDefault ||
+    (!!isAlreadyListed && exemptions.listingIds.includes(isAlreadyListed._id));
+  const listingId = isAlreadyListed ? isAlreadyListed._id : undefined;
+  // A new item (or listing) starts from what applies to it now; without an item (queueing) the base is unknown
+  React.useEffect(() => {
+    form.setValue('skipAutoDelist', skipDefault);
+    form.setValue('rememberAutoDelist', exception ? rememberDefault : undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedItem?.hash, listingId]);
+  const remember = form.watch('rememberAutoDelist') ?? rememberDefault;
+  const skipCovered = stackableSkipped || (!!exception && remember);
+  const skip = skipCovered || (form.watch('skipAutoDelist') ?? skipDefault);
 
   const handleMacroClick = (macro: NoteMacro) => {
     const placeholders = getPlaceholders(macro.text);
@@ -257,6 +282,32 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
           </motion.span>
         </AnimatePresence>
       </Button>
+
+      {autoDelistOn && (selectedItem || allowQueue) && (
+        <div className="flex basis-full flex-col gap-1 px-1 pb-0.5">
+          <label className="flex cursor-pointer items-start gap-2 has-[:disabled]:cursor-default">
+            <Checkbox
+              className="mt-0.5"
+              checked={skip}
+              disabled={skipCovered}
+              onCheckedChange={(value) => form.setValue('skipAutoDelist', value === true)}
+            />
+            <span className="min-w-0 leading-tight">
+              <span className="block text-xs font-medium text-foreground">{t('form.autoDelist.skip')}</span>
+              <span className="block text-[11px] text-muted-foreground">{t('form.autoDelist.skipHint')}</span>
+            </span>
+          </label>
+          {exception && (
+            <label className="flex cursor-pointer items-center gap-2 pl-6 text-xs text-muted-foreground">
+              <Checkbox
+                checked={remember}
+                onCheckedChange={(value) => form.setValue('rememberAutoDelist', value === true)}
+              />
+              {t('form.autoDelist.remember', { name: exception.name })}
+            </label>
+          )}
+        </div>
+      )}
     </div>
   );
 };

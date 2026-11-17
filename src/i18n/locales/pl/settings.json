@@ -582,6 +582,25 @@
           "off": "Nic nie rób",
           "ask": "Zapytaj mnie",
           "auto": "Usuń ogłoszenie"
+        },
+        "exceptions": {
+          "label": "Nigdy nie usuwaj tych",
+          "description": "Ogłoszenia tych przedmiotów nigdy nie są usuwane ani nie wywołują pytania. „Nigdy nie pytaj o…” w powiadomieniu dodaje przedmiot.",
+          "add": "Dodaj",
+          "search": "Szukaj baz przedmiotów…",
+          "empty": "Brak przedmiotów.",
+          "noMatch": "Brak pasujących baz przedmiotów",
+          "remove": "Usuń {{name}}",
+          "stackableNote": "Waluta w stosach: tokeny, pboxy, klucze, esencje."
+        },
+        "exceptionMode": {
+          "label": "Nigdy nie usuwaj",
+          "description": "Ogłoszenie oznaczone „Nie usuwaj automatycznie tego ogłoszenia” zawsze zostaje.",
+          "options": {
+            "none": "Nic (domyślnie)",
+            "stackable": "Walutę w stosach i wybrane przedmioty",
+            "selected": "Tylko wybrane przedmioty"
+          }
         }
       },
       "view": {

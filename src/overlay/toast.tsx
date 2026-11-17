@@ -324,6 +324,8 @@ export interface ConfirmToastOptions {
   /** ms before the toast auto-dismisses (= cancelled). Default 5000. */
   duration?: number;
   onConfirm: () => void | Promise<void>;
+  /** A third, link-style choice under the description ("Never ask for …"); the toast closes on it. */
+  link?: { label: string; onClick: () => void };
 }
 
 /** In-overlay confirmation (never window.confirm: it wedges the non-focusable overlay window). */
@@ -335,10 +337,27 @@ export function confirmToast({
   variant = 'default',
   duration = 5000,
   onConfirm,
+  link,
 }: ConfirmToastOptions): void {
   const show = variant === 'warning' ? toast.warning : toast;
-  show(title, {
-    description,
+  const id = show(title, {
+    description: link ? (
+      <span className="flex flex-col items-start gap-1">
+        {description}
+        <button
+          type="button"
+          className="text-xs font-medium text-muted-foreground underline underline-offset-2 transition-colors duration-(--dur-fast) hover:text-foreground"
+          onClick={() => {
+            toast.dismiss(id);
+            link.onClick();
+          }}
+        >
+          {link.label}
+        </button>
+      </span>
+    ) : (
+      description
+    ),
     duration,
     action: {
       label: confirmLabel,

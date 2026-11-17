@@ -7,6 +7,9 @@ export const shortcutFormSchema = z
     note: z.string().optional(),
     price: z.union([z.string(), z.number()]).optional(),
     currency: z.string().optional(),
+    // Auto-delist (pages/delist/delist-exemptions.ts): unset leaves the listing's / base's exemption as it is
+    skipAutoDelist: z.boolean().optional(),
+    rememberAutoDelist: z.boolean().optional(),
   })
   .refine(
     (data) => {

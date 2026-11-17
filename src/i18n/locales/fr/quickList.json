@@ -89,7 +89,12 @@
     "update": "Mettre à jour",
     "queueItem": "Mettre en attente",
     "post": "Publier",
-    "noteOrPriceRequired": "Renseignez la note ou le prix en HR."
+    "noteOrPriceRequired": "Renseignez la note ou le prix en HR.",
+    "autoDelist": {
+      "skip": "Ne pas retirer cette annonce automatiquement",
+      "skipHint": "La ranger dans le coffre ou l'en sortir ne déclenchera aucune question.",
+      "remember": "Retenir pour tous les {{name}}"
+    }
   },
   "macros": {
     "duplicate": "Une macro nommée « {{label}} » existe déjà.",
@@ -182,7 +187,8 @@
     "pick": "Des objets comme {{name}} ont quitté votre coffre. Choisissez les annonces à retirer.",
     "delist": "Retirer",
     "keep": "Garder",
-    "choose": "Choisir"
+    "choose": "Choisir",
+    "neverAsk": "Ne plus demander pour {{name}}"
   },
   "myListings": {
     "searchPlaceholder": "Rechercher parmi {{count}} annonces…",

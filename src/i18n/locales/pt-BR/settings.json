@@ -577,6 +577,25 @@
           "off": "Não fazer nada",
           "ask": "Perguntar",
           "auto": "Remover o anúncio"
+        },
+        "exceptions": {
+          "label": "Nunca remover estes",
+          "description": "Anúncios destes itens nunca são removidos nem geram pergunta. \"Nunca perguntar sobre…\" no aviso adiciona um.",
+          "add": "Adicionar",
+          "search": "Buscar bases de item…",
+          "empty": "Nenhum item ainda.",
+          "noMatch": "Nenhuma base de item encontrada",
+          "remove": "Remover {{name}}",
+          "stackableNote": "Moeda empilhável: tokens, pboxes, chaves, essências."
+        },
+        "exceptionMode": {
+          "label": "Nunca remover",
+          "description": "Um anúncio marcado com \"Não remover este anúncio automaticamente\" nunca é removido.",
+          "options": {
+            "none": "Nada (padrão)",
+            "stackable": "Moeda empilhável e itens que eu escolher",
+            "selected": "Só itens que eu escolher"
+          }
         }
       },
       "view": {

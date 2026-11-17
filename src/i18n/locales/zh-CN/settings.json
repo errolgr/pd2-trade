@@ -567,6 +567,25 @@
           "off": "不做处理",
           "ask": "询问我",
           "auto": "下架"
+        },
+        "exceptions": {
+          "label": "从不下架这些",
+          "description": "这些物品的挂单永远不会被下架，也不会询问。提示中的“不再询问…”会添加一项。",
+          "add": "添加",
+          "search": "搜索物品底材…",
+          "empty": "暂无物品。",
+          "noMatch": "没有匹配的物品底材",
+          "remove": "移除 {{name}}",
+          "stackableNote": "可堆叠货币：代币、谜题盒、钥匙、精华。"
+        },
+        "exceptionMode": {
+          "label": "从不下架",
+          "description": "勾选了“不自动下架此挂单”的挂单始终保留。",
+          "options": {
+            "none": "无（默认）",
+            "stackable": "可堆叠货币和我选的物品",
+            "selected": "仅我选的物品"
+          }
         }
       },
       "view": {

@@ -572,6 +572,25 @@
           "off": "Do nothing",
           "ask": "Ask me",
           "auto": "Delist it"
+        },
+        "exceptions": {
+          "label": "Never delist these",
+          "description": "Listings of these items are never delisted or asked about. \"Never ask for…\" on the prompt adds one.",
+          "add": "Add",
+          "search": "Search item bases…",
+          "empty": "No items yet.",
+          "noMatch": "No item base matches",
+          "remove": "Remove {{name}}",
+          "stackableNote": "Stackable currency: tokens, pboxes, keys, essences."
+        },
+        "exceptionMode": {
+          "label": "Never delist",
+          "description": "A listing you marked \"Don't auto-delist this listing\" is always left alone.",
+          "options": {
+            "none": "Nothing (default)",
+            "stackable": "Stackable currency and items I pick",
+            "selected": "Only items I pick"
+          }
         }
       },
       "view": {

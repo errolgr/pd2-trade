@@ -8,6 +8,7 @@ export const changeLog = {
     '✨ Market: "Sold archive" is now "Archive" and shows the same listings as the projectdiablo2.com Archive: sold, removed and expired, not only sold ones. A Status filter in the Listing section narrows it, and each result says how it ended',
     '✨ Market and price check: searches show every listing of the season by default instead of only the last 3 days (14 in the archive). Pick a "Listed within" window to narrow one, or set a default in Settings › Market',
     '✨ Price check: ended listings show how they ended and how long they were up in a short form ("sold 2d"); hover it for the full sentence',
+    '🆕 Auto-delist exceptions: Settings › Market › "Never delist" can leave stackable currency (tokens, pboxes, keys, essences) and items you pick alone when they leave the stash. "Never ask for …" on the prompt and "Remember for all …" when listing add an item; "Don\'t auto-delist this listing" exempts a single listing',
   ],
   '0.11.7': [
     '🆕 Horadric Sim is in open beta: no waitlist. Sign in with PD2 and the Sim button in the price check, market and Net Worth (and the try-on hotkey) sends items to the planner',
