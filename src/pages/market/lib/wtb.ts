@@ -25,6 +25,13 @@ export const WTB_CURRENCIES = [
 ] as const;
 export type WtbCurrency = (typeof WTB_CURRENCIES)[number];
 
+/** The currency picker's options: rune art for runes (bundled `/runes`), none for HR. */
+export const WTB_CURRENCY_OPTIONS = WTB_CURRENCIES.map((c) => ({
+  value: c,
+  label: c,
+  icon: c === 'HR' ? undefined : `/runes/${c}_Rune.png`,
+}));
+
 export type WtbStatus = 'open' | 'paused' | 'closed' | 'expired';
 
 export const WTB_EXPIRY_DAYS = [1, 3, 7, 14] as const;
