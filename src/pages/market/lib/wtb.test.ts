@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { defaultFilters } from './defaults';
 import type { MarketFilters, StatFilter } from './types';
 import {
+  impossibleByRow,
   isValidOfferAmount,
+  parseImpossible,
+  wtbCheckBody,
   listPriceFor,
   matchSummary,
   niceToHaveIdsFor,
@@ -123,6 +126,40 @@ describe('postBlocker (WTB_POST_RULE v2)', () => {
       true,
       false,
       false,
+    ]);
+  });
+});
+
+describe('impossible requests', () => {
+  it('keeps only well-formed server entries', () => {
+    const ok = { rowId: 'a', key: 'maxhp', reason: 'above-max', max: 3, item: 'Harlequin Crest' };
+    const item = { rowId: null, key: null, reason: 'sockets', max: 2, item: 'Harlequin Crest' };
+    expect(
+      parseImpossible([ok, item, { ...ok, reason: 'nope' }, { ...ok, item: 1 }, { ...ok, max: '3' }, null]),
+    ).toEqual([ok, item]);
+    expect(parseImpossible(undefined)).toEqual([]);
+    expect(parseImpossible({ rowId: 'a' })).toEqual([]);
+  });
+
+  it('checks only a named item with a stat row or a socket count', () => {
+    const life = row('a', 'maxhp', { min: 20 });
+    expect(wtbCheckBody(filters({ stats: [life] }), [])).toBeNull();
+    expect(wtbCheckBody(filters({ itemName: 'Shael Rune' }), [])).toBeNull();
+    expect(wtbCheckBody(filters({ itemName: 'Shael Rune', stats: [life] }), ['a'])).toMatchObject({
+      niceToHaveIds: ['a'],
+      filters: { itemName: 'Shael Rune' },
+    });
+    expect(wtbCheckBody(filters({ itemName: 'Harlequin Crest', socketsMin: 3 }), [])).not.toBeNull();
+  });
+
+  it('points at rows by id, an item-level sockets verdict at the sockets row', () => {
+    const rows = [row('a', 'maxhp'), row('s', 'sockets', { kind: 'item', min: 3 }), row('b', 'item_fastercastrate')];
+    const cannot = { rowId: 'a', key: 'maxhp', reason: 'cannot-roll', item: 'Ring' } as const;
+    const sockets = { rowId: null, key: null, reason: 'sockets', max: 2, item: 'Ring' } as const;
+    const byRow = impossibleByRow([cannot, { ...cannot, reason: 'no-stats' }, sockets], rows);
+    expect([...byRow]).toEqual([
+      ['a', cannot],
+      ['s', sockets],
     ]);
   });
 });

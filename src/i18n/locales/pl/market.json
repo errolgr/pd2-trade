@@ -702,6 +702,18 @@
         "item": "Wybierz w filtrach nazwę przedmiotu, bazę lub typ.",
         "detail": "Dodaj co najmniej jedną wymaganą statystykę, liczbę gniazd lub eteryczność."
       },
+      "impossible": {
+        "noStats": "{{item}} nie może mieć statystyk",
+        "cannotRoll": "{{stat}} nie może wypaść na {{item}}",
+        "aboveMax": "{{item}} ma najwyżej {{stat}}",
+        "tooHigh": "{{stat}} jest za wysokie dla {{item}}",
+        "sockets_one": "{{item}} ma najwyżej {{count}} gniazdo",
+        "sockets_few": "{{item}} ma najwyżej {{count}} gniazda",
+        "sockets_many": "{{item}} ma najwyżej {{count}} gniazd",
+        "sockets_other": "{{item}} ma najwyżej {{count}} gniazda",
+        "noSockets": "{{item}} nie może mieć gniazd",
+        "tooManySockets": "{{item}} nie może mieć tylu gniazd"
+      },
       "previewLineNoOffer": "Gracz chce to kupić",
       "expiryNext": "Czas trwania · użyty przy następnym podbiciu"
     },

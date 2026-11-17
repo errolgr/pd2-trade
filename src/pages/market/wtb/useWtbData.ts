@@ -9,11 +9,13 @@ import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStash
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { t } from '@/i18n';
 import {
+  checkWtbRequest,
   dismissWtbResponse,
   listMyWtbRequests,
   listWtbResponses,
   matchWtbRequests,
   searchWtbRequests,
+  wtbFilters,
   type WtbMatchItem,
   type WtbSearchPage,
 } from '../alerts/wtb-api';
@@ -21,6 +23,8 @@ import { subscribeWtbResponses } from '../alerts/alert-events';
 import {
   byBestOffer,
   MAX_WTB_MATCH_ITEMS,
+  type WtbCheckBody,
+  type WtbImpossible,
   type WtbItemMatch,
   type WtbRealm,
   type WtbRequest,
@@ -398,36 +402,37 @@ export function useMyWtbRequests(enabled: boolean, token: string | null): MyWtbR
   };
 }
 
-/** How long an overlap answer (demand bar, "Others want this too") is reused. */
-const OVERLAP_TTL_MS = 2 * 60_000;
-const overlapCache = new Map<string, { at: number; result: Promise<WtbSearchPage> }>();
+type AnswerCache<T> = Map<string, { at: number; result: Promise<T> }>;
 
 /**
- * One overlap search (`overlap: true`) per `body` (null: none), cached a few minutes per filters; `debounceMs`
- * waits for typing to pause. Null while unknown, and on an error (the surfaces then just don't show).
+ * `run`'s answer for `key` (null: none), shared through `cache` for `ttlMs` (a failure is not kept); `debounceMs`
+ * waits for typing to pause. Null while unknown, and on an error (logged as `what`).
  */
-export function useWtbOverlap(body: WtbSearchBody | null, token: string | null, debounceMs = 0): WtbSearchPage | null {
-  const key = body && `${token ? 'user' : 'anon'}|${JSON.stringify(body)}`;
-  const [settled, setSettled] = useState<{ key: string; page: WtbSearchPage | null } | null>(null);
+function useCachedAnswer<T>(
+  key: string | null,
+  run: () => Promise<T>,
+  { cache, ttlMs, debounceMs, what }: { cache: AnswerCache<T>; ttlMs: number; debounceMs: number; what: string },
+): T | null {
+  const [settled, setSettled] = useState<{ key: string; value: T | null } | null>(null);
   useEffect(() => {
-    if (!key || !body) return;
+    if (!key) return;
     let cancelled = false;
     const timer = window.setTimeout(() => {
       const now = Date.now();
-      for (const [k, entry] of overlapCache) if (now - entry.at >= OVERLAP_TTL_MS) overlapCache.delete(k);
-      let entry = overlapCache.get(key);
+      for (const [k, entry] of cache) if (now - entry.at >= ttlMs) cache.delete(k);
+      let entry = cache.get(key);
       if (!entry) {
-        entry = { at: now, result: searchWtbRequests(body, { token }) };
-        overlapCache.set(key, entry);
+        entry = { at: now, result: run() };
+        cache.set(key, entry);
         const failed = entry;
-        entry.result.catch(() => overlapCache.get(key) === failed && overlapCache.delete(key));
+        entry.result.catch(() => cache.get(key) === failed && cache.delete(key));
       }
       entry.result.then(
-        (page) => !cancelled && setSettled({ key, page }),
+        (value) => !cancelled && setSettled({ key, value }),
         (error) => {
           if (cancelled) return;
-          console.warn('[wtb] overlap search failed:', error);
-          setSettled({ key, page: null });
+          console.warn(`[wtb] ${what} failed:`, error);
+          setSettled({ key, value: null });
         },
       );
     }, debounceMs);
@@ -435,10 +440,52 @@ export function useWtbOverlap(body: WtbSearchBody | null, token: string | null, 
       cancelled = true;
       window.clearTimeout(timer);
     };
-    // The key holds the body and whether a token is sent
+    // The key holds everything `run` sends
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
-  return settled && settled.key === key ? settled.page : null;
+  return settled && settled.key === key ? settled.value : null;
+}
+
+/** How long an overlap answer (demand bar, "Others want this too") is reused. */
+const OVERLAP_TTL_MS = 2 * 60_000;
+const overlapCache: AnswerCache<WtbSearchPage> = new Map();
+
+/**
+ * One overlap search (`overlap: true`) per `body` (null: none), cached a few minutes per filters; `debounceMs`
+ * waits for typing to pause. Null while unknown, and on an error (the surfaces then just don't show).
+ */
+export function useWtbOverlap(body: WtbSearchBody | null, token: string | null, debounceMs = 0): WtbSearchPage | null {
+  const key = body && `${token ? 'user' : 'anon'}|${JSON.stringify(body)}`;
+  return useCachedAnswer(key, () => searchWtbRequests(body!, { token }), {
+    cache: overlapCache,
+    ttlMs: OVERLAP_TTL_MS,
+    debounceMs,
+    what: 'overlap search',
+  });
+}
+
+/** How long a `/check` answer is reused (game data doesn't change under a session). */
+const CHECK_TTL_MS = 10 * 60_000;
+const checkCache: AnswerCache<WtbImpossible[]> = new Map();
+const NO_IMPOSSIBLE: WtbImpossible[] = [];
+
+/**
+ * What of a request the server proves can't exist (`/check`), cached per filters and nice-to-have rows;
+ * `debounceMs` waits for typing to pause. Empty while unknown, without a body, and on an error (the post itself
+ * is checked again by the server).
+ */
+export function useWtbCheck(body: WtbCheckBody | null, token: string | null, debounceMs = 0): WtbImpossible[] {
+  const key = useMemo(
+    () => body && `${token ? 'user' : 'anon'}|${JSON.stringify([wtbFilters(body.filters), body.niceToHaveIds])}`,
+    [body, token],
+  );
+  const impossible = useCachedAnswer(key, () => checkWtbRequest(body!, { token }), {
+    cache: checkCache,
+    ttlMs: CHECK_TTL_MS,
+    debounceMs,
+    what: 'request check',
+  });
+  return impossible ?? NO_IMPOSSIBLE;
 }
 
 /** Responses read per list (newest first). */

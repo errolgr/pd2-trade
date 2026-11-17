@@ -640,6 +640,16 @@
         "item": "Wähle in den Filtern einen Gegenstandsnamen, eine Basis oder einen Typ.",
         "detail": "Füge mindestens einen Pflichtwert, eine Sockelanzahl oder Ätherisch hinzu."
       },
+      "impossible": {
+        "noStats": "{{item}} kann keine Werte haben",
+        "cannotRoll": "{{stat}} kann auf {{item}} nicht vorkommen",
+        "aboveMax": "{{item}} hat höchstens {{stat}}",
+        "tooHigh": "{{stat}} ist zu hoch für {{item}}",
+        "sockets_one": "{{item}} hat höchstens {{count}} Sockel",
+        "sockets_other": "{{item}} hat höchstens {{count}} Sockel",
+        "noSockets": "{{item}} kann keine Sockel haben",
+        "tooManySockets": "{{item}} kann nicht so viele Sockel haben"
+      },
       "previewLineNoOffer": "Ein Spieler will das kaufen",
       "expiryNext": "Laufzeit · gilt für den nächsten Push"
     },

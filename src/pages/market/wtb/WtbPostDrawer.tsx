@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, ChevronRight, HandCoins, Loader2, LogIn, X } from 'lucide-react';
+import type { TFunction } from 'i18next';
+import { ArrowRight, Ban, ChevronRight, HandCoins, Loader2, LogIn, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tip } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { showToast } from '@/overlay';
 import { trackEvent } from '@/lib/telemetry';
@@ -11,15 +13,16 @@ import { useNow } from '@/pages/market/enrich/useNow';
 import { useMarketStore } from '@/pages/market/store/useMarketStore';
 import { toggleWatch, watchState } from '../alerts/WatchButton';
 import { MarketApiError } from '../alerts/market-api';
-import { createWtbRequest, updateWtbRequest } from '../alerts/wtb-api';
+import { createWtbRequest, updateWtbRequest, WtbImpossibleError } from '../alerts/wtb-api';
 import { NumberInput, Segmented, SelectMenu } from '../components/controls';
 import { withSource, type SearchDefaults } from '../lib/defaults';
 import { roundHr } from '../lib/price-stats';
 import { groupOf } from '../lib/stat-groups';
-import type { MarketApi, MarketFilters } from '../lib/types';
+import type { MarketApi, MarketFilters, StatFilter } from '../lib/types';
 import {
   DEFAULT_WTB_EXPIRY_DAYS,
   formatOffer,
+  impossibleByRow,
   isValidOfferAmount,
   MAX_OPEN_WTB_PER_USER,
   niceToHaveIdsFor,
@@ -28,15 +31,18 @@ import {
   WTB_EXPIRY_DAYS,
   isPostBlocker,
   postBlocker,
+  type WtbImpossible,
   type WtbPostBlocker,
+  wtbCheckBody,
   wtbStatRows,
   type WtbCurrency,
   type WtbExpiryDays,
   type WtbRequest,
 } from '../lib/wtb';
 import { statRowText, wtbTitle, wtbTitleColor } from './wtb-text';
+import { filterName } from '../components/stat-text';
 import { WtbItemArt } from './WtbItemArt';
-import { useWtbOverlap, type MyWtbRequests } from './useWtbData';
+import { useWtbCheck, useWtbOverlap, type MyWtbRequests } from './useWtbData';
 import { OTHERS_ROWS, othersBoxModel, othersOverlapBody } from './wtb-demand';
 
 /** The drawer follows the filters as they're edited: ask once they settle. */
@@ -50,6 +56,37 @@ const BLOCKER_KEYS: Record<WtbPostBlocker, string> = {
   item: 'wtb.post.blocked.item',
   detail: 'wtb.post.blocked.detail',
 };
+
+/**
+ * Why a request can't exist, one short line: "Shael Rune can't have stats", "Life can't roll on Ring", "Harlequin
+ * Crest has at most +3 All Skills", "Harlequin Crest takes at most 2 sockets". `rows`: the filters' stat rows.
+ */
+function impossibleText(t: TFunction, entry: WtbImpossible, rows: readonly StatFilter[]): string {
+  const { item, max } = entry;
+  const row: StatFilter | undefined =
+    rows.find((r) => r.id === entry.rowId) ??
+    (entry.key ? { id: '', kind: 'mod', key: entry.key, enabled: true } : undefined);
+  switch (entry.reason) {
+    case 'sockets':
+      if (max === undefined) return t('wtb.post.impossible.tooManySockets', { item });
+      return max === 0
+        ? t('wtb.post.impossible.noSockets', { item })
+        : t('wtb.post.impossible.sockets', { item, count: max });
+    case 'above-max':
+      if (row && max !== undefined)
+        return t('wtb.post.impossible.aboveMax', {
+          item,
+          stat: statRowText({ ...row, min: max, max: undefined, not: false }),
+        });
+      if (row) return t('wtb.post.impossible.tooHigh', { item, stat: filterName(row) });
+      return t('wtb.post.impossible.noStats', { item });
+    case 'cannot-roll':
+      if (row) return t('wtb.post.impossible.cannotRoll', { item, stat: filterName(row) });
+      return t('wtb.post.impossible.noStats', { item });
+    case 'no-stats':
+      return t('wtb.post.impossible.noStats', { item });
+  }
+}
 
 /**
  * "Sold lately · low – high HR": the p25–p75 HR price of the same search over the sold archive (the existing market
@@ -184,6 +221,21 @@ export function WtbPostDrawer({
     editingId: editing?.id ?? null,
     now,
   });
+  // What of the request can't exist: the server's check as the filters settle, or its 400 on the last post of
+  // these same filters
+  const checkBody = useMemo(() => wtbCheckBody(filters, niceToHaveIds), [filters, niceToHaveIds]);
+  const checked = useWtbCheck(checkBody, token, OTHERS_DEBOUNCE_MS);
+  const [rejected, setRejected] = useState<{
+    filters: MarketFilters;
+    niceToHaveIds: string[];
+    impossible: WtbImpossible[];
+  } | null>(null);
+  const impossible =
+    rejected && rejected.filters === filters && rejected.niceToHaveIds === niceToHaveIds
+      ? rejected.impossible
+      : checked;
+  const impossibleRows = impossibleByRow(impossible, rows);
+  const impossibleLines = [...new Set(impossible.map((entry) => impossibleText(t, entry, filters.stats)))];
   // A new request's unsaved choices outlive the pane (closing it, opening another request), until it is posted
   useEffect(() => {
     if (!editing) onDraftChange({ niceIds, amount, currency, openToOffers, expiry, alsoWatch });
@@ -192,7 +244,7 @@ export function WtbPostDrawer({
   const expiryOptions = WTB_EXPIRY_DAYS.map((d) => ({ value: String(d), label: t('wtb.post.days', { count: d }) }));
 
   const submit = async () => {
-    if (!token || !whisperTo || !validAmount || blocker || saving) return;
+    if (!token || !whisperTo || !validAmount || blocker || impossible.length > 0 || saving) return;
     setSaving(true);
     const offer = { amount, currency };
     try {
@@ -235,6 +287,15 @@ export function WtbPostDrawer({
         showToast({
           title: t('wtb.post.capTitle'),
           description: t('wtb.post.capDescription', { count: MAX_OPEN_WTB_PER_USER }),
+          variant: 'warning',
+        });
+      } else if (error instanceof WtbImpossibleError) {
+        setRejected({ filters, niceToHaveIds, impossible: error.impossible });
+        showToast({
+          title: editing ? t('wtb.post.saveFailed') : t('wtb.post.postFailed'),
+          description: [...new Set(error.impossible.map((entry) => impossibleText(t, entry, filters.stats)))].join(
+            ' · ',
+          ),
           variant: 'warning',
         });
       } else if (status === 400 && isPostBlocker(rule)) {
@@ -297,18 +358,24 @@ export function WtbPostDrawer({
                 {rows.map((row) => {
                   const group = groupOf(row);
                   const nice = niceToHaveIds.includes(row.id);
+                  const why = impossibleRows.get(row.id);
+                  const whyText = why && impossibleText(t, why, filters.stats);
                   return (
                     <li key={row.id}
                       className="flex min-w-0 items-center gap-1.5 text-xs">
-                      <span
-                        className={cn(
-                          'min-w-0 flex-1 truncate',
-                          row.kind === 'corruption' ? 'text-q-corrupted' : 'text-q-magic',
-                          nice && 'opacity-70',
-                        )}
-                      >
-                        {statRowText(row)}
-                      </span>
+                      <Tip label={whyText}>
+                        <span
+                          className={cn(
+                            'flex min-w-0 flex-1 items-center gap-1',
+                            why ? 'text-destructive' : row.kind === 'corruption' ? 'text-q-corrupted' : 'text-q-magic',
+                            nice && !why && 'opacity-70',
+                          )}
+                        >
+                          {why && <Ban aria-label={whyText}
+                            className="size-3 shrink-0" />}
+                          <span className="min-w-0 truncate">{statRowText(row)}</span>
+                        </span>
+                      </Tip>
                       {group === 'and' ? (
                         <button
                           type="button"
@@ -485,6 +552,13 @@ export function WtbPostDrawer({
       </ScrollArea>
 
       <div className="space-y-1.5 border-t border-border p-2.5">
+        {impossibleLines.map((line) => (
+          <p key={line}
+            role="status"
+            className="text-[11px] text-destructive">
+            {line}
+          </p>
+        ))}
         {blocker && (
           <p role="status"
             className="text-[11px] text-warning">
@@ -494,7 +568,7 @@ export function WtbPostDrawer({
         {token ? (
           <Button
             className="h-8 w-full text-xs"
-            disabled={!validAmount || !!blocker || !whisperTo || saving}
+            disabled={!validAmount || !!blocker || impossible.length > 0 || !whisperTo || saving}
             onClick={() => void submit()}
           >
             {saving && <Loader2 className="size-3.5 animate-spin" />}

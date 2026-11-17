@@ -609,6 +609,15 @@
         "item": "请在筛选中选择物品名称、底材或类型。",
         "detail": "请至少添加一条必需属性、孔数或无形。"
       },
+      "impossible": {
+        "noStats": "{{item}} 不能带属性",
+        "cannotRoll": "{{stat}} 不会出现在 {{item}} 上",
+        "aboveMax": "{{item}} 最多 {{stat}}",
+        "tooHigh": "{{stat}} 对 {{item}} 来说太高",
+        "sockets_other": "{{item}} 最多 {{count}} 个孔",
+        "noSockets": "{{item}} 不能有孔",
+        "tooManySockets": "{{item}} 不能有这么多孔"
+      },
       "previewLineNoOffer": "有玩家想买这个",
       "expiryNext": "时长 · 用于下次顶帖"
     },

@@ -671,6 +671,17 @@
         "item": "Choisissez un nom d'objet, une base ou un type dans les filtres.",
         "detail": "Ajoutez au moins une stat requise, un nombre de châsses ou éthéré."
       },
+      "impossible": {
+        "noStats": "{{item}} ne peut pas avoir de stats",
+        "cannotRoll": "{{stat}} ne peut pas apparaître sur {{item}}",
+        "aboveMax": "{{item}} a au plus {{stat}}",
+        "tooHigh": "{{stat}} est trop élevé pour {{item}}",
+        "sockets_one": "{{item}} a au plus {{count}} châsse",
+        "sockets_many": "{{item}} a au plus {{count}} de châsses",
+        "sockets_other": "{{item}} a au plus {{count}} châsses",
+        "noSockets": "{{item}} ne peut pas avoir de châsses",
+        "tooManySockets": "{{item}} ne peut pas avoir autant de châsses"
+      },
       "previewLineNoOffer": "Un joueur veut acheter ceci",
       "expiryNext": "Durée · utilisée à la prochaine remontée"
     },

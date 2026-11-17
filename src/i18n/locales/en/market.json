@@ -640,6 +640,16 @@
         "item": "Pick an item name, base or type in the filters.",
         "detail": "Add at least one required stat, socket count or ethereal."
       },
+      "impossible": {
+        "noStats": "{{item}} can't have stats",
+        "cannotRoll": "{{stat}} can't roll on {{item}}",
+        "aboveMax": "{{item}} has at most {{stat}}",
+        "tooHigh": "{{stat}} is too high for {{item}}",
+        "sockets_one": "{{item}} takes at most {{count}} socket",
+        "sockets_other": "{{item}} takes at most {{count}} sockets",
+        "noSockets": "{{item}} can't have sockets",
+        "tooManySockets": "{{item}} can't have that many sockets"
+      },
       "previewLineNoOffer": "A player wants to buy this",
       "expiryNext": "Duration · used for the next bump"
     },

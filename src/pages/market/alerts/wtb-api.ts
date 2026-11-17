@@ -7,8 +7,10 @@ import { BACKEND_URL } from '@/lib/pkce';
 import { marketSearchBody } from '@/lib/market-search-api';
 import type { MarketFilters } from '@/pages/market/lib/types';
 import type {
+  WtbCheckBody,
   WtbCurrency,
   WtbExpiryDays,
+  WtbImpossible,
   WtbItemMatch,
   WtbRealm,
   WtbRequest,
@@ -16,17 +18,41 @@ import type {
   WtbSearchBody,
   WtbStatus,
 } from '@/pages/market/lib/wtb';
-import { isWtbResponse } from '@/pages/market/lib/wtb';
-import { errorFrom } from './market-api';
+import { isWtbResponse, parseImpossible } from '@/pages/market/lib/wtb';
+import { errorFrom, MarketApiError } from './market-api';
 
 const WTB_URL = `${BACKEND_URL}/api/market/wtb`;
 
 const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
 const json = { 'Content-Type': 'application/json' };
 
+/** A post or edit the server rejected as asking for an item that can't exist (400 with `impossible`). */
+export class WtbImpossibleError extends MarketApiError {
+  constructor(
+    error: MarketApiError,
+    public readonly impossible: WtbImpossible[],
+  ) {
+    super(error.message, error.status, error.retryAfterMs, error.rule, error.nextBumpAt);
+    this.name = 'WtbImpossibleError';
+  }
+}
+
 async function send<T>(url: string, init: RequestInit): Promise<T> {
   const response = await fetch(url, init);
-  if (!response.ok) throw await errorFrom(response);
+  if (!response.ok) {
+    const impossible =
+      response.status === 400
+        ? await response
+            .clone()
+            .json()
+            .then(
+              (body) => parseImpossible(body?.impossible),
+              () => [],
+            )
+        : [];
+    const error = await errorFrom(response);
+    throw impossible.length > 0 ? new WtbImpossibleError(error, impossible) : error;
+  }
   return (response.status === 204 ? undefined : await response.json()) as T;
 }
 
@@ -112,6 +138,28 @@ export function updateWtbRequest(token: string, id: string, patch: WtbPatch): Pr
     headers: { ...auth(token), ...json },
     body: JSON.stringify(patch.filters ? { ...patch, filters: wtbFilters(patch.filters) } : patch),
   });
+}
+
+/**
+ * What of a request can't exist (`POST /api/market/wtb/check`, auth optional): empty when it's possible or not
+ * provably impossible. A server without the check (404) answers empty.
+ */
+export async function checkWtbRequest(
+  body: WtbCheckBody,
+  { token, signal }: { token?: string | null; signal?: AbortSignal } = {},
+): Promise<WtbImpossible[]> {
+  try {
+    const answer = await send<{ impossible?: unknown }>(`${WTB_URL}/check`, {
+      method: 'POST',
+      headers: token ? { ...auth(token), ...json } : json,
+      body: JSON.stringify({ ...body, filters: wtbFilters(body.filters) }),
+      signal,
+    });
+    return parseImpossible(answer?.impossible);
+  } catch (error) {
+    if (error instanceof MarketApiError && error.status === 404) return [];
+    throw error;
+  }
 }
 
 /**

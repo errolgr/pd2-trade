@@ -5,6 +5,7 @@ import { defaultFilters } from '@/pages/market/lib/defaults';
 import { MarketApiError } from './market-api';
 import {
   bumpWtbRequest,
+  checkWtbRequest,
   contactWtbRequest,
   createWtbRequest,
   deleteWtbRequest,
@@ -12,6 +13,7 @@ import {
   searchWtbRequests,
   matchWtbRequests,
   updateWtbRequest,
+  WtbImpossibleError,
 } from './wtb-api';
 
 vi.mock('@/lib/browser-http', () => ({ fetch: vi.fn() }));
@@ -158,6 +160,29 @@ describe('wtb-api requests', () => {
     expect(call(1)[1].headers).toEqual({ Authorization: 'Bearer tok', 'Content-Type': 'application/json' });
     expect(body(1)).not.toHaveProperty('countViews');
   });
+
+  it('checks a request, the token when signed in, and reads its impossible rows', async () => {
+    const shael = { rowId: 'r1', key: 'maxhp', reason: 'no-stats', item: 'Shael Rune' };
+    vi.mocked(fetch).mockResolvedValueOnce(Response.json({ impossible: [shael, { rowId: 'x', reason: 'odd' }] }));
+    const checked = await checkWtbRequest(
+      { filters: { ...filters, source: 'wanted', wanted: { mine: true } }, niceToHaveIds: ['r1'] },
+      { token: 'tok' },
+    );
+    expect(checked).toEqual([shael]);
+    expect(call()[0]).toBe(`${URL}/check`);
+    expect(call()[1].headers).toEqual({ Authorization: 'Bearer tok', 'Content-Type': 'application/json' });
+    expect(body()).toMatchObject({ niceToHaveIds: ['r1'], filters: { itemName: 'Shako', source: 'live' } });
+    expect(body().filters).not.toHaveProperty('wanted');
+  });
+
+  it('takes a server without the check (404) as nothing impossible', async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(Response.json({ message: 'Not Found' }, { status: 404 }))
+      .mockResolvedValueOnce(Response.json({ message: 'down' }, { status: 503 }));
+    await expect(checkWtbRequest({ filters, niceToHaveIds: [] })).resolves.toEqual([]);
+    expect(call()[1].headers).toEqual({ 'Content-Type': 'application/json' });
+    await expect(checkWtbRequest({ filters, niceToHaveIds: [] })).rejects.toMatchObject({ status: 503 });
+  });
 });
 
 describe('wtb-api errors', () => {
@@ -182,6 +207,19 @@ describe('wtb-api errors', () => {
       expiresInDays: 7,
     }).catch((e) => e);
     expect(error).toMatchObject({ status: 400, rule: 'detail' });
+  });
+
+  it('carries the impossible rows a rejected post or edit names', async () => {
+    const impossible = [{ rowId: null, key: null, reason: 'sockets', max: 2, item: 'Harlequin Crest' }];
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(Response.json({ message: "Can't exist", impossible }, { status: 400 }))
+      .mockResolvedValueOnce(Response.json({ message: 'Bad', impossible: [] }, { status: 400 }));
+    const error = await updateWtbRequest('tok', 'r1', { filters }).catch((e) => e);
+    expect(error).toBeInstanceOf(WtbImpossibleError);
+    expect(error).toMatchObject({ status: 400, message: "Can't exist", impossible });
+    const plain = await updateWtbRequest('tok', 'r1', { filters }).catch((e) => e);
+    expect(plain).toBeInstanceOf(MarketApiError);
+    expect(plain).not.toBeInstanceOf(WtbImpossibleError);
   });
 
   it('carries Retry-After of a throttled match', async () => {

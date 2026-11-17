@@ -178,6 +178,79 @@ export function postBlocker(filters: MarketFilters, niceToHaveIds: readonly stri
   return detailed ? null : 'detail';
 }
 
+/**
+ * Why the server judged a request impossible (`POST /api/market/wtb/check`; also the 400 `impossible` of a post or
+ * edit): `no-stats` the item can carry none, `cannot-roll` the row's stat can't appear on it, `above-max` the row's
+ * min is above the most it can have (`max`), `sockets` socketsMin is above its most sockets (`max`).
+ */
+export type WtbImpossibleReason = 'no-stats' | 'cannot-roll' | 'above-max' | 'sockets';
+
+export interface WtbImpossible {
+  /** The stat row's id; null for the item itself (sockets). */
+  rowId: string | null;
+  key: string | null;
+  reason: WtbImpossibleReason;
+  max?: number;
+  /** The item the server judged ("Shael Rune", "Ring", "Harlequin Crest"). */
+  item: string;
+}
+
+const IMPOSSIBLE_REASONS: readonly string[] = ['no-stats', 'cannot-roll', 'above-max', 'sockets'];
+
+const isImpossible = (value: unknown): value is WtbImpossible => {
+  const v = value as Partial<WtbImpossible> | null;
+  return (
+    !!v &&
+    typeof v === 'object' &&
+    IMPOSSIBLE_REASONS.includes(v.reason as string) &&
+    typeof v.item === 'string' &&
+    (v.rowId === null || typeof v.rowId === 'string') &&
+    (v.key === null || typeof v.key === 'string') &&
+    (v.max === undefined || typeof v.max === 'number')
+  );
+};
+
+/** The well-formed entries of a server `impossible` list (anything else: none, so nothing is blocked on noise). */
+export const parseImpossible = (value: unknown): WtbImpossible[] =>
+  Array.isArray(value) ? value.filter(isImpossible) : [];
+
+/** `POST /api/market/wtb/check`: the filters and nice-to-have rows a post would send. */
+export interface WtbCheckBody {
+  filters: MarketFilters;
+  niceToHaveIds: string[];
+}
+
+/**
+ * What the post drawer asks the server to check, null when there's nothing it could judge: no item named, or
+ * neither a stat row nor a socket count asked for.
+ */
+export function wtbCheckBody(filters: MarketFilters, niceToHaveIds: readonly string[]): WtbCheckBody | null {
+  if (!wtbItemScoped(filters)) return null;
+  if (wtbStatRows(filters).length === 0 && filters.socketsMin === undefined) return null;
+  return { filters, niceToHaveIds: [...niceToHaveIds] };
+}
+
+/**
+ * The stat rows an impossible list points at, with why (the first entry each): by row id, and the `sockets` row
+ * for the item's own socket verdict.
+ */
+export function impossibleByRow(
+  impossible: readonly WtbImpossible[],
+  rows: readonly Pick<StatFilter, 'id' | 'kind' | 'key'>[],
+): Map<string, WtbImpossible> {
+  const byRow = new Map<string, WtbImpossible>();
+  for (const entry of impossible) {
+    const ids =
+      entry.rowId !== null
+        ? [entry.rowId]
+        : entry.reason === 'sockets'
+          ? rows.filter((row) => row.kind === 'item' && row.key === 'sockets').map((row) => row.id)
+          : [];
+    for (const id of ids) if (!byRow.has(id)) byRow.set(id, entry);
+  }
+  return byRow;
+}
+
 /** An offer the server takes: above 0, at most MAX_WTB_OFFER, at most 2 decimals. */
 export function isValidOfferAmount(amount: number | undefined): amount is number {
   return (

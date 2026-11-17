@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.12.1': [
+    "✨ Buy requests: items that can't exist can't be posted (a Shael Rune with Life, a Ring with Enhanced Defense, +4 skills on a Shako); the post panel names the stat that can't roll",
+  ],
   '0.12.0': [
     '🆕 Market: buy requests. Post one from any search ("Want to buy"); browse everyone\'s under Wanted; sellers answer with a whisper or an offer',
     '🆕 Buy request answers arrive as notifications and show in the chat thread with that player',

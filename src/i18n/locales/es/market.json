@@ -671,6 +671,17 @@
         "item": "Elige en los filtros un nombre de objeto, una base o un tipo.",
         "detail": "Añade al menos una estadística obligatoria, un número de engarces o etéreo."
       },
+      "impossible": {
+        "noStats": "{{item}} no puede tener estadísticas",
+        "cannotRoll": "{{stat}} no puede salir en {{item}}",
+        "aboveMax": "{{item}} tiene como máximo {{stat}}",
+        "tooHigh": "{{stat}} es demasiado alto para {{item}}",
+        "sockets_one": "{{item}} admite como máximo {{count}} engarce",
+        "sockets_many": "{{item}} admite como máximo {{count}} de engarces",
+        "sockets_other": "{{item}} admite como máximo {{count}} engarces",
+        "noSockets": "{{item}} no puede tener engarces",
+        "tooManySockets": "{{item}} no puede tener tantos engarces"
+      },
       "previewLineNoOffer": "Un jugador quiere comprar esto",
       "expiryNext": "Duración · se usa en la próxima subida"
     },

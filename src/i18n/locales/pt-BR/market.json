@@ -671,6 +671,17 @@
         "item": "Escolha nos filtros um nome de item, uma base ou um tipo.",
         "detail": "Adicione pelo menos um atributo obrigatório, número de soquetes ou etéreo."
       },
+      "impossible": {
+        "noStats": "{{item}} não pode ter atributos",
+        "cannotRoll": "{{stat}} não pode aparecer em {{item}}",
+        "aboveMax": "{{item}} tem no máximo {{stat}}",
+        "tooHigh": "{{stat}} é alto demais para {{item}}",
+        "sockets_one": "{{item}} aceita no máximo {{count}} soquete",
+        "sockets_many": "{{item}} aceita no máximo {{count}} de soquetes",
+        "sockets_other": "{{item}} aceita no máximo {{count}} soquetes",
+        "noSockets": "{{item}} não pode ter soquetes",
+        "tooManySockets": "{{item}} não pode ter tantos soquetes"
+      },
       "previewLineNoOffer": "Um jogador quer comprar isto",
       "expiryNext": "Duração · usada na próxima subida"
     },
