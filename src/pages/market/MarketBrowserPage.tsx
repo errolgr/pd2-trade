@@ -54,6 +54,7 @@ import { wtbBoardFilters, wtbSearchBody, wtbSearchFilters, type WtbRequest } fro
 import { MarketApiError } from './alerts/market-api';
 import { bumpWtbRequest, searchWtbRequests, updateWtbRequest, type WtbPatch } from './alerts/wtb-api';
 import { WantToBuyButton } from './wtb/WantToBuyButton';
+import { markWtbCalloutSeen, WtbNewCallout } from './wtb/WtbNewCallout';
 import { WtbPostDrawer, type WtbPostDraft } from './wtb/WtbPostDrawer';
 import { useWatchWtbPrompt } from './wtb/WatchWtbPrompt';
 import { type WtbSelection, WtbRequestDrawer } from './wtb/WtbRequestDrawer';
@@ -413,6 +414,10 @@ const MarketBrowserPage: React.FC = () => {
   /** Search's buy request pane, and the Wanted source's request drawer, take the detail pane's place. */
   const postOpen = tab === 'search' && !!wtbPost && !archived;
   const requestOpen = wantedSource && !!wtbSelection;
+  // Buy requests in use (posting one, the Wanted source): the NEW callout on Want to buy has done its job
+  useEffect(() => {
+    if (postOpen || wantedSource) markWtbCalloutSeen();
+  }, [postOpen, wantedSource]);
 
   const selectListing = useCallback((id: string) => {
     setSelectedId(id);
@@ -898,11 +903,13 @@ const MarketBrowserPage: React.FC = () => {
                                   <OpenOnSiteButton filters={filters} />
                                   <WatchButton filters={filters}
                                     wtbPrompt={watchWtbPrompt} />
-                                  <WantToBuyButton
-                                    open={postOpen}
-                                    source={archived ? 'archive' : 'live'}
-                                    onToggle={togglePost}
-                                  />
+                                  <WtbNewCallout show={!archived}>
+                                    <WantToBuyButton
+                                      open={postOpen}
+                                      source={archived ? 'archive' : 'live'}
+                                      onToggle={togglePost}
+                                    />
+                                  </WtbNewCallout>
                                 </>
                               )}
                               <ViewModeToggle value={viewMode}

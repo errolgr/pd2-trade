@@ -556,6 +556,12 @@
     "2h-ranged": "Zweihand-Fernkampf"
   },
   "wtb": {
+    "callout": {
+      "badge": "NEU",
+      "title": "Kaufgesuche",
+      "description": "Nichts gefunden? Erstelle ein Kaufgesuch mit deinem Angebot: Verkäufer, die ein passendes Item preisprüfen, sehen es. Alle Gesuche findest du unter {{wanted}}.",
+      "dismiss": "Schließen"
+    },
     "chip": {
       "label_one": "{{count}} Käufer · bis {{offer}}",
       "label_other": "{{count}} Käufer · bis {{offer}}",

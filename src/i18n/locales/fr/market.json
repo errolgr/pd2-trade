@@ -580,6 +580,12 @@
     "2h-ranged": "Distance à deux mains"
   },
   "wtb": {
+    "callout": {
+      "badge": "NOUVEAU",
+      "title": "Demandes d'achat",
+      "description": "Introuvable ? Publiez ce que vous cherchez avec votre offre : les vendeurs qui estiment un objet correspondant la verront. Toutes les demandes sont dans {{wanted}}.",
+      "dismiss": "Fermer"
+    },
     "chip": {
       "label_one": "{{count}} acheteur · jusqu'à {{offer}}",
       "label_many": "{{count}} acheteurs · jusqu'à {{offer}}",
