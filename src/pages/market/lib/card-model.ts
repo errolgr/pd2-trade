@@ -1,7 +1,8 @@
 import type { ItemDetail, Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { jewelElement, type JewelElement } from '@/pages/chat/lib/listing-art';
 import { itemCorruptions } from '@/lib/item-utils';
-import { DAMAGE_KEY, isDamagePair, MAX_DAMAGE_NAMES, MIN_DAMAGE_NAMES, parseStatKey, pinsMatch } from './stats';
+import { MAX_DAMAGE_NAMES, MIN_DAMAGE_NAMES } from './pseudo';
+import { DAMAGE_KEY, isDamagePair, parseStatKey, pinsMatch } from './stats';
 
 /*
  * Pure view model of the full-width result card: socketed items grouped, each item mod split into the item's own

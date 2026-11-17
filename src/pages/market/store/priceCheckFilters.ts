@@ -16,14 +16,8 @@ import { PSEUDO_KEY_PREFIX, getStatKey } from '@/pages/price-check/lib/utils';
 import { findBaseOption, optionCodes } from '@/pages/market/lib/catalog';
 import { typeCodeForCodes } from '@/pages/market/lib/type-selection';
 import { defaultFilters, mergeFilters } from '@/pages/market/lib/defaults';
-import {
-  DAMAGE_KEY,
-  MAX_DAMAGE_NAMES,
-  MIN_DAMAGE_NAMES,
-  isDamageRangeKey,
-  withLowDamageRange,
-} from '@/pages/market/lib/stats';
-import { PSEUDO_LOW_ENDS } from '@/pages/market/lib/pseudo';
+import { DAMAGE_KEY, isDamageRangeKey, withLowDamageRange } from '@/pages/market/lib/stats';
+import { MAX_DAMAGE_NAMES, MIN_DAMAGE_NAMES, PSEUDO_LOW_ENDS } from '@/pages/market/lib/pseudo';
 import type { MarketFilters, Rarity, StatFilter } from '@/pages/market/lib/types';
 
 export interface PriceCheckSearch {

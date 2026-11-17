@@ -47,6 +47,20 @@ const ELEMENTAL_DAMAGE_LINE = /^(fire|cold|light)(min|max)?dam$/;
 /** The flat damage total's elemental lines: fire, cold, lightning and magic (poison is damage over time). */
 const FLAT_ELEMENT_LINE = /^(fire|cold|light|magic)(min|max)?dam$/;
 
+/** Modifier names of the physical min / max damage lines (the site's `a|b` alternatives; one per line on a listing). */
+export const MIN_DAMAGE_NAMES: readonly string[] = [
+  'min_damage',
+  'mindamage',
+  'secondary_mindamage',
+  'item_throw_mindamage',
+];
+export const MAX_DAMAGE_NAMES: readonly string[] = [
+  'max_damage',
+  'maxdamage',
+  'secondary_maxdamage',
+  'item_throw_maxdamage',
+];
+
 /**
  * Added damage of the "Adds X-Y" lines `lines` matches, summed per end: Σ min and Σ max. PD2 sends the line as
  * `firedam [min, max]` (cold: `[min, max, chill frames]`); `firemindam [min, max]` is the same pair under another
@@ -227,6 +241,14 @@ export const PSEUDO_STATS: PseudoDef[] = [
     group: 'Pseudo',
     compute: (m) => addedFlatDamage(m).min,
     lowEndOf: 'pseudo_flat_max_damage',
+  },
+  {
+    // Every physical min- and max-damage line added up: "+9 to Minimum Damage" + "+15 to Maximum Damage" = 24,
+    // "Adds 4-14 Damage" = 18. Not the per-level max damage (an eighth per level) or elemental damage.
+    id: 'pseudo_total_damage',
+    label: '+{X} Total Damage',
+    group: 'Pseudo',
+    compute: (m) => [...MIN_DAMAGE_NAMES, ...MAX_DAMAGE_NAMES].reduce((n, name) => n + sum(m, name), 0),
   },
   {
     id: 'pseudo_life_leech',

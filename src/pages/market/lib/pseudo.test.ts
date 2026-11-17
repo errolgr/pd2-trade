@@ -106,4 +106,18 @@ describe('computePseudo', () => {
     expect(p).toMatchObject({ pseudo_flat_min_damage: 71, pseudo_flat_max_damage: 850 });
     expect(p).toMatchObject({ pseudo_elemental_min_damage: 1, pseudo_elemental_max_damage: 700 });
   });
+
+  it('Total Damage adds every physical min and max damage line; per-level and elemental stay out', () => {
+    expect(pseudo(mod('min_damage', 9), mod('max_damage', 15)).pseudo_total_damage).toBe(24);
+    expect(pseudo(mod('max_damage', 24)).pseudo_total_damage).toBe(24);
+    // weapon aliases, a corruption's second line, and lines that don't count
+    const p = pseudo(
+      mod('mindamage', 5),
+      mod('secondary_maxdamage', 10),
+      mod('secondary_maxdamage', 4),
+      mod('item_maxdamage_perlevel', 16),
+      mod('firedam', 4, 20),
+    );
+    expect(p.pseudo_total_damage).toBe(19);
+  });
 });
