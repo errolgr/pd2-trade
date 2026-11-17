@@ -1,5 +1,5 @@
 import { defaultAgeDays, type SearchDefaults } from './defaults';
-import type { CharClass, MarketFilters, OnlineFilter, Rarity, StatFilter, Tri } from './types';
+import type { CharClass, MarketFilters, MarketListingStatus, OnlineFilter, Rarity, StatFilter, Tri } from './types';
 
 /*
  * The filters a search narrows by, one entry per thing the user could take back: an empty search offers to drop
@@ -20,7 +20,8 @@ export type ActiveFilterSpec =
   | { kind: 'class'; value: CharClass }
   | { kind: 'tri'; field: TriField; value: Tri }
   | { kind: 'range'; field: RangeField; min?: number; max?: number }
-  | { kind: 'age'; days: number }
+  | { kind: 'age'; days: number | undefined }
+  | { kind: 'status'; value: MarketListingStatus[] }
   | { kind: 'priceText'; value: string }
   | { kind: 'seller'; name?: string }
   | { kind: 'online'; field: 'site' | 'game'; value: OnlineFilter }
@@ -87,6 +88,8 @@ export function activeFilters(f: MarketFilters, defaults: SearchDefaults): Activ
   const age = defaultAgeDays(f.source, defaults);
   if (f.maxAgeDays !== age)
     add('age', { kind: 'age', days: f.maxAgeDays }, (g) => ({ ...g, maxAgeDays: defaultAgeDays(g.source, defaults) }));
+  if (f.source === 'archive' && f.status?.length)
+    add('status', { kind: 'status', value: f.status }, (g) => ({ ...g, status: undefined }));
 
   if (f.priceText) add('priceText', { kind: 'priceText', value: f.priceText }, (g) => ({ ...g, priceText: undefined }));
   if (f.hrMin !== undefined || f.hrMax !== undefined)

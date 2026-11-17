@@ -26,8 +26,8 @@
     "noFavoritesDescription": "Marca un anuncio con el corazón para guardarlo aquí; los favoritos se sincronizan con projectdiablo2.com.",
     "noLiveListingsFor": "No hay anuncios activos de {{itemName}}",
     "noLiveListings": "Ningún anuncio activo coincide",
-    "searchArchivePrompt": "¿Buscar en el archivo de vendidos para ver a cuánto se vendió recientemente?",
-    "searchArchive": "Buscar en vendidos",
+    "searchArchivePrompt": "¿Buscar en el archivo (anuncios vendidos, retirados y caducados) para ver a cuánto se vendió recientemente?",
+    "searchArchive": "Buscar en el archivo",
     "noListingsTitle": "Ningún anuncio coincide",
     "noListingsDescription": "Relaja un filtro, amplía el rango de antigüedad o cambia el modo.",
     "refreshing": "Actualizando resultados",
@@ -76,7 +76,7 @@
     "tooManyDescription_other": "Se pueden vigilar hasta {{count}} búsquedas a la vez. Detén una primero (pestaña Guardadas).",
     "startedDescription": "Recibirás una notificación por cada nuevo anuncio que coincida con esta búsqueda.",
     "labels": {
-      "archive": "Los anuncios vendidos no se pueden vigilar",
+      "archive": "Las búsquedas en el archivo no se pueden vigilar",
       "watching": "Vigilando: haz clic para dejar de recibir notificaciones de nuevos anuncios de esta búsqueda",
       "watch": "Vigilar: recibe una notificación y un sonido por cada nuevo anuncio que coincida con esta búsqueda"
     }
@@ -108,7 +108,17 @@
       "label": "Origen de los anuncios",
       "live": "Activos",
       "archive": "Archivo",
-      "archiveTitle": "Anuncios vendidos / retirados"
+      "archiveTitle": "Anuncios finalizados: vendidos, retirados y caducados (archivo de projectdiablo2.com)"
+    },
+    "status": {
+      "label": "Estado",
+      "all": "Todos",
+      "sold": "Vendido",
+      "removed": "Retirado",
+      "expired": "Caducado",
+      "soldTitle": "El vendedor aceptó una oferta",
+      "removedTitle": "Eliminado por el vendedor o un moderador",
+      "expiredTitle": "Sin subir ni editar durante 6 días"
     },
     "clearAll": "Limpiar todos los filtros",
     "clearStats": "Quitar todos los filtros de estadísticas",
@@ -387,6 +397,7 @@
     "buyout": "precio de compra",
     "listingAge": "antigüedad del anuncio",
     "sort": "orden",
+    "status": "estado (el archivo del sitio muestra vendidos, retirados y caducados)",
     "extendedStat": "estadística que el sitio no puede expresar"
   },
   "nameSearch": {
@@ -403,7 +414,7 @@
   },
   "detail": {
     "label": "Detalle del anuncio",
-    "sold": "Vendido / retirado",
+    "ended": "Finalizado",
     "listed": "Anunciado",
     "favorite": "Añadir a favoritos",
     "unfavorite": "Quitar de favoritos",
@@ -444,7 +455,7 @@
     "anyOf": "cualquiera de ({{rows}})",
     "noneOf": "ninguno de ({{rows}})",
     "seller": "vendedor {{name}}",
-    "sold": " · vendido"
+    "archive": " · archivo"
   },
   "saved": {
     "savedToast": "Búsqueda guardada",

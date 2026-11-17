@@ -437,31 +437,32 @@ describe('buildGetMarketListingQuery', () => {
     ) as Record<string, any>;
   }
 
-  it('builds an open-listing query over the last 3 days, newest bump first', () => {
+  it('builds an open-listing query over every live listing (no age window), newest bump first', () => {
     const q = query(makeItem());
     expect(q).toMatchObject({
       type: 'item',
       $limit: 10,
       $skip: 0,
       accepted_offer_id: null,
-      updated_at: { $gte: '2026-10-15T12:00:00.000Z' },
       $sort: { bumped_at: -1 },
       is_hardcore: false,
       is_ladder: true,
       'item.quality.name': 'Rare',
     });
+    expect(q).not.toHaveProperty('updated_at');
     expect(q).not.toHaveProperty(['item.modifiers']);
     expect(q).not.toHaveProperty(['item.corrupted']);
   });
 
-  it('looks back 14 days in archive mode and honors paging, realm and quality override', () => {
+  it('searches the whole archive, sold listings included, and honors paging, realm and quality override', () => {
     const q = query(
       makeItem(),
       [],
       {},
       { archive: true, limit: 50, offset: 100, settings: HC_NONLADDER, quality: 'Crafted' },
     );
-    expect(q.updated_at.$gte).toBe('2026-10-04T12:00:00.000Z');
+    expect(q).not.toHaveProperty('updated_at');
+    expect(q).not.toHaveProperty('accepted_offer_id');
     expect(q).toMatchObject({
       $limit: 50,
       $skip: 100,

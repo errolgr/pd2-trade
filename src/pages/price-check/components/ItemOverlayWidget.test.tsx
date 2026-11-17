@@ -458,7 +458,7 @@ describe('ItemOverlayWidget unique price pill', () => {
     const f = lastFilters();
     expect(f.stats).toEqual([expect.objectContaining({ kind: 'corruption', key: 'item_corr_2' })]);
     expect(f.corrupted).toBe('yes');
-    expect(f.status).toEqual(['sold', 'removed', 'expired']);
+    expect(f.source).toBe('archive');
     expect(getMarketListingsArchive).not.toHaveBeenCalled();
     expect(getMarketListings).not.toHaveBeenCalled();
   });
@@ -602,7 +602,8 @@ describe('ItemOverlayWidget market search', () => {
     expect(screen.queryByText('Loading market listings...')).toBeNull();
 
     expect(searchListings.mock.calls[0][1]).toEqual({ page: 0, limit: 20, priceStats: true });
-    expect(lastFilters()).toMatchObject({ source: 'live', maxAgeDays: 3, ladder: true, hardcore: false });
+    expect(lastFilters()).toMatchObject({ source: 'live', ladder: true, hardcore: false });
+    expect(lastFilters()).not.toHaveProperty('maxAgeDays');
     expect(lastFilters()).not.toHaveProperty('status');
     // Every search goes to the market service; PD2 only stands in for it
     expect(getMarketListings).not.toHaveBeenCalled();
@@ -752,7 +753,8 @@ describe('ItemOverlayWidget market search', () => {
     expect(searchListings).not.toHaveBeenCalled();
     fireEvent.click(searchButton());
     await waitFor(() => expect(searchListings).toHaveBeenCalledTimes(1));
-    expect(lastFilters()).toMatchObject({ source: 'archive', maxAgeDays: 14, status: ['sold', 'removed', 'expired'] });
+    expect(lastFilters()).toMatchObject({ source: 'archive' });
+    expect(lastFilters()).not.toHaveProperty('maxAgeDays');
     expect(getMarketListingsArchive).not.toHaveBeenCalled();
   });
 
@@ -785,9 +787,10 @@ describe('ItemOverlayWidget market search', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Expired' }));
     fireEvent.click(searchButton());
     const row = (await screen.findByText('4 HR')).closest('tr')!;
-    const ended = within(row).getByText('sold after 2 days');
+    const ended = within(row).getByText('Sold').closest('td')!;
+    expect(ended.textContent).toBe('Sold 2d');
     fireEvent.focus(ended);
-    expect((await screen.findByRole('tooltip')).textContent).toBe('Ended 2 days ago');
+    expect((await screen.findByRole('tooltip')).textContent).toBe('sold after 2 days · Ended 2 days ago');
   });
 
   it('asks PD2 for the page when the market service fails, and reports the failure', async () => {

@@ -41,6 +41,7 @@ function sectionOf(spec: ActiveFilterSpec): string | undefined {
     case 'range':
       return spec.field === 'sockets' ? 'properties' : spec.field === 'hr' ? 'price' : 'requirements';
     case 'age':
+    case 'status':
       return 'listing';
     case 'priceText':
       return 'price';
@@ -67,6 +68,8 @@ function fieldOf(spec: ActiveFilterSpec): string | undefined {
       return RANGE_LABELS[spec.field];
     case 'age':
       return 'filters.listedWithin';
+    case 'status':
+      return 'filters.status.label';
     case 'priceText':
       return 'filters.priceNote';
     case 'seller':
@@ -131,7 +134,9 @@ export function useActiveFilterText(): (spec: ActiveFilterSpec) => string {
         case 'range':
           return rangeText(t(RANGE_LABELS[spec.field]), spec.min, spec.max);
         case 'age':
-          return `${t('filters.listedWithin')}: ${t('filters.days', { count: spec.days })}`;
+          return `${t('filters.listedWithin')}: ${spec.days === undefined ? t('filters.any') : t('filters.days', { count: spec.days })}`;
+        case 'status':
+          return `${t('filters.status.label')}: ${spec.value.map((s) => t(`filters.status.${s}`)).join(', ')}`;
         case 'seller':
           return `${t('filters.seller')}: ${spec.name ?? t('filters.sellerPicked')}`;
         case 'online':

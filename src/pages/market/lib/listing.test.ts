@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { defaultFilters, mergeFilters, upgradeFilters, withSource } from './defaults';
+import { defaultFilters, mergeFilters, upgradeFilters } from './defaults';
 import { itemArtUrl, itemDisplayName, listingAge, listingUrl, sellerAccount, sellerGlyphName } from './listing';
 import { applyPreset, BUILT_IN_PRESETS } from './presets';
 import { PSEUDO_STATS } from './pseudo';
@@ -112,13 +112,6 @@ describe('defaults', () => {
     expect(merged.requirements).toEqual({ levelMax: 80, strMin: 10 });
     expect(merged.sort).toEqual({ by: 'price', dir: 'desc' });
     expect(merged.hardcore).toBe(true);
-  });
-
-  it('switching to the archive moves a default age window to 14 days and back', () => {
-    const archive = withSource(base, 'archive');
-    expect(archive).toMatchObject({ source: 'archive', maxAgeDays: 14 });
-    expect(withSource(archive, 'live').maxAgeDays).toBe(3);
-    expect(withSource({ ...base, maxAgeDays: 1 }, 'archive').maxAgeDays).toBe(1);
   });
 });
 

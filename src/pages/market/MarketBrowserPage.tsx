@@ -254,7 +254,7 @@ const MarketBrowserPage: React.FC = () => {
     () => (filters?.stats ?? []).filter((s) => s.enabled && !s.not && s.kind === 'mod').map((s) => s.key),
     [filters?.stats],
   );
-  /** Sold archive results: no offer/whisper (the item is gone). */
+  /** Archive results (ended listings): no offer/whisper (the item is gone). */
   const archived = tab === 'search' && filters?.source === 'archive';
 
   const detailRow =
@@ -740,7 +740,7 @@ function ResultsPane({
   favorites: MarketFavorites;
   rows: ScoredListing[];
   onSignIn: () => void;
-  /** Set while a live search can be re-run over the sold archive (offered when it finds nothing). */
+  /** Set while a live search can be re-run over the archive (offered when it finds nothing). */
   onSearchArchive?: () => void;
   /** The searched item name, for the empty-state wording. */
   itemName?: string;

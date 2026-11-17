@@ -551,13 +551,13 @@ export const SETTINGS_REGISTRY: readonly SettingEntry[] = [
   },
   {
     kind: 'select',
-    key: 'marketDefaultMaxAgeDays',
+    key: 'marketDefaultListedWithinDays',
     section: 'Market',
     labelKey: 'settings:market.browser.age.label',
     groupKeys: ['settings:market.browser.group'],
     keywords: ['age', 'days', 'old', 'filter'],
-    value: (s) => String(s.marketDefaultMaxAgeDays ?? 3),
-    options: (s) => ageDayOptions(s.marketDefaultMaxAgeDays ?? 3),
+    value: (s) => String(s.marketDefaultListedWithinDays ?? 0),
+    options: (s) => ageDayOptions(s.marketDefaultListedWithinDays ?? 0),
     numeric: true,
   },
   {

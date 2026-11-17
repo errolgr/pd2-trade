@@ -26,8 +26,8 @@
     "noFavoritesDescription": "Ajoutez un cœur à une annonce pour la garder ici ; les favoris se synchronisent avec projectdiablo2.com.",
     "noLiveListingsFor": "Aucune annonce active pour {{itemName}}",
     "noLiveListings": "Aucune annonce active ne correspond",
-    "searchArchivePrompt": "Chercher dans l'archive des ventes pour voir son prix récent ?",
-    "searchArchive": "Chercher dans l'archive",
+    "searchArchivePrompt": "Chercher dans les archives (annonces vendues, retirées et expirées) pour voir son prix récent ?",
+    "searchArchive": "Chercher dans les archives",
     "noListingsTitle": "Aucune annonce ne correspond",
     "noListingsDescription": "Assouplissez un filtre, élargissez la période ou changez de mode.",
     "refreshing": "Actualisation des résultats",
@@ -76,7 +76,7 @@
     "tooManyDescription_other": "Jusqu'à {{count}} recherches peuvent être surveillées à la fois. Arrêtez-en une d'abord (onglet Enregistrées).",
     "startedDescription": "Vous recevrez une pop-up pour chaque nouvelle annonce correspondant à cette recherche.",
     "labels": {
-      "archive": "Les annonces vendues ne peuvent pas être surveillées",
+      "archive": "Les recherches dans les archives ne peuvent pas être surveillées",
       "watching": "Surveillée : cliquez pour arrêter les pop-ups des nouvelles annonces correspondant à cette recherche",
       "watch": "Surveiller : recevez une pop-up et un son pour chaque nouvelle annonce correspondant à cette recherche"
     }
@@ -108,7 +108,17 @@
       "label": "Source des annonces",
       "live": "Actives",
       "archive": "Archives",
-      "archiveTitle": "Annonces vendues / retirées"
+      "archiveTitle": "Annonces terminées : vendues, retirées et expirées (archives de projectdiablo2.com)"
+    },
+    "status": {
+      "label": "Statut",
+      "all": "Tous",
+      "sold": "Vendue",
+      "removed": "Retirée",
+      "expired": "Expirée",
+      "soldTitle": "Le vendeur a accepté une offre",
+      "removedTitle": "Supprimée par le vendeur ou un modérateur",
+      "expiredTitle": "Ni remontée ni modifiée depuis 6 jours"
     },
     "clearAll": "Effacer tous les filtres",
     "clearStats": "Retirer tous les filtres de stats",
@@ -387,6 +397,7 @@
     "buyout": "achat immédiat",
     "listingAge": "âge de l'annonce",
     "sort": "tri",
+    "status": "statut (les archives du site montrent vendues, retirées et expirées)",
     "extendedStat": "stat que le site ne peut pas exprimer"
   },
   "nameSearch": {
@@ -403,7 +414,7 @@
   },
   "detail": {
     "label": "Détail de l'annonce",
-    "sold": "Vendue / retirée",
+    "ended": "Terminée",
     "listed": "Publiée",
     "favorite": "Ajouter aux favoris",
     "unfavorite": "Retirer des favoris",
@@ -444,7 +455,7 @@
     "anyOf": "au moins un de ({{rows}})",
     "noneOf": "aucun de ({{rows}})",
     "seller": "vendeur {{name}}",
-    "sold": " · vendu"
+    "archive": " · archives"
   },
   "saved": {
     "savedToast": "Recherche enregistrée",

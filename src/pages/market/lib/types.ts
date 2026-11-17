@@ -62,7 +62,7 @@ export interface Requirements {
 }
 
 export interface MarketFilters {
-  /** `live` = active listings, `archive` = sold listings (see `status` for removed/expired). */
+  /** `live` = active listings, `archive` = ended ones (sold, removed, expired), like the site's Archive. */
   source: 'live' | 'archive';
   hardcore: boolean;
   ladder: boolean;
@@ -98,13 +98,10 @@ export interface MarketFilters {
   sellerName?: string;
   requirements: Requirements;
   stats: StatFilter[];
-  /**
-   * History: the statuses to search instead of the one `source` selects (`live` = active, `archive` = sold), each
-   * aged by its own time within `maxAgeDays`. Absent = `source`.
-   */
+  /** Archive only: the statuses to show (a subset of ARCHIVE_STATUSES). Absent = every one, like the site. */
   status?: MarketListingStatus[];
-  /** updated_at window; site default 3. */
-  maxAgeDays: number;
+  /** Listing age window in days (`updated_at`); absent = every listing (the default). */
+  maxAgeDays?: number;
   /** `key` (a property key or pseudo id) is required for `by: 'stat'` and ignored otherwise. */
   sort: { by: SortBy; dir: 'asc' | 'desc'; key?: string };
 }

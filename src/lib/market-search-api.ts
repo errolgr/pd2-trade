@@ -109,7 +109,8 @@ export function marketSearchBody(
           or: s.or,
           not: s.not || undefined,
         })),
-      status: f.status?.length ? f.status : undefined,
+      // The archive's status pick; a live search never carries one
+      status: f.source === 'archive' && f.status?.length ? f.status : undefined,
       maxAgeDays: f.maxAgeDays,
       sort: { by: f.sort.by, dir: f.sort.dir, key: f.sort.by === 'stat' ? f.sort.key : undefined },
     },

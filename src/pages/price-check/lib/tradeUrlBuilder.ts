@@ -198,17 +198,14 @@ export function buildGetMarketListingQuery(
   corruptionNames?: string[],
   qualityOverride?: QualitySearch,
 ): MarketListingQuery {
-  const now = new Date();
-  const daysAgo = isArchive ? 14 : 3; // 2 weeks for archive, 3 days for regular
-  const dateThreshold = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
   const quality = qualityOverride ?? item.quality;
+  // Every listing, no age window, like the market browser; the archive keeps sold listings (accepted offer) too
   const query: Partial<MarketListingQuery> = {
     $resolve: { user: { in_game_account: true } },
     type: 'item',
     $limit: limit,
     $skip: offset,
-    accepted_offer_id: null,
-    updated_at: { $gte: dateThreshold.toISOString() },
+    ...(!isArchive && { accepted_offer_id: null }),
     $sort: { bumped_at: -1 },
     is_hardcore: settings.mode === 'hardcore',
     is_ladder: settings.ladder === 'ladder',

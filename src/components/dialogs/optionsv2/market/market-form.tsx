@@ -35,7 +35,7 @@ const marketFormSchema = z.object({
   marketDefaultSort: z.enum(SORT_VALUES),
   marketDefaultSeller: z.enum(SELLER_VALUES),
   marketDefaultHasBuyout: z.enum(BUYOUT_VALUES),
-  marketDefaultMaxAgeDays: z.number().int().positive(),
+  marketDefaultListedWithinDays: z.number().int().min(0),
   marketPageSize: z.union([z.literal(25), z.literal(50), z.literal(100)]),
   marketWhisperTemplate: z.string(),
   marketShowDealBadges: z.boolean(),
@@ -55,7 +55,7 @@ function toFormValues(settings: ISettings | undefined): MarketFormValues {
     marketDefaultSort: settings?.marketDefaultSort ?? 'newest',
     marketDefaultSeller: settings?.marketDefaultSeller ?? 'all',
     marketDefaultHasBuyout: settings?.marketDefaultHasBuyout ?? 'any',
-    marketDefaultMaxAgeDays: settings?.marketDefaultMaxAgeDays ?? 3,
+    marketDefaultListedWithinDays: settings?.marketDefaultListedWithinDays ?? 0,
     marketPageSize: settings?.marketPageSize ?? 25,
     marketWhisperTemplate: settings?.marketWhisperTemplate ?? '',
     marketShowDealBadges: settings?.marketShowDealBadges ?? true,
@@ -256,10 +256,10 @@ export function MarketForm() {
           />
           <FormField
             control={form.control}
-            name="marketDefaultMaxAgeDays"
+            name="marketDefaultListedWithinDays"
             render={({ field }) => (
               <SelectRow
-                settingKey="marketDefaultMaxAgeDays"
+                settingKey="marketDefaultListedWithinDays"
                 label={t('market.browser.age.label')}
                 value={String(field.value)}
                 options={ageDayOptions(field.value)}

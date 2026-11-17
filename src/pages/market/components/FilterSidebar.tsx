@@ -24,10 +24,17 @@ import {
   typeValueLabel,
 } from '../lib/type-selection';
 import { weaponGroupByCode } from '../lib/weapon-groups';
-import { defaultAgeDays, MAX_FILTER_TEXT, MAX_SELLER_NAME, type SearchDefaults, withSource } from '../lib/defaults';
+import {
+  ARCHIVE_STATUSES,
+  defaultAgeDays,
+  MAX_FILTER_TEXT,
+  MAX_SELLER_NAME,
+  type SearchDefaults,
+  withSource,
+} from '../lib/defaults';
 import { anniversaryTri, withAnniversary } from '../lib/anniversary';
 import { codeCounts, CODE_FACET_SIZE, type CodeCounts, countsByValue, type MarketFacets } from '../lib/facets';
-import type { MarketFilters, OnlineFilter, Rarity, SortBy } from '../lib/types';
+import type { MarketFilters, MarketListingStatus, OnlineFilter, Rarity, SortBy } from '../lib/types';
 import { Field, RangeField, Section, Segmented, SelectField, TriField, fieldInputClass, ClearButton } from './controls';
 import { FACET_DIM, FacetCount, useFacetText } from './FacetCounts';
 import { PriceControl } from './PriceControl';
@@ -131,6 +138,78 @@ function RarityItem({
   );
 }
 
+const STATUS_COLOR: Partial<Record<MarketListingStatus, string>> = { sold: 'text-success' };
+
+/**
+ * The archive's statuses: a multi-select dropdown, every one picked by default (the site's Archive). `counts`
+ * (facets): listings each status alone finds.
+ */
+function StatusField({
+  value,
+  onChange,
+  counts,
+}: {
+  value: MarketListingStatus[] | undefined;
+  onChange: (v: MarketListingStatus[] | undefined) => void;
+  counts: Map<MarketListingStatus, number>;
+}) {
+  const { t } = useTranslation('market');
+  const facetText = useFacetText();
+  const picked = ARCHIVE_STATUSES.filter((s) => !value?.length || value.includes(s));
+  const toggle = (status: MarketListingStatus, on: boolean) => {
+    const next = ARCHIVE_STATUSES.filter((s) => (s === status ? on : picked.includes(s)));
+    onChange(next.length === ARCHIVE_STATUSES.length ? undefined : next);
+  };
+  const summary =
+    picked.length === ARCHIVE_STATUSES.length
+      ? t('filters.status.all')
+      : picked.map((s, i) => (
+          <React.Fragment key={s}>
+            {i > 0 && <span className="text-muted-foreground">, </span>}
+            <span className={STATUS_COLOR[s]}>{t(`filters.status.${s}`)}</span>
+          </React.Fragment>
+        ));
+  return (
+    <Field label={t('filters.status.label')}>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          aria-label={t('filters.status.label')}
+          className="flex h-7 w-full items-center justify-between gap-2 rounded-md border border-input bg-transparent px-2 text-xs whitespace-nowrap outline-none transition-[border-color,box-shadow] duration-(--dur-fast) ease-out hover:border-ring/40 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 data-[state=open]:border-ring [&[data-state=open]>svg]:rotate-180"
+        >
+          <span className="min-w-0 truncate">{summary}</span>
+          <ChevronDown className="size-4 shrink-0 opacity-50 transition-transform duration-(--dur-fast) ease-out" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start"
+          className="w-(--radix-dropdown-menu-trigger-width) min-w-40">
+          {ARCHIVE_STATUSES.map((s) => {
+            const checked = picked.includes(s);
+            const last = checked && picked.length === 1;
+            const count = counts.get(s);
+            const label = t(`filters.status.${s}`);
+            return (
+              <DropdownMenuCheckboxItem
+                key={s}
+                checked={checked}
+                // The last picked status stays: an empty pick would mean every status again
+                disabled={last}
+                title={t(`filters.status.${s}Title`)}
+                aria-label={count === undefined ? label : facetText(label, count)}
+                // Stay open: several statuses are usually toggled in a row
+                onSelect={(e) => e.preventDefault()}
+                onCheckedChange={(on) => toggle(s, on)}
+                className={cn('text-xs', STATUS_COLOR[s], count === 0 && !checked && FACET_DIM)}
+              >
+                <span className="min-w-0 flex-1 truncate">{label}</span>
+                <FacetCount count={count} />
+              </DropdownMenuCheckboxItem>
+            );
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </Field>
+  );
+}
+
 const countDefined = (...values: unknown[]) =>
   values.filter((v) => v !== undefined && v !== '' && v !== 'any' && v !== 'all').length;
 
@@ -209,6 +288,7 @@ export function FilterSidebar({
       baseCode: codeCounts(facets?.baseCode, CODE_FACET_SIZE.baseCode),
       ethereal: countsByValue(facets?.ethereal),
       corrupted: countsByValue(facets?.corrupted),
+      status: countsByValue(facets?.status),
     }),
     [facets],
   );
@@ -358,9 +438,15 @@ export function FilterSidebar({
           // menu) shows in the badge
           active={
             (f.maxAgeDays !== defaultAgeDays(f.source, defaults) ? 1 : 0) +
-            (f.sort.by !== defaults.sort.by || f.sort.dir !== defaults.sort.dir ? 1 : 0)
+            (f.sort.by !== defaults.sort.by || f.sort.dir !== defaults.sort.dir ? 1 : 0) +
+            (f.source === 'archive' && f.status?.length ? 1 : 0)
           }
         >
+          {f.source === 'archive' && (
+            <StatusField value={f.status}
+              counts={counts.status}
+              onChange={(status) => set({ status })} />
+          )}
           <Field label={t('filters.mode')}>
             <div className="flex gap-1">
               <Segmented
@@ -385,14 +471,13 @@ export function FilterSidebar({
           </Field>
           <SelectField
             label={t('filters.listedWithin')}
-            value={String(f.maxAgeDays)}
+            value={f.maxAgeDays === undefined ? undefined : String(f.maxAgeDays)}
             options={
-              ageOptions.some((o) => o.value === String(f.maxAgeDays))
+              f.maxAgeDays === undefined || ageOptions.some((o) => o.value === String(f.maxAgeDays))
                 ? ageOptions
                 : [...ageOptions, { value: String(f.maxAgeDays), label: ageLabel(f.maxAgeDays) }]
             }
-            anyLabel={null}
-            onChange={(v) => v && set({ maxAgeDays: Number(v) })}
+            onChange={(v) => set({ maxAgeDays: v ? Number(v) : undefined })}
           />
           <Field label={t('filters.sort.label')}>
             <Segmented

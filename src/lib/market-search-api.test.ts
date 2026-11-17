@@ -84,15 +84,16 @@ describe('searchMarketListings', () => {
       ],
       total: 1,
     });
-    const f = mergeFilters(base, { source: 'archive', status: ['sold', 'removed', 'expired'] });
+    const f = mergeFilters(base, { source: 'archive', status: ['sold', 'removed'] });
 
     const result = await search(f);
 
-    expect(JSON.parse(vi.mocked(fetch).mock.calls[0][1]?.body as string).filters.status).toEqual([
-      'sold',
-      'removed',
-      'expired',
-    ]);
+    const sent = (call: number) => JSON.parse(vi.mocked(fetch).mock.calls[call][1]?.body as string).filters;
+    expect(sent(0).status).toEqual(['sold', 'removed']);
+    // A status pick left on a live search never narrows it
+    respond(200, { items: [], total: 0 });
+    await search({ ...f, source: 'live' });
+    expect(sent(1).status).toBeUndefined();
     expect(result.items[0]).toMatchObject({
       status: 'removed',
       listedAt: '2026-10-20T09:00:00.000Z',

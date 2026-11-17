@@ -142,8 +142,15 @@ export const SELLER_OPTIONS: SettingOption[] = keyed(SELLER_VALUES, 'settings:ma
 export const BUYOUT_OPTIONS: SettingOption[] = keyed(BUYOUT_VALUES, 'settings:market.browser.buyout.options');
 export const PAGE_SIZE_OPTIONS: SettingOption[] = PAGE_SIZES.map((n) => ({ value: String(n), label: String(n) }));
 
-export const ageDayOptions = (current: number): SettingOption[] =>
-  withCurrent(AGE_DAYS, current).map((n) => ({ value: String(n), labelKey: 'market:filters.days', count: n }));
+/** Default listing age choices: Any (0, no window), then days. */
+export const ageDayOptions = (current: number): SettingOption[] => [
+  { value: '0', labelKey: 'market:filters.any' },
+  ...(current > 0 ? withCurrent(AGE_DAYS, current) : AGE_DAYS).map((n) => ({
+    value: String(n),
+    labelKey: 'market:filters.days',
+    count: n,
+  })),
+];
 
 export const alertSecondsOptions = (current: number): SettingOption[] =>
   withCurrent(ALERT_SECONDS, current).map((n) => ({

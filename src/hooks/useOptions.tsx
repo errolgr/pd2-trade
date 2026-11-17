@@ -124,7 +124,7 @@ export interface ISettings {
   marketDefaultSort?: MarketDefaultSort; // a fresh / reset market search's order
   marketDefaultSeller?: 'all' | 'online' | 'in-game'; // a fresh search's seller filter: anyone, online on the site, in game
   marketDefaultHasBuyout?: 'any' | 'yes' | 'no'; // a fresh search's buyout filter
-  marketDefaultMaxAgeDays?: number; // a fresh live search's listing age window (archive keeps 14 days)
+  marketDefaultListedWithinDays?: number; // a fresh live search's listing age window in days; 0 = every listing (the archive never has one)
   marketPageSize?: 25 | 50 | 100; // market results per page
   marketWhisperTemplate?: string; // "Copy whisper" body; placeholders {item} {price} {seller} {account}; '' = default
   marketShowDealBadges?: boolean; // deal badge (price vs market) on listings
@@ -224,7 +224,7 @@ const DEFAULT_SETTINGS: ISettings = {
   marketDefaultSort: 'newest',
   marketDefaultSeller: 'all',
   marketDefaultHasBuyout: 'any',
-  marketDefaultMaxAgeDays: 3,
+  marketDefaultListedWithinDays: 0,
   marketPageSize: 25,
   marketWhisperTemplate: '',
   marketShowDealBadges: true,

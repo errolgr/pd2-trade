@@ -25,8 +25,8 @@
     "noFavoritesDescription": "Heart a listing to keep it here; favorites sync with projectdiablo2.com.",
     "noLiveListingsFor": "No live listings for {{itemName}}",
     "noLiveListings": "No live listings match",
-    "searchArchivePrompt": "Search the sold archive to see what it sold for recently?",
-    "searchArchive": "Search sold archive",
+    "searchArchivePrompt": "Search the archive (sold, removed and expired listings) to see what it went for recently?",
+    "searchArchive": "Search archive",
     "noListingsTitle": "No listings match",
     "noListingsDescription": "Loosen a filter, widen the age window or switch the mode.",
     "refreshing": "Refreshing results",
@@ -71,7 +71,7 @@
     "tooManyDescription_other": "Up to {{count}} searches can be watched at once. Stop one first (Saved tab).",
     "startedDescription": "You'll get a popup for every new listing matching this search.",
     "labels": {
-      "archive": "Sold listings cannot be watched",
+      "archive": "Archive searches cannot be watched",
       "watching": "Watching: click to stop the popups for new listings matching this search",
       "watch": "Watch: get a popup and a sound for every new listing matching this search"
     }
@@ -99,8 +99,18 @@
     "source": {
       "label": "Listing source",
       "live": "Live listings",
-      "archive": "Sold archive",
-      "archiveTitle": "Sold / delisted listings"
+      "archive": "Archive",
+      "archiveTitle": "Ended listings: sold, removed and expired (projectdiablo2.com's archive)"
+    },
+    "status": {
+      "label": "Status",
+      "all": "All",
+      "sold": "Sold",
+      "removed": "Removed",
+      "expired": "Expired",
+      "soldTitle": "The seller accepted an offer",
+      "removedTitle": "Deleted by the seller or a moderator",
+      "expiredTitle": "Not bumped or edited for 6 days"
     },
     "clearAll": "Clear all filters",
     "clearStats": "Remove every stat filter",
@@ -370,6 +380,7 @@
     "buyout": "buyout",
     "listingAge": "listing age",
     "sort": "sort",
+    "status": "status (the site's archive shows sold, removed and expired)",
     "extendedStat": "stat the site can't express"
   },
   "nameSearch": {
@@ -385,7 +396,7 @@
   },
   "detail": {
     "label": "Listing detail",
-    "sold": "Sold / delisted",
+    "ended": "Ended",
     "listed": "Listed",
     "favorite": "Add to favorites",
     "unfavorite": "Remove from favorites",
@@ -424,7 +435,7 @@
     "anyOf": "any of ({{rows}})",
     "noneOf": "none of ({{rows}})",
     "seller": "seller {{name}}",
-    "sold": " · sold"
+    "archive": " · archive"
   },
   "saved": {
     "savedToast": "Search saved",

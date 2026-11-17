@@ -12,7 +12,7 @@ describe('searchDefaults', () => {
         marketDefaultSort: 'priciest',
         marketDefaultSeller: 'online',
         marketDefaultHasBuyout: 'no',
-        marketDefaultMaxAgeDays: 30,
+        marketDefaultListedWithinDays: 30,
       }),
     );
     expect(f).toMatchObject({
@@ -24,27 +24,33 @@ describe('searchDefaults', () => {
     });
   });
 
-  it("falls back to the site's defaults for missing or stale values", () => {
+  it('falls back to the defaults (no age window) for missing, Any or stale values', () => {
     expect(searchDefaults({})).toEqual(SITE_SEARCH_DEFAULTS);
+    expect(defaultFilters(mode)).not.toHaveProperty('maxAgeDays');
     const stale = {
       marketDefaultSort: 'score',
       marketDefaultSeller: 'offline',
       marketDefaultHasBuyout: 'maybe',
-      marketDefaultMaxAgeDays: 0,
+      marketDefaultListedWithinDays: 0,
     } as unknown as SearchDefaultSettings;
     expect(searchDefaults(stale)).toEqual(SITE_SEARCH_DEFAULTS);
-    expect(searchDefaults({ marketDefaultMaxAgeDays: 2.5 }).maxAgeDays).toBe(3);
-    expect(searchDefaults({ marketDefaultMaxAgeDays: 366 }).maxAgeDays).toBe(3);
+    expect(searchDefaults({ marketDefaultListedWithinDays: 2.5 }).maxAgeDays).toBeUndefined();
+    expect(searchDefaults({ marketDefaultListedWithinDays: 366 }).maxAgeDays).toBeUndefined();
   });
 });
 
 describe('withSource', () => {
-  it("moves an age window at the user's live default to the archive's 14 days and back", () => {
-    const defaults = searchDefaults({ marketDefaultMaxAgeDays: 7 });
+  it("drops an age window at the user's live default on the way to the archive (no window) and brings it back", () => {
+    const defaults = searchDefaults({ marketDefaultListedWithinDays: 7 });
     const archive = withSource(defaultFilters(mode, defaults), 'archive', defaults);
-    expect(archive.maxAgeDays).toBe(14);
+    expect(archive.maxAgeDays).toBeUndefined();
     expect(withSource(archive, 'live', defaults).maxAgeDays).toBe(7);
     // A window the user picked stays
     expect(withSource({ ...defaultFilters(mode, defaults), maxAgeDays: 30 }, 'archive', defaults).maxAgeDays).toBe(30);
+  });
+
+  it("drops the archive's status pick on the way to live listings", () => {
+    const archive = { ...withSource(defaultFilters(mode), 'archive'), status: ['sold' as const] };
+    expect(withSource(archive, 'live').status).toBeUndefined();
   });
 });

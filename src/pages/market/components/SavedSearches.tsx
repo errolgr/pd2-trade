@@ -61,7 +61,7 @@ export function describeFilters(f: MarketFilters): string {
   if (required.length) parts.push(required.join(', '));
   if (f.sellerName) parts.push(t('market:describe.seller', { name: f.sellerName }));
   parts.push(
-    `${f.hardcore ? 'HC' : 'SC'} ${f.ladder ? 'L' : 'NL'}${f.source === 'archive' ? t('market:describe.sold') : ''}`,
+    `${f.hardcore ? 'HC' : 'SC'} ${f.ladder ? 'L' : 'NL'}${f.source === 'archive' ? t('market:describe.archive') : ''}`,
   );
   return parts.join(' · ');
 }
