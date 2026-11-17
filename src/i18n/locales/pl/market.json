@@ -105,6 +105,8 @@
     "single": "{{search}}: {{listing}}"
   },
   "filters": {
+    "wouldTake": "Przyjęliby te przedmioty",
+    "wouldTakeTitle": "Zlecenia, które przedmiot z tego wyszukiwania mógłby spełnić, nie tylko te z dokładnie tymi filtrami",
     "label": "Filtry wyszukiwania",
     "any": "Dowolne",
     "selected_one": "{{count}} wybrana",
@@ -638,7 +640,30 @@
     "listItAt": "Wystaw za {{offer}}",
     "nice": "Opcja",
     "must": "Wymóg",
-    "corrupted": "Spaczony",
+    "flags": {
+      "corrupted": { "yes": "Spaczony", "no": "Niespaczony" },
+      "ethereal": { "yes": "Eteryczny", "no": "Nieeteryczny" },
+      "desecrated": { "yes": "Zbezczeszczony", "no": "Niezbezczeszczony" },
+      "identified": { "yes": "Zidentyfikowany", "no": "Niezidentyfikowany" }
+    },
+    "sockets": {
+      "exact_one": "{{count}} gniazdo",
+      "exact_few": "{{count}} gniazda",
+      "exact_many": "{{count}} gniazd",
+      "exact_other": "{{count}} gniazda",
+      "min_one": "{{count}}+ gniazd",
+      "min_few": "{{count}}+ gniazd",
+      "min_many": "{{count}}+ gniazd",
+      "min_other": "{{count}}+ gniazd",
+      "max_one": "≤{{count}} gniazdo",
+      "max_few": "≤{{count}} gniazda",
+      "max_many": "≤{{count}} gniazd",
+      "max_other": "≤{{count}} gniazda",
+      "range_one": "{{min}}–{{count}} gniazdo",
+      "range_few": "{{min}}–{{count}} gniazda",
+      "range_many": "{{min}}–{{count}} gniazd",
+      "range_other": "{{min}}–{{count}} gniazda"
+    },
     "youHaveOne": "Masz taki",
     "yours": "twoje",
     "daysLeft_one": "Został {{count}} dzień",

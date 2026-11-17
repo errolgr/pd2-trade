@@ -36,6 +36,7 @@ import {
 } from '../lib/wtb';
 import { statRowText, wtbTitle, wtbTitleColor } from './wtb-text';
 import { WtbItemArt } from './WtbItemArt';
+import { WtbRequirementTags } from './WtbRequirementTags';
 import { useWtbOverlap, type MyWtbRequests } from './useWtbData';
 import { OTHERS_ROWS, othersBoxModel, othersOverlapBody } from './wtb-demand';
 
@@ -283,13 +284,10 @@ export function WtbPostDrawer({
               <WtbItemArt filters={filters}
                 className="size-12"
                 artClassName="max-h-11 max-w-11" />
-              <div className="flex min-w-0 items-baseline gap-2">
+              <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
                 <span className={cn('min-w-0 truncate text-sm font-semibold', wtbTitleColor(filters))}>{title}</span>
-                {filters.corrupted === 'yes' && (
-                  <span className="shrink-0 rounded-sm border border-q-corrupted/50 bg-q-corrupted/10 px-1 text-[10px] font-semibold text-q-corrupted">
-                    {t('wtb.corrupted')}
-                  </span>
-                )}
+                <WtbRequirementTags filters={filters}
+                  variant="tag" />
               </div>
             </div>
             {rows.length > 0 && (

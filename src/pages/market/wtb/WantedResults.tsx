@@ -218,7 +218,14 @@ const WtbCard = React.memo(function WtbCard({
             sockets={model.pills.sockets}
             corrupted={model.pills.corrupted}
             ethereal={model.pills.ethereal}
-          />
+          >
+            {model.pills.flags.map((x) => (
+              <span key={x.flag}
+                className={cn(CARD_PILL, 'border-border/70 text-muted-foreground')}>
+                {x.text}
+              </span>
+            ))}
+          </ItemPills>
         }
         aside={
           // The listing card's price column: the amount, the note line, then its badges (where Deal / Offer go)
@@ -365,6 +372,12 @@ const WtbRow = React.memo(function WtbRow({
           <RowFlags ethereal={model.pills.ethereal}
             sockets={model.pills.sockets}
             corrupted={model.pills.corrupted} />
+          {model.pills.flags.map((x) => (
+            <span key={x.flag}
+              className="shrink-0 text-[10px] text-muted-foreground">
+              {x.text}
+            </span>
+          ))}
           <WtbBadges model={model}
             compact />
           {model.actions && (

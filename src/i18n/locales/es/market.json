@@ -99,6 +99,8 @@
     "single": "{{search}}: {{listing}}"
   },
   "filters": {
+    "wouldTake": "Aceptarían estos objetos",
+    "wouldTakeTitle": "Solicitudes que un objeto de esta búsqueda podría cumplir, no solo las que piden estos filtros",
     "label": "Filtros de búsqueda",
     "any": "Cualquiera",
     "selected_one": "{{count}} seleccionado",
@@ -611,7 +613,26 @@
     "listItAt": "Publicarlo a {{offer}}",
     "nice": "Opcional",
     "must": "Obligatorio",
-    "corrupted": "Corrupto",
+    "flags": {
+      "corrupted": { "yes": "Corrupto", "no": "No corrupto" },
+      "ethereal": { "yes": "Etéreo", "no": "No etéreo" },
+      "desecrated": { "yes": "Profanado", "no": "No profanado" },
+      "identified": { "yes": "Identificado", "no": "Sin identificar" }
+    },
+    "sockets": {
+      "exact_one": "{{count}} engarce",
+      "exact_many": "{{count}} engarces",
+      "exact_other": "{{count}} engarces",
+      "min_one": "{{count}}+ engarces",
+      "min_many": "{{count}}+ engarces",
+      "min_other": "{{count}}+ engarces",
+      "max_one": "≤{{count}} engarce",
+      "max_many": "≤{{count}} engarces",
+      "max_other": "≤{{count}} engarces",
+      "range_one": "{{min}}–{{count}} engarces",
+      "range_many": "{{min}}–{{count}} engarces",
+      "range_other": "{{min}}–{{count}} engarces"
+    },
     "youHaveOne": "Tienes uno",
     "yours": "tuya",
     "daysLeft_one": "Queda {{count}} día",

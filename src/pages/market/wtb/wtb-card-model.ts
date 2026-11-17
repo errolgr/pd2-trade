@@ -3,6 +3,8 @@
  * wants line by line (matched against the user's stash item when one fits), the owner's status. Pure: no React.
  */
 import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
+import { t as translate } from '@/i18n';
+import type { MarketFilters } from '../lib/types';
 import { itemNameOption } from '../lib/catalog';
 import { groupOf } from '../lib/stat-groups';
 import { baseValueLabel, pickedBases, typeValueLabel } from '../lib/type-selection';
@@ -29,6 +31,68 @@ export interface WtbCardPills {
   sockets: string | null;
   corrupted: boolean;
   ethereal: boolean;
+  /** The flags it asks for beyond the Corrupted / Ethereal pills: Uncorrupted, Non-ethereal, (Not) desecrated, … */
+  flags: WtbFlag[];
+}
+
+export type WtbFlagName = 'corrupted' | 'ethereal' | 'desecrated' | 'identified';
+
+/** An item flag a request pins to yes or no, with its word ("Uncorrupted"). */
+export interface WtbFlag {
+  flag: WtbFlagName;
+  value: 'yes' | 'no';
+  text: string;
+}
+
+const FLAG_TEXT: Record<WtbFlagName, Record<'yes' | 'no', () => string>> = {
+  corrupted: {
+    yes: () => translate('market:wtb.flags.corrupted.yes'),
+    no: () => translate('market:wtb.flags.corrupted.no'),
+  },
+  ethereal: {
+    yes: () => translate('market:wtb.flags.ethereal.yes'),
+    no: () => translate('market:wtb.flags.ethereal.no'),
+  },
+  desecrated: {
+    yes: () => translate('market:wtb.flags.desecrated.yes'),
+    no: () => translate('market:wtb.flags.desecrated.no'),
+  },
+  identified: {
+    yes: () => translate('market:wtb.flags.identified.yes'),
+    no: () => translate('market:wtb.flags.identified.no'),
+  },
+};
+const FLAG_NAMES: readonly WtbFlagName[] = ['corrupted', 'ethereal', 'desecrated', 'identified'];
+
+/** The flags `f` pins to yes or no, in order: corrupted, ethereal, desecrated, identified. */
+export function wtbFlags(f: Pick<MarketFilters, WtbFlagName>): WtbFlag[] {
+  return FLAG_NAMES.flatMap((flag) => {
+    const value = f[flag];
+    return value === 'yes' || value === 'no' ? [{ flag, value, text: FLAG_TEXT[flag][value]() }] : [];
+  });
+}
+
+/** "1 socket", "3+ sockets", "≤4 sockets", "2–4 sockets"; null when it asks none. */
+export function wtbSocketsText(f: Pick<MarketFilters, 'socketsMin' | 'socketsMax'>): string | null {
+  const { socketsMin: min, socketsMax: max } = f;
+  if (min === undefined && max === undefined) return null;
+  if (min !== undefined && max !== undefined)
+    return min === max
+      ? translate('market:wtb.sockets.exact', { count: min })
+      : translate('market:wtb.sockets.range', { min, count: max });
+  return min !== undefined
+    ? translate('market:wtb.sockets.min', { count: min })
+    : translate('market:wtb.sockets.max', { count: max });
+}
+
+/** What a request asks of the item itself (the drawers' summary): its pinned flags, then its sockets. */
+export interface WtbRequirements {
+  flags: WtbFlag[];
+  sockets: string | null;
+}
+
+export function wtbRequirements(f: Pick<MarketFilters, WtbFlagName | 'socketsMin' | 'socketsMax'>): WtbRequirements {
+  return { flags: wtbFlags(f), sockets: wtbSocketsText(f) };
 }
 
 /** One stat row the request asks for. */
@@ -134,6 +198,8 @@ export function buildWtbCardModel(
       sockets: socketsText(f.socketsMin, f.socketsMax),
       corrupted: f.corrupted === 'yes',
       ethereal: f.ethereal === 'yes',
+      // Corrupted and Ethereal (yes) have their own pills
+      flags: wtbFlags(f).filter((x) => x.value === 'no' || (x.flag !== 'corrupted' && x.flag !== 'ethereal')),
     },
     offer: formatOffer(request.offer),
     approxHr: request.offer.currency !== 'HR' && request.offer.hr !== null ? request.offer.hr : null,

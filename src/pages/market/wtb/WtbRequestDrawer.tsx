@@ -18,6 +18,7 @@ import { groupOf } from '../lib/stat-groups';
 import { formatOffer, wtbDaysLeft, wtbStatRows, wtbWhisper, type WtbRequest } from '../lib/wtb';
 import { itemRowValue, summaryRowText, wtbTitleColor } from './wtb-text';
 import { WtbItemArt } from './WtbItemArt';
+import { WtbRequirementTags } from './WtbRequirementTags';
 import { useWtbWhisper } from './useWtbWhisper';
 import { ownerActionsFor, wtbTimes, wtbTimesLine } from './wtb-bump';
 import { markFilledPatch, selectionContactItem } from './wtb-responses';
@@ -139,13 +140,12 @@ export function WtbRequestDrawer({
             <WtbItemArt filters={request.filters}
               className="size-12"
               artClassName="max-h-11 max-w-11" />
-            <div className="flex min-w-0 items-baseline gap-2">
+            <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
               <span className={cn('min-w-0 truncate text-sm font-semibold', wtbTitleColor(request.filters))}>
                 {request.title}
               </span>
-              {request.filters.corrupted === 'yes' && (
-                <span className="shrink-0 text-[10px] text-q-corrupted">{t('wtb.corrupted')}</span>
-              )}
+              <WtbRequirementTags filters={request.filters}
+                variant="text" />
             </div>
           </div>
 

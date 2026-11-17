@@ -87,6 +87,8 @@
     "single": "{{search}}：{{listing}}"
   },
   "filters": {
+    "wouldTake": "愿意收这些物品",
+    "wouldTakeTitle": "此搜索的物品可满足的求购，而不仅是要求这些筛选条件的求购",
     "label": "搜索筛选",
     "any": "不限",
     "selected_other": "已选 {{count}} 项",
@@ -557,7 +559,18 @@
     "listItAt": "以 {{offer}} 上架",
     "nice": "可选",
     "must": "必需",
-    "corrupted": "已腐化",
+    "flags": {
+      "corrupted": { "yes": "已腐化", "no": "未腐化" },
+      "ethereal": { "yes": "无形", "no": "非无形" },
+      "desecrated": { "yes": "已亵渎", "no": "未亵渎" },
+      "identified": { "yes": "已鉴定", "no": "未鉴定" }
+    },
+    "sockets": {
+      "exact_other": "{{count}} 孔",
+      "min_other": "{{count}}+ 孔",
+      "max_other": "≤{{count}} 孔",
+      "range_other": "{{min}}–{{count}} 孔"
+    },
     "youHaveOne": "你有一件",
     "yours": "你的",
     "daysLeft_other": "剩余 {{count}} 天",

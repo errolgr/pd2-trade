@@ -93,6 +93,8 @@
     "single": "{{search}}: {{listing}}"
   },
   "filters": {
+    "wouldTake": "Würde diese Items nehmen",
+    "wouldTakeTitle": "Kaufgesuche, die ein Item dieser Suche erfüllen könnte, nicht nur solche mit genau diesen Filtern",
     "label": "Suchfilter",
     "any": "Beliebig",
     "selected_one": "{{count}} ausgewählt",
@@ -584,7 +586,22 @@
     "listItAt": "Für {{offer}} einstellen",
     "nice": "Optional",
     "must": "Pflicht",
-    "corrupted": "Korrumpiert",
+    "flags": {
+      "corrupted": { "yes": "Korrumpiert", "no": "Nicht korrumpiert" },
+      "ethereal": { "yes": "Ätherisch", "no": "Nicht ätherisch" },
+      "desecrated": { "yes": "Entweiht", "no": "Nicht entweiht" },
+      "identified": { "yes": "Identifiziert", "no": "Unidentifiziert" }
+    },
+    "sockets": {
+      "exact_one": "{{count}} Sockel",
+      "exact_other": "{{count}} Sockel",
+      "min_one": "{{count}}+ Sockel",
+      "min_other": "{{count}}+ Sockel",
+      "max_one": "≤{{count}} Sockel",
+      "max_other": "≤{{count}} Sockel",
+      "range_one": "{{min}}–{{count}} Sockel",
+      "range_other": "{{min}}–{{count}} Sockel"
+    },
     "youHaveOne": "Du hast einen",
     "yours": "deins",
     "daysLeft_one": "Noch {{count}} Tag",

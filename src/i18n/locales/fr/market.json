@@ -99,6 +99,8 @@
     "single": "{{search}} : {{listing}}"
   },
   "filters": {
+    "wouldTake": "Prendraient ces objets",
+    "wouldTakeTitle": "Demandes qu'un objet de cette recherche pourrait satisfaire, pas seulement celles qui demandent ces filtres",
     "label": "Filtres de recherche",
     "any": "Tous",
     "selected_one": "{{count}} sélectionné",
@@ -611,7 +613,26 @@
     "listItAt": "Le mettre en vente à {{offer}}",
     "nice": "Bonus",
     "must": "Requis",
-    "corrupted": "Corrompu",
+    "flags": {
+      "corrupted": { "yes": "Corrompu", "no": "Non corrompu" },
+      "ethereal": { "yes": "Éthéré", "no": "Non éthéré" },
+      "desecrated": { "yes": "Profané", "no": "Non profané" },
+      "identified": { "yes": "Identifié", "no": "Non identifié" }
+    },
+    "sockets": {
+      "exact_one": "{{count}} châsse",
+      "exact_many": "{{count}} châsses",
+      "exact_other": "{{count}} châsses",
+      "min_one": "{{count}}+ châsses",
+      "min_many": "{{count}}+ châsses",
+      "min_other": "{{count}}+ châsses",
+      "max_one": "≤{{count}} châsse",
+      "max_many": "≤{{count}} châsses",
+      "max_other": "≤{{count}} châsses",
+      "range_one": "{{min}}–{{count}} châsses",
+      "range_many": "{{min}}–{{count}} châsses",
+      "range_other": "{{min}}–{{count}} châsses"
+    },
     "youHaveOne": "Vous en avez un",
     "yours": "la vôtre",
     "daysLeft_one": "{{count}} jour restant",

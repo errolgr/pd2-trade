@@ -3,7 +3,7 @@ import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStash
 import { defaultFilters } from '../lib/defaults';
 import type { MarketFilters, StatFilter } from '../lib/types';
 import type { WtbRequest } from '../lib/wtb';
-import { buildWtbCardModel } from './wtb-card-model';
+import { buildWtbCardModel, wtbRequirements } from './wtb-card-model';
 
 const NOW = Date.parse('2026-11-16T12:00:00Z');
 const row = (id: string, key: string, extra: Partial<StatFilter> = {}): StatFilter => ({
@@ -62,6 +62,7 @@ describe('buildWtbCardModel', () => {
       sockets: '2+os',
       corrupted: true,
       ethereal: true,
+      flags: [],
     });
     expect(model).toMatchObject({ fits: true, own: true });
     expect(
@@ -72,6 +73,7 @@ describe('buildWtbCardModel', () => {
       sockets: null,
       corrupted: false,
       ethereal: false,
+      flags: [],
     });
     const rw = buildWtbCardModel(request({ itemName: 'Spirit', rarity: [], socketsMin: 4, socketsMax: 4 }), {
       userId: null,
@@ -125,5 +127,45 @@ describe('buildWtbCardModel', () => {
     expect(mine({ status: 'paused' }).status).toBe('paused');
     expect(mine({ expiresAt: '2026-11-10T00:00:00Z' }).status).toBe('expired');
     expect(mine({ status: 'closed' }).status).toBe('closed');
+  });
+});
+
+describe('request flags', () => {
+  const words = (filters: Partial<MarketFilters>) =>
+    buildWtbCardModel(request(filters), { userId: null, now: NOW }).pills.flags.map((x) => x.text);
+
+  it('cards add every pinned flag the Corrupted / Ethereal pills do not show', () => {
+    expect(words({ corrupted: 'no', ethereal: 'no', desecrated: 'yes', identified: 'no' })).toEqual([
+      'Uncorrupted',
+      'Non-ethereal',
+      'Desecrated',
+      'Unidentified',
+    ]);
+    expect(words({ corrupted: 'yes', ethereal: 'yes', desecrated: 'no', identified: 'yes' })).toEqual([
+      'Not desecrated',
+      'Identified',
+    ]);
+    expect(words({ corrupted: 'any', ethereal: 'any', desecrated: 'any', identified: 'any' })).toEqual([]);
+  });
+
+  it("the drawers' summary: every pinned flag's yes / no word, then the sockets", () => {
+    const base = defaultFilters({ hardcore: false, ladder: true });
+    expect(wtbRequirements({ ...base, corrupted: 'yes', ethereal: 'yes', desecrated: 'no', identified: 'yes' })).toEqual({
+      flags: [
+        { flag: 'corrupted', value: 'yes', text: 'Corrupted' },
+        { flag: 'ethereal', value: 'yes', text: 'Ethereal' },
+        { flag: 'desecrated', value: 'no', text: 'Not desecrated' },
+        { flag: 'identified', value: 'yes', text: 'Identified' },
+      ],
+      sockets: null,
+    });
+    const sockets = (socketsMin?: number, socketsMax?: number) =>
+      wtbRequirements({ ...base, socketsMin, socketsMax }).sockets;
+    expect(sockets(1, 1)).toBe('1 socket');
+    expect(sockets(4, 4)).toBe('4 sockets');
+    expect(sockets(3)).toBe('3+ sockets');
+    expect(sockets(undefined, 4)).toBe('≤4 sockets');
+    expect(sockets(2, 4)).toBe('2–4 sockets');
+    expect(sockets()).toBeNull();
   });
 });

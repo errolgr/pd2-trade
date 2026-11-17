@@ -93,6 +93,8 @@
     "single": "{{search}}: {{listing}}"
   },
   "filters": {
+    "wouldTake": "Would take these items",
+    "wouldTakeTitle": "Requests an item of this search could fill, not only those asking for these filters",
     "label": "Search filters",
     "any": "Any",
     "selected_one": "{{count}} selected",
@@ -584,7 +586,22 @@
     "listItAt": "List it at {{offer}}",
     "nice": "Nice",
     "must": "Must",
-    "corrupted": "Corrupted",
+    "flags": {
+      "corrupted": { "yes": "Corrupted", "no": "Uncorrupted" },
+      "ethereal": { "yes": "Ethereal", "no": "Non-ethereal" },
+      "desecrated": { "yes": "Desecrated", "no": "Not desecrated" },
+      "identified": { "yes": "Identified", "no": "Unidentified" }
+    },
+    "sockets": {
+      "exact_one": "{{count}} socket",
+      "exact_other": "{{count}} sockets",
+      "min_one": "{{count}}+ sockets",
+      "min_other": "{{count}}+ sockets",
+      "max_one": "≤{{count}} socket",
+      "max_other": "≤{{count}} sockets",
+      "range_one": "{{min}}–{{count}} sockets",
+      "range_other": "{{min}}–{{count}} sockets"
+    },
     "youHaveOne": "You have one",
     "yours": "yours",
     "daysLeft_one": "{{count}} day left",
