@@ -27,11 +27,20 @@ export function scoreListings(listings: MarketListingEntry[], f: MarketFilters):
 export async function runSearch(api: MarketApi, f: MarketFilters, opts: SearchOptions = {}): Promise<SearchResult> {
   const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, Math.floor(opts.pageSize ?? DEFAULT_PAGE_SIZE)));
   const page = Math.max(0, Math.floor(opts.page ?? 0));
-  const { items, total, totalExact, fetched, facets } = await api.searchListings(f, {
+  const { items, total, totalExact, fetched, facets, priceStats } = await api.searchListings(f, {
     page,
     limit,
     signal: opts.signal,
     ...(opts.facets ? { facets: opts.facets } : {}),
+    ...(opts.priceStats ? { priceStats: true } : {}),
   });
-  return { items, total, totalExact, fetched, mode: 'server', ...(facets ? { facets } : {}) };
+  return {
+    items,
+    total,
+    totalExact,
+    fetched,
+    mode: 'server',
+    ...(facets ? { facets } : {}),
+    ...(priceStats ? { priceStats } : {}),
+  };
 }

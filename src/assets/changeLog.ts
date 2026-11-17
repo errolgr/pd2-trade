@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.11.8': [
+    '✨ Market: the results header shows the median price of every match ("8,430 listings · median 0.05 HR"); hover it for the price spread, as in the price check',
+  ],
   '0.11.7': [
     '🆕 Horadric Sim is in open beta: no waitlist. Sign in with PD2 and the Sim button in the price check, market and Net Worth (and the try-on hotkey) sends items to the planner',
     '🆕 Settings: a Test button next to the notification and market alert volume sliders plays the sound at that volume, so you can set it without waiting for a real alert',

@@ -47,6 +47,7 @@ import { useEnterTracker } from './components/EnterOnce';
 import { useLiveAlertGlow } from './hooks/useLiveAlertGlow';
 import { useSearchDefaults } from './hooks/useSearchDefaults';
 import { useTranslation } from '@/i18n';
+import { MatchesMedian } from '@/pages/price-check/components/MatchesMedian';
 
 /** Card hotkeys (lowercase key → action on the selected card). */
 const CARD_HOTKEYS: Record<string, CardCommand['action']> = { o: 'offer', w: 'whisper', f: 'favorite' };
@@ -903,6 +904,14 @@ function ResultsPane({
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="relative flex h-8 shrink-0 items-center gap-2 border-b border-border/60 bg-muted/20 px-2.5 text-[11px] text-muted-foreground">
         {status}
+        {tab === 'search' && search.status === 'ready' && search.priceStats && (
+          <MatchesMedian
+            stats={search.priceStats}
+            archived={search.filters?.source === 'archive'}
+            // The strip is at the top of the panel: the spread opens over the results
+            side="bottom"
+          />
+        )}
         {error && rows.length > 0 && <span className="min-w-0 truncate text-destructive">{error}</span>}
         <span className="ml-auto" />
         {toolbar}
