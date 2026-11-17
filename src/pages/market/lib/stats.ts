@@ -1,5 +1,5 @@
 import type { Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { PSEUDO_LOW_ENDS, PSEUDO_STATS } from './pseudo';
+import { MAX_DAMAGE_NAMES, MIN_DAMAGE_NAMES, PSEUDO_LOW_ENDS, PSEUDO_STATS } from './pseudo';
 import { SITE_STAT_OPTIONS } from './stat-options.data';
 import type { CorruptionOption, ItemPropertyOption, PseudoDef, StatOption } from './types';
 
@@ -30,19 +30,6 @@ export interface ParsedStatKey {
  * min line's value (slot 0); the row's min/max and the roll read the max line.
  */
 export const DAMAGE_KEY = 'damage';
-/** Modifier names of the physical min / max damage lines (the site's `a|b` alternatives). */
-export const MIN_DAMAGE_NAMES: readonly string[] = [
-  'min_damage',
-  'mindamage',
-  'secondary_mindamage',
-  'item_throw_mindamage',
-];
-export const MAX_DAMAGE_NAMES: readonly string[] = [
-  'max_damage',
-  'maxdamage',
-  'secondary_maxdamage',
-  'item_throw_maxdamage',
-];
 
 /** Whether a parsed key's names are the physical damage pair (`damage`, `damage{4..}`). */
 export const isDamagePair = (names: readonly string[]) => names.length === 1 && names[0] === DAMAGE_KEY;

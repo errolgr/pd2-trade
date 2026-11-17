@@ -1,9 +1,9 @@
 /**
  * Σ totals on the price check's stat rows: a resist row's Σ chip offers the market's resistance pseudo stats
- * (`pseudo_*_res`, see market/lib/pseudo.ts) that row feeds, and a fire / cold / lightning "Adds X-Y" row the
- * elemental damage total (`pseudo_elemental_max_damage`, low end in the key's pin). Picking one folds the rows the
- * total fully covers into a single Σ row (stat_id StatId.Pseudo), searched on the market service; unfolding brings
- * them back.
+ * (`pseudo_*_res`, see market/lib/pseudo.ts) that row feeds, a fire / cold / lightning "Adds X-Y" row the
+ * elemental damage total (`pseudo_elemental_max_damage`, low end in the key's pin), and a physical damage row the
+ * min + max total (`pseudo_total_damage`). Picking one folds the rows the total fully covers into a single Σ row
+ * (stat_id StatId.Pseudo), searched on the market service; unfolding brings them back.
  */
 import type { Stat } from './interfaces';
 import { StatId } from './stat-mappings';
@@ -33,17 +33,35 @@ const ALL_RES_KEY = `id:${StatId.AllResistances}`;
 const ELEMENTAL_DAMAGE_IDS: readonly number[] = [StatId.FireDamage, StatId.ColdDamage, StatId.LightningDamage];
 /** The flat damage total's rows: physical and every element but poison (damage over time). */
 const FLAT_DAMAGE_IDS: readonly number[] = [...ELEMENTAL_DAMAGE_IDS, StatId.MagicDamage, StatId.Damage];
+/** The physical damage rows: "+X to Minimum Damage", "+X to Maximum Damage" and both merged as "Adds X-Y Damage". */
+const PHYSICAL_DAMAGE_IDS: readonly number[] = [21, 22, StatId.Damage];
 
 /**
  * The Σ totals for an item's rows (buildStatRows output): resist totals, all-resist line counted into every
  * element, as the market service computes them (element totals cover only their own line: All Resistances also
- * feeds the other elements), and the elemental and flat damage totals of its "Adds X-Y" rows.
+ * feeds the other elements), the elemental and flat damage totals of its "Adds X-Y" rows, and the physical min +
+ * max damage total.
  */
 export function pseudoOptions(rows: Stat[]): PseudoOption[] {
   return [
     ...resistOptions(rows),
     ...damageTotal(rows, ELEMENTAL_DAMAGE_IDS, 'pseudo_elemental_max_damage', 'Total Elemental Damage'),
     ...damageTotal(rows, FLAT_DAMAGE_IDS, 'pseudo_flat_max_damage', 'Total Flat Damage'),
+    ...totalDamageOptions(rows),
+  ];
+}
+
+/** Physical min and max damage added up (+9 min + 15 max = 24; Adds 4-14 = 18); none without such rows. */
+function totalDamageOptions(rows: Stat[]): PseudoOption[] {
+  const damage = rows.filter((s) => PHYSICAL_DAMAGE_IDS.includes(s.stat_id));
+  if (damage.length === 0) return [];
+  return [
+    {
+      id: 'pseudo_total_damage',
+      name: 'Total Damage',
+      value: damage.reduce((n, s) => n + (s.value ?? 0) + (s.maxValue ?? 0), 0),
+      covers: [...new Set(damage.map(getStatKey))],
+    },
   ];
 }
 
