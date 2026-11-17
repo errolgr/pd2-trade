@@ -22,8 +22,17 @@ function levelLabel({ price, from, to }: { price: number; from: number; to: numb
  * pages), with a hover popover of their spread as an ask ladder (listings per price bucket, cheapest first; the
  * median's bucket highlighted) and median / middle half / average. Nothing below
  * MIN_MEDIAN_SAMPLE priced matches. `archived`: the search ran over ended listings (the prices are last asks).
+ * `side`: where the popover opens (above by default; below in a header at the top of a window).
  */
-export function MatchesMedian({ stats, archived }: { stats: MarketPriceStats; archived: boolean }) {
+export function MatchesMedian({
+  stats,
+  archived,
+  side = 'top',
+}: {
+  stats: MarketPriceStats;
+  archived: boolean;
+  side?: 'top' | 'bottom';
+}) {
   const { t } = useTranslation('priceCheck');
   if (stats.count < MIN_MEDIAN_SAMPLE || stats.median === null) return null;
   const median = stats.median;
@@ -31,7 +40,7 @@ export function MatchesMedian({ stats, archived }: { stats: MarketPriceStats; ar
 
   return (
     <HoverPopover
-      side="top"
+      side={side}
       content={
         <div className="w-[300px] max-w-[calc(100vw-16px)] space-y-2.5 rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-panel">
           <div className="flex items-baseline justify-between gap-3">

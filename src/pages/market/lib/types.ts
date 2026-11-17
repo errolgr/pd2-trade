@@ -5,6 +5,7 @@
 import type { MarketListingEntry, Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { MarketFacetName, MarketFacets } from './facets';
+import type { MarketPriceStats } from './price-stats';
 
 export type Tri = 'any' | 'yes' | 'no';
 export type OnlineFilter = 'all' | 'online' | 'offline';
@@ -190,6 +191,8 @@ export interface SearchOptions {
   signal?: AbortSignal;
   /** Facet counts to ask for with this page (the market browser's first page). */
   facets?: readonly MarketFacetName[];
+  /** Ask for the price spread of every match with this page (the market browser's first page). */
+  priceStats?: boolean;
 }
 
 export interface SearchResult {
@@ -204,6 +207,8 @@ export interface SearchResult {
   mode: 'server';
   /** Facet counts, when `facets` were asked for. */
   facets?: MarketFacets;
+  /** The price spread of every match, when `priceStats` was asked for. */
+  priceStats?: MarketPriceStats;
 }
 
 /** Whether a listing is still on PD2, checked before acting on it; `listing` is PD2's current copy. */
@@ -235,13 +240,20 @@ export interface MarketApi {
    */
   searchListings: (
     filters: MarketFilters,
-    opts: { page: number; limit: number; signal?: AbortSignal; facets?: readonly MarketFacetName[] },
+    opts: {
+      page: number;
+      limit: number;
+      signal?: AbortSignal;
+      facets?: readonly MarketFacetName[];
+      priceStats?: boolean;
+    },
   ) => Promise<{
     items: ScoredListing[];
     total: number;
     totalExact: boolean;
     fetched: number;
     facets?: MarketFacets;
+    priceStats?: MarketPriceStats;
   }>;
   /** One live listing from PD2 (`GET market/listing/:id`); null when PD2 no longer has it. */
   getListing: (listingId: string) => Promise<MarketListingEntry | null>;
