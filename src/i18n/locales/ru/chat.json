@@ -38,7 +38,11 @@
     "offer": "Предложение: {{price}}",
     "offerFor": "Предложение: {{price}} за {{item}}",
     "yourOffer": "Ваше предложение: {{price}}",
-    "yourOfferFor": "Ваше предложение: {{price}} за {{item}}"
+    "yourOfferFor": "Ваше предложение: {{price}} за {{item}}",
+    "wtbReceivedItem": "Есть {{item}} для вашей заявки {{title}}",
+    "wtbReceived": "Написал(а) о вашей заявке {{title}}",
+    "wtbMadeItem": "Вы предложили {{item}} на их заявку {{title}}",
+    "wtbMade": "Вы написали об их заявке {{title}}"
   },
   "links": {
     "marketListing": "Объявление {{id}}..."
@@ -189,7 +193,19 @@
     "more_one": "ещё {{count}}",
     "more_few": "ещё {{count}}",
     "more_many": "ещё {{count}}",
-    "more_other": "ещё {{count}}"
+    "more_other": "ещё {{count}}",
+    "buyRequestReceived": "Заявка на покупку",
+    "buyRequestMade": "Их заявка на покупку",
+    "forRequest": "для {{title}}",
+    "whisperBack": "Ответить шёпотом",
+    "whisperBackTitle": "Скопировать ответ продавцу шёпотом",
+    "whisper": "Шепнуть",
+    "whisperBuyerTitle": "Снова скопировать ваш шёпот покупателю",
+    "viewRequest": "Открыть заявку",
+    "viewRequestTitle": "Открыть заявку на покупку на рынке",
+    "markFilled": "Отметить выполненной",
+    "markFilledTitle": "Закрыть вашу заявку: этот продавец её выполнил",
+    "markFilledFailed": "Не удалось закрыть заявку"
   },
   "thread": {
     "muted": "Без звука",
@@ -227,9 +243,9 @@
     "empty": {
       "allTitle": "Нет диалогов",
       "sellingTitle": "Сейчас вы ничего не продаёте",
-      "sellingDescription": "Здесь появятся предложения на ваши объявления и ЛС об обмене от покупателей.",
+      "sellingDescription": "Здесь появляются предложения на ваши лоты, торговые шёпоты покупателей и заявки на покупку, на которые вы ответили.",
       "buyingTitle": "Сейчас вы ничего не покупаете",
-      "buyingDescription": "Здесь появятся ваши предложения и отправленные вами ЛС об обмене.",
+      "buyingDescription": "Здесь появляются ваши предложения, отправленные торговые шёпоты и продавцы, ответившие на ваши заявки на покупку.",
       "archivedTitle": "Нет архивных чатов",
       "archivedDescription": "Отправьте чат в архив через меню ⋯; новое сообщение вернёт его."
     },

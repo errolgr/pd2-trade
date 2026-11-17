@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -9,22 +9,26 @@ import type { MarketFilters } from '@/pages/market/lib/types';
 import { type MarketStore, MAX_WATCHED_SEARCHES, useMarketStore } from '@/pages/market/store/useMarketStore';
 import { findWatch } from './alert-logic';
 import { t as translate, useTranslation } from '@/i18n';
+import { type WatchWtbPrompt, WtbPromptPopover } from '../wtb/WatchWtbPrompt';
 
-/** What Watch would do for `filters`, and whether it can (not on sold listings). */
+/** What Watch would do for `filters`, and whether it can (live listings only: not sold listings or buy requests). */
 export function watchState(store: MarketStore, filters: MarketFilters | null) {
   const { watching, saved } = filters ? findWatch(store.savedSearches, filters) : { watching: null, saved: null };
-  const archive = filters?.source === 'archive';
+  const archive = !!filters && filters.source !== 'live';
   const disabled = !filters || (archive && !watching);
   return { watching, saved, archive, disabled };
 }
 
-/** Starts watching `filters` (reusing a saved search with them), or stops the watch on them; toasts the outcome. */
-export function toggleWatch(store: MarketStore, filters: MarketFilters): void {
+/**
+ * Starts watching `filters` (reusing a saved search with them), or stops the watch on them; toasts the outcome.
+ * True when a watch started.
+ */
+export function toggleWatch(store: MarketStore, filters: MarketFilters): boolean {
   const { watching, saved } = findWatch(store.savedSearches, filters);
   if (watching) {
     store.setSearchWatching(watching.id, false);
     showToast({ title: translate('market:watch.stoppedToast'), description: watching.name, variant: 'info' });
-    return;
+    return false;
   }
   if (!store.alertsEnabled) store.setAlertsEnabled(true);
   const started = saved ? store.setSearchWatching(saved.id, true) : !!store.saveSearch(undefined, filters, true);
@@ -41,37 +45,48 @@ export function toggleWatch(store: MarketStore, filters: MarketFilters): void {
       variant: 'warning',
     });
   }
+  return started;
 }
 
 /**
  * "Watch" the current market filters: a popup and a sound for every new listing that matches them (a watched
  * saved search, streamed live from pd2trader.com). Shows "Watching" while one exists for identical filters;
- * clicking it again stops watching (the saved search stays, without alerts).
+ * clicking it again stops watching (the saved search stays, without alerts). With `wtbPrompt`, starting a watch
+ * may offer to post a buy request for the same search (a small prompt under the button).
  */
-export function WatchButton({ filters, className }: { filters: MarketFilters | null; className?: string }) {
+export function WatchButton({
+  filters,
+  className,
+  wtbPrompt,
+}: {
+  filters: MarketFilters | null;
+  className?: string;
+  wtbPrompt?: WatchWtbPrompt;
+}) {
   const { t } = useTranslation('market');
   const store = useMarketStore();
   const { watching, archive, disabled } = watchState(store, filters);
   // One soft pulse when watching starts (not when the panel opens on a watched search)
   const [pulses, setPulses] = useState(0);
   const [wasWatching, setWasWatching] = useState(!!watching);
+  const [prompting, setPrompting] = useState(false);
   if (!!watching !== wasWatching) {
     setWasWatching(!!watching);
     if (watching) setPulses((n) => n + 1);
+    else if (prompting) setPrompting(false);
   }
 
   const toggle = () => {
-    if (filters) toggleWatch(store, filters);
+    if (!filters) return;
+    const started = toggleWatch(store, filters);
+    if (started && wtbPrompt?.offer(filters)) setPrompting(true);
   };
+  const closePrompt = useCallback(() => setPrompting(false), []);
 
   const label =
-    archive && !watching
-      ? t('watch.labels.archive')
-      : watching
-        ? t('watch.labels.watching')
-        : t('watch.labels.watch');
+    archive && !watching ? t('watch.labels.archive') : watching ? t('watch.labels.watching') : t('watch.labels.watch');
 
-  return (
+  const button = (
     // The span takes hover/focus while the button is disabled, so the tooltip still says why
     <Tip label={label}>
       <span
@@ -121,5 +136,14 @@ export function WatchButton({ filters, className }: { filters: MarketFilters | n
         </button>
       </span>
     </Tip>
+  );
+  return wtbPrompt ? (
+    <WtbPromptPopover open={prompting}
+      prompt={wtbPrompt}
+      onClose={closePrompt}>
+      {button}
+    </WtbPromptPopover>
+  ) : (
+    button
   );
 }

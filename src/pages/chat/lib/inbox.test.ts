@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Conversation, Message } from '@/common/types/pd2-website/ChatTypes';
 import type { TradeOffer } from '@/hooks/useTradeOffers';
 import { OPEN_TRADE_MS, type WhisperPerson } from '@/lib/whisper-history';
+import type { WtbResponse } from '@/pages/market/lib/wtb';
 import type { ChatMessage } from '../hooks/useChatStore';
 import { setThreadPrefs, EMPTY_PREFS } from '@/lib/chat-prefs';
 import {
@@ -386,5 +387,78 @@ describe('buildTimeline', () => {
       ['unread', true],
       ['second website', false],
     ]);
+  });
+});
+
+describe('buy request responses', () => {
+  const response = (over: Partial<WtbResponse> = {}): WtbResponse => ({
+    id: 'r1',
+    requestId: 'req1',
+    request: {
+      id: 'req1',
+      title: 'Rare Circlet',
+      offer: { amount: 2, currency: 'HR', hr: 2 },
+      status: 'open',
+      buyer: { userId: ME, name: 'me' },
+      whisperTo: 'MeAcc',
+    },
+    seller: { userId: 'hammer', name: 'HammerTime', account: 'HammerAcc' },
+    item: { name: 'Grim Visage', quality: 'Rare', baseCode: 'ci0' },
+    met: [],
+    channel: 'whisper',
+    createdAt: iso(10),
+    dismissed: false,
+    ...over,
+  });
+
+  it("a response to your request is in the seller's thread, buying (not selling), unread until seen", () => {
+    const [thread] = inbox({ wtb: { received: [response()], made: [] } });
+    expect(thread).toMatchObject({
+      id: 'user:hammer',
+      name: 'HammerTime',
+      buying: true,
+      selling: false,
+      unread: 1,
+      latest: { text: 'Has Grim Visage for your Rare Circlet request', own: false },
+    });
+    expect(thread.wtb).toEqual([{ response: response(), received: true, unread: true }]);
+    // The seller's account links their whispers into the same thread
+    expect(thread.accounts).toContain('HammerAcc');
+    expect(visibleThreads([thread], 'buying', '')).toHaveLength(1);
+    expect(visibleThreads([thread], 'selling', '')).toHaveLength(0);
+  });
+
+  it("your answer to someone's request is in the buyer's thread, selling, never unread", () => {
+    const made = response({
+      request: {
+        id: 'req2',
+        title: 'Shako',
+        offer: { amount: 1, currency: 'Ist', hr: 0.15 },
+        status: 'open',
+        buyer: { userId: 'dave', name: 'Dave' },
+        whisperTo: 'DaveAcc',
+      },
+      seller: { userId: ME, name: 'me', account: 'MeAcc' },
+    });
+    const [thread] = inbox({ wtb: { received: [], made: [made] } });
+    expect(thread).toMatchObject({ id: 'user:dave', name: 'Dave', selling: true, buying: false, unread: 0 });
+    expect(thread.latest?.text).toBe('You offered Grim Visage for their Shako request');
+    expect(thread.accounts).toContain('DaveAcc');
+  });
+
+  it('merges into the conversation with that user; seen (the thread was open) it is read', () => {
+    const conv = conversation('c-hammer', { id: 'hammer', username: 'HammerTime' });
+    const unseen = inbox({ conversations: [conv], wtb: { received: [response()], made: [] } });
+    expect(unseen).toHaveLength(1);
+    expect(unseen[0]).toMatchObject({ id: 'c-hammer', unread: 1, buying: true });
+    const prefs = setThreadPrefs(EMPTY_PREFS, threadAliases(unseen[0]), { offersSeenAt: ago(5) });
+    const [seen] = inbox({ conversations: [conv], prefs, wtb: { received: [response()], made: [] } });
+    expect(seen.unread).toBe(0);
+    expect(seen.wtb[0].unread).toBe(false);
+  });
+
+  it('leaves out responses whose other side is you', () => {
+    const own = response({ seller: { userId: ME, name: 'me', account: null } });
+    expect(inbox({ wtb: { received: [own], made: [] } })).toEqual([]);
   });
 });

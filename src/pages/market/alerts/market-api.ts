@@ -55,17 +55,26 @@ export class MarketApiError extends Error {
     public readonly status: number,
     /** From a 429/503 `Retry-After` header. */
     public readonly retryAfterMs: number | null = null,
+    /** The `rule` a 400 names (buy requests: what the request lacks, see `postBlocker`). */
+    public readonly rule: string | null = null,
+    /** The `nextBumpAt` a buy request bump's 429 names (still cooling down). */
+    public readonly nextBumpAt: string | null = null,
   ) {
     super(message);
     this.name = 'MarketApiError';
   }
 }
 
-async function errorFrom(response: Response): Promise<MarketApiError> {
+/** A non-2xx reply as a MarketApiError: the server's `{ message, rule? }` and any Retry-After. */
+export async function errorFrom(response: Response): Promise<MarketApiError> {
   let message = `Market API ${response.status}`;
+  let rule: string | null = null;
+  let nextBumpAt: string | null = null;
   try {
     const body = await response.json();
     if (body?.message) message = Array.isArray(body.message) ? body.message.join(', ') : String(body.message);
+    if (typeof body?.rule === 'string') rule = body.rule;
+    if (typeof body?.nextBumpAt === 'string') nextBumpAt = body.nextBumpAt;
   } catch {
     // non-JSON error body
   }
@@ -74,6 +83,8 @@ async function errorFrom(response: Response): Promise<MarketApiError> {
     message,
     response.status,
     Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : null,
+    rule,
+    nextBumpAt,
   );
 }
 
@@ -104,12 +115,20 @@ export function watchQuery(filters: MarketFilters): string {
   return encodeMarketQuery(marketSearchBody(sorted, 0, 1).filters);
 }
 
-/** Opens the live stream of `queries` (1-10 distinct `q`; `text/event-stream`); throws MarketApiError on a non-2xx. */
-export async function openLiveSearchStream(queries: readonly string[], signal: AbortSignal): Promise<Response> {
+/**
+ * Opens the live stream of `queries` (0-10 distinct `q`; none only with `token`); `token` (the user's PD2 token)
+ * also brings the responses to their buy requests (`wtb.response`). `text/event-stream`; throws MarketApiError on a
+ * non-2xx (401: the token expired).
+ */
+export async function openLiveSearchStream(
+  queries: readonly string[],
+  signal: AbortSignal,
+  token?: string | null,
+): Promise<Response> {
   const params = new URLSearchParams();
   for (const q of queries) params.append('q', q);
   const response = await fetch(`${BACKEND_URL}/api/market/search/live?${params}`, {
-    headers: { Accept: 'text/event-stream' },
+    headers: { Accept: 'text/event-stream', ...(token && { Authorization: `Bearer ${token}` }) },
     signal,
   });
   if (!response.ok) throw await errorFrom(response);

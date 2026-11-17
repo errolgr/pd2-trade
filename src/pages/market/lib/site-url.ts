@@ -96,7 +96,7 @@ export function siteSearchLink(f: MarketFilters): SiteSearchLink {
   if (f.userOnlineSite !== 'all' || f.userOnlineGame !== 'all') dropped.push(t('market:siteUrl.online'));
   if (f.hasBuyout !== 'any') dropped.push(t('market:siteUrl.buyout'));
   // No window = every listing: nothing to carry (the site applies its own window)
-  if (f.maxAgeDays !== undefined && f.maxAgeDays !== DEFAULT_MAX_AGE_DAYS[f.source])
+  if (f.maxAgeDays !== undefined && f.maxAgeDays !== DEFAULT_MAX_AGE_DAYS[f.source === 'archive' ? 'archive' : 'live'])
     dropped.push(t('market:siteUrl.listingAge'));
   if (f.source === 'archive' && f.status?.length) dropped.push(t('market:siteUrl.status'));
   if (f.sort.by !== 'bumped' || f.sort.dir !== 'desc') dropped.push(t('market:siteUrl.sort'));

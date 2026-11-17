@@ -37,7 +37,11 @@
     "offer": "Oferta: {{price}}",
     "offerFor": "Oferta: {{price}} por {{item}}",
     "yourOffer": "Tu oferta: {{price}}",
-    "yourOfferFor": "Tu oferta: {{price}} por {{item}}"
+    "yourOfferFor": "Tu oferta: {{price}} por {{item}}",
+    "wtbReceivedItem": "Tiene {{item}} para tu solicitud {{title}}",
+    "wtbReceived": "Te susurró por tu solicitud {{title}}",
+    "wtbMadeItem": "Ofreciste {{item}} para su solicitud {{title}}",
+    "wtbMade": "Le susurraste por su solicitud {{title}}"
   },
   "links": {
     "marketListing": "Anuncio del mercado {{id}}..."
@@ -186,7 +190,19 @@
     "showLess": "Mostrar menos",
     "more_one": "{{count}} más",
     "more_many": "{{count}} más",
-    "more_other": "{{count}} más"
+    "more_other": "{{count}} más",
+    "buyRequestReceived": "Solicitud de compra",
+    "buyRequestMade": "Su solicitud de compra",
+    "forRequest": "para {{title}}",
+    "whisperBack": "Responder por susurro",
+    "whisperBackTitle": "Copiar un susurro de respuesta al vendedor",
+    "whisper": "Susurrar",
+    "whisperBuyerTitle": "Volver a copiar tu susurro al comprador",
+    "viewRequest": "Ver solicitud",
+    "viewRequestTitle": "Abrir la solicitud de compra en el mercado",
+    "markFilled": "Marcar cumplida",
+    "markFilledTitle": "Cerrar tu solicitud: este vendedor la cumplió",
+    "markFilledFailed": "No se pudo cerrar la solicitud"
   },
   "thread": {
     "muted": "Silenciado",
@@ -224,9 +240,9 @@
     "empty": {
       "allTitle": "No hay conversaciones",
       "sellingTitle": "No estás vendiendo nada ahora",
-      "sellingDescription": "Aquí aparecen las ofertas a tus anuncios y los susurros de intercambio de compradores.",
+      "sellingDescription": "Aquí aparecen las ofertas en tus anuncios, los susurros de compradores y las solicitudes de compra que respondiste.",
       "buyingTitle": "No estás comprando nada ahora",
-      "buyingDescription": "Aquí aparecen tus ofertas y los susurros de intercambio que envías.",
+      "buyingDescription": "Aquí aparecen tus ofertas, los susurros que envías y los vendedores que responden a tus solicitudes de compra.",
       "archivedTitle": "No hay chats archivados",
       "archivedDescription": "Archiva un chat desde su menú ⋯; un mensaje nuevo lo recupera."
     },

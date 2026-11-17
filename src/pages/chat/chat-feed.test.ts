@@ -27,6 +27,7 @@ const thread = (id: string, over: Partial<InboxThread> = {}): InboxThread => ({
   name: id,
   people: [],
   offers: [],
+  wtb: [],
   accounts: [],
   unread: 0,
   selling: false,

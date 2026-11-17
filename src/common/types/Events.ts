@@ -14,6 +14,8 @@ export enum ToastActionType {
   OPEN_URL = 'OPEN_URL',
   /** data: PanelPayloads['sim'] (a report's { slug, url } to select) or none: opens the overlay's Horadric Sim panel. */
   OPEN_SIM_PANEL = 'OPEN_SIM_PANEL',
+  /** data: WtbResponse: copies the buyer's whisper back to the seller (handled by useMarketAlerts). */
+  WTB_WHISPER_BACK = 'WTB_WHISPER_BACK',
 }
 
 export interface CustomToastPayload {
@@ -30,6 +32,10 @@ export interface CustomToastPayload {
   listing?: ListingPanelPayload;
   /** 'error': error styling (a failed sim); 'muted': quiet styling (a cancelled sim). */
   tone?: 'error' | 'muted';
+  /** A second button before the action (in the toast and its log entry). Not with `listing` (its Details). */
+  secondaryAction?: CustomToastPayload['action'];
+  /** An item picture beside the text (a buy request response's item: its name and base). */
+  art?: { itemName?: string; baseCode?: string };
 }
 
 export interface GenericToastPayload {

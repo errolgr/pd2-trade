@@ -655,6 +655,10 @@
         "label": "Volume des alertes du marché : <num>{{value}} %</num>",
         "description": "Volume du son des alertes du marché (0-100 %).",
         "ariaLabel": "Volume des alertes du marché"
+      },
+      "wtbPrompt": {
+        "label": "Proposer une demande d'achat après Surveiller",
+        "description": "Quand vous commencez à surveiller une recherche, proposer de publier aussi une demande d'achat pour elle."
       }
     }
   },

@@ -17,7 +17,7 @@ import { useOpenTrader } from '../hooks/useListingActions';
 import { currentLocale, useTranslation } from '@/i18n';
 
 /** Same tones as the chat Trader sidebar's presence dot. */
-const PRESENCE_TONE: Record<TraderPresence['kind'], string> = {
+export const PRESENCE_TONE: Record<TraderPresence['kind'], string> = {
   ingame: 'bg-success shadow-[0_0_6px] shadow-success/60',
   online: 'bg-warning',
   seen: 'bg-muted-foreground/50',

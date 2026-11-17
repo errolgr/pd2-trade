@@ -37,7 +37,11 @@
     "offer": "Oferta: {{price}}",
     "offerFor": "Oferta: {{price}} por {{item}}",
     "yourOffer": "Sua oferta: {{price}}",
-    "yourOfferFor": "Sua oferta: {{price}} por {{item}}"
+    "yourOfferFor": "Sua oferta: {{price}} por {{item}}",
+    "wtbReceivedItem": "Tem {{item}} para seu pedido {{title}}",
+    "wtbReceived": "Sussurrou sobre seu pedido {{title}}",
+    "wtbMadeItem": "Você ofereceu {{item}} para o pedido {{title}}",
+    "wtbMade": "Você sussurrou sobre o pedido {{title}}"
   },
   "links": {
     "marketListing": "Anúncio do mercado {{id}}..."
@@ -186,7 +190,19 @@
     "showLess": "Mostrar menos",
     "more_one": "mais {{count}}",
     "more_many": "mais {{count}}",
-    "more_other": "mais {{count}}"
+    "more_other": "mais {{count}}",
+    "buyRequestReceived": "Pedido de compra",
+    "buyRequestMade": "Pedido de compra dele",
+    "forRequest": "para {{title}}",
+    "whisperBack": "Responder por sussurro",
+    "whisperBackTitle": "Copiar um sussurro de resposta ao vendedor",
+    "whisper": "Sussurrar",
+    "whisperBuyerTitle": "Copiar seu sussurro ao comprador de novo",
+    "viewRequest": "Ver pedido",
+    "viewRequestTitle": "Abrir o pedido de compra no mercado",
+    "markFilled": "Marcar como atendido",
+    "markFilledTitle": "Fechar seu pedido: este vendedor o atendeu",
+    "markFilledFailed": "Não foi possível fechar o pedido"
   },
   "thread": {
     "muted": "Silenciada",
@@ -224,9 +240,9 @@
     "empty": {
       "allTitle": "Nenhuma conversa",
       "sellingTitle": "Você não está vendendo nada no momento",
-      "sellingDescription": "Ofertas nos seus anúncios e sussurros de troca de compradores aparecem aqui.",
+      "sellingDescription": "Ofertas nos seus anúncios, sussurros de compradores e pedidos de compra que você respondeu aparecem aqui.",
       "buyingTitle": "Você não está comprando nada no momento",
-      "buyingDescription": "Suas ofertas e os sussurros de troca que você envia aparecem aqui.",
+      "buyingDescription": "Suas ofertas, os sussurros que você envia e vendedores respondendo aos seus pedidos de compra aparecem aqui.",
       "archivedTitle": "Nenhum chat arquivado",
       "archivedDescription": "Arquive um chat pelo menu ⋯; uma nova mensagem o traz de volta."
     },

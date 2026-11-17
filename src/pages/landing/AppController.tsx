@@ -30,6 +30,7 @@ import {
 import { openOffers } from '@/pages/chat/chat-feed';
 import { useDelist } from '@/pages/delist/DelistHandler';
 import { useMarketAlerts } from '@/pages/market/alerts/useMarketAlerts';
+import { useWtbResponseActions } from '@/pages/market/wtb/useWtbResponseActions';
 import { loadNotificationLog } from '@/lib/notification-log';
 import { t } from '@/i18n';
 
@@ -53,6 +54,8 @@ const AppController: React.FC = () => {
 
   // Market Watch alerts (one live search stream of the watched searches) - exactly one instance, here
   useMarketAlerts();
+  // A buy request response toast's Whisper back - exactly one instance, here
+  useWtbResponseActions();
 
   // Horadric Sim intents from pd2trader.com (sim finished, open report/planner) - exactly one instance, here
   useOverlayIntents();

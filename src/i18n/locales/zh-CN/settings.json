@@ -643,6 +643,10 @@
         "label": "市场提醒音量：<num>{{value}}%</num>",
         "description": "市场提醒音的音量（0-100%）。",
         "ariaLabel": "市场提醒音量"
+      },
+      "wtbPrompt": {
+        "label": "关注后建议发布求购",
+        "description": "开始关注某个搜索时，建议同时为它发布求购。"
       }
     }
   },

@@ -1,9 +1,11 @@
 import type { ComponentType } from 'react';
 import type { NetWorthTab } from '@/hooks/useNetWorth';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import type { InboxFilter } from '@/pages/chat/lib/inbox';
 import type { SettingsSectionId } from '@/components/dialogs/optionsv2/settings-ui';
 import type { ListingPanelPayload, MarketPanelPayload } from '@/pages/market/lib/types';
+import type { WtbListPrice } from '@/pages/market/lib/wtb';
 import type { BuildsPanelPayload } from '@/pages/builds/lib/types';
 
 export type PanelId =
@@ -29,8 +31,21 @@ export type PanelId =
 export interface PanelPayloads {
   /** encodeItem(raw) output (what used to be ?text=). undefined only before the first search (the panel is keepMounted). */
   itemSearch: { text: string } | undefined;
-  /** item = encodeItemForQuickList(raw); undefined = manage mode. listingId: manage mode scrolled to that listing; edit: and its price editor open. */
-  quickList: { item?: string; error?: 'not_in_stash'; listingId?: string; edit?: boolean } | undefined;
+  /**
+   * item = encodeItemForQuickList(raw); undefined = manage mode. listingId: manage mode scrolled to that listing; edit: and
+   * its price editor open. stashItem: a stash item to list as is (a buy request it fits). prefill: the HR price or note
+   * to list the item at (a buyer's offer).
+   */
+  quickList:
+    | {
+        item?: string;
+        error?: 'not_in_stash';
+        listingId?: string;
+        edit?: boolean;
+        stashItem?: GameStashItem;
+        prefill?: WtbListPrice;
+      }
+    | undefined;
   currency: { tab?: NetWorthTab } | undefined;
   /**
    * conversationId/conversation: the conversation to open (conversation: a freshly created one); threadId: a

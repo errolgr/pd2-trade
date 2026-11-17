@@ -37,6 +37,11 @@ import ItemOverlayWidget from './ItemOverlayWidget';
 
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
+// The buy request banner's /match call (pd2trader.com) is not what these tests cover
+vi.mock('@/pages/market/wtb/useWtbData', () => ({
+  useWtbSession: () => ({ realm: null, token: null, userId: null }),
+  useWtbItemMatches: () => [],
+}));
 vi.mock('@/lib/market-search-api', async (importOriginal) => ({
   ...(await importOriginal<typeof MarketSearchApi>()),
   searchMarketListings: vi.fn(),

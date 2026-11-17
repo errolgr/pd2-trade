@@ -25,6 +25,8 @@ interface ItemSelectionListProps {
   onBump: (marketId: string, itemHash: string) => Promise<void>;
   onRefresh: () => Promise<void>;
   deleteMarketListing: (listingId: string) => Promise<void>;
+  /** Beside the listed item's name (the selected one, else the first): the buyers chip. */
+  buyers?: React.ReactNode;
 }
 
 const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
@@ -40,6 +42,7 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
   onCollapseAll,
   onBump,
   onRefresh,
+  buyers,
 }) => {
   const { t } = useTranslation('quickList');
   const anyExpanded = expandedItems.size > 0;
@@ -121,6 +124,13 @@ const ItemSelectionList: React.FC<ItemSelectionListProps> = ({
                     >
                       {stashItem.name}
                     </div>
+                    {buyers && (isSelected || (!selectedItem && index === 0)) && (
+                      // The chip and its popover act on their own: not a click on the card
+                      <span onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}>
+                        {buyers}
+                      </span>
+                    )}
                   </div>
                   <MarketListingBadge
                     key={`${stashItem.hash}-${currentListings.length}`}

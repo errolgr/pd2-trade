@@ -79,6 +79,13 @@
       "archive": "Buscas no arquivo não podem ter alerta",
       "watching": "Com alerta: clique para parar os avisos de novos anúncios desta busca",
       "watch": "Alerta: receba um aviso e um som para cada novo anúncio desta busca"
+    },
+    "wtbPrompt": {
+      "title": "Publicar também um pedido de compra?",
+      "description": "Vendedores que tiverem o item podem te enviar mensagem.",
+      "post": "Publicar pedido de compra",
+      "notNow": "Agora não",
+      "never": "Não perguntar de novo"
     }
   },
   "alerts": {
@@ -108,7 +115,14 @@
       "label": "Origem dos anúncios",
       "live": "Ativos",
       "archive": "Arquivo",
-      "archiveTitle": "Anúncios encerrados: vendidos, removidos e expirados (arquivo do projectdiablo2.com)"
+      "archiveTitle": "Anúncios encerrados: vendidos, removidos e expirados (arquivo do projectdiablo2.com)",
+      "wanted": "Procurados",
+      "wantedTitle": "Pedidos de compra que procuram isto",
+      "short": {
+        "live": "Ativos",
+        "archive": "Arquivo",
+        "wanted": "Pedidos"
+      }
     },
     "status": {
       "label": "Status",
@@ -129,7 +143,11 @@
       "listing": "Anúncio",
       "price": "Preço",
       "seller": "Vendedor",
-      "requirements": "Requisitos"
+      "requirements": "Requisitos",
+      "offer": "Oferta",
+      "buyer": "Comprador",
+      "requests": "Pedidos",
+      "realm": "Reino"
     },
     "type": "Tipo",
     "base": "Base",
@@ -188,7 +206,12 @@
     "modeLabel": "Softcore ou Hardcore",
     "applied": {
       "not": "Sem {{name}}"
-    }
+    },
+    "minOffer": "Oferta mín.",
+    "buyer": "Comprador",
+    "buyerPlaceholder": "Usuário ou conta",
+    "fitsStash": "No meu baú",
+    "mineOnly": "Só os meus"
   },
   "controls": {
     "min": "mín",
@@ -455,7 +478,8 @@
     "anyOf": "qualquer de ({{rows}})",
     "noneOf": "nenhum de ({{rows}})",
     "seller": "vendedor {{name}}",
-    "archive": " · arquivo"
+    "archive": " · arquivo",
+    "wanted": " · procurados"
   },
   "saved": {
     "savedToast": "Busca salva",
@@ -554,5 +578,234 @@
     "ranged": "À distância",
     "1h-ranged": "À distância de uma mão",
     "2h-ranged": "À distância de duas mãos"
+  },
+  "wtb": {
+    "chip": {
+      "label_one": "{{count}} comprador · até {{offer}}",
+      "label_many": "{{count}} compradores · até {{offer}}",
+      "label_other": "{{count}} compradores · até {{offer}}",
+      "tooltip_one": "{{count}} jogador publicou um pedido de compra que este item atende. Clique para ver a oferta.",
+      "tooltip_many": "{{count}} jogadores publicaram pedidos de compra que este item atende. Clique para ver as ofertas.",
+      "tooltip_other": "{{count}} jogadores publicaram pedidos de compra que este item atende. Clique para ver as ofertas.",
+      "hintNew": "Novo",
+      "hint": "Pedidos de compra: jogadores procurando um item como este. Clique para ver quem e quanto pagam.",
+      "hintOk": "Entendi",
+      "title": "Pedidos de compra deste item",
+      "subtitle": "Jogadores que publicaram o que querem. Sussurre para vender.",
+      "almost_one": "Quase ({{count}}) — compradores a 1 atributo",
+      "almost_many": "Quase ({{count}}) — compradores a 1 atributo",
+      "almost_other": "Quase ({{count}}) — compradores a 1 atributo",
+      "needs": "precisa de {{stat}} ({{value}})",
+      "needsNone": "precisa de {{stat}} (você não tem)",
+      "allRequests": "Todos os pedidos"
+    },
+    "whisperBuyer": "Sussurrar para {{name}}",
+    "copyWhisper": "Copiar sussurro",
+    "listAt": "Anunciar por {{offer}}",
+    "listItAt": "Anunciar por {{offer}}",
+    "nice": "Opcional",
+    "must": "Obrigatório",
+    "corrupted": "Corrompido",
+    "youHaveOne": "Você tem um",
+    "yours": "seu",
+    "daysLeft_one": "Falta {{count}} dia",
+    "daysLeft_many": "Faltam {{count}} de dias",
+    "daysLeft_other": "Faltam {{count}} dias",
+    "drawer": {
+      "title": "Pedido de compra",
+      "buyer": "Comprador",
+      "personalStash": "Baú pessoal · {{name}}",
+      "sharedStash": "Baú compartilhado · página {{page}}",
+      "openToOffersLeft_one": "Aberto a ofertas · falta {{count}} dia",
+      "openToOffersLeft_many": "Aberto a ofertas · faltam {{count}} de dias",
+      "openToOffersLeft_other": "Aberto a ofertas · faltam {{count}} dias",
+      "wantsYourItem": "Procura · seu item",
+      "wants": "Procura",
+      "met": "Atendido",
+      "fromStash": "Do seu baú",
+      "own": "Este é o seu pedido. Gerencie-o em Meus."
+    },
+    "post": {
+      "title": "Publicar pedido de compra",
+      "editTitle": "Editar pedido de compra",
+      "filtersHint": "Usa os filtros à esquerda. Edite-os lá.",
+      "summary": "O que você procura",
+      "toggleNice": "Obrigatório ou opcional: {{stat}}",
+      "excluded": "Não",
+      "anyOf": "Um de",
+      "niceHint": "Clique em Obrigatório / Opcional para tornar um atributo opcional.",
+      "yourOffer": "Sua oferta",
+      "soldLately": "Vendido recentemente · {{low}} – {{high}} HR",
+      "amount": "Quantidade",
+      "currency": "Moeda",
+      "invalidAmount": "Oferta acima de 0 e no máximo 1000, com até 2 casas decimais.",
+      "openToOffers": "Aberto a contrapropostas",
+      "expires": "Expira",
+      "days_one": "{{count}} d",
+      "days_many": "{{count}} d",
+      "days_other": "{{count}} d",
+      "alsoWatch": "Também vigiar: me avise se um for anunciado",
+      "alreadyWatching": "Você já vigia esta busca",
+      "preview": "Os vendedores verão",
+      "previewLine": "Um jogador pagará {{offer}} por isto",
+      "previewHint": "na verificação de preço deles, quando o item corresponder",
+      "submit": "Publicar pedido",
+      "save": "Salvar alterações",
+      "signIn": "Entre para publicar",
+      "postedToast": "Pedido de compra publicado",
+      "savedToast": "Pedido de compra salvo",
+      "signInAgain": "Entre novamente para publicar",
+      "capTitle": "Pedidos de compra demais",
+      "capDescription_one": "Você pode ter até {{count}} pedido aberto ou pausado. Feche um primeiro (Procurados → Meus).",
+      "capDescription_many": "Você pode ter até {{count}} de pedidos abertos ou pausados. Feche um primeiro (Procurados → Meus).",
+      "capDescription_other": "Você pode ter até {{count}} pedidos abertos ou pausados. Feche um primeiro (Procurados → Meus).",
+      "postFailed": "Não foi possível publicar o pedido",
+      "saveFailed": "Não foi possível salvar o pedido",
+      "blocked": {
+        "item": "Escolha nos filtros um nome de item, uma base ou um tipo.",
+        "detail": "Adicione pelo menos um atributo obrigatório, número de soquetes ou etéreo."
+      },
+      "previewLineNoOffer": "Um jogador quer comprar isto",
+      "expiryNext": "Duração · usada na próxima subida"
+    },
+    "button": {
+      "text": "Quero comprar",
+      "label": "Quero comprar: publique um pedido de compra para esta busca",
+      "archive": "Não é possível pedir anúncios vendidos"
+    },
+    "status": {
+      "live_one": "Ativo · falta {{count}} d",
+      "live_many": "Ativo · faltam {{count}} d",
+      "live_other": "Ativo · faltam {{count}} d",
+      "paused": "Pausado",
+      "expired": "Expirado",
+      "closed": "Fechado"
+    },
+    "mine": {
+      "noMatches": "Nenhuma correspondência ainda",
+      "views_one": "Exibido em {{count}} verificação de preço",
+      "views_many": "Exibido em {{count}} de verificações de preço",
+      "views_other": "Exibido em {{count}} verificações de preço",
+      "contacts_one": "{{count}} vendedor entrou em contato",
+      "contacts_many": "{{count}} de vendedores entraram em contato",
+      "contacts_other": "{{count}} vendedores entraram em contato",
+      "edit": "Editar",
+      "pause": "Pausar",
+      "resume": "Retomar",
+      "close": "Fechar",
+      "updateFailed": "Não foi possível atualizar o pedido"
+    },
+    "sort": {
+      "label": "Ordenar pedidos",
+      "newest": "Mais recentes",
+      "offer": "Maior oferta"
+    },
+    "signInStash": "No meu baú lê seu baú em projectdiablo2.com.",
+    "signInMine": "Seus pedidos de compra usam sua conta do projectdiablo2.com.",
+    "loadFailed": "Não foi possível carregar os pedidos de compra",
+    "stashFailed": "Não foi possível ler seu baú",
+    "listLabel": "Pedidos de compra",
+    "empty": {
+      "allTitle": "Nenhum pedido de compra",
+      "allDescription": "Ninguém procura isso ainda. Publique um a partir de uma busca com Quero comprar.",
+      "stashTitle": "Nada no seu baú corresponde",
+      "stashDescription": "Nenhum pedido aberto corresponde a um item do seu baú agora.",
+      "mineTitle": "Nenhum pedido de compra ainda",
+      "mineDescription": "Busque o que você quer e publique um pedido com Quero comprar."
+    },
+    "cta": {
+      "title": "Nenhum {{item}} assim está anunciado",
+      "titleAny": "Nada assim está anunciado",
+      "live": "Anúncios ativos",
+      "stats_one": "{{count}} atributo",
+      "stats_many": "{{count}} de atributos",
+      "stats_other": "{{count}} atributos",
+      "corrupted": "corrompido",
+      "post": "Publicar pedido de compra",
+      "helper": "Vendedores que verificarem o preço de um item correspondente verão sua oferta.",
+      "orLoosen": "Ou afrouxe"
+    },
+    "badge": {
+      "buyers_one": "{{count}} comprador",
+      "buyers_many": "{{count}} de compradores",
+      "buyers_other": "{{count}} compradores",
+      "tooltip": "Procurado: {{name}} pagará {{offer}}"
+    },
+    "card": {
+      "subtitle": "Pedido de compra · {{kind}}",
+      "subtitleAny": "Pedido de compra",
+      "pays": "Paga",
+      "openToOffers": "aberto a ofertas",
+      "approxHr": "≈ {{hr}} HR",
+      "postedAge": "publicado {{age}}",
+      "bumpedAge": "subiu {{age}}",
+      "expiredAgo": "Expirou há {{age}}"
+    },
+    "others": {
+      "title": "Outros também querem isto",
+      "sameStats": "mesmos atributos",
+      "titleCount": "Outros também querem · {{count}}",
+      "seeAll": "Ver todos ({{count}})",
+      "open": "Abrir o pedido de {{name}} ({{offer}})",
+      "more_one": "+{{count}} a mais",
+      "more_many": "+{{count}} a mais",
+      "more_other": "+{{count}} a mais"
+    },
+    "demand": {
+      "offersUpTo": "Ofertas até {{offers}}",
+      "openOffers": "Ofertas de compra abertas {{low}}–{{high}} HR ({{count}})",
+      "openOffersNoHr": "Ofertas de compra abertas ({{count}})",
+      "viewRequests": "Ver pedidos",
+      "buying_one": "{{count}} jogador está comprando isto",
+      "buying_many": "{{count}} de jogadores estão comprando isto",
+      "buying_other": "{{count}} jogadores estão comprando isto",
+      "buyingIncludingYours_one": "{{count}} jogador está comprando isto, incluindo você",
+      "buyingIncludingYours_many": "{{count}} de jogadores estão comprando isto, incluindo você",
+      "buyingIncludingYours_other": "{{count}} jogadores estão comprando isto, incluindo você",
+      "soldLately_one": "Vendido recentemente {{low}}–{{high}} HR ({{count}} venda)",
+      "soldLately_many": "Vendido recentemente {{low}}–{{high}} HR ({{count}} de vendas)",
+      "soldLately_other": "Vendido recentemente {{low}}–{{high}} HR ({{count}} vendas)"
+    },
+    "results": {
+      "count_one": "{{count}} pedido",
+      "count_many": "{{count}} de pedidos",
+      "count_other": "{{count}} pedidos",
+      "fitting_one": "{{count}} corresponde ao seu baú",
+      "fitting_many": "{{count}} de pedidos correspondem ao seu baú",
+      "fitting_other": "{{count}} correspondem ao seu baú"
+    },
+    "bump": {
+      "label": "Subir",
+      "in": "Subir em {{h}} h {{m}} min",
+      "revive": "Subir para reativar",
+      "done_one": "Subiu para o topo · expira em {{count}} d",
+      "done_many": "Subiu para o topo · expira em {{count}} d",
+      "done_other": "Subiu para o topo · expira em {{count}} d",
+      "tooSoon": "Ainda não dá para subir",
+      "tooSoonDescription": "Você pode subir de novo em {{h}} h {{m}} min."
+    },
+    "mineSections": {
+      "active": "Ativos ({{count}})",
+      "expired": "Expirados ({{count}})"
+    },
+    "response": {
+      "title": "🛒 Um vendedor pode atender seu pedido de compra",
+      "body": "{{seller}} tem algo para {{title}} · sua oferta {{offer}}",
+      "bodyNoItem": "{{seller}} sussurrou para você sobre {{title}}",
+      "viewRequest": "Ver pedido",
+      "whisperBack": "Responder por sussurro",
+      "requestGone": "Esse pedido de compra não está mais aberto"
+    },
+    "responses": {
+      "title_one": "Respostas · {{count}}",
+      "title_many": "Respostas · {{count}}",
+      "title_other": "Respostas · {{count}}",
+      "noItem": "Sussurrou para você (sem item)",
+      "dismiss": "Dispensar",
+      "markFilled": "Marcar como atendido",
+      "confirmClose": "Fechar este pedido?",
+      "confirmCloseDescription": "{{title}} · atendido por {{seller}}",
+      "close": "Fechar pedido"
+    }
   }
 }

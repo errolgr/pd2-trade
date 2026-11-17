@@ -649,6 +649,10 @@
         "label": "Lautstärke Marktalarm: <num>{{value}}%</num>",
         "description": "Lautstärke des Marktalarm-Tons (0–100 %).",
         "ariaLabel": "Lautstärke Marktalarm"
+      },
+      "wtbPrompt": {
+        "label": "Nach Beobachten ein Kaufgesuch anbieten",
+        "description": "Wenn du eine Suche beobachtest, anbieten, auch ein Kaufgesuch dafür zu erstellen."
       }
     }
   },

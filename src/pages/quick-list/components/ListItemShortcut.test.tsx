@@ -24,6 +24,12 @@ const panel = vi.hoisted(() => ({ close: (() => {}) as () => void }));
 vi.mock('@/overlay', () => ({ showToast: vi.fn(), usePanel: () => panel }));
 vi.mock('framer-motion', () => import('@/pages/quick-list/motion-mock'));
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => true }));
+// The buy request /match calls (pd2trader.com) are not what these tests cover
+vi.mock('@/pages/market/wtb/useWtbData', () => ({
+  useWtbSession: () => ({ realm: null, token: null, userId: null }),
+  useWtbItemMatches: () => [],
+  useListingWtbMatches: () => new Map(),
+}));
 vi.mock('@/hooks/pd2website/usePD2Website', () => {
   class AuthenticationError extends Error {}
   class AccountMismatchError extends Error {}

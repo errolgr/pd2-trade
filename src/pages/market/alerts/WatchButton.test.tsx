@@ -12,6 +12,8 @@ import {
   MARKET_PREFS_FILENAME,
   resetMarketPrefs,
 } from '@/pages/market/store/useMarketStore';
+import { trackEvent } from '@/lib/telemetry';
+import type { WatchWtbPrompt } from '../wtb/WatchWtbPrompt';
 import { WatchButton } from './WatchButton';
 
 vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
@@ -24,6 +26,7 @@ vi.mock('@/lib/browser-fs', () => ({
   readTextFile: vi.fn(),
   writeTextFile: vi.fn(async () => {}),
 }));
+vi.mock('@/lib/telemetry', () => ({ trackEvent: vi.fn() }));
 
 const shako = (): MarketFilters => ({
   ...defaultFilters({ hardcore: false, ladder: true }),
@@ -40,25 +43,31 @@ const savedCopy = (id: string, watching: boolean): SavedSearch => ({
 });
 
 const settle = () => act(() => vi.advanceTimersByTimeAsync(0));
-const button = () => screen.getByRole('button');
+/** The Watch button (the only one with aria-pressed; the prompt adds others). */
+const button = () => document.querySelector<HTMLButtonElement>('button[aria-pressed]')!;
 const lastWritten = () => {
   const calls = vi.mocked(writeTextFile).mock.calls.filter(([path]) => path === MARKET_PREFS_FILENAME);
   return JSON.parse(String(calls.at(-1)?.[1]));
 };
 
 /** Starts from a market-prefs.json holding `savedSearches`. */
-async function mountWith(savedSearches: SavedSearch[], filters: MarketFilters = shako()) {
+async function mountWith(savedSearches: SavedSearch[], filters: MarketFilters = shako(), wtbPrompt?: WatchWtbPrompt) {
   vi.mocked(exists).mockResolvedValue(true);
   vi.mocked(readTextFile).mockResolvedValue(JSON.stringify({ savedSearches }));
-  const view = render(<WatchButton filters={filters} />);
+  const view = render(<WatchButton filters={filters}
+    wtbPrompt={wtbPrompt} />);
   await settle();
   return view;
 }
+
+const prompt = (offer = true): WatchWtbPrompt => ({ offer: vi.fn(() => offer), onPost: vi.fn(), onNever: vi.fn() });
+const promptShown = () => screen.queryByRole('dialog', { name: 'Also post a buy request?' });
 
 beforeEach(() => {
   vi.useFakeTimers();
   resetMarketPrefs();
   vi.mocked(showToast).mockClear();
+  vi.mocked(trackEvent).mockClear();
   vi.mocked(writeTextFile).mockClear();
   vi.mocked(exists).mockResolvedValue(false);
   vi.mocked(readTextFile).mockReset();
@@ -157,5 +166,94 @@ describe('WatchButton', () => {
     expect(button().getAttribute('aria-label')).toBe('Archive searches cannot be watched');
     rerender(<WatchButton filters={null} />);
     expect((button() as HTMLButtonElement).disabled).toBe(true);
+  });
+});
+
+describe('WatchButton: "Also post a buy request?"', () => {
+  it('offers it once Watch starts on a search that can be asked for, without taking focus', async () => {
+    const offer = prompt();
+    await mountWith([], shako(), offer);
+    act(() => button().focus());
+    fireEvent.click(button());
+    await settle();
+    expect(offer.offer).toHaveBeenCalledWith(shako());
+    expect(promptShown()).not.toBeNull();
+    expect(screen.getByText('Sellers who have it can message you.')).toBeTruthy();
+    expect(document.activeElement).toBe(button());
+    expect(trackEvent).toHaveBeenCalledWith('market_wtb_prompt_shown');
+  });
+
+  it('not when the search cannot be asked for, nor when Watch stops or is refused', async () => {
+    await mountWith([], shako(), prompt(false));
+    fireEvent.click(button());
+    await settle();
+    expect(promptShown()).toBeNull();
+
+    cleanup();
+    resetMarketPrefs();
+    const offer = prompt();
+    await mountWith([savedCopy('w1', true)], shako(), offer);
+    fireEvent.click(button());
+    await settle();
+    expect(promptShown()).toBeNull();
+    expect(offer.offer).not.toHaveBeenCalled();
+  });
+
+  it('Post buy request opens the post pane (it never posts) and closes the prompt', async () => {
+    const offer = prompt();
+    await mountWith([], shako(), offer);
+    fireEvent.click(button());
+    await settle();
+    fireEvent.click(screen.getByRole('button', { name: 'Post buy request' }));
+    await settle();
+    expect(offer.onPost).toHaveBeenCalledTimes(1);
+    expect(promptShown()).toBeNull();
+    expect(trackEvent).toHaveBeenCalledWith('market_wtb_prompt_accepted');
+  });
+
+  it("Not now and Escape dismiss it; Don't ask again turns it off", async () => {
+    const offer = prompt();
+    await mountWith([], shako(), offer);
+    fireEvent.click(button());
+    await settle();
+    fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
+    await settle();
+    expect(promptShown()).toBeNull();
+    expect(trackEvent).toHaveBeenCalledWith('market_wtb_prompt_dismissed', { reason: 'not_now' });
+
+    // Stop, start again: Escape
+    fireEvent.click(button());
+    fireEvent.click(button());
+    await settle();
+    expect(promptShown()).not.toBeNull();
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+    await settle();
+    expect(promptShown()).toBeNull();
+    expect(trackEvent).toHaveBeenCalledWith('market_wtb_prompt_dismissed', { reason: 'escape' });
+
+    fireEvent.click(button());
+    fireEvent.click(button());
+    await settle();
+    fireEvent.click(screen.getByRole('button', { name: "Don't ask again" }));
+    await settle();
+    expect(offer.onNever).toHaveBeenCalledTimes(1);
+    expect(offer.onPost).not.toHaveBeenCalled();
+    expect(promptShown()).toBeNull();
+  });
+
+  it('goes away after 10 s, unless the pointer is on it', async () => {
+    await mountWith([], shako(), prompt());
+    fireEvent.click(button());
+    await settle();
+    fireEvent.pointerEnter(promptShown()!);
+    await act(() => vi.advanceTimersByTimeAsync(15_000));
+    expect(promptShown()).not.toBeNull();
+
+    fireEvent.pointerLeave(promptShown()!);
+    await act(() => vi.advanceTimersByTimeAsync(9_000));
+    expect(promptShown()).not.toBeNull();
+    await act(() => vi.advanceTimersByTimeAsync(1_000));
+    expect(promptShown()).toBeNull();
+    expect(trackEvent).toHaveBeenCalledWith('market_wtb_prompt_dismissed', { reason: 'timeout' });
   });
 });

@@ -661,6 +661,10 @@
         "label": "Głośność alertów rynku: <num>{{value}}%</num>",
         "description": "Głośność dźwięku alertu rynku (0-100%).",
         "ariaLabel": "Głośność alertów rynku"
+      },
+      "wtbPrompt": {
+        "label": "Proponuj zlecenie kupna po Obserwuj",
+        "description": "Gdy zaczynasz obserwować wyszukiwanie, zaproponuj dodanie też zlecenia kupna dla niego."
       }
     }
   },

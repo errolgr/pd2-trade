@@ -12,6 +12,7 @@ export {
   notify,
   runLoggedAction,
   openLoggedListing,
+  setToastActionHandler,
   ToastLayer,
   type ToastPayload,
   type ConfirmToastOptions,

@@ -6,6 +6,7 @@ import type { MarketListingEntry, Modifier } from '@/common/types/pd2-website/Ge
 import type { MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { MarketFacetName, MarketFacets } from './facets';
 import type { MarketPriceStats } from './price-stats';
+import type { WtbCurrency, WtbItemMatch } from './wtb';
 
 export type Tri = 'any' | 'yes' | 'no';
 export type OnlineFilter = 'all' | 'online' | 'offline';
@@ -62,8 +63,11 @@ export interface Requirements {
 }
 
 export interface MarketFilters {
-  /** `live` = active listings, `archive` = ended ones (sold, removed, expired), like the site's Archive. */
-  source: 'live' | 'archive';
+  /**
+   * `live` = active listings, `archive` = ended ones (sold, removed, expired), like the site's Archive, `wanted` =
+   * buy requests asking for what the filters describe (see `wanted`).
+   */
+  source: 'live' | 'archive' | 'wanted';
   hardcore: boolean;
   ladder: boolean;
   /** Exact item.name (unique/set/runeword/base name), site parity. */
@@ -104,6 +108,20 @@ export interface MarketFilters {
   maxAgeDays?: number;
   /** `key` (a property key or pseudo id) is required for `by: 'stat'` and ignored otherwise. */
   sort: { by: SortBy; dir: 'asc' | 'desc'; key?: string };
+  /** The Wanted source's own filters (offer, requests, order); the market search never reads them. */
+  wanted?: WantedFilters;
+}
+
+/** Wanted source filters beyond the shared ones (`sellerName` is the buyer there). */
+export interface WantedFilters {
+  /** Lowest offer, in `offerCurrency` (HR when unset). */
+  minOffer?: number;
+  offerCurrency?: WtbCurrency;
+  /** Only requests the user's stash fits. */
+  fitsStash?: boolean;
+  /** Only the user's own requests (every status). */
+  mine?: boolean;
+  sort?: 'newest' | 'offer';
 }
 
 export interface StatOption {
@@ -293,6 +311,17 @@ export interface MarketPanelPayload {
   savedSearchId?: string;
   focusListingId?: string;
   tab?: MarketTab;
+  /**
+   * Opens Search on the Wanted source: the item a buy request asks for (it and its kind), the request in the
+   * drawer; `itemText` (the price-checked item's clipboard JSON) offers "List it at {offer}"; `item` (the user's
+   * listing it came from) is sent with a contact.
+   */
+  wanted?: { match: WtbItemMatch; itemText?: string; item?: object };
+  /**
+   * Opens a buy request by id (a response's View request): the user's own on Mine only, else as it stands on the
+   * board in the user's realm; its drawer open.
+   */
+  requestId?: string;
 }
 
 /** Payload for `openPanel('listingDetail', payload)`: the listing drawer. */

@@ -53,4 +53,14 @@ describe('withSource', () => {
     const archive = { ...withSource(defaultFilters(mode), 'archive'), status: ['sold' as const] };
     expect(withSource(archive, 'live').status).toBeUndefined();
   });
+
+  it('switches to and from Wanted keeping every filter (Wanted has no age window of its own)', () => {
+    const defaults = searchDefaults({ marketDefaultListedWithinDays: 7 });
+    const live = { ...defaultFilters(mode, defaults), itemName: 'Shako', rarity: ['Unique' as const] };
+    const wanted = withSource(live, 'wanted', defaults);
+    expect(wanted).toEqual({ ...live, source: 'wanted' });
+    const back = withSource({ ...wanted, wanted: { mine: true } }, 'live', defaults);
+    expect(back).toMatchObject({ source: 'live', itemName: 'Shako', maxAgeDays: 7, wanted: { mine: true } });
+    expect(withSource(wanted, 'archive', defaults).maxAgeDays).toBeUndefined();
+  });
 });

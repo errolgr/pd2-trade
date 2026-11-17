@@ -256,11 +256,22 @@ const OPTION_BY_NAMES = new Map(
     return pins.length === 0 ? [[names.join('|'), o] as const] : [];
   }),
 );
+/**
+ * Unpinned `a|b|…` options by each of their names (the first option listing a name wins), for a key naming one
+ * member alone (`max_damage` of `max_damage|maxdamage|…`), as other clients and older requests may send.
+ */
+const OPTION_BY_MEMBER = new Map<string, StatOption>();
+for (const o of STAT_OPTIONS) {
+  const { names, pins } = parseStatKey(o.key);
+  if (pins.length > 0 || names.length < 2) continue;
+  for (const name of names) if (!OPTION_BY_MEMBER.has(name)) OPTION_BY_MEMBER.set(name, o);
+}
 
 /**
  * Label template for a property key or pseudo id; a key the site list lacks takes the label of the unpinned
  * option over the same names (`firedam|firemindam{4..}` → Adds {X}-{Y} Fire Damage), else of its first known name
- * (`a|b` alternatives, extended slots); the key itself when unknown.
+ * (`a|b` alternatives, extended slots), else of the `a|b` option listing that name (`max_damage` → +{X} to Maximum
+ * Damage); the key itself when unknown.
  */
 export function statLabel(key: string): string {
   const known = OPTION_BY_KEY.get(key) ?? PSEUDO_BY_ID.get(key) ?? PSEUDO_BY_ID.get(pseudoIdOf(key));
@@ -270,6 +281,10 @@ export function statLabel(key: string): string {
   if (sameNames) return sameNames.label;
   for (const name of names) {
     const option = OPTION_BY_KEY.get(name);
+    if (option) return option.label;
+  }
+  for (const name of names) {
+    const option = OPTION_BY_MEMBER.get(name);
     if (option) return option.label;
   }
   return key;

@@ -1,9 +1,6 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import moment from 'moment';
-import { useVirtualizer } from '@tanstack/react-virtual';
-import { Heart, Loader2, Sigma } from 'lucide-react';
+import React, { createContext, useContext } from 'react';
+import { Heart, Sigma } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tip } from '@/components/ui/tooltip';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
 import { ListingThumb } from '@/pages/chat/components/ListingCard';
@@ -16,7 +13,7 @@ import { statWithValue } from './stat-text';
 import type { ScoredListing } from '../lib/types';
 import { itemNameColor } from './ItemTooltip';
 import { displayMods } from '../lib/card-model';
-import { EnterOnce, type EnterTracker } from './EnterOnce';
+import type { EnterTracker } from './EnterOnce';
 import { SellerName } from './SellerName';
 import { EndedTag } from './EndedTag';
 import { OfferBadge } from './OfferBadge';
@@ -24,10 +21,10 @@ import type { ListingOffers } from '../lib/listing-offers';
 import { roundHr } from '../lib/price-stats';
 import { useOpenTrader } from '../hooks/useListingActions';
 import { useTranslation } from '@/i18n';
+import { type LoadMoreState, ResultRowFrame, RowFlags, VirtualRowList } from './card-parts';
 
-const ROW_HEIGHT = 58;
-/** Rows from the end at which the next server page is requested. */
-const LOAD_MORE_AHEAD = 6;
+/** Height of a compact result row (listing or buy request). */
+export const ROW_HEIGHT = 58;
 const SUMMARY_MODS = 4;
 
 /** "2.5 HR" / "0.75 HR"; null when the listing has no HR price (note only). */
@@ -50,61 +47,6 @@ export function itemArtGlow(item: { is_ethereal?: boolean; modifiers?: readonly 
     return '[filter:drop-shadow(0_0_2px_var(--q-normal))_drop-shadow(0_0_6px_color-mix(in_oklab,var(--q-normal)_55%,transparent))]';
   if (anniversary) return '[filter:drop-shadow(0_0_2px_var(--q-unique))_drop-shadow(0_0_6px_var(--q-unique))]';
   return '';
-}
-
-/** A failed next-page load (see useMarketSearch). */
-export interface LoadMoreState {
-  error: string | null;
-  /** Rate limited: Retry stays disabled until then (epoch ms). */
-  retryAt: number | null;
-  onRetry: () => void;
-}
-
-/** Under the results: "Loading more…", or "Couldn't load more · Retry" after a failed page. */
-export function LoadMoreFooter({ loading, error, retryAt, onRetry }: LoadMoreState & { loading: boolean }) {
-  const { t } = useTranslation(['market', 'common']);
-  // Rate limited: Retry unlocks when `retryAt` has passed (the timer marks it; no clock read during render)
-  const [unlockedAt, setUnlockedAt] = useState<number | null>(null);
-  const waiting = retryAt !== null && unlockedAt !== retryAt;
-  useEffect(() => {
-    if (retryAt === null) return;
-    const timer = window.setTimeout(() => setUnlockedAt(retryAt), Math.max(0, retryAt - Date.now()));
-    return () => window.clearTimeout(timer);
-  }, [retryAt]);
-
-  if (loading) {
-    return (
-      <div aria-busy
-        className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
-        <Loader2 className="size-3.5 animate-spin" />
-        {t('results.loadingMore')}
-      </div>
-    );
-  }
-  if (!error) return null;
-  return (
-    <div role="status"
-      className="flex items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground">
-      <Tip label={error}>
-        <span>{t('results.loadMoreFailed')}</span>
-      </Tip>
-      <span aria-hidden>·</span>
-      <Tip
-        label={
-          waiting && retryAt !== null ? t('results.rateLimitedUntil', { time: moment(retryAt).format('LT') }) : error
-        }
-      >
-        <button
-          type="button"
-          aria-disabled={waiting}
-          onClick={waiting ? undefined : onRetry}
-          className="rounded-sm font-medium text-primary underline-offset-2 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring/60 aria-disabled:cursor-not-allowed aria-disabled:text-muted-foreground aria-disabled:no-underline"
-        >
-          {t('common:actions.retry')}
-        </button>
-      </Tip>
-    </div>
-  );
 }
 
 /**
@@ -178,78 +120,35 @@ export function ResultsList({
   footer,
 }: ResultsListProps) {
   const { t } = useTranslation('market');
-  const containerRef = useRef<HTMLDivElement>(null);
-  // eslint-disable-next-line react-hooks/incompatible-library -- no React Compiler; the virtualizer re-renders us
-  const virtualizer = useVirtualizer({
-    count: rows.length,
-    getScrollElement: () =>
-      containerRef.current?.querySelector<HTMLDivElement>('[data-slot="scroll-area-viewport"]') ?? null,
-    estimateSize: () => ROW_HEIGHT,
-    getItemKey: (index) => rows[index].listing._id,
-    overscan: 10,
-  });
-
-  // A fresh result set (new search, filter change) starts at the top; appended pages keep the position.
-  // Before the selection effect, so a kept selection still scrolls into view.
-  useEffect(() => {
-    virtualizer.scrollToOffset(0);
-  }, [enter.generation, virtualizer]);
-
-  // Keep the keyboard selection in view
-  const selectedIndex = selectedId ? rows.findIndex((r) => r.listing._id === selectedId) : -1;
-  useEffect(() => {
-    if (selectedIndex >= 0) virtualizer.scrollToIndex(selectedIndex, { align: 'auto' });
-  }, [selectedIndex, virtualizer]);
-
-  // Infinite load: the last rendered row is near the end
-  const lastVisible = virtualizer.getVirtualItems().at(-1)?.index ?? -1;
-  useEffect(() => {
-    if (hasMore && !loadingMore && rows.length > 0 && lastVisible >= rows.length - LOAD_MORE_AHEAD) onLoadMore();
-  }, [hasMore, loadingMore, lastVisible, rows.length, onLoadMore]);
-
   return (
-    <ScrollArea
-      ref={containerRef}
-      className="min-h-0 flex-1 overflow-hidden [&_[data-radix-scroll-area-viewport]>div]:!block"
-    >
-      <div
-        role="listbox"
-        aria-label={t('results.listings')}
-        className="relative w-full"
-        style={{ height: virtualizer.getTotalSize() }}
-      >
-        {virtualizer.getVirtualItems().map((item) => {
-          const row = rows[item.index];
-          return (
-            <div
-              key={`${enter.generation}:${item.key}`}
-              className="absolute left-0 top-0 w-full"
-              style={{ transform: `translateY(${item.start}px)`, height: ROW_HEIGHT }}
-            >
-              <EnterOnce tracker={enter}
-                id={row.listing._id}
-                index={item.index}
-                className="h-full">
-                <ResultRow
-                  row={row}
-                  selected={row.listing._id === selectedId}
-                  onSelect={onSelect}
-                  deal={deals.get(row.listing._id)}
-                  offers={offers.get(row.listing._id)}
-                  pseudoKeys={pseudoKeys}
-                  favorite={favoriteIds.has(row.listing._id)}
-                />
-              </EnterOnce>
-            </div>
-          );
-        })}
-      </div>
-      <LoadMoreFooter loading={loadingMore}
-        {...loadMore} />
-      {footer}
-    </ScrollArea>
+    <VirtualRowList
+      items={rows}
+      getKey={listingKey}
+      selectedKey={selectedId}
+      rowHeight={ROW_HEIGHT}
+      enter={enter}
+      hasMore={hasMore}
+      loadingMore={loadingMore}
+      onLoadMore={onLoadMore}
+      loadMore={loadMore}
+      ariaLabel={t('results.listings')}
+      footer={footer}
+      renderRow={(row) => (
+        <ResultRow
+          row={row}
+          selected={row.listing._id === selectedId}
+          onSelect={onSelect}
+          deal={deals.get(row.listing._id)}
+          offers={offers.get(row.listing._id)}
+          pseudoKeys={pseudoKeys}
+          favorite={favoriteIds.has(row.listing._id)}
+        />
+      )}
+    />
   );
 }
+
+const listingKey = (row: ScoredListing) => row.listing._id;
 
 const ResultRow = React.memo(function ResultRow({
   row,
@@ -279,41 +178,36 @@ const ResultRow = React.memo(function ResultRow({
     .join(' · ');
   const base = item.base?.name && item.base.name !== item.name ? item.base.name : null;
   return (
-    <div
-      role="option"
-      aria-selected={selected}
-      data-listing-id={listing._id}
-      onClick={() => onSelect(listing._id)}
-      className={cn(
-        'flex h-full w-full cursor-default items-center gap-2.5 border-b border-border/40 px-2.5 transition-colors duration-(--dur-med)',
-        selected ? 'bg-accent/70 shadow-[inset_2px_0_0_var(--primary)]' : 'hover:bg-accent/30',
-      )}
-    >
-      <ListingThumb listing={listing}
-        className="size-10"
-        artClassName={cn('max-h-9 max-w-9', itemArtGlow(item))} />
-
-      <div className="min-w-0 flex-1">
-        <div className="flex min-w-0 items-baseline gap-1.5">
+    <ResultRowFrame
+      id={listing._id}
+      selected={selected}
+      onSelect={() => onSelect(listing._id)}
+      art={
+        <ListingThumb listing={listing}
+          className="size-10"
+          artClassName={cn('max-h-9 max-w-9', itemArtGlow(item))} />
+      }
+      title={
+        <>
           <span className={cn('truncate text-[13px] font-semibold', itemNameColor(item))}>{item.name}</span>
           {base && <span className="truncate text-[11px] text-muted-foreground">{base}</span>}
-          {item.is_ethereal && <span className="shrink-0 text-[10px] text-info">eth</span>}
-          {isAnniversaryItem(item) && <span className="shrink-0 text-[10px] text-q-unique">anniv</span>}
-          {item.socket_count > 0 && (
-            <span className="shrink-0 text-[10px] text-muted-foreground">{`${item.socket_count}os`}</span>
-          )}
-          {item.corrupted && <span className="shrink-0 text-[10px] text-q-corrupted">corr</span>}
+          <RowFlags
+            ethereal={!!item.is_ethereal}
+            anniversary={isAnniversaryItem(item)}
+            sockets={item.socket_count > 0 ? `${item.socket_count}os` : null}
+            corrupted={!!item.corrupted}
+          />
           {favorite && (
             <Heart className="size-3 shrink-0 fill-destructive text-destructive"
               aria-label={t('results.favorite')} />
           )}
           <OfferBadge offers={offers}
             compact />
-        </div>
-        <Tip label={summary}>
-          <div className="truncate text-[11px] leading-4 text-muted-foreground">{summary || '\u00a0'}</div>
-        </Tip>
-        {pseudoKeys.length > 0 && (
+        </>
+      }
+      summary={summary}
+      extra={
+        pseudoKeys.length > 0 && (
           <div className="flex min-w-0 gap-1 overflow-hidden">
             {pseudoKeys.map((key) => (
               <Tip key={key}
@@ -325,41 +219,42 @@ const ResultRow = React.memo(function ResultRow({
               </Tip>
             ))}
           </div>
-        )}
-      </div>
-
-      <div className="flex w-28 shrink-0 flex-col items-end gap-0.5">
-        <div className="flex min-w-0 max-w-full items-center gap-1.5">
-          <DealBadge deal={deal}
-            compact />
-          <Tip label={listing.price || undefined}>
-            <span
-              className={cn(
-                'truncate text-xs font-semibold tabular-nums',
-                price ? 'text-q-gold' : 'text-foreground/85',
-              )}
-            >
-              {price ?? (listing.price || '—')}
-            </span>
-          </Tip>
-        </div>
-        {price && listing.price && (
-          <Tip label={listing.price}>
-            <span className="max-w-full truncate text-[10px] text-muted-foreground">{listing.price}</span>
-          </Tip>
-        )}
-        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-          {listing.user?.username && (
-            <SellerName onOpen={openTrader}
-              className="max-w-16">
-              {listing.user.username}
-            </SellerName>
+        )
+      }
+      aside={
+        <>
+          <div className="flex min-w-0 max-w-full items-center gap-1.5">
+            <DealBadge deal={deal}
+              compact />
+            <Tip label={listing.price || undefined}>
+              <span
+                className={cn(
+                  'truncate text-xs font-semibold tabular-nums',
+                  price ? 'text-q-gold' : 'text-foreground/85',
+                )}
+              >
+                {price ?? (listing.price || '—')}
+              </span>
+            </Tip>
+          </div>
+          {price && listing.price && (
+            <Tip label={listing.price}>
+              <span className="max-w-full truncate text-[10px] text-muted-foreground">{listing.price}</span>
+            </Tip>
           )}
-          <OnlineDots listing={listing} />
-          <EndedTag row={row} />
-          <span className="tabular-nums">{listingAge(listing)}</span>
-        </div>
-      </div>
-    </div>
+          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+            {listing.user?.username && (
+              <SellerName onOpen={openTrader}
+                className="max-w-16">
+                {listing.user.username}
+              </SellerName>
+            )}
+            <OnlineDots listing={listing} />
+            <EndedTag row={row} />
+            <span className="tabular-nums">{listingAge(listing)}</span>
+          </div>
+        </>
+      }
+    />
   );
 });

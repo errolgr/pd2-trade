@@ -79,6 +79,13 @@
       "archive": "Les recherches dans les archives ne peuvent pas être surveillées",
       "watching": "Surveillée : cliquez pour arrêter les pop-ups des nouvelles annonces correspondant à cette recherche",
       "watch": "Surveiller : recevez une pop-up et un son pour chaque nouvelle annonce correspondant à cette recherche"
+    },
+    "wtbPrompt": {
+      "title": "Publier aussi une demande d'achat ?",
+      "description": "Les vendeurs qui l'ont pourront vous contacter.",
+      "post": "Publier une demande d'achat",
+      "notNow": "Pas maintenant",
+      "never": "Ne plus demander"
     }
   },
   "alerts": {
@@ -108,7 +115,14 @@
       "label": "Source des annonces",
       "live": "Actives",
       "archive": "Archives",
-      "archiveTitle": "Annonces terminées : vendues, retirées et expirées (archives de projectdiablo2.com)"
+      "archiveTitle": "Annonces terminées : vendues, retirées et expirées (archives de projectdiablo2.com)",
+      "wanted": "Recherchés",
+      "wantedTitle": "Demandes d'achat qui cherchent ceci",
+      "short": {
+        "live": "Actives",
+        "archive": "Archives",
+        "wanted": "Achats"
+      }
     },
     "status": {
       "label": "Statut",
@@ -129,7 +143,11 @@
       "listing": "Annonce",
       "price": "Prix",
       "seller": "Vendeur",
-      "requirements": "Prérequis"
+      "requirements": "Prérequis",
+      "offer": "Offre",
+      "buyer": "Acheteur",
+      "requests": "Demandes",
+      "realm": "Royaume"
     },
     "type": "Type",
     "base": "Base",
@@ -188,7 +206,12 @@
     "modeLabel": "Softcore ou hardcore",
     "applied": {
       "not": "Sans {{name}}"
-    }
+    },
+    "minOffer": "Offre min.",
+    "buyer": "Acheteur",
+    "buyerPlaceholder": "Pseudo ou compte",
+    "fitsStash": "Dans mon coffre",
+    "mineOnly": "Seulement les miennes"
   },
   "controls": {
     "min": "min",
@@ -455,7 +478,8 @@
     "anyOf": "au moins un de ({{rows}})",
     "noneOf": "aucun de ({{rows}})",
     "seller": "vendeur {{name}}",
-    "archive": " · archives"
+    "archive": " · archives",
+    "wanted": " · recherchés"
   },
   "saved": {
     "savedToast": "Recherche enregistrée",
@@ -554,5 +578,234 @@
     "ranged": "Distance",
     "1h-ranged": "Distance à une main",
     "2h-ranged": "Distance à deux mains"
+  },
+  "wtb": {
+    "chip": {
+      "label_one": "{{count}} acheteur · jusqu'à {{offer}}",
+      "label_many": "{{count}} acheteurs · jusqu'à {{offer}}",
+      "label_other": "{{count}} acheteurs · jusqu'à {{offer}}",
+      "tooltip_one": "{{count}} joueur a publié une demande d'achat que cet objet remplit. Cliquez pour voir son offre.",
+      "tooltip_many": "{{count}} joueurs ont publié des demandes d'achat que cet objet remplit. Cliquez pour voir leurs offres.",
+      "tooltip_other": "{{count}} joueurs ont publié des demandes d'achat que cet objet remplit. Cliquez pour voir leurs offres.",
+      "hintNew": "Nouveau",
+      "hint": "Demandes d'achat : des joueurs cherchent un objet comme celui-ci. Cliquez pour voir qui et combien ils paient.",
+      "hintOk": "Compris",
+      "title": "Demandes d'achat pour cet objet",
+      "subtitle": "Des joueurs ont publié ce qu'ils cherchent. Chuchotez-leur pour vendre.",
+      "almost_one": "Presque ({{count}}) — acheteurs à 1 stat près",
+      "almost_many": "Presque ({{count}}) — acheteurs à 1 stat près",
+      "almost_other": "Presque ({{count}}) — acheteurs à 1 stat près",
+      "needs": "veut {{stat}} ({{value}})",
+      "needsNone": "veut {{stat}} (vous ne l'avez pas)",
+      "allRequests": "Toutes les demandes"
+    },
+    "whisperBuyer": "Chuchoter à {{name}}",
+    "copyWhisper": "Copier le chuchotement",
+    "listAt": "Mettre en vente à {{offer}}",
+    "listItAt": "Le mettre en vente à {{offer}}",
+    "nice": "Bonus",
+    "must": "Requis",
+    "corrupted": "Corrompu",
+    "youHaveOne": "Vous en avez un",
+    "yours": "la vôtre",
+    "daysLeft_one": "{{count}} jour restant",
+    "daysLeft_many": "{{count}} de jours restants",
+    "daysLeft_other": "{{count}} jours restants",
+    "drawer": {
+      "title": "Demande d'achat",
+      "buyer": "Acheteur",
+      "personalStash": "Coffre personnel · {{name}}",
+      "sharedStash": "Coffre partagé · page {{page}}",
+      "openToOffersLeft_one": "Ouvert aux offres · {{count}} jour restant",
+      "openToOffersLeft_many": "Ouvert aux offres · {{count}} de jours restants",
+      "openToOffersLeft_other": "Ouvert aux offres · {{count}} jours restants",
+      "wantsYourItem": "Cherche · votre objet",
+      "wants": "Cherche",
+      "met": "Rempli",
+      "fromStash": "Depuis votre coffre",
+      "own": "C'est votre demande. Gérez-la dans Les miennes."
+    },
+    "post": {
+      "title": "Publier une demande d'achat",
+      "editTitle": "Modifier la demande d'achat",
+      "filtersHint": "Utilise les filtres à gauche. Modifiez-les là-bas.",
+      "summary": "Ce que vous cherchez",
+      "toggleNice": "Requis ou bonus : {{stat}}",
+      "excluded": "Pas",
+      "anyOf": "Un parmi",
+      "niceHint": "Cliquez sur Requis / Bonus pour rendre une stat facultative.",
+      "yourOffer": "Votre offre",
+      "soldLately": "Vendu récemment · {{low}} – {{high}} HR",
+      "amount": "Montant",
+      "currency": "Monnaie",
+      "invalidAmount": "Offre supérieure à 0 et au plus 1000, avec 2 décimales au maximum.",
+      "openToOffers": "Ouvert aux contre-offres",
+      "expires": "Expire",
+      "days_one": "{{count}} j",
+      "days_many": "{{count}} j",
+      "days_other": "{{count}} j",
+      "alsoWatch": "Surveiller aussi : m'alerter si un est mis en vente",
+      "alreadyWatching": "Cette recherche est déjà surveillée",
+      "preview": "Les vendeurs verront",
+      "previewLine": "Un joueur paiera {{offer}} pour ceci",
+      "previewHint": "dans leur vérification de prix, si leur objet correspond",
+      "submit": "Publier la demande",
+      "save": "Enregistrer",
+      "signIn": "Se connecter pour publier",
+      "postedToast": "Demande d'achat publiée",
+      "savedToast": "Demande d'achat enregistrée",
+      "signInAgain": "Reconnectez-vous pour publier",
+      "capTitle": "Trop de demandes d'achat",
+      "capDescription_one": "Vous pouvez avoir jusqu'à {{count}} demande ouverte ou en pause. Fermez-en une d'abord (Recherchés → Les miennes).",
+      "capDescription_many": "Vous pouvez avoir jusqu'à {{count}} de demandes ouvertes ou en pause. Fermez-en une d'abord (Recherchés → Les miennes).",
+      "capDescription_other": "Vous pouvez avoir jusqu'à {{count}} demandes ouvertes ou en pause. Fermez-en une d'abord (Recherchés → Les miennes).",
+      "postFailed": "Impossible de publier la demande",
+      "saveFailed": "Impossible d'enregistrer la demande",
+      "blocked": {
+        "item": "Choisissez un nom d'objet, une base ou un type dans les filtres.",
+        "detail": "Ajoutez au moins une stat requise, un nombre de châsses ou éthéré."
+      },
+      "previewLineNoOffer": "Un joueur veut acheter ceci",
+      "expiryNext": "Durée · utilisée à la prochaine remontée"
+    },
+    "button": {
+      "text": "Je veux acheter",
+      "label": "Je veux acheter : publier une demande d'achat pour cette recherche",
+      "archive": "Impossible de demander des annonces vendues"
+    },
+    "status": {
+      "live_one": "Active · {{count}} j restant",
+      "live_many": "Active · {{count}} j restants",
+      "live_other": "Active · {{count}} j restants",
+      "paused": "En pause",
+      "expired": "Expirée",
+      "closed": "Fermée"
+    },
+    "mine": {
+      "noMatches": "Aucune correspondance pour l'instant",
+      "views_one": "Affichée dans {{count}} vérification de prix",
+      "views_many": "Affichée dans {{count}} de vérifications de prix",
+      "views_other": "Affichée dans {{count}} vérifications de prix",
+      "contacts_one": "{{count}} vendeur vous a contacté",
+      "contacts_many": "{{count}} de vendeurs vous ont contacté",
+      "contacts_other": "{{count}} vendeurs vous ont contacté",
+      "edit": "Modifier",
+      "pause": "Mettre en pause",
+      "resume": "Reprendre",
+      "close": "Fermer",
+      "updateFailed": "Impossible de mettre à jour la demande"
+    },
+    "sort": {
+      "label": "Trier les demandes",
+      "newest": "Plus récentes",
+      "offer": "Meilleure offre"
+    },
+    "signInStash": "Dans mon coffre lit votre coffre sur projectdiablo2.com.",
+    "signInMine": "Vos demandes d'achat utilisent votre compte projectdiablo2.com.",
+    "loadFailed": "Impossible de charger les demandes d'achat",
+    "stashFailed": "Impossible de lire votre coffre",
+    "listLabel": "Demandes d'achat",
+    "empty": {
+      "allTitle": "Aucune demande d'achat",
+      "allDescription": "Personne ne le cherche encore. Publiez-en une depuis une recherche avec Je veux acheter.",
+      "stashTitle": "Rien dans votre coffre ne correspond",
+      "stashDescription": "Aucune demande ouverte ne correspond à un objet de votre coffre pour l'instant.",
+      "mineTitle": "Aucune demande d'achat",
+      "mineDescription": "Cherchez ce que vous voulez, puis publiez une demande avec Je veux acheter."
+    },
+    "cta": {
+      "title": "Aucun {{item}} de ce genre en vente",
+      "titleAny": "Rien de ce genre en vente",
+      "live": "Annonces actives",
+      "stats_one": "{{count}} stat",
+      "stats_many": "{{count}} de stats",
+      "stats_other": "{{count}} stats",
+      "corrupted": "corrompu",
+      "post": "Publier une demande d'achat",
+      "helper": "Les vendeurs qui vérifient le prix d'un objet correspondant verront votre offre.",
+      "orLoosen": "Ou assouplir"
+    },
+    "badge": {
+      "buyers_one": "{{count}} acheteur",
+      "buyers_many": "{{count}} d'acheteurs",
+      "buyers_other": "{{count}} acheteurs",
+      "tooltip": "Recherché : {{name}} paiera {{offer}}"
+    },
+    "card": {
+      "subtitle": "Demande d'achat · {{kind}}",
+      "subtitleAny": "Demande d'achat",
+      "pays": "Paie",
+      "openToOffers": "ouvert aux offres",
+      "approxHr": "≈ {{hr}} HR",
+      "postedAge": "publiée {{age}}",
+      "bumpedAge": "remontée {{age}}",
+      "expiredAgo": "Expirée il y a {{age}}"
+    },
+    "others": {
+      "title": "D'autres le veulent aussi",
+      "sameStats": "mêmes stats",
+      "titleCount": "D'autres le veulent aussi · {{count}}",
+      "seeAll": "Tout voir ({{count}})",
+      "open": "Ouvrir la demande de {{name}} ({{offer}})",
+      "more_one": "+{{count}} de plus",
+      "more_many": "+{{count}} de plus",
+      "more_other": "+{{count}} de plus"
+    },
+    "demand": {
+      "offersUpTo": "Offres jusqu'à {{offers}}",
+      "openOffers": "Offres d'achat ouvertes {{low}}–{{high}} HR ({{count}})",
+      "openOffersNoHr": "Offres d'achat ouvertes ({{count}})",
+      "viewRequests": "Voir les demandes",
+      "buying_one": "{{count}} joueur achète ceci",
+      "buying_many": "{{count}} de joueurs achètent ceci",
+      "buying_other": "{{count}} joueurs achètent ceci",
+      "buyingIncludingYours_one": "{{count}} joueur achète ceci, vous compris",
+      "buyingIncludingYours_many": "{{count}} de joueurs achètent ceci, vous compris",
+      "buyingIncludingYours_other": "{{count}} joueurs achètent ceci, vous compris",
+      "soldLately_one": "Vendu récemment {{low}}–{{high}} HR ({{count}} vente)",
+      "soldLately_many": "Vendu récemment {{low}}–{{high}} HR ({{count}} de ventes)",
+      "soldLately_other": "Vendu récemment {{low}}–{{high}} HR ({{count}} ventes)"
+    },
+    "results": {
+      "count_one": "{{count}} demande",
+      "count_many": "{{count}} de demandes",
+      "count_other": "{{count}} demandes",
+      "fitting_one": "{{count}} correspond à votre coffre",
+      "fitting_many": "{{count}} de demandes correspondent à votre coffre",
+      "fitting_other": "{{count}} correspondent à votre coffre"
+    },
+    "bump": {
+      "label": "Remonter",
+      "in": "Remonter dans {{h}} h {{m}} min",
+      "revive": "Remonter pour réactiver",
+      "done_one": "Remontée en tête · expire dans {{count}} j",
+      "done_many": "Remontée en tête · expire dans {{count}} j",
+      "done_other": "Remontée en tête · expire dans {{count}} j",
+      "tooSoon": "Pas encore remontable",
+      "tooSoonDescription": "Vous pourrez la remonter dans {{h}} h {{m}} min."
+    },
+    "mineSections": {
+      "active": "Actives ({{count}})",
+      "expired": "Expirées ({{count}})"
+    },
+    "response": {
+      "title": "🛒 Un vendeur peut remplir votre demande d'achat",
+      "body": "{{seller}} a ce qu'il faut pour {{title}} · votre offre {{offer}}",
+      "bodyNoItem": "{{seller}} vous a chuchoté au sujet de {{title}}",
+      "viewRequest": "Voir la demande",
+      "whisperBack": "Répondre en chuchotant",
+      "requestGone": "Cette demande d'achat n'est plus ouverte"
+    },
+    "responses": {
+      "title_one": "Réponses · {{count}}",
+      "title_many": "Réponses · {{count}}",
+      "title_other": "Réponses · {{count}}",
+      "noItem": "Vous a chuchoté (aucun objet indiqué)",
+      "dismiss": "Ignorer",
+      "markFilled": "Marquer remplie",
+      "confirmClose": "Fermer cette demande ?",
+      "confirmCloseDescription": "{{title}} · remplie par {{seller}}",
+      "close": "Fermer la demande"
+    }
   }
 }

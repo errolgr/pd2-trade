@@ -44,6 +44,7 @@ const marketFormSchema = z.object({
   marketAlertSoundEnabled: z.boolean(),
   marketAlertVolume: z.number().int().min(0).max(100),
   marketAlertToastSeconds: z.number().int().positive(),
+  marketWtbPromptEnabled: z.boolean(),
 });
 
 type MarketFormValues = z.infer<typeof marketFormSchema>;
@@ -64,6 +65,7 @@ function toFormValues(settings: ISettings | undefined): MarketFormValues {
     marketAlertSoundEnabled: settings?.marketAlertSoundEnabled ?? true,
     marketAlertVolume: settings?.marketAlertVolume ?? 70,
     marketAlertToastSeconds: settings?.marketAlertToastSeconds ?? 8,
+    marketWtbPromptEnabled: settings?.marketWtbPromptEnabled ?? true,
   };
 }
 
@@ -156,7 +158,12 @@ export function MarketForm() {
   }
 
   const switchRow = (
-    name: 'marketShowDealBadges' | 'marketShowPriceHistory' | 'marketShowSellerCard' | 'marketAlertSoundEnabled',
+    name:
+      | 'marketShowDealBadges'
+      | 'marketShowPriceHistory'
+      | 'marketShowSellerCard'
+      | 'marketAlertSoundEnabled'
+      | 'marketWtbPromptEnabled',
     key: string,
   ) => (
     <FormField
@@ -359,6 +366,7 @@ export function MarketForm() {
               );
             }}
           />
+          {switchRow('marketWtbPromptEnabled', 'market.alerts.wtbPrompt')}
         </SettingsGroup>
       </div>
     </Form>
