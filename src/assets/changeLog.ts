@@ -1,14 +1,14 @@
 export const changeLog = {
   '0.11.8': [
-    '🆕 Market: buy requests. Post what you want to buy from any search ("Want to buy"); the Wanted source lists everyone\'s requests, and sellers who have the item can answer with a whisper or an offer',
-    '🆕 Price check and Quick List: a buyers chip beside the item name shows the open buy requests your item fills (and ones it almost fills); message a buyer from it',
-    '🆕 Market: answers to your buy requests pop up as notifications (Whisper back / View request), stay in the notification log, and show in the chat thread with that player',
-    '✨ Market: after you Watch a search, a small prompt offers to post it as a buy request too ("Don\'t ask again" turns it off; Settings › Market › Alerts turns it back on)',
-    '🆕 "+# Total Damage": minimum and maximum damage added up, for jewels, rings and anything else that rolls them (+9 min + 15 max = 24, the same as +24 max). A pseudo stat in the market browser, and a Σ total on the minimum, maximum or Adds X-Y damage row in the price check',
-    '✨ Market: the results header shows the median price of every match ("8,430 listings · median 0.05 HR"); hover it for the price spread, as in the price check',
-    '✨ Market: "Sold archive" is now "Archive" and shows the same listings as the projectdiablo2.com Archive: sold, removed and expired, not only sold ones. A Status filter in the Listing section narrows it, and each result says how it ended',
-    '✨ Market and price check: searches show every listing of the season by default instead of only the last 3 days (14 in the archive). Pick a "Listed within" window to narrow one, or set a default in Settings › Market',
-    '✨ Price check: ended listings show how they ended and how long they were up in a short form ("sold 2d"); hover it for the full sentence',
+    '🆕 Market: buy requests. Post one from any search ("Want to buy"); browse everyone\'s under Wanted; sellers answer with a whisper or an offer',
+    '🆕 Buy request answers arrive as notifications and show in the chat thread with that player',
+    '🆕 Price check and Quick List: a buyers chip shows open buy requests your item fills',
+    '✨ Market: Watch offers to post the search as a buy request too',
+    '🆕 "+# Total Damage" pseudo stat (min + max damage) in the market and price check',
+    '✨ Market: median price in the results header; hover for the price spread',
+    '✨ Market: "Sold archive" is now "Archive": sold, removed and expired listings, with a Status filter',
+    '✨ Market and price check: no 3-day default window; searches cover the whole season (set a default in Settings › Market)',
+    '✨ Price check: ended listings show a short status ("sold 2d")',
   ],
   '0.11.7': [
     '🆕 Horadric Sim is in open beta: no waitlist. Sign in with PD2 and the Sim button in the price check, market and Net Worth (and the try-on hotkey) sends items to the planner',
