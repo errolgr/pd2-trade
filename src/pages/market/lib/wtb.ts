@@ -25,11 +25,11 @@ export const WTB_CURRENCIES = [
 ] as const;
 export type WtbCurrency = (typeof WTB_CURRENCIES)[number];
 
-/** The currency picker's options: rune art for runes (bundled `/runes`), none for HR. */
+/** The currency picker's options with their art (bundled `/runes`): each rune's own, a stack of high runes for HR. */
 export const WTB_CURRENCY_OPTIONS = WTB_CURRENCIES.map((c) => ({
   value: c,
   label: c,
-  icon: c === 'HR' ? undefined : `/runes/${c}_Rune.png`,
+  icon: c === 'HR' ? '/runes/HR.png' : `/runes/${c}_Rune.png`,
 }));
 
 export type WtbStatus = 'open' | 'paused' | 'closed' | 'expired';
