@@ -44,7 +44,8 @@ describe('isDelistExempt', () => {
   });
 
   it('none: no base; stackable: stackable currency and picked items; selected: only picked items', () => {
-    const exempt = (code: string, mode: DelistExemptions['mode']) => isDelistExempt(listing('L1', code), { ...none, mode });
+    const exempt = (code: string, mode: DelistExemptions['mode']) =>
+      isDelistExempt(listing('L1', code), { ...none, mode });
     for (const code of ['toa', 'lbox', 'lpp', 'pk1', 'tes']) {
       expect(exempt(code, 'none'), code).toBe(false);
       expect(exempt(code, 'stackable'), code).toBe(true);

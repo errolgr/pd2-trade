@@ -21,7 +21,13 @@ import MacroManagerSheet, {
   NoteMacro,
   MacroTemplate,
 } from './MacroManagerSheet';
-import { baseCodeOf, exceptionOf, exemptionsOf, isExcepted, isStackableCurrency } from '@/pages/delist/delist-exemptions';
+import {
+  baseCodeOf,
+  exceptionOf,
+  exemptionsOf,
+  isExcepted,
+  isStackableCurrency,
+} from '@/pages/delist/delist-exemptions';
 
 interface ListingFormFieldsProps {
   form: UseFormReturn<ShortcutFormData>;
@@ -58,9 +64,7 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
   const stackableSkipped = exemptions.mode === 'stackable' && isStackableCurrency(baseCode);
   const rememberDefault = exemptions.mode !== 'none' && isExcepted(baseCode, exemptions.exceptions);
   const skipDefault =
-    stackableSkipped ||
-    rememberDefault ||
-    (!!isAlreadyListed && exemptions.listingIds.includes(isAlreadyListed._id));
+    stackableSkipped || rememberDefault || (!!isAlreadyListed && exemptions.listingIds.includes(isAlreadyListed._id));
   const listingId = isAlreadyListed ? isAlreadyListed._id : undefined;
   // A new item (or listing) starts from what applies to it now; without an item (queueing) the base is unknown
   React.useEffect(() => {

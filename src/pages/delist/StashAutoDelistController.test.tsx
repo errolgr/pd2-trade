@@ -156,7 +156,12 @@ describe('StashAutoDelistController', () => {
 
   describe('exemptions', () => {
     const token = (hash: string) =>
-      ({ ...shako(hash), name: 'Token of Absolution', base_code: 'toa', base: { name: 'Token of Absolution' } }) as GameStashItem;
+      ({
+        ...shako(hash),
+        name: 'Token of Absolution',
+        base_code: 'toa',
+        base: { name: 'Token of Absolution' },
+      }) as GameStashItem;
     const tokenLeaves = async () => {
       settings.stashAutoDelist = 'ask';
       stash = [token('t1'), shako('h1'), ring];

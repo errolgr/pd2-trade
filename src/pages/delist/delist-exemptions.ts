@@ -114,7 +114,10 @@ export function addDelistException(
 }
 
 /** The list without every entry covering one of `codes`. */
-export function removeDelistException(exceptions: readonly DelistException[], codes: readonly string[]): DelistException[] {
+export function removeDelistException(
+  exceptions: readonly DelistException[],
+  codes: readonly string[],
+): DelistException[] {
   return exceptions.filter((entry) => !entry.codes.some((code) => codes.includes(code)));
 }
 
@@ -165,7 +168,8 @@ export function delistChoiceUpdate(
     // Under 'none' the list is dormant: remembering turns it on, and not remembering leaves it as it is
     const active = (settings.delistExceptionMode ?? 'none') !== 'none';
     if (remember && !(listed && active)) Object.assign(update, rememberException(settings, exception));
-    else if (!remember && listed && active) update.delistExceptions = removeDelistException(exceptions, exception.codes);
+    else if (!remember && listed && active)
+      update.delistExceptions = removeDelistException(exceptions, exception.codes);
   }
   return Object.keys(update).length > 0 ? update : null;
 }

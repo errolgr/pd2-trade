@@ -52,7 +52,15 @@ const StashAutoDelistController: React.FC = () => {
   const ladder = settings.ladder === 'ladder';
 
   // Read when a tick runs: switching ask ↔ auto, a new exception, or a refreshed token, keeps the last stash read
-  const latest = useRef({ mode, settings, updateSettings, fetchStash, getMarketListings, deleteMarketListing, openPanel });
+  const latest = useRef({
+    mode,
+    settings,
+    updateSettings,
+    fetchStash,
+    getMarketListings,
+    deleteMarketListing,
+    openPanel,
+  });
   latest.current = { mode, settings, updateSettings, fetchStash, getMarketListings, deleteMarketListing, openPanel };
 
   useEffect(() => {
