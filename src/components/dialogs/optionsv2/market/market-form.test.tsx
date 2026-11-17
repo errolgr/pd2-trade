@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { MotionGlobalConfig } from 'framer-motion';
 import { useOptions, type ISettings } from '@/hooks/useOptions';
 import { playNotificationSound } from '@/hooks/useSocketNotifications';
 import { createOptionsStore, type OptionsStore } from '../test-utils';
@@ -22,6 +23,13 @@ function renderForm(settings: Partial<ISettings> = {}) {
 const advance = (ms: number) => act(() => vi.advanceTimersByTime(ms));
 const select = (name: string) => screen.getByLabelText(name) as HTMLSelectElement;
 
+// The exception chips animate out
+beforeAll(() => {
+  MotionGlobalConfig.skipAnimations = true;
+});
+afterAll(() => {
+  MotionGlobalConfig.skipAnimations = false;
+});
 beforeEach(() => {
   vi.useFakeTimers();
 });
@@ -74,5 +82,34 @@ describe('MarketForm', () => {
     fireEvent.click(toggle);
     await advance(300);
     expect(store.updateSettings.mock.calls.at(-1)?.[0]).toEqual({ marketWtbPromptEnabled: false });
+  });
+
+  it('lists the picked items as chips (× removes one) unless "Never delist" is Nothing', async () => {
+    const ber = { name: 'Ber Rune', codes: ['r30'] };
+    renderForm({
+      stashAutoDelist: 'ask',
+      delistExceptionMode: 'stackable',
+      delistExceptions: [{ name: 'Token of Absolution', codes: ['toa'] }, ber],
+    });
+    expect(screen.getByText(/^Stackable currency:/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Token of Absolution' }));
+    fireEvent.change(select('Never delist'), { target: { value: 'selected' } });
+    await advance(300);
+    expect(store.updateSettings.mock.calls.at(-1)?.[0]).toEqual({
+      delistExceptions: [ber],
+      delistExceptionMode: 'selected',
+    });
+    expect(screen.getByText('Ber Rune')).toBeTruthy();
+    expect(screen.queryByText(/^Stackable currency:/)).toBeNull();
+
+    cleanup();
+    renderForm({ stashAutoDelist: 'ask', delistExceptionMode: 'none', delistExceptions: [ber] });
+    expect(select('Never delist').value).toBe('none');
+    expect(screen.queryByText('Ber Rune')).toBeNull();
+
+    cleanup();
+    renderForm({ stashAutoDelist: 'off', delistExceptionMode: 'selected', delistExceptions: [ber] });
+    expect(screen.queryByLabelText('Never delist')).toBeNull();
+    expect(screen.queryByText('Ber Rune')).toBeNull();
   });
 });

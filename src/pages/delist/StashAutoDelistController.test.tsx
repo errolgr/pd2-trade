@@ -153,4 +153,54 @@ describe('StashAutoDelistController', () => {
     await nextPoll();
     expect(fetchStash).not.toHaveBeenCalled();
   });
+
+  describe('exemptions', () => {
+    const token = (hash: string) =>
+      ({ ...shako(hash), name: 'Token of Absolution', base_code: 'toa', base: { name: 'Token of Absolution' } }) as GameStashItem;
+    const tokenLeaves = async () => {
+      settings.stashAutoDelist = 'ask';
+      stash = [token('t1'), shako('h1'), ring];
+      listings = [
+        { _id: 'T1', item: token('t1') },
+        { _id: 'L1', item: shako('h1') },
+      ] as unknown as MarketListingEntry[];
+      settings.delistExemptListings = ['L1'];
+      await mount();
+      stash = [ring];
+      await nextPoll();
+    };
+
+    it('asks about stackable currency by default, never about an exempt listing', async () => {
+      await tokenLeaves();
+      expect(confirmToast).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(confirmToast).mock.calls[0][0].description).toContain('Token of Absolution');
+    });
+
+    it('leaves stackable currency alone in the stackable mode', async () => {
+      settings.delistExceptionMode = 'stackable';
+      await tokenLeaves();
+      expect(confirmToast).not.toHaveBeenCalled();
+      expect(deleteMarketListing).not.toHaveBeenCalled();
+    });
+
+    it('"Never ask" adds the base to the picked items and turns them on', async () => {
+      settings.stashAutoDelist = 'ask';
+      settings.delistExceptions = [{ name: 'Ring', codes: ['rin'] }];
+      const updateSettings = vi.fn(async () => true);
+      vi.mocked(useOptions).mockImplementation(() => ({ settings, updateSettings }) as never);
+      await mount();
+      stash = [ring];
+      await nextPoll();
+      const { link } = vi.mocked(confirmToast).mock.calls[0][0];
+      expect(link?.label).toContain('Shako');
+      link!.onClick();
+      expect(updateSettings).toHaveBeenCalledWith({
+        delistExceptions: [
+          { name: 'Ring', codes: ['rin'] },
+          { name: 'Shako', codes: ['uap'] },
+        ],
+        delistExceptionMode: 'selected',
+      });
+    });
+  });
 });

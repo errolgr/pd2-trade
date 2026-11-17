@@ -572,6 +572,25 @@
           "off": "Nichts tun",
           "ask": "Mich fragen",
           "auto": "Inserat entfernen"
+        },
+        "exceptions": {
+          "label": "Diese nie entfernen",
+          "description": "Inserate dieser Gegenstände werden nie entfernt, und du wirst nicht gefragt. „Nie wieder fragen bei …“ in der Abfrage fügt einen hinzu.",
+          "add": "Hinzufügen",
+          "search": "Gegenstandsbasis suchen…",
+          "empty": "Noch keine Gegenstände.",
+          "noMatch": "Keine passende Gegenstandsbasis",
+          "remove": "{{name}} entfernen",
+          "stackableNote": "Stapelbare Währung: Tokens, Puzzleboxen, Schlüssel, Essenzen."
+        },
+        "exceptionMode": {
+          "label": "Nie entfernen",
+          "description": "Ein Inserat, bei dem du „Dieses Inserat nicht automatisch entfernen“ gewählt hast, bleibt immer bestehen.",
+          "options": {
+            "none": "Nichts (Standard)",
+            "stackable": "Stapelbare Währung und ausgewählte Gegenstände",
+            "selected": "Nur ausgewählte Gegenstände"
+          }
         }
       },
       "view": {

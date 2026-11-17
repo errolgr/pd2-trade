@@ -86,7 +86,12 @@
     "update": "Aktualisieren",
     "queueItem": "In Warteschlange",
     "post": "Inserieren",
-    "noteOrPriceRequired": "Bitte fülle das Notizfeld oder den HR-Preis aus."
+    "noteOrPriceRequired": "Bitte fülle das Notizfeld oder den HR-Preis aus.",
+    "autoDelist": {
+      "skip": "Dieses Inserat nicht automatisch entfernen",
+      "skipHint": "Wenn du es in die Truhe legst oder herausnimmst, wirst du nicht gefragt.",
+      "remember": "Für alle {{name}} merken"
+    }
   },
   "macros": {
     "duplicate": "Ein Makro namens „{{label}}“ existiert bereits.",
@@ -178,7 +183,8 @@
     "pick": "Gegenstände wie {{name}} haben deine Truhe verlassen. Wähle, welche Inserate entfernt werden.",
     "delist": "Entfernen",
     "keep": "Behalten",
-    "choose": "Auswählen"
+    "choose": "Auswählen",
+    "neverAsk": "Nie wieder fragen bei {{name}}"
   },
   "myListings": {
     "searchPlaceholder": "{{count}} Inserate durchsuchen…",

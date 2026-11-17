@@ -92,7 +92,12 @@
     "update": "Aktualizuj",
     "queueItem": "Dodaj do kolejki",
     "post": "Opublikuj",
-    "noteOrPriceRequired": "Wypełnij pole notatki lub ceny w HR."
+    "noteOrPriceRequired": "Wypełnij pole notatki lub ceny w HR.",
+    "autoDelist": {
+      "skip": "Nie usuwaj automatycznie tego ogłoszenia",
+      "skipHint": "Wkładanie go do skrzyni lub wyjmowanie nie wywoła pytania.",
+      "remember": "Zapamiętaj dla wszystkich: {{name}}"
+    }
   },
   "macros": {
     "duplicate": "Makro o nazwie „{{label}}” już istnieje.",
@@ -186,7 +191,8 @@
     "pick": "Przedmioty takie jak {{name}} opuściły skrzynię. Wybierz ogłoszenia do usunięcia.",
     "delist": "Usuń",
     "keep": "Zostaw",
-    "choose": "Wybierz"
+    "choose": "Wybierz",
+    "neverAsk": "Nigdy nie pytaj o {{name}}"
   },
   "myListings": {
     "searchPlaceholder": "Szukaj wśród {{count}} ogłoszeń…",

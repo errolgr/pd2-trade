@@ -20,6 +20,7 @@ import { DEFAULT_LISTINGS_SORT, type ListingsSort } from '@/pages/quick-list/lis
 import type { ChatDockItem } from '@/pages/chat/chat-dock';
 import type { PaletteRef } from '@/pages/palette/lib/types';
 import type { SimGoal, SimLastExport } from '@/lib/sim-preferences';
+import type { DelistException } from '@/pages/delist/delist-exemptions';
 
 /** A tracked character the builds panel remembers (followed / recently viewed). */
 export interface BuildCharacterRef {
@@ -38,6 +39,12 @@ export type NetWorthTickerAnchor =
 
 /** Settings → Market: what happens when a listed item leaves the stash. */
 export type StashAutoDelistMode = 'off' | 'ask' | 'auto';
+
+/**
+ * Settings → Market: which item bases the auto-delist leaves alone: none, stackable currency plus the picked items,
+ * or only the picked items (`delistExceptions`).
+ */
+export type DelistExceptionMode = 'none' | 'stackable' | 'selected';
 
 /** Settings → Market: a fresh market search's order (newest bump, cheapest first, priciest first). */
 export type MarketDefaultSort = 'newest' | 'cheapest' | 'priciest';
@@ -121,6 +128,9 @@ export interface ISettings {
   corruptedZoneFollowed?: string[]; // CORRUPTED_ZONES names for the 'followed' timer and toasts
   // Settings → Market (src/components/dialogs/optionsv2/market)
   stashAutoDelist?: StashAutoDelistMode; // a listed item leaves the stash: leave it, ask to delist, or delist it
+  delistExceptionMode?: DelistExceptionMode; // which item bases the auto-delist leaves alone
+  delistExceptions?: DelistException[]; // the picked items: bases the auto-delist leaves alone (Settings → Market chips)
+  delistExemptListings?: string[]; // listing ids the auto-delist leaves alone (Quick List checkbox), newest last
   marketDefaultSort?: MarketDefaultSort; // a fresh / reset market search's order
   marketDefaultSeller?: 'all' | 'online' | 'in-game'; // a fresh search's seller filter: anyone, online on the site, in game
   marketDefaultHasBuyout?: 'any' | 'yes' | 'no'; // a fresh search's buyout filter
@@ -224,6 +234,9 @@ const DEFAULT_SETTINGS: ISettings = {
   corruptedZoneAlertLeadMinutes: 0,
   corruptedZoneFollowed: [],
   stashAutoDelist: 'ask',
+  delistExceptionMode: 'none',
+  delistExceptions: [],
+  delistExemptListings: [],
   marketDefaultSort: 'newest',
   marketDefaultSeller: 'all',
   marketDefaultHasBuyout: 'any',
