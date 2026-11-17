@@ -41,6 +41,7 @@ export const ListingDrawerPage: React.FC = () => {
   const listing = pickedListing ?? (lookup.state === 'ready' ? lookup.detail.listing : null);
   /** Sold or removed: no offer/whisper (seller card picks are live listings). */
   const archived = !pickedListing && lookup.state === 'ready' && lookup.detail.status !== 'active';
+  const endedStatus = archived && lookup.state === 'ready' ? lookup.detail.status : undefined;
 
   const mode = useMemo(
     () => ({ hardcore: settings?.mode === 'hardcore', ladder: settings?.ladder !== 'non-ladder' }),
@@ -56,7 +57,10 @@ export const ListingDrawerPage: React.FC = () => {
     () => filters.stats.filter((s) => s.enabled && !s.not && s.kind === 'pseudo').map((s) => pseudoIdOf(s.key)),
     [filters.stats],
   );
-  const row = useMemo(() => (listing ? scoreListings([listing], filters)[0] : null), [listing, filters]);
+  const row = useMemo(
+    () => (listing ? { ...scoreListings([listing], filters)[0], status: endedStatus } : null),
+    [listing, filters, endedStatus],
+  );
   const listings = useMemo(() => (listing ? [listing] : []), [listing]);
   const deals = useDealIndicators(listings);
 

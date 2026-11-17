@@ -101,7 +101,7 @@ import { StatId } from '../lib/stat-mappings';
 import { corruptionNamesForRoll, sameCorruptionNames } from '../lib/corruptions';
 import { corruptionOption } from '@/pages/market/lib/catalog';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
-import { listingAge, sellerGlyphName } from '@/pages/market/lib/listing';
+import { compactDuration, listingAge, sellerGlyphName } from '@/pages/market/lib/listing';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { writePng, writeText } from '@/lib/browser-clipboard';
 import { whisperCommand } from '@/lib/whisper-history';
@@ -2566,14 +2566,16 @@ const ListingRow = ({ row, idx }: { row: ScoredListing; idx: number }) => {
   const presenceText = `${online ? t('overlay.listing.inGame') : t('overlay.listing.notInGame')} · ${
     onSite ? t('overlay.listing.onSite') : t('overlay.listing.notOnSite')
   }`;
-  // Market service rows: how long the listing was up and, once it ended, how
+  // Market service rows: how long the listing was up and, once it ended, how (the cell is short, the tooltip says it)
   const ended = row.status && row.status !== 'active' ? row.status : null;
   const upFor =
     typeof row.durationSeconds === 'number' ? moment.duration(row.durationSeconds, 'seconds').humanize() : null;
+  const endedTitle = [
+    ended && upFor ? t(ENDED_KEYS[ended], { duration: upFor }) : null,
+    ended && row.endedAt ? t('overlay.listing.endedAt', { when: moment(row.endedAt).fromNow() }) : null,
+  ].filter(Boolean);
   const listedTitle = ended
-    ? row.endedAt
-      ? t('overlay.listing.endedAt', { when: moment(row.endedAt).fromNow() })
-      : undefined
+    ? endedTitle.join(' · ') || undefined
     : upFor
       ? t('overlay.listing.listedFor', { duration: upFor })
       : undefined;
@@ -2707,10 +2709,19 @@ const ListingRow = ({ row, idx }: { row: ScoredListing; idx: number }) => {
             </Tooltip>
           </td>
 
-          {/* Listed Column: bump age; for ended listings how long they were up ("sold after 2 days") */}
+          {/* Listed Column: bump age; for ended listings how it ended and how long it was up ("Sold 2d") */}
           <Tip label={listedTitle}>
             <td className="whitespace-nowrap rounded-r-md px-2 py-1 text-right text-xs tabular-nums text-muted-foreground">
-              {ended && upFor ? t(ENDED_KEYS[ended], { duration: upFor }) : listingAge(listing) || '-'}
+              {ended && typeof row.durationSeconds === 'number' ? (
+                <>
+                  <span className={cn('lowercase', ended === 'sold' && 'text-success')}>
+                    {t(`market:filters.status.${ended}`)}
+                  </span>{' '}
+                  {compactDuration(row.durationSeconds * 1000)}
+                </>
+              ) : (
+                listingAge(listing) || '-'
+              )}
             </td>
           </Tip>
         </tr>

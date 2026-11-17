@@ -9,6 +9,17 @@ export function listingUrl(listing: Pick<MarketListingEntry, '_id'>): string {
   return `https://projectdiablo2.com/market/listing/${encodeURIComponent(listing._id)}`;
 }
 
+/** A duration as `5m`, `3h`, `2d`, `5w` (weeks from 14 days); under a minute `<1m`. */
+export function compactDuration(ms: number): string {
+  const minutes = Math.max(0, Math.floor(ms / 60_000));
+  if (minutes < 1) return t('market:age.minutes', { n: '<1' });
+  if (minutes < 60) return t('market:age.minutes', { n: minutes });
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return t('market:age.hours', { n: hours });
+  const days = Math.floor(hours / 24);
+  return days < 14 ? t('market:age.days', { n: days }) : t('market:age.weeks', { n: Math.floor(days / 7) });
+}
+
 /** Compact age of the last bump (else update): `now`, `5m`, `3h`, `2d`, `5w`; empty when unknown. */
 export function listingAge(
   listing: Pick<MarketListingEntry, 'bumped_at' | 'updated_at'>,
@@ -16,13 +27,8 @@ export function listingAge(
 ): string {
   const at = Date.parse(listing.bumped_at || listing.updated_at || '');
   if (Number.isNaN(at)) return '';
-  const minutes = Math.max(0, Math.floor((now.getTime() - at) / 60_000));
-  if (minutes < 1) return t('market:age.now');
-  if (minutes < 60) return t('market:age.minutes', { n: minutes });
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return t('market:age.hours', { n: hours });
-  const days = Math.floor(hours / 24);
-  return days < 14 ? t('market:age.days', { n: days }) : t('market:age.weeks', { n: Math.floor(days / 7) });
+  const ms = now.getTime() - at;
+  return ms < 60_000 ? t('market:age.now') : compactDuration(ms);
 }
 
 /**

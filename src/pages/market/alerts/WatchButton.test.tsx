@@ -151,10 +151,10 @@ describe('WatchButton', () => {
     expect(showToast).toHaveBeenLastCalledWith(expect.objectContaining({ title: 'Too many watches' }));
   });
 
-  it('is disabled for sold-listing searches and without filters', async () => {
+  it('is disabled for archive searches and without filters', async () => {
     const { rerender } = await mountWith([], { ...shako(), source: 'archive' });
     expect((button() as HTMLButtonElement).disabled).toBe(true);
-    expect(button().getAttribute('aria-label')).toBe('Sold listings cannot be watched');
+    expect(button().getAttribute('aria-label')).toBe('Archive searches cannot be watched');
     rerender(<WatchButton filters={null} />);
     expect((button() as HTMLButtonElement).disabled).toBe(true);
   });

@@ -19,13 +19,14 @@ import { ItemTooltip } from './ItemTooltip';
 import { OfferButton, WhisperButton } from './ListingActions';
 import { formatHrPrice } from './ResultsList';
 import { AddAllModsButton } from './ModMenu';
+import { EndedTag } from './EndedTag';
 import { useTranslation } from '@/i18n';
 
 export interface ListingDetailProps {
   row: ScoredListing;
   deal: Deal | undefined;
   api: MarketApi | null;
-  /** Sold archive rows: no offer/whisper (the item is gone). */
+  /** Archive rows (ended listings): no offer/whisper (the item is gone). */
   archived: boolean;
   favorite: boolean;
   onToggleFavorite: (listing: MarketListingEntry) => void;
@@ -65,7 +66,13 @@ export function ListingDetail({
       className="flex h-full min-h-0 flex-col border-l border-border bg-card/40">
       <div className="flex items-center gap-1.5 border-b border-border px-2.5 py-1.5">
         <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-          {archived ? t('detail.sold') : t('detail.listed')}
+          {!archived ? (
+            t('detail.listed')
+          ) : row.status && row.status !== 'active' ? (
+            <EndedTag row={row} />
+          ) : (
+            t('detail.ended')
+          )}
           {` · ${listing.is_ladder ? 'Ladder' : 'Non-ladder'} ${listing.is_hardcore ? 'HC' : 'SC'} · ${listingAge(listing)}`}
         </span>
         <AddAllModsButton

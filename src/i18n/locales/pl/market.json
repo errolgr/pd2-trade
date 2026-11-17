@@ -27,8 +27,8 @@
     "noFavoritesDescription": "Polub ogłoszenie serduszkiem, aby je tu zachować; ulubione synchronizują się z projectdiablo2.com.",
     "noLiveListingsFor": "Brak aktywnych ogłoszeń {{itemName}}",
     "noLiveListings": "Brak pasujących aktywnych ogłoszeń",
-    "searchArchivePrompt": "Przeszukać archiwum sprzedanych, aby zobaczyć ostatnie ceny sprzedaży?",
-    "searchArchive": "Szukaj w archiwum sprzedanych",
+    "searchArchivePrompt": "Przeszukać archiwum (ogłoszenia sprzedane, wycofane i wygasłe), aby zobaczyć ostatnie ceny?",
+    "searchArchive": "Szukaj w archiwum",
     "noListingsTitle": "Brak pasujących ogłoszeń",
     "noListingsDescription": "Poluzuj filtr, poszerz zakres wieku lub zmień tryb.",
     "refreshing": "Odświeżanie wyników",
@@ -81,7 +81,7 @@
     "tooManyDescription_other": "Można obserwować do {{count}} wyszukiwania naraz. Najpierw zatrzymaj jedno (karta Zapisane).",
     "startedDescription": "Otrzymasz powiadomienie o każdym nowym ogłoszeniu pasującym do tego wyszukiwania.",
     "labels": {
-      "archive": "Sprzedanych ogłoszeń nie można obserwować",
+      "archive": "Wyszukiwań w archiwum nie można obserwować",
       "watching": "Obserwujesz: kliknij, aby wyłączyć powiadomienia o nowych ogłoszeniach pasujących do tego wyszukiwania",
       "watch": "Obserwuj: otrzymuj powiadomienie i dźwięk przy każdym nowym ogłoszeniu pasującym do tego wyszukiwania"
     }
@@ -116,7 +116,17 @@
       "label": "Źródło ogłoszeń",
       "live": "Aktywne",
       "archive": "Archiwum",
-      "archiveTitle": "Sprzedane / wycofane ogłoszenia"
+      "archiveTitle": "Zakończone ogłoszenia: sprzedane, wycofane i wygasłe (archiwum projectdiablo2.com)"
+    },
+    "status": {
+      "label": "Status",
+      "all": "Wszystkie",
+      "sold": "Sprzedane",
+      "removed": "Wycofane",
+      "expired": "Wygasłe",
+      "soldTitle": "Sprzedający przyjął ofertę",
+      "removedTitle": "Usunięte przez sprzedającego lub moderatora",
+      "expiredTitle": "Nie podbite ani nie edytowane od 6 dni"
     },
     "clearAll": "Wyczyść wszystkie filtry",
     "clearStats": "Usuń wszystkie filtry statystyk",
@@ -404,6 +414,7 @@
     "buyout": "kup teraz",
     "listingAge": "wiek ogłoszenia",
     "sort": "sortowanie",
+    "status": "status (archiwum strony pokazuje sprzedane, wycofane i wygasłe)",
     "extendedStat": "statystyka, której strona nie obsługuje"
   },
   "nameSearch": {
@@ -421,7 +432,7 @@
   },
   "detail": {
     "label": "Szczegóły ogłoszenia",
-    "sold": "Sprzedane / wycofane",
+    "ended": "Zakończone",
     "listed": "Wystawione",
     "favorite": "Dodaj do ulubionych",
     "unfavorite": "Usuń z ulubionych",
@@ -464,7 +475,7 @@
     "anyOf": "dowolne z ({{rows}})",
     "noneOf": "żadne z ({{rows}})",
     "seller": "sprzedawca {{name}}",
-    "sold": " · sprzedane"
+    "archive": " · archiwum"
   },
   "saved": {
     "savedToast": "Zapisano wyszukiwanie",

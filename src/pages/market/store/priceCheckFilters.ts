@@ -24,7 +24,7 @@ import {
   withLowDamageRange,
 } from '@/pages/market/lib/stats';
 import { PSEUDO_LOW_ENDS } from '@/pages/market/lib/pseudo';
-import type { MarketFilters, MarketListingStatus, Rarity, StatFilter } from '@/pages/market/lib/types';
+import type { MarketFilters, Rarity, StatFilter } from '@/pages/market/lib/types';
 
 export interface PriceCheckSearch {
   item: Item;
@@ -52,12 +52,6 @@ export interface PriceCheckSearch {
  * - `slot-value`: a pinned value or slot range that isn't a non-negative integer (the key grammar's slots).
  */
 export type MarketFilterGap = 'label' | 'slot-value';
-
-/**
- * Show Expired: PD2's listingArchive holds every ended listing (sold through an offer, removed by the seller,
- * expired), and players mostly trade in game and then remove the listing, so all three are the archive.
- */
-export const ARCHIVE_STATUSES: MarketListingStatus[] = ['sold', 'removed', 'expired'];
 
 const RARITIES: readonly Rarity[] = ['Normal', 'Superior', 'Magic', 'Rare', 'Crafted', 'Set', 'Unique', 'Runeword'];
 
@@ -186,11 +180,7 @@ export interface MarketQueryFilters {
 /** Reads a price-check PD2 market query back into market filters. */
 export function marketQueryToFilters(query: Record<string, unknown>, archive: boolean): MarketQueryFilters {
   const gaps = new Set<MarketFilterGap>();
-  const out: Partial<MarketFilters> = {
-    source: archive ? 'archive' : 'live',
-    // The price check's windows: 14 days of sales, 3 days of live listings
-    maxAgeDays: archive ? 14 : 3,
-  };
+  const out: Partial<MarketFilters> = { source: archive ? 'archive' : 'live' };
   if (typeof query.is_hardcore === 'boolean') out.hardcore = query.is_hardcore;
   if (typeof query.is_ladder === 'boolean') out.ladder = query.is_ladder;
 
@@ -256,8 +246,8 @@ export function marketQueryToFilters(query: Record<string, unknown>, archive: bo
 }
 
 /**
- * The price check's current search as market filters (no `status`: Show Expired searches `ARCHIVE_STATUSES` in
- * the price check, the market browser's sold archive when opened there), and the gaps PD2 would fill.
+ * The price check's current search as market filters (Show Expired: the archive, every ended listing like PD2's
+ * listingArchive), and the gaps PD2 would fill.
  */
 export function priceCheckMarketSearch(search: PriceCheckSearch): MarketQueryFilters {
   const query = buildGetMarketListingQuery(
@@ -317,10 +307,7 @@ export function priceCheckServiceSearch(
   const { filters, gaps } = priceCheckMarketSearch(search);
   const realm = { hardcore: search.settings.mode === 'hardcore', ladder: search.settings.ladder === 'ladder' };
   return {
-    filters: mergeFilters(defaultFilters(realm), {
-      ...(search.archive ? { ...filters, status: ARCHIVE_STATUSES } : filters),
-      sort,
-    }),
+    filters: mergeFilters(defaultFilters(realm), { ...filters, sort }),
     gaps,
   };
 }

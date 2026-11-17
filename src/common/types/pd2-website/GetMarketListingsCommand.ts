@@ -20,8 +20,10 @@ export interface MarketListingQuery {
   type: 'item';
   $limit: number;
   $skip: number;
-  accepted_offer_id: null;
-  updated_at: {
+  /** Live listings only: without an accepted offer (sold archive entries carry one). */
+  accepted_offer_id?: null;
+  /** Optional age window; absent = every listing. */
+  updated_at?: {
     $gte: string; // ISO timestamp
   };
   /** One sort key: newest / oldest bump, or HR price. */

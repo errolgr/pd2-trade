@@ -169,11 +169,14 @@ describe('siteSearchLink', () => {
       marketDefaultSort: 'cheapest',
       marketDefaultSeller: 'in-game',
       marketDefaultHasBuyout: 'yes',
-      marketDefaultMaxAgeDays: 7,
+      marketDefaultListedWithinDays: 7,
     });
     const fresh = defaultFilters({ hardcore: false, ladder: true }, defaults);
     expect(siteSearchLink(fresh).dropped).toEqual(['online', 'buyout', 'listing age', 'sort']);
-    // The archive keeps the site's 14 days whatever the live default
-    expect(siteSearchLink(withSource(fresh, 'archive', defaults)).dropped).not.toContain('listing age');
+    // No window carries nothing; a window other than the site Archive's 14 days is named
+    const archive = withSource(fresh, 'archive', defaults);
+    expect(siteSearchLink(archive).dropped).not.toContain('listing age');
+    expect(siteSearchLink({ ...archive, maxAgeDays: 14 }).dropped).not.toContain('listing age');
+    expect(siteSearchLink({ ...archive, maxAgeDays: 7 }).dropped).toContain('listing age');
   });
 });

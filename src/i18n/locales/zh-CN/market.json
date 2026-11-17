@@ -24,8 +24,8 @@
     "noFavoritesDescription": "点击挂单上的爱心即可保存在此；收藏会与 projectdiablo2.com 同步。",
     "noLiveListingsFor": "{{itemName}} 没有在售挂单",
     "noLiveListings": "没有匹配的在售挂单",
-    "searchArchivePrompt": "搜索已售存档，看看最近的成交价？",
-    "searchArchive": "搜索已售存档",
+    "searchArchivePrompt": "搜索存档（已售、已下架和已过期挂单），看看最近的成交价？",
+    "searchArchive": "搜索存档",
     "noListingsTitle": "没有匹配的挂单",
     "noListingsDescription": "放宽筛选、扩大时间范围或切换模式。",
     "refreshing": "正在刷新结果",
@@ -66,7 +66,7 @@
     "tooManyDescription_other": "最多可同时关注 {{count}} 个搜索。请先停止一个（已保存 标签页）。",
     "startedDescription": "每当有符合此搜索的新挂单时，你都会收到弹窗。",
     "labels": {
-      "archive": "无法关注已售挂单",
+      "archive": "无法关注存档搜索",
       "watching": "关注中：点击停止此搜索新挂单的弹窗",
       "watch": "关注：每当有符合此搜索的新挂单时弹窗并提示音"
     }
@@ -91,8 +91,18 @@
     "source": {
       "label": "挂单来源",
       "live": "在售挂单",
-      "archive": "已售存档",
-      "archiveTitle": "已售 / 已下架挂单"
+      "archive": "存档",
+      "archiveTitle": "已结束挂单：已售、已下架和已过期（projectdiablo2.com 存档）"
+    },
+    "status": {
+      "label": "状态",
+      "all": "全部",
+      "sold": "已售",
+      "removed": "已下架",
+      "expired": "已过期",
+      "soldTitle": "卖家接受了报价",
+      "removedTitle": "被卖家或管理员删除",
+      "expiredTitle": "6 天内未顶帖或编辑"
     },
     "clearAll": "清除所有筛选",
     "clearStats": "移除所有属性筛选",
@@ -353,6 +363,7 @@
     "buyout": "一口价",
     "listingAge": "挂单时间",
     "sort": "排序",
+    "status": "状态（网站存档显示已售、已下架和已过期）",
     "extendedStat": "网站无法表达的属性"
   },
   "nameSearch": {
@@ -367,7 +378,7 @@
   },
   "detail": {
     "label": "挂单详情",
-    "sold": "已售 / 已下架",
+    "ended": "已结束",
     "listed": "挂出时间",
     "favorite": "加入收藏",
     "unfavorite": "取消收藏",
@@ -404,7 +415,7 @@
     "anyOf": "任一（{{rows}}）",
     "noneOf": "排除（{{rows}}）",
     "seller": "卖家 {{name}}",
-    "sold": " · 已售"
+    "archive": " · 存档"
   },
   "saved": {
     "savedToast": "搜索已保存",

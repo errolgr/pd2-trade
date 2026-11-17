@@ -1,4 +1,4 @@
-import type { MarketFilters, Rarity } from './types';
+import type { MarketFilters, MarketListingStatus, Rarity } from './types';
 
 /**
  * Facet counts from the market service (`facets` of `POST /api/market/search`; server
@@ -7,8 +7,11 @@ import type { MarketFilters, Rarity } from './types';
  * picking it would find: quality = that rarity alone, flags = yes / no.
  */
 
-/** The facets the market browser asks for (first page of a narrowed search only, see `wantsFacets`). */
-export const BROWSER_FACETS = ['quality', 'typeCode', 'baseCode', 'ethereal', 'corrupted', 'price'] as const;
+/**
+ * The facets the market browser asks for (first page of a narrowed search only, see `wantsFacets`); the service
+ * counts `status` on archive searches only.
+ */
+export const BROWSER_FACETS = ['quality', 'typeCode', 'baseCode', 'ethereal', 'corrupted', 'status', 'price'] as const;
 export type MarketFacetName = (typeof BROWSER_FACETS)[number];
 
 /** Set on every search (realm, archive/live, age window, presence, buyout, sort): they never make it a narrowed one. */
@@ -57,6 +60,7 @@ export interface MarketFacets {
   baseCode?: FacetCount<string>[];
   ethereal?: FacetCount<boolean>[];
   corrupted?: FacetCount<boolean>[];
+  status?: FacetCount<MarketListingStatus>[];
   price?: PriceBucket[];
 }
 
@@ -74,6 +78,8 @@ function counts<T>(raw: unknown, isValue: (v: unknown) => v is T): FacetCount<T>
 const isString = (v: unknown): v is string => typeof v === 'string';
 const isNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 const isBoolean = (v: unknown): v is boolean => typeof v === 'boolean';
+const STATUSES: readonly unknown[] = ['active', 'sold', 'removed', 'expired'] satisfies MarketListingStatus[];
+const isStatus = (v: unknown): v is MarketListingStatus => STATUSES.includes(v);
 
 /** The `facets` of a search reply, keeping only well-formed buckets; undefined when the reply has none. */
 export function parseFacets(raw: unknown): MarketFacets | undefined {
@@ -92,6 +98,7 @@ export function parseFacets(raw: unknown): MarketFacets | undefined {
     baseCode: counts(f.baseCode, isString),
     ethereal: counts(f.ethereal, isBoolean),
     corrupted: counts(f.corrupted, isBoolean),
+    status: counts(f.status, isStatus),
     price,
   };
 }

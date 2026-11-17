@@ -25,8 +25,8 @@
     "noFavoritesDescription": "Markiere ein Inserat mit dem Herz, um es hier zu behalten; Favoriten werden mit projectdiablo2.com synchronisiert.",
     "noLiveListingsFor": "Keine aktiven Inserate für {{itemName}}",
     "noLiveListings": "Keine passenden aktiven Inserate",
-    "searchArchivePrompt": "Im Verkaufsarchiv nachsehen, wofür es zuletzt verkauft wurde?",
-    "searchArchive": "Verkaufsarchiv durchsuchen",
+    "searchArchivePrompt": "Im Archiv (verkaufte, entfernte und abgelaufene Inserate) nachsehen, wofür es zuletzt wegging?",
+    "searchArchive": "Archiv durchsuchen",
     "noListingsTitle": "Keine passenden Inserate",
     "noListingsDescription": "Lockere einen Filter, erweitere den Zeitraum oder wechsle den Modus.",
     "refreshing": "Ergebnisse werden aktualisiert",
@@ -71,7 +71,7 @@
     "tooManyDescription_other": "Es können höchstens {{count}} Suchen gleichzeitig beobachtet werden. Beende zuerst eine (Tab „Gespeichert“).",
     "startedDescription": "Du bekommst für jedes neue passende Inserat eine Benachrichtigung.",
     "labels": {
-      "archive": "Verkaufte Inserate können nicht beobachtet werden",
+      "archive": "Archivsuchen können nicht beobachtet werden",
       "watching": "Beobachtet: klicken, um die Benachrichtigungen für neue passende Inserate zu beenden",
       "watch": "Beobachten: Benachrichtigung und Ton für jedes neue passende Inserat"
     }
@@ -99,8 +99,18 @@
     "source": {
       "label": "Inseratquelle",
       "live": "Aktive Inserate",
-      "archive": "Verkaufsarchiv",
-      "archiveTitle": "Verkaufte / entfernte Inserate"
+      "archive": "Archiv",
+      "archiveTitle": "Beendete Inserate: verkauft, entfernt und abgelaufen (Archiv von projectdiablo2.com)"
+    },
+    "status": {
+      "label": "Status",
+      "all": "Alle",
+      "sold": "Verkauft",
+      "removed": "Entfernt",
+      "expired": "Abgelaufen",
+      "soldTitle": "Der Verkäufer hat ein Angebot angenommen",
+      "removedTitle": "Vom Verkäufer oder einem Moderator gelöscht",
+      "expiredTitle": "6 Tage lang nicht gebumpt oder bearbeitet"
     },
     "clearAll": "Alle Filter löschen",
     "clearStats": "Alle Wertefilter entfernen",
@@ -370,6 +380,7 @@
     "buyout": "Sofortkauf",
     "listingAge": "Inseratalter",
     "sort": "Sortierung",
+    "status": "Status (das Archiv der Seite zeigt verkaufte, entfernte und abgelaufene)",
     "extendedStat": "Wert, den die Seite nicht abbilden kann"
   },
   "nameSearch": {
@@ -385,7 +396,7 @@
   },
   "detail": {
     "label": "Inseratdetails",
-    "sold": "Verkauft / entfernt",
+    "ended": "Beendet",
     "listed": "Inseriert",
     "favorite": "Zu Favoriten hinzufügen",
     "unfavorite": "Aus Favoriten entfernen",
@@ -424,7 +435,7 @@
     "anyOf": "eines von ({{rows}})",
     "noneOf": "keines von ({{rows}})",
     "seller": "Verkäufer {{name}}",
-    "sold": " · verkauft"
+    "archive": " · Archiv"
   },
   "saved": {
     "savedToast": "Suche gespeichert",

@@ -35,6 +35,7 @@ import { formatStat, statWithValue } from './stat-text';
 import { AddAllModsButton, ModMenu } from './ModMenu';
 import { EnterOnce, type EnterTracker } from './EnterOnce';
 import { SellerName } from './SellerName';
+import { EndedTag } from './EndedTag';
 import { MarketSimButton } from './MarketSimButton';
 import { OfferBadge } from './OfferBadge';
 import type { ListingOffers } from '../lib/listing-offers';
@@ -74,7 +75,7 @@ export interface ResultCardsProps {
   statKeys: string[];
   favoriteIds: Set<string>;
   onToggleFavorite: (listing: MarketListingEntry) => void;
-  /** Sold archive: no offer/whisper. */
+  /** Archive (ended listings): no offer/whisper. */
   archived: boolean;
   api: MarketApi | null;
   command: CardCommand | null;
@@ -173,7 +174,10 @@ export function ResultCards({
               className="absolute left-0 top-0 w-full"
               style={{ transform: `translateY(${item.start}px)`, paddingInline: PADDING }}
             >
-              <EnterOnce tracker={enter} id={id} index={item.index} className="relative">
+              <EnterOnce tracker={enter}
+                id={id}
+                index={item.index}
+                className="relative">
                 <ResultCard
                   row={row}
                   selected={id === selectedId}
@@ -203,7 +207,8 @@ export function ResultCards({
           );
         })}
       </div>
-      <LoadMoreFooter loading={loadingMore} {...loadMore} />
+      <LoadMoreFooter loading={loadingMore}
+        {...loadMore} />
     </ScrollArea>
   );
 }
@@ -472,7 +477,8 @@ const ResultCard = React.memo(function ResultCard({
           {pseudoKeys.length > 0 && (
             <div className="flex flex-wrap gap-1 px-1.5 pt-1">
               {pseudoKeys.map((key) => (
-                <Tip key={key} label={statWithValue(key, row.pseudo[key] ?? 0)}>
+                <Tip key={key}
+                  label={statWithValue(key, row.pseudo[key] ?? 0)}>
                   <span className="inline-flex h-5 items-center gap-0.5 rounded-sm bg-muted/60 px-1.5 text-[11px] tabular-nums text-muted-foreground">
                     <Sigma className="size-3" />
                     {statWithValue(key, row.pseudo[key] ?? 0, { short: true })}
@@ -516,7 +522,8 @@ const ResultCard = React.memo(function ResultCard({
             )}
             {item.character_id && (
               <>
-                <span aria-hidden className="h-3 w-px bg-border" />
+                <span aria-hidden
+                  className="h-3 w-px bg-border" />
                 <Tip label={t('cards.inGameAs', { character: item.character_id })}>
                   <span className="inline-flex min-w-0 items-center gap-1 text-muted-foreground">
                     <Gamepad2 className={cn('size-3 shrink-0', inGame && 'text-success')} />
@@ -528,6 +535,7 @@ const ResultCard = React.memo(function ResultCard({
           </span>
           {/* When / where */}
           <span className="inline-flex items-center gap-2 text-[11px] text-muted-foreground">
+            <EndedTag row={row} />
             <Tip label={t('filters.sort.bumpedTitle')}>
               <span className="inline-flex items-center gap-1 tabular-nums">
                 <Clock className="size-3" />
@@ -574,8 +582,10 @@ const ResultCard = React.memo(function ResultCard({
               <ExternalLink className="size-3.5" />
             </Button>
           </Tip>
-          {simAccess && !archived && <MarketSimButton access={simAccess} listingId={listing._id} />}
-          {!archived && <WhisperButton actions={actions} dense />}
+          {simAccess && !archived && <MarketSimButton access={simAccess}
+            listingId={listing._id} />}
+          {!archived && <WhisperButton actions={actions}
+            dense />}
           {!archived && (
             <OfferButton
               api={api}
@@ -669,13 +679,17 @@ function SourceSuffix({
           </span>
         </span>
       </TooltipTrigger>
-      <TooltipContent side="top" align="start" className="space-y-1 text-[11px]">
+      <TooltipContent side="top"
+        align="start"
+        className="space-y-1 text-[11px]">
         {ownLabel && <div className="text-muted-foreground">{ownLabel}</div>}
         {sources.map((s) => {
           const group = groups[s.group];
           return (
-            <div key={s.group} className="flex items-center gap-1.5">
-              <SocketIcon listing={groupListings[s.group]} className="size-4" />
+            <div key={s.group}
+              className="flex items-center gap-1.5">
+              <SocketIcon listing={groupListings[s.group]}
+                className="size-4" />
               <span className={groupNameColor(group)}>
                 {`${group.items.length > 1 ? `${group.items.length} × ` : ''}${shortName(group.name)}`}
               </span>
@@ -719,7 +733,8 @@ function ModLine({
         highlighted && 'bg-muted/60',
       )}
     >
-      {matched && <span aria-hidden className="absolute inset-y-0.5 left-0 w-[3px] rounded-full bg-primary" />}
+      {matched && <span aria-hidden
+        className="absolute inset-y-0.5 left-0 w-[3px] rounded-full bg-primary" />}
       <span
         className={cn(
           'relative min-w-0 flex-1',
@@ -731,7 +746,10 @@ function ModLine({
         {hasRange && <span className="text-muted-foreground">{` [${mod.min} – ${mod.max}]`}</span>}
         {line.perLevel && <span className="text-muted-foreground">{t('cards.perLevel')}</span>}
         {split && (
-          <SourceSuffix line={line} groups={groups} groupListings={groupListings} onHoverGroup={onHoverGroup} />
+          <SourceSuffix line={line}
+            groups={groups}
+            groupListings={groupListings}
+            onHoverGroup={onHoverGroup} />
         )}
       </span>
       {matched && <span className="relative shrink-0 text-[11px] text-primary">{t('cards.matchedFilter')}</span>}
@@ -766,14 +784,16 @@ function SocketSection({
   const total = values.length > 0 && values.every((v) => v !== null) ? values.reduce((s, v) => s + (v ?? 0), 0) : null;
   const columns = Math.min(Math.max(groups.length, 1), 3);
   return (
-    <section className="border-t border-border/50 px-3 py-2" onMouseLeave={() => onHover(null)}>
+    <section className="border-t border-border/50 px-3 py-2"
+      onMouseLeave={() => onHover(null)}>
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
           {t('cards.socketed', { count: filled })}
         </span>
         <span className="flex items-center gap-1">
           {socketGroups.map((g, socket) => (
-            <Tip key={socket} label={groups[g].name}>
+            <Tip key={socket}
+              label={groups[g].name}>
               <span
                 onMouseEnter={() => onHover(g)}
                 className={cn(
@@ -790,7 +810,8 @@ function SocketSection({
             </Tip>
           ))}
           {Array.from({ length: emptySockets }, (_, i) => (
-            <span key={`empty-${i}`} className="size-6 rounded-full border border-dashed border-border" />
+            <span key={`empty-${i}`}
+              className="size-6 rounded-full border border-dashed border-border" />
           ))}
         </span>
         {emptySockets > 0 && (
@@ -803,7 +824,8 @@ function SocketSection({
         )}
       </div>
       {groups.length > 0 && (
-        <div className="mt-1.5 grid gap-1.5" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+        <div className="mt-1.5 grid gap-1.5"
+          style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
           {groups.map((group, g) => (
             <div
               key={group.key}
@@ -814,7 +836,8 @@ function SocketSection({
               )}
             >
               <div className="flex items-center gap-1.5">
-                <SocketIcon listing={groupListings[g]} className="size-7" />
+                <SocketIcon listing={groupListings[g]}
+                  className="size-7" />
                 <span className={cn('truncate text-[12px] font-semibold', groupNameColor(group))}>
                   {group.items.length > 1 ? `${group.items.length} × ${group.name}` : group.name}
                 </span>
@@ -838,11 +861,16 @@ function SocketSection({
                     // Flag-only lines (Zod's Indestructible) have no mod to filter on
                     const mod = group.mods[i];
                     return mod ? (
-                      <ModMenu key={i} mod={mod} item={item} socketLine className={lineClass}>
+                      <ModMenu key={i}
+                        mod={mod}
+                        item={item}
+                        socketLine
+                        className={lineClass}>
                         {text}
                       </ModMenu>
                     ) : (
-                      <div key={i} className={lineClass}>
+                      <div key={i}
+                        className={lineClass}>
                         {text}
                       </div>
                     );

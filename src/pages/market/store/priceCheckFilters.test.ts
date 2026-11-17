@@ -4,7 +4,6 @@ import type { Item } from '@/pages/price-check/lib/interfaces';
 import type { MarketFilters } from '@/pages/market/lib/types';
 import { optionCodes } from '@/pages/market/lib/catalog';
 import {
-  ARCHIVE_STATUSES,
   marketQueryToFilters,
   priceCheckMarketSearch,
   priceCheckServiceSearch,
@@ -45,7 +44,6 @@ describe('marketQueryToFilters', () => {
     );
     expect(filters).toMatchObject({
       source: 'live',
-      maxAgeDays: 3,
       hardcore: true,
       ladder: false,
       rarity: ['Rare'],
@@ -79,7 +77,8 @@ describe('marketQueryToFilters', () => {
       },
       true,
     );
-    expect(filters).toMatchObject({ source: 'archive', maxAgeDays: 14 });
+    expect(filters).toMatchObject({ source: 'archive' });
+    expect(filters).not.toHaveProperty('maxAgeDays');
     expect(stripIds(filters)).toEqual([
       { kind: 'mod', key: 'all_resist', min: 15, enabled: true },
       { kind: 'mod', key: 'all_attributes', min: 5, enabled: true },
@@ -275,8 +274,10 @@ describe('priceCheckToMarketFilters', () => {
     expect(stripIds(filters)).toEqual([{ kind: 'mod', key: 'item_fastercastrate', min: 20, enabled: true }]);
   });
 
-  it('switches to the sold archive window', () => {
-    expect(priceCheckToMarketFilters(search({ archive: true }))).toMatchObject({ source: 'archive', maxAgeDays: 14 });
+  it('switches to the archive, with no age window', () => {
+    const filters = priceCheckToMarketFilters(search({ archive: true }));
+    expect(filters).toMatchObject({ source: 'archive' });
+    expect(filters).not.toHaveProperty('maxAgeDays');
   });
 
   it('searches a runeword as a Runeword, whatever its base quality', () => {
@@ -316,7 +317,7 @@ describe('priceCheckToMarketFilters', () => {
       rarity: ['Runeword'],
       typeCode: 'shie',
       baseCode: 'uit',
-      status: ARCHIVE_STATUSES,
+      source: 'archive',
     });
   });
 

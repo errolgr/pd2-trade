@@ -18,6 +18,7 @@ import { itemNameColor } from './ItemTooltip';
 import { displayMods } from '../lib/card-model';
 import { EnterOnce, type EnterTracker } from './EnterOnce';
 import { SellerName } from './SellerName';
+import { EndedTag } from './EndedTag';
 import { OfferBadge } from './OfferBadge';
 import type { ListingOffers } from '../lib/listing-offers';
 import { roundHr } from '../lib/price-stats';
@@ -355,6 +356,7 @@ const ResultRow = React.memo(function ResultRow({
             </SellerName>
           )}
           <OnlineDots listing={listing} />
+          <EndedTag row={row} />
           <span className="tabular-nums">{listingAge(listing)}</span>
         </div>
       </div>
