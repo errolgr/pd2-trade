@@ -580,6 +580,12 @@
     "2h-ranged": "A distancia a dos manos"
   },
   "wtb": {
+    "callout": {
+      "badge": "NUEVO",
+      "title": "Solicitudes de compra",
+      "description": "¿No lo encuentras? Publica lo que quieres con tu oferta: los vendedores que tasen un objeto que coincida la verán. Todas las solicitudes están en {{wanted}}.",
+      "dismiss": "Cerrar"
+    },
     "chip": {
       "label_one": "{{count}} comprador · hasta {{offer}}",
       "label_many": "{{count}} compradores · hasta {{offer}}",

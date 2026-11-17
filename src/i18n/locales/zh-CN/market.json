@@ -532,6 +532,12 @@
     "2h-ranged": "双手远程"
   },
   "wtb": {
+    "callout": {
+      "badge": "新",
+      "title": "求购",
+      "description": "找不到？发布求购并附上你的出价：查价到匹配物品的卖家会看到。所有求购都在「{{wanted}}」中。",
+      "dismiss": "关闭"
+    },
     "chip": {
       "label_other": "{{count}} 位买家 · 最高 {{offer}}",
       "tooltip_other": "{{count}} 位玩家发布了此物品满足的求购。点击查看他们的出价。",
