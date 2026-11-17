@@ -228,8 +228,13 @@ const MarketBrowserPage: React.FC = () => {
     pageSize: settings?.marketPageSize,
   });
 
-  // Wanted: Fits my stash (the stash run through /match), the price check's rune prices for the lowest offer
-  const stash = useStashWtbMatches(activated && signedIn && wantedSource, mode, token);
+  // Wanted: Fits my stash (the stash run through /match in the board's realm), the price check's rune prices for
+  // the lowest offer
+  const boardRealm = useMemo(
+    () => ({ ladder: filters?.ladder ?? mode.ladder, hardcore: filters?.hardcore ?? mode.hardcore }),
+    [filters?.ladder, filters?.hardcore, mode],
+  );
+  const stash = useStashWtbMatches(activated && signedIn && wantedSource, boardRealm, token);
   const { calculatedRuneValues } = useEconomyData();
   const wantedFilters = wantedSource && filters ? (filters.wanted ?? {}) : null;
   const fitsStash = !!token && !!wantedFilters?.fitsStash;
@@ -435,6 +440,14 @@ const MarketBrowserPage: React.FC = () => {
   const openOthersRequest = (request: WtbRequest) => {
     if (filters) setFilters(withSource(filters, 'wanted', searchDefaults));
     openRequest({ request });
+  };
+  /**
+   * The Wanted board on Would take these items for `f` (the demand bar's View requests, the post drawer's See all):
+   * the same overlapping requests their counts were read for.
+   */
+  const wouldTakeBoard = (f: MarketFilters): MarketFilters => {
+    const board = withSource(f, 'wanted', searchDefaults);
+    return { ...board, wanted: { ...board.wanted, overlap: true } };
   };
   /** "List at {offer}": the list item tab with the item and the offer as its price. */
   const listAt = useCallback(
@@ -885,7 +898,7 @@ const MarketBrowserPage: React.FC = () => {
                             demand && (
                               <DemandBar
                                 model={demand}
-                                onViewRequests={() => setFilters(withSource(filters, 'wanted', searchDefaults))}
+                                onViewRequests={() => setFilters(wouldTakeBoard(filters))}
                               />
                             )
                           }
@@ -1010,7 +1023,7 @@ const MarketBrowserPage: React.FC = () => {
                         onDraftChange={keepPostDraft}
                         onOpenRequest={openOthersRequest}
                         onSeeAllRequests={() => {
-                          setFilters(withSource(filters, 'wanted', searchDefaults));
+                          setFilters(wouldTakeBoard(filters));
                           setWtbPost(null);
                         }}
                         onClose={() => setWtbPost(null)}

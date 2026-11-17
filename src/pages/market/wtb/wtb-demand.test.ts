@@ -219,10 +219,15 @@ describe('type-only search (Circlet, Jewel)', () => {
   });
 
   it("the post drawer asks too, and lists HammerTime's jewel (the user's own left out)", () => {
-    expect(othersOverlapBody(live)).toMatchObject({ typeCode: '{"$in": ["circ", "jewl"]}', overlap: true, limit: 10 });
-    expect(othersOverlapBody({ ...live, typeCode: undefined })).toBeNull();
+    expect(othersOverlapBody(live, [])).toMatchObject({ typeCode: '{"$in": ["circ", "jewl"]}', overlap: true, limit: 10 });
+    expect(othersOverlapBody({ ...live, typeCode: undefined }, [])).toBeNull();
     const box = othersBoxModel(page([circlet, jewel]), live, { userId: 'errol', editingId: null, now: NOW });
     expect(box?.count).toBe(1);
     expect(box?.rows.map((r) => [r.buyer, r.offer])).toEqual([['HammerTime', '1 Ist']]);
+  });
+
+  it("Others want this too leaves the draft's nice-to-have rows out (they never rule a request out)", () => {
+    const draft = { ...live, stats: [row('must', 'item_fastercastrate', { min: 20 }), row('nice', 'item_maxhp', { min: 30 })] };
+    expect(othersOverlapBody(draft, ['nice'])?.stats).toEqual([{ kind: 'mod', key: 'item_fastercastrate', min: 20 }]);
   });
 });

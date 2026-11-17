@@ -41,9 +41,17 @@ export function demandBodies(
   };
 }
 
-/** The post drawer's "Others want this too" search: requests overlapping the draft's item (none without one). */
-export const othersOverlapBody = (filters: MarketFilters): WtbSearchBody | null =>
-  wtbItemScoped(filters) ? wtbOverlapBody(filters, { limit: OTHERS_LOOKUP }) : null;
+/**
+ * The post drawer's "Others want this too" search: requests overlapping the draft's item and its required rows (none
+ * without an item). Nice-to-have rows are left out: they never rule a request out, the buyer takes items without them.
+ */
+export const othersOverlapBody = (filters: MarketFilters, niceToHaveIds: readonly string[]): WtbSearchBody | null =>
+  wtbItemScoped(filters)
+    ? wtbOverlapBody(
+        { ...filters, stats: filters.stats.filter((s) => !niceToHaveIds.includes(s.id)) },
+        { limit: OTHERS_LOOKUP },
+      )
+    : null;
 export type DemandBarModel =
   | {
       kind: 'live';

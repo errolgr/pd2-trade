@@ -233,6 +233,13 @@ describe('Wanted search body', () => {
     expect(wtbSearchBody(w, { stashIds: many, runeValues: [] }).ids).toHaveLength(500);
   });
 
+  it('sends the socket range to the board and the overlap search (requests asking for sockets in it)', () => {
+    const s = { ...f, socketsMin: 4, socketsMax: 4 };
+    expect(wtbSearchBody(s, { stashIds: null, runeValues: [] })).toMatchObject({ socketsMin: 4, socketsMax: 4 });
+    expect(wtbOverlapBody({ ...f, socketsMin: 2 }, { limit: 3 })).toMatchObject({ socketsMin: 2 });
+    expect(wtbOverlapBody({ ...f, socketsMin: 2 }, { limit: 3 })).not.toHaveProperty('socketsMax');
+  });
+
   it('overlap: the item and required rows only, best offer first', () => {
     expect(wtbOverlapBody(f, { limit: 3 })).toEqual({
       ladder: true,

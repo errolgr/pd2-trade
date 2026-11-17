@@ -317,6 +317,13 @@ export interface WtbSearchBody {
   baseCode?: string;
   rarity?: MarketFilters['rarity'];
   stats?: { kind: StatFilter['kind']; key: string; min?: number; max?: number }[];
+  /** Socket count range (0–6): requests that ask for sockets in it (`overlap`: whose socket range meets it). */
+  socketsMin?: number;
+  socketsMax?: number;
+  /** Item flags: requests asking for a corrupted / uncorrupted… item (`overlap`: that would accept one). */
+  corrupted?: 'yes' | 'no';
+  ethereal?: 'yes' | 'no';
+  desecrated?: 'yes' | 'no';
   minOfferHr?: number;
   buyer?: string;
   mine?: boolean;
@@ -341,7 +348,10 @@ export function offerToHr(amount: number, currency: WtbCurrency, runeValues: rea
   return rune && rune.price > 0 ? Math.round(amount * rune.price * 1000) / 1000 : null;
 }
 
-/** The item fields and required stat rows of `f` as a Wanted search says them (both semantics). */
+/**
+ * The item fields, socket range, item flags (corrupted, ethereal, desecrated when yes / no) and required stat rows
+ * of `f` as a Wanted search says them (both semantics).
+ */
 function searchedItem(f: MarketFilters): Omit<WtbSearchBody, 'sort' | 'cursor' | 'limit'> {
   const stats = wtbStatRows(f)
     .filter((s) => groupOf(s) === 'and')
@@ -359,13 +369,18 @@ function searchedItem(f: MarketFilters): Omit<WtbSearchBody, 'sort' | 'cursor' |
     ...(f.baseCode && { baseCode: f.baseCode }),
     ...(f.rarity.length > 0 && { rarity: f.rarity }),
     ...(stats.length > 0 && { stats }),
+    ...(f.socketsMin !== undefined && { socketsMin: f.socketsMin }),
+    ...(f.socketsMax !== undefined && { socketsMax: f.socketsMax }),
+    ...(f.corrupted !== 'any' && { corrupted: f.corrupted }),
+    ...(f.ethereal !== 'any' && { ethereal: f.ethereal }),
+    ...(f.desecrated !== 'any' && { desecrated: f.desecrated }),
   };
 }
 
 /**
  * The Wanted search for `f`: the item fields and required stat rows (any-of and excluded rows can't say what a
- * request asks for), the lowest offer in HR, the buyer (`sellerName`), Mine only, and Fits my stash as the ids
- * the stash matched (`stashIds`, null while unknown: none sent).
+ * request asks for), the lowest offer in HR, the buyer (`sellerName`), Mine only, Fits my stash as the ids the
+ * stash matched (`stashIds`, null while unknown: none sent), and Would take these items as the overlap semantics.
  */
 export function wtbSearchBody(
   f: MarketFilters,
@@ -384,6 +399,7 @@ export function wtbSearchBody(
     ...(minOfferHr !== null && { minOfferHr }),
     ...(buyer && { buyer }),
     ...(w.mine && { mine: true }),
+    ...(w.overlap && { overlap: true }),
     ...(w.fitsStash && stashIds && { ids: stashIds.slice(0, MAX_WTB_SEARCH_IDS) }),
     sort: w.sort ?? 'newest',
     ...(cursor && { cursor }),

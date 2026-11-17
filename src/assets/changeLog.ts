@@ -1,4 +1,10 @@
 export const changeLog = {
+  '0.12.1': [
+    '✨ Market: Wanted filters like listings. Sockets, Corrupted, Ethereal and Desecrated narrow buy requests, and "Would take these items" shows the requests an item of your search could fill',
+    '✨ Buy requests show everything they ask for: Uncorrupted, Non-ethereal, Desecrated, Unidentified and sockets, on the cards, in the request and while posting',
+    '✨ Market: the Class filter is gone',
+    '🔧 Buy requests: "Others want this too" no longer misses requests over a nice-to-have stat, and Fits my stash checks the realm you\'re browsing',
+  ],
   '0.12.0': [
     '🆕 Market: buy requests. Post one from any search ("Want to buy"); browse everyone\'s under Wanted; sellers answer with a whisper or an offer',
     '🆕 Buy request answers arrive as notifications and show in the chat thread with that player',

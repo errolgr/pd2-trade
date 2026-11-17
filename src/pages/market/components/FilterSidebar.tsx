@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
-import { CLASSES, RARITIES, TYPE_OPTIONS, optionCodes } from '../lib/catalog';
+import { RARITIES, TYPE_OPTIONS, optionCodes } from '../lib/catalog';
 import {
   basesForTypeValue,
   baseValueLabel,
@@ -381,7 +381,7 @@ export function FilterSidebar({
 
         <Section
           {...section('Item', t('filters.sections.item'))}
-          active={countDefined(f.typeCode, f.baseCode, req.class) + (f.rarity.length ? 1 : 0)}
+          active={countDefined(f.typeCode, f.baseCode) + (f.rarity.length ? 1 : 0)}
         >
           <SelectField
             label={t('filters.type')}
@@ -413,64 +413,60 @@ export function FilterSidebar({
           <RarityField value={f.rarity}
             counts={counts.quality}
             onChange={(rarity) => set({ rarity })} />
-          {!wanted && (
-            <SelectField
-              label={t('filters.class')}
-              value={req.class}
-              options={CLASSES.map((c) => ({ value: c.value, label: c.label }))}
-              onChange={(v) => setReq({ class: CLASSES.find((c) => c.value === v)?.value })}
-            />
-          )}
         </Section>
 
-        {!wanted && (
-          <Section
-            {...section('Properties', t('filters.sections.properties'))}
-            active={countDefined(
-              f.ethereal,
-              f.corrupted,
-              f.desecrated,
-              f.identified,
-              anniversaryTri(f.stats),
-              f.socketsMin,
-              f.socketsMax,
-            )}
-          >
-            <TriField
-              label={t('filters.corrupted')}
-              value={f.corrupted}
-              counts={yesNo(counts.corrupted)}
-              onChange={(corrupted) => set({ corrupted })}
-            />
-            <RangeField
-              label={t('filters.sockets')}
-              min={f.socketsMin}
-              max={f.socketsMax}
-              onChange={(socketsMin, socketsMax) => set({ socketsMin, socketsMax })}
-            />
-            <TriField
-              label={t('filters.ethereal')}
-              value={f.ethereal}
-              counts={yesNo(counts.ethereal)}
-              onChange={(ethereal) => set({ ethereal })}
-            />
-            <TriField
-              label={t('filters.desecrated')}
-              value={f.desecrated}
-              onChange={(desecrated) => set({ desecrated })}
-            />
-            <TriField
-              label={t('filters.identified')}
-              value={f.identified}
-              onChange={(identified) => set({ identified })}
-            />
-            <TriField
-              label={t('filters.anniversary')}
-              value={anniversaryTri(f.stats)}
-              onChange={(value) => set({ stats: withAnniversary(f.stats, value) })}
-            />
-          </Section>
-        )}
+        {/* On Wanted, the properties a buy request can ask for (the board filters on these); not Identified or
+            Anniversary, which no request is posted for */}
+        <Section
+          {...section('Properties', t('filters.sections.properties'))}
+          active={countDefined(
+            f.ethereal,
+            f.corrupted,
+            f.desecrated,
+            wanted ? undefined : f.identified,
+            wanted ? undefined : anniversaryTri(f.stats),
+            f.socketsMin,
+            f.socketsMax,
+          )}
+        >
+          <TriField
+            label={t('filters.corrupted')}
+            value={f.corrupted}
+            counts={wanted ? undefined : yesNo(counts.corrupted)}
+            onChange={(corrupted) => set({ corrupted })}
+          />
+          <RangeField
+            label={t('filters.sockets')}
+            min={f.socketsMin}
+            max={f.socketsMax}
+            onChange={(socketsMin, socketsMax) => set({ socketsMin, socketsMax })}
+          />
+          <TriField
+            label={t('filters.ethereal')}
+            value={f.ethereal}
+            counts={wanted ? undefined : yesNo(counts.ethereal)}
+            onChange={(ethereal) => set({ ethereal })}
+          />
+          <TriField
+            label={t('filters.desecrated')}
+            value={f.desecrated}
+            onChange={(desecrated) => set({ desecrated })}
+          />
+          {!wanted && (
+            <>
+              <TriField
+                label={t('filters.identified')}
+                value={f.identified}
+                onChange={(identified) => set({ identified })}
+              />
+              <TriField
+                label={t('filters.anniversary')}
+                value={anniversaryTri(f.stats)}
+                onChange={(value) => set({ stats: withAnniversary(f.stats, value) })}
+              />
+            </>
+          )}
+        </Section>
 
         <Section
           {...section('Listing', wanted ? t('filters.sections.realm') : t('filters.sections.listing'))}
@@ -651,8 +647,16 @@ export function FilterSidebar({
             </Section>
             <Section
               {...section('Requests', t('filters.sections.requests'))}
-              active={(wanted.fitsStash ? 1 : 0) + (wanted.mine ? 1 : 0)}
+              active={(wanted.overlap ? 1 : 0) + (wanted.fitsStash ? 1 : 0) + (wanted.mine ? 1 : 0)}
             >
+              <WantedToggle
+                label={t('filters.wouldTake')}
+                hint={t('filters.wouldTakeTitle')}
+                count={null}
+                checked={!!wanted.overlap}
+                disabledReason={null}
+                onChange={(overlap) => setWanted({ overlap: overlap || undefined })}
+              />
               <WantedToggle
                 label={t('filters.fitsStash')}
                 count={wantedCounts?.stash ?? null}
@@ -773,22 +777,27 @@ function SellerInput({
   );
 }
 
-/** A Requests checkbox (Fits my stash, Mine only) with its count; signed out it's off, the reason on hover. */
+/**
+ * A Requests checkbox (Would take these items, Fits my stash, Mine only) with its count and `hint` on hover; signed
+ * out a sign-in one is off, the reason on hover.
+ */
 function WantedToggle({
   label,
+  hint,
   count,
   checked,
   disabledReason,
   onChange,
 }: {
   label: string;
+  hint?: string;
   count: number | null;
   checked: boolean;
   disabledReason: string | null;
   onChange: (on: boolean) => void;
 }) {
   return (
-    <Tip label={disabledReason ?? undefined}>
+    <Tip label={disabledReason ?? hint}>
       <label
         className={cn(
           'flex items-center gap-2 text-xs',

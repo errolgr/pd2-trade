@@ -105,6 +105,8 @@
     "single": "{{search}}: {{listing}}"
   },
   "filters": {
+    "wouldTake": "Взяли бы эти предметы",
+    "wouldTakeTitle": "Заявки, которые мог бы выполнить предмет из этого поиска, а не только те, что просят эти фильтры",
     "label": "Фильтры поиска",
     "any": "Любой",
     "selected_one": "выбран {{count}}",
@@ -638,7 +640,30 @@
     "listItAt": "Выставить за {{offer}}",
     "nice": "Желательно",
     "must": "Обязательно",
-    "corrupted": "Осквернён",
+    "flags": {
+      "corrupted": { "yes": "Осквернён", "no": "Не осквернён" },
+      "ethereal": { "yes": "Эфирный", "no": "Не эфирный" },
+      "desecrated": { "yes": "Порченый", "no": "Не порченый" },
+      "identified": { "yes": "Опознан", "no": "Не опознан" }
+    },
+    "sockets": {
+      "exact_one": "{{count}} сокет",
+      "exact_few": "{{count}} сокета",
+      "exact_many": "{{count}} сокетов",
+      "exact_other": "{{count}} сокета",
+      "min_one": "{{count}}+ сокетов",
+      "min_few": "{{count}}+ сокетов",
+      "min_many": "{{count}}+ сокетов",
+      "min_other": "{{count}}+ сокетов",
+      "max_one": "≤{{count}} сокет",
+      "max_few": "≤{{count}} сокета",
+      "max_many": "≤{{count}} сокетов",
+      "max_other": "≤{{count}} сокета",
+      "range_one": "{{min}}–{{count}} сокет",
+      "range_few": "{{min}}–{{count}} сокета",
+      "range_many": "{{min}}–{{count}} сокетов",
+      "range_other": "{{min}}–{{count}} сокета"
+    },
     "youHaveOne": "У вас есть",
     "yours": "ваша",
     "daysLeft_one": "Остался {{count}} день",
