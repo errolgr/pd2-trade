@@ -322,6 +322,8 @@ export interface SelectOption {
   label: string;
   count?: number;
   depth?: 0 | 1;
+  /** Image URL shown before the label, in the list and in the trigger (rune art). */
+  icon?: string;
 }
 
 /**
@@ -345,24 +347,7 @@ export function filterSelectOptions(options: SelectOption[], query: string): Sel
   return kept;
 }
 
-/**
- * Compact select with a search box at the top of its list; `anyLabel` (default "Any") adds an entry mapped to
- * undefined, `anyLabel: null` omits it. An option's `count` (facets) shows in the list, not in the trigger;
- * `depth: 1` indents it under the option above (a type group's member types). With `onToggle` it is a multi-select:
- * clicking (or Enter on) an option adds or removes it and keeps the list open, while "Any" clears the picks and
- * closes; `selected` then says which options show as picked and `valueLabel` what the trigger shows.
- */
-export function SelectField({
-  label,
-  value,
-  options,
-  onChange,
-  onToggle,
-  selected,
-  valueLabel,
-  anyLabel: anyLabelProp,
-  disabled,
-}: {
+interface SelectMenuProps {
   label: string;
   value: string | undefined;
   options: SelectOption[];
@@ -372,7 +357,39 @@ export function SelectField({
   valueLabel?: string;
   anyLabel?: string | null;
   disabled?: boolean;
-}) {
+  /** The trigger's sizing (default full width). */
+  className?: string;
+}
+
+/**
+ * Compact select with a search box at the top of its list; `anyLabel` (default "Any") adds an entry mapped to
+ * undefined, `anyLabel: null` omits it. An option's `count` (facets) shows in the list, not in the trigger;
+ * `depth: 1` indents it under the option above (a type group's member types); `icon` shows its art in the list
+ * and the trigger. With `onToggle` it is a multi-select: clicking (or Enter on) an option adds or removes it and
+ * keeps the list open, while "Any" clears the picks and closes; `selected` then says which options show as picked
+ * and `valueLabel` what the trigger shows.
+ */
+export function SelectField(props: SelectMenuProps) {
+  return (
+    <Field label={props.label}>
+      <SelectMenu {...props} />
+    </Field>
+  );
+}
+
+/** SelectField without the label above it (`label` stays the accessible name), for a row beside an input. */
+export function SelectMenu({
+  label,
+  value,
+  options,
+  onChange,
+  onToggle,
+  selected,
+  valueLabel,
+  anyLabel: anyLabelProp,
+  disabled,
+  className,
+}: SelectMenuProps) {
   const { t } = useTranslation('market');
   const search = useSearchPopover();
   // `follow`: the highlight tracks the search (see below) until the arrow keys or the pointer move it. `resync`
@@ -381,6 +398,9 @@ export function SelectField({
   const anyLabel = anyLabelProp === undefined ? t('filters.any') : anyLabelProp;
   const current = value ?? ANY;
   const all: SelectOption[] = anyLabel === null ? options : [{ value: ANY, label: anyLabel }, ...options];
+  const currentOption = all.find((o) => o.value === current);
+  // Art lists keep an art column for every row, so labels line up
+  const hasIcons = options.some((o) => o.icon);
   const shown = filterSelectOptions(all, search.query);
   const q = search.query.trim().toLowerCase();
   // Typing highlights the first option that matches itself, not a group kept for a matching member ("circ":
@@ -395,79 +415,96 @@ export function SelectField({
   };
 
   return (
-    <Field label={label}>
-      <SearchPopover
-        state={{
-          ...search,
-          setOpen: open,
-          setQuery: (query) => {
-            search.setQuery(query);
-            setHighlight((h) => ({ ...h, follow: true }));
-          },
-        }}
-        label={label}
-        placeholder={t('filters.searchOptions')}
-        // cmdk trims its value, so a trailing space re-sends the same highlight: a controlled value that does not
-        // change is not re-applied after the list's own pick
-        highlighted={highlight.resync ? `${highlighted} ` : highlighted}
-        // While following the search, the list's own pick of its first row is undone
-        onHighlight={(v) =>
-          setHighlight((h) => (h.follow ? { ...h, resync: !h.resync } : { value: v, follow: false, resync: false }))
-        }
-        onNavigate={
-          highlight.follow ? () => setHighlight({ value: highlighted, follow: false, resync: false }) : undefined
-        }
-        contentClassName="w-auto max-w-80 min-w-(--radix-popover-trigger-width)"
-        inputClassName="h-8 text-xs"
-        listClassName="max-h-72"
-        trigger={
-          <button
-            type="button"
-            role="combobox"
-            aria-label={label}
-            aria-expanded={search.open}
-            disabled={disabled}
-            // As a select's: the open list takes the overlay's keyboard, so typing goes to its search box
-            data-keep-keyboard
-            className="flex h-7 w-full items-center justify-between gap-2 rounded-md border border-input bg-transparent px-2 text-xs whitespace-nowrap outline-none transition-[color,background-color,border-color,box-shadow] duration-(--dur-fast) ease-out hover:border-ring/40 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-50 data-[state=open]:border-ring"
-          >
-            <span className="truncate">{valueLabel ?? all.find((o) => o.value === current)?.label}</span>
-            <ChevronDown
-              aria-hidden
-              className="size-4 shrink-0 text-muted-foreground opacity-50 transition-transform duration-(--dur-fast) ease-out [[data-state=open]>&]:rotate-180"
-            />
-          </button>
-        }
-      >
-        {shown.map((o) => (
-          <FacetSelectItem
-            key={o.value}
-            value={o.value}
-            label={o.label}
-            count={o.count}
-            depth={o.depth}
-            selected={selected && o.value !== ANY ? selected(o.value) : o.value === current}
-            onSelect={() => {
-              if (onToggle && o.value !== ANY) return onToggle(o.value);
-              onChange(o.value === ANY ? undefined : o.value);
-              search.setOpen(false);
-            }}
+    <SearchPopover
+      state={{
+        ...search,
+        setOpen: open,
+        setQuery: (query) => {
+          search.setQuery(query);
+          setHighlight((h) => ({ ...h, follow: true }));
+        },
+      }}
+      label={label}
+      placeholder={t('filters.searchOptions')}
+      // cmdk trims its value, so a trailing space re-sends the same highlight: a controlled value that does not
+      // change is not re-applied after the list's own pick
+      highlighted={highlight.resync ? `${highlighted} ` : highlighted}
+      // While following the search, the list's own pick of its first row is undone
+      onHighlight={(v) =>
+        setHighlight((h) => (h.follow ? { ...h, resync: !h.resync } : { value: v, follow: false, resync: false }))
+      }
+      onNavigate={
+        highlight.follow ? () => setHighlight({ value: highlighted, follow: false, resync: false }) : undefined
+      }
+      contentClassName="w-auto max-w-80 min-w-(--radix-popover-trigger-width)"
+      inputClassName="h-8 text-xs"
+      listClassName="max-h-72"
+      trigger={
+        <button
+          type="button"
+          role="combobox"
+          aria-label={label}
+          aria-expanded={search.open}
+          disabled={disabled}
+          // As a select's: the open list takes the overlay's keyboard, so typing goes to its search box
+          data-keep-keyboard
+          className={cn(
+            'flex h-7 w-full items-center justify-between gap-2 rounded-md border border-input bg-transparent px-2 text-xs whitespace-nowrap outline-none transition-[color,background-color,border-color,box-shadow] duration-(--dur-fast) ease-out hover:border-ring/40 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-50 data-[state=open]:border-ring',
+            className,
+          )}
+        >
+          <span className="flex min-w-0 items-center gap-1.5">
+            {currentOption?.icon && <OptionIcon src={currentOption.icon} />}
+            <span className="truncate">{valueLabel ?? currentOption?.label}</span>
+          </span>
+          <ChevronDown
+            aria-hidden
+            className="size-4 shrink-0 text-muted-foreground opacity-50 transition-transform duration-(--dur-fast) ease-out [[data-state=open]>&]:rotate-180"
           />
-        ))}
-        {shown.length === 0 && (
-          <div className="px-2 py-3 text-center text-xs text-muted-foreground">{t('filters.noOptions')}</div>
-        )}
-      </SearchPopover>
-    </Field>
+        </button>
+      }
+    >
+      {shown.map((o) => (
+        <FacetSelectItem
+          key={o.value}
+          value={o.value}
+          label={o.label}
+          count={o.count}
+          depth={o.depth}
+          icon={hasIcons ? (o.icon ?? null) : undefined}
+          selected={selected && o.value !== ANY ? selected(o.value) : o.value === current}
+          onSelect={() => {
+            if (onToggle && o.value !== ANY) return onToggle(o.value);
+            onChange(o.value === ANY ? undefined : o.value);
+            search.setOpen(false);
+          }}
+        />
+      ))}
+      {shown.length === 0 && (
+        <div className="px-2 py-3 text-center text-xs text-muted-foreground">{t('filters.noOptions')}</div>
+      )}
+    </SearchPopover>
   );
 }
 
-/** A select option with its facet count (if any) on the right, dimmed at 0. */
+/** An option's art, at text size. */
+function OptionIcon({ src }: { src: string }) {
+  return <img src={src}
+    alt=""
+    aria-hidden
+    className="size-4 shrink-0 object-contain" />;
+}
+
+/**
+ * A select option with its facet count (if any) on the right, dimmed at 0. `icon`: its art; null keeps an empty
+ * art column (other options have art), undefined has none.
+ */
 function FacetSelectItem({
   value,
   label,
   count,
   depth,
+  icon,
   selected,
   onSelect,
 }: {
@@ -475,6 +512,7 @@ function FacetSelectItem({
   label: string;
   count: number | undefined;
   depth: 0 | 1 | undefined;
+  icon?: string | null;
   selected: boolean;
   onSelect: () => void;
 }) {
@@ -493,6 +531,8 @@ function FacetSelectItem({
         count === 0 && !selected && FACET_DIM,
       )}
     >
+      {icon !== undefined && (icon ? <OptionIcon src={icon} /> : <span aria-hidden
+        className="size-4 shrink-0" />)}
       <span className="min-w-0 flex-1 truncate">{label}</span>
       <FacetCount count={count} />
       <span className="flex size-3.5 shrink-0 items-center justify-center">
