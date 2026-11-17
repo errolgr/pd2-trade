@@ -1,5 +1,5 @@
 export const changeLog = {
-  '0.11.8': [
+  '0.12.0': [
     '🆕 Market: buy requests. Post one from any search ("Want to buy"); browse everyone\'s under Wanted; sellers answer with a whisper or an offer',
     '🆕 Buy request answers arrive as notifications and show in the chat thread with that player',
     '🆕 Price check and Quick List: a buyers chip shows open buy requests your item fills',
