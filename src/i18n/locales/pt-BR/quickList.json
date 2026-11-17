@@ -89,7 +89,12 @@
     "update": "Atualizar",
     "queueItem": "Pôr na fila",
     "post": "Publicar",
-    "noteOrPriceRequired": "Preencha a nota ou o preço em HR."
+    "noteOrPriceRequired": "Preencha a nota ou o preço em HR.",
+    "autoDelist": {
+      "skip": "Não remover este anúncio automaticamente",
+      "skipHint": "Colocá-lo no baú ou tirá-lo de lá não vai gerar pergunta.",
+      "remember": "Lembrar para todos os {{name}}"
+    }
   },
   "macros": {
     "duplicate": "Já existe uma macro chamada \"{{label}}\".",
@@ -182,7 +187,8 @@
     "pick": "Itens como {{name}} saíram do seu baú. Escolha quais anúncios remover.",
     "delist": "Remover",
     "keep": "Manter",
-    "choose": "Escolher"
+    "choose": "Escolher",
+    "neverAsk": "Nunca perguntar sobre {{name}}"
   },
   "myListings": {
     "searchPlaceholder": "Buscar entre {{count}} anúncios…",

@@ -604,6 +604,12 @@
     "2h-ranged": "Dwuręczna dystansowa"
   },
   "wtb": {
+    "callout": {
+      "badge": "NOWOŚĆ",
+      "title": "Zlecenia kupna",
+      "description": "Nie możesz znaleźć? Dodaj zlecenie kupna ze swoją ofertą: sprzedający, którzy wycenią pasujący przedmiot, ją zobaczą. Wszystkie zlecenia są w zakładce {{wanted}}.",
+      "dismiss": "Zamknij"
+    },
     "chip": {
       "label_one": "{{count}} kupujący · do {{offer}}",
       "label_few": "{{count}} kupujących · do {{offer}}",

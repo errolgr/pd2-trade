@@ -556,6 +556,12 @@
     "2h-ranged": "2H Ranged"
   },
   "wtb": {
+    "callout": {
+      "badge": "NEW",
+      "title": "Buy requests",
+      "description": "Can't find it? Post what you want with your offer: sellers who price-check a match see it. Everyone's requests are under {{wanted}}.",
+      "dismiss": "Dismiss"
+    },
     "chip": {
       "label_one": "{{count}} buyer · up to {{offer}}",
       "label_other": "{{count}} buyers · up to {{offer}}",

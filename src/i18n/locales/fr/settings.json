@@ -577,6 +577,25 @@
           "off": "Ne rien faire",
           "ask": "Me demander",
           "auto": "Retirer l'annonce"
+        },
+        "exceptions": {
+          "label": "Ne jamais retirer ceux-ci",
+          "description": "Les annonces de ces objets ne sont jamais retirées et aucune question n'est posée. « Ne plus demander pour… » dans l'invite en ajoute un.",
+          "add": "Ajouter",
+          "search": "Rechercher une base d'objet…",
+          "empty": "Aucun objet pour l'instant.",
+          "noMatch": "Aucune base d'objet ne correspond",
+          "remove": "Retirer {{name}}",
+          "stackableNote": "Monnaie empilable : tokens, pboxes, clés, essences."
+        },
+        "exceptionMode": {
+          "label": "Ne jamais retirer",
+          "description": "Une annonce marquée « Ne pas retirer cette annonce automatiquement » n'est jamais touchée.",
+          "options": {
+            "none": "Rien (par défaut)",
+            "stackable": "La monnaie empilable et les objets choisis",
+            "selected": "Seulement les objets choisis"
+          }
         }
       },
       "view": {

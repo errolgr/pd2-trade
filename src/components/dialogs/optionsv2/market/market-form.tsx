@@ -10,11 +10,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DEFAULT_WHISPER_TEMPLATE } from '@/pages/market/lib/whisper';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import { VolumeControl } from '../volume-control';
+import { DelistExceptions } from './delist-exceptions';
+import type { DelistException } from '@/pages/delist/delist-exemptions';
 import {
   ageDayOptions,
   alertSecondsOptions,
   AUTO_DELIST_OPTIONS,
   AUTO_DELIST_VALUES,
+  DELIST_EXCEPTION_OPTIONS,
+  DELIST_EXCEPTION_VALUES,
   BUYOUT_OPTIONS,
   BUYOUT_VALUES,
   LISTINGS_VIEW_OPTIONS,
@@ -31,6 +35,9 @@ import { Trans, useTranslation } from '@/i18n';
 
 const marketFormSchema = z.object({
   stashAutoDelist: z.enum(AUTO_DELIST_VALUES),
+  // Only DelistExceptions edits it (zod's inferred object fields would come out optional)
+  delistExceptions: z.custom<DelistException[]>((value) => Array.isArray(value)),
+  delistExceptionMode: z.enum(DELIST_EXCEPTION_VALUES),
   myListingsView: z.enum(LISTINGS_VIEW_VALUES),
   marketDefaultSort: z.enum(SORT_VALUES),
   marketDefaultSeller: z.enum(SELLER_VALUES),
@@ -52,6 +59,8 @@ type MarketFormValues = z.infer<typeof marketFormSchema>;
 function toFormValues(settings: ISettings | undefined): MarketFormValues {
   return {
     stashAutoDelist: settings?.stashAutoDelist ?? 'ask',
+    delistExceptions: settings?.delistExceptions ?? [],
+    delistExceptionMode: settings?.delistExceptionMode ?? 'none',
     myListingsView: settings?.myListingsView ?? 'cards',
     marketDefaultSort: settings?.marketDefaultSort ?? 'newest',
     marketDefaultSeller: settings?.marketDefaultSeller ?? 'all',
@@ -141,8 +150,11 @@ export function MarketForm() {
         const parsed = marketFormSchema.safeParse(form.getValues());
         if (!parsed.success) return;
         const current = toFormValues(settingsRef.current);
+        // JSON: the exception list is a fresh array after parsing
         const changed = Object.fromEntries(
-          Object.entries(parsed.data).filter(([key, val]) => current[key as keyof MarketFormValues] !== val),
+          Object.entries(parsed.data).filter(
+            ([key, val]) => JSON.stringify(current[key as keyof MarketFormValues]) !== JSON.stringify(val),
+          ),
         ) as Partial<ISettings>;
         if (Object.keys(changed).length > 0) updateSettings(changed);
       }, 300);
@@ -204,6 +216,46 @@ export function MarketForm() {
               />
             )}
           />
+          {form.watch('stashAutoDelist') !== 'off' && (
+            <>
+              <FormField
+                control={form.control}
+                name="delistExceptionMode"
+                render={({ field }) => (
+                  <SelectRow
+                    settingKey="delistExceptionMode"
+                    label={t('market.listings.autoDelist.exceptionMode.label')}
+                    description={t('market.listings.autoDelist.exceptionMode.description')}
+                    value={field.value}
+                    options={DELIST_EXCEPTION_OPTIONS}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
+              {form.watch('delistExceptionMode') !== 'none' && (
+                <FormField
+                  control={form.control}
+                  name="delistExceptions"
+                  render={({ field }) => (
+                    <SettingsRow
+                      settingKey="delistExceptions"
+                      layout="stacked"
+                      label={t('market.listings.autoDelist.exceptions.label')}
+                      description={t('market.listings.autoDelist.exceptions.description')}
+                      control={<DelistExceptions value={field.value}
+                        onChange={field.onChange} />}
+                    >
+                      {form.watch('delistExceptionMode') === 'stackable' && (
+                        <p className="text-xs text-muted-foreground">
+                          {t('market.listings.autoDelist.exceptions.stackableNote')}
+                        </p>
+                      )}
+                    </SettingsRow>
+                  )}
+                />
+              )}
+            </>
+          )}
           <FormField
             control={form.control}
             name="myListingsView"

@@ -4,7 +4,6 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { showToast } from '@/overlay';
 import { trackEvent } from '@/lib/telemetry';
 import { useTranslation } from '@/i18n';
@@ -13,7 +12,7 @@ import { useMarketStore } from '@/pages/market/store/useMarketStore';
 import { toggleWatch, watchState } from '../alerts/WatchButton';
 import { MarketApiError } from '../alerts/market-api';
 import { createWtbRequest, updateWtbRequest } from '../alerts/wtb-api';
-import { NumberInput, Segmented } from '../components/controls';
+import { NumberInput, Segmented, SelectMenu } from '../components/controls';
 import { withSource, type SearchDefaults } from '../lib/defaults';
 import { roundHr } from '../lib/price-stats';
 import { groupOf } from '../lib/stat-groups';
@@ -25,7 +24,7 @@ import {
   MAX_OPEN_WTB_PER_USER,
   niceToHaveIdsFor,
   toggleNiceToHave,
-  WTB_CURRENCIES,
+  WTB_CURRENCY_OPTIONS,
   WTB_EXPIRY_DAYS,
   isPostBlocker,
   postBlocker,
@@ -364,22 +363,14 @@ export function WtbPostDrawer({
                   onChange={setAmount}
                 />
               </div>
-              <Select value={currency}
-                onValueChange={(v) => setCurrency(v as WtbCurrency)}>
-                <SelectTrigger className="h-7 w-24 text-xs"
-                  aria-label={t('wtb.post.currency')}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {WTB_CURRENCIES.map((c) => (
-                    <SelectItem key={c}
-                      value={c}
-                      className="text-xs">
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SelectMenu
+                label={t('wtb.post.currency')}
+                value={currency}
+                options={WTB_CURRENCY_OPTIONS}
+                anyLabel={null}
+                onChange={(v) => v && setCurrency(v as WtbCurrency)}
+                className="w-24 shrink-0"
+              />
             </div>
             {amount !== undefined && !validAmount && (
               <p className="text-[11px] text-destructive">{t('wtb.post.invalidAmount')}</p>

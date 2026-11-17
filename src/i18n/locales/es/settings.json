@@ -577,6 +577,25 @@
           "off": "No hacer nada",
           "ask": "Preguntarme",
           "auto": "Retirar el anuncio"
+        },
+        "exceptions": {
+          "label": "Nunca retirar estos",
+          "description": "Los anuncios de estos objetos nunca se retiran ni se pregunta por ellos. «No volver a preguntar por…» en el aviso añade uno.",
+          "add": "Añadir",
+          "search": "Buscar bases de objeto…",
+          "empty": "Aún no hay objetos.",
+          "noMatch": "Ninguna base de objeto coincide",
+          "remove": "Quitar {{name}}",
+          "stackableNote": "Moneda apilable: tokens, pboxes, llaves, esencias."
+        },
+        "exceptionMode": {
+          "label": "Nunca retirar",
+          "description": "Un anuncio marcado con «No retirar este anuncio automáticamente» nunca se toca.",
+          "options": {
+            "none": "Nada (predeterminado)",
+            "stackable": "Moneda apilable y objetos que elija",
+            "selected": "Solo objetos que elija"
+          }
         }
       },
       "view": {

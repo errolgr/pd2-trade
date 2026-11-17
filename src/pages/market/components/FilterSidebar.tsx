@@ -35,9 +35,8 @@ import {
 import { anniversaryTri, withAnniversary } from '../lib/anniversary';
 import { codeCounts, CODE_FACET_SIZE, type CodeCounts, countsByValue, type MarketFacets } from '../lib/facets';
 import type { MarketFilters, MarketListingStatus, OnlineFilter, Rarity, SortBy, WantedFilters } from '../lib/types';
-import { WTB_CURRENCIES, type WtbCurrency } from '../lib/wtb';
+import { WTB_CURRENCY_OPTIONS, type WtbCurrency } from '../lib/wtb';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Field,
   NumberInput,
@@ -45,6 +44,7 @@ import {
   Section,
   Segmented,
   SelectField,
+  SelectMenu,
   TriField,
   fieldInputClass,
   ClearButton,
@@ -594,24 +594,14 @@ export function FilterSidebar({
                   step={0.5}
                   onChange={(minOffer) => setWanted({ minOffer })}
                 />
-                <Select
+                <SelectMenu
+                  label={t('wtb.post.currency')}
                   value={wanted.offerCurrency ?? 'HR'}
-                  onValueChange={(v) => setWanted({ offerCurrency: v as WtbCurrency })}
-                >
-                  <SelectTrigger className="h-7 w-20 shrink-0 text-xs"
-                    aria-label={t('wtb.post.currency')}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {WTB_CURRENCIES.map((c) => (
-                      <SelectItem key={c}
-                        value={c}
-                        className="text-xs">
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  options={WTB_CURRENCY_OPTIONS}
+                  anyLabel={null}
+                  onChange={(v) => setWanted({ offerCurrency: v as WtbCurrency })}
+                  className="w-24 shrink-0"
+                />
               </div>
             </Field>
           </Section>

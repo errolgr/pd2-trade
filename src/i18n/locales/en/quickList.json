@@ -86,7 +86,12 @@
     "update": "Update",
     "queueItem": "Queue Item",
     "post": "Post",
-    "noteOrPriceRequired": "Please fill in either the note or HR price field."
+    "noteOrPriceRequired": "Please fill in either the note or HR price field.",
+    "autoDelist": {
+      "skip": "Don't auto-delist this listing",
+      "skipHint": "Moving it in or out of the stash won't ask about it.",
+      "remember": "Remember for all {{name}}"
+    }
   },
   "macros": {
     "duplicate": "A macro named \"{{label}}\" already exists.",
@@ -178,7 +183,8 @@
     "pick": "Items like {{name}} left your stash. Choose which listings to remove.",
     "delist": "Delist",
     "keep": "Keep",
-    "choose": "Choose"
+    "choose": "Choose",
+    "neverAsk": "Never ask for {{name}}"
   },
   "myListings": {
     "searchPlaceholder": "Search {{count}} listings…",

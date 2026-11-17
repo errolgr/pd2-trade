@@ -580,6 +580,12 @@
     "2h-ranged": "À distância de duas mãos"
   },
   "wtb": {
+    "callout": {
+      "badge": "NOVO",
+      "title": "Pedidos de compra",
+      "description": "Não encontrou? Publique o que você quer com a sua oferta: vendedores que avaliarem um item compatível vão vê-la. Todos os pedidos ficam em {{wanted}}.",
+      "dismiss": "Fechar"
+    },
     "chip": {
       "label_one": "{{count}} comprador · até {{offer}}",
       "label_many": "{{count}} compradores · até {{offer}}",

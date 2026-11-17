@@ -83,7 +83,12 @@
     "update": "更新",
     "queueItem": "排队物品",
     "post": "发布",
-    "noteOrPriceRequired": "请填写备注或 HR 价格。"
+    "noteOrPriceRequired": "请填写备注或 HR 价格。",
+    "autoDelist": {
+      "skip": "不自动下架此挂单",
+      "skipHint": "将它放入或移出储物箱时不会询问。",
+      "remember": "对所有 {{name}} 记住此设置"
+    }
   },
   "macros": {
     "duplicate": "名为“{{label}}”的宏已存在。",
@@ -174,7 +179,8 @@
     "pick": "与 {{name}} 相同的物品离开了储物箱。请选择要下架的挂单。",
     "delist": "下架",
     "keep": "保留",
-    "choose": "选择"
+    "choose": "选择",
+    "neverAsk": "不再询问 {{name}}"
   },
   "myListings": {
     "searchPlaceholder": "在 {{count}} 个挂单中搜索…",

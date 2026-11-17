@@ -89,7 +89,12 @@
     "update": "Actualizar",
     "queueItem": "Poner en cola",
     "post": "Publicar",
-    "noteOrPriceRequired": "Rellena la nota o el precio en HR."
+    "noteOrPriceRequired": "Rellena la nota o el precio en HR.",
+    "autoDelist": {
+      "skip": "No retirar este anuncio automáticamente",
+      "skipHint": "Meterlo en el alijo o sacarlo no te preguntará nada.",
+      "remember": "Recordar para todos los {{name}}"
+    }
   },
   "macros": {
     "duplicate": "Ya existe una macro llamada \"{{label}}\".",
@@ -182,7 +187,8 @@
     "pick": "Objetos como {{name}} salieron de tu alijo. Elige qué anuncios retirar.",
     "delist": "Retirar",
     "keep": "Mantener",
-    "choose": "Elegir"
+    "choose": "Elegir",
+    "neverAsk": "No volver a preguntar por {{name}}"
   },
   "myListings": {
     "searchPlaceholder": "Buscar entre {{count}} anuncios…",

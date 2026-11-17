@@ -8,6 +8,7 @@ import { trackEvent } from '@/lib/telemetry';
 import type { MarketFilters } from '../lib/types';
 import type { WtbRequest } from '../lib/wtb';
 import { shouldPromptWtb, WTB_PROMPT_MS } from './wtb-watch-prompt';
+import { markWtbCalloutSeen } from './WtbNewCallout';
 
 /** What Watch needs to offer "Also post a buy request?" once it starts watching. */
 export interface WatchWtbPrompt {
@@ -75,6 +76,8 @@ export function WtbPromptPopover({
     if (!open) return;
     closed.current = false;
     trackEvent('market_wtb_prompt_shown');
+    // This prompt introduces buy requests itself: the NEW callout beside it would only stack on it
+    markWtbCalloutSeen();
   }, [open]);
   const dismiss = useCallback(
     (reason: DismissReason) => {

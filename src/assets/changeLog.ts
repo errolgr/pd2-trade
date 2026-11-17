@@ -9,6 +9,7 @@ export const changeLog = {
     '✨ Market: "Sold archive" is now "Archive": sold, removed and expired listings, with a Status filter',
     '✨ Market and price check: no 3-day default window; searches cover the whole season (set a default in Settings › Market)',
     '✨ Price check: ended listings show a short status ("sold 2d")',
+    '🆕 Auto-delist: "Never delist" skips stackable currency, items you pick, or a single listing (Settings › Market)',
   ],
   '0.11.7': [
     '🆕 Horadric Sim is in open beta: no waitlist. Sign in with PD2 and the Sim button in the price check, market and Net Worth (and the try-on hotkey) sends items to the planner',
