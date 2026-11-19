@@ -51,6 +51,11 @@ export interface MarketPrefs {
   viewMode: MarketViewMode;
   /** Filter sidebar sections the user opened or closed (by title); the rest use their default. */
   sectionsOpen: Record<string, boolean>;
+  /**
+   * Search as the filters change (the default). Off: filter edits wait for the sidebar's Search (or Ctrl+Enter),
+   * so building a query doesn't send the market service a search per click.
+   */
+  autoSearch: boolean;
 }
 
 export const EMPTY_MARKET_PREFS: MarketPrefs = {
@@ -62,6 +67,7 @@ export const EMPTY_MARKET_PREFS: MarketPrefs = {
   alertsEnabled: true,
   viewMode: 'cards',
   sectionsOpen: {},
+  autoSearch: true,
 };
 
 // Filters are stored as the panel built them; only the envelope is checked so a filter field added later
@@ -131,6 +137,7 @@ export function parseMarketPrefs(text: string): MarketPrefs {
     alertsEnabled: file.alertsEnabled !== false,
     viewMode: file.viewMode === 'rows' ? 'rows' : 'cards',
     sectionsOpen: sectionsOpen.success ? sectionsOpen.data : {},
+    autoSearch: file.autoSearch !== false,
   };
 }
 
@@ -431,6 +438,9 @@ export const marketStoreActions = {
   },
   setViewMode(viewMode: MarketViewMode): void {
     changeMarketPrefs((prefs) => (prefs.viewMode === viewMode ? prefs : { ...prefs, viewMode }));
+  },
+  setAutoSearch(on: boolean): void {
+    changeMarketPrefs((prefs) => (prefs.autoSearch === on ? prefs : { ...prefs, autoSearch: on }));
   },
 };
 

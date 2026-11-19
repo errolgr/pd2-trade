@@ -31,6 +31,7 @@
     "noListingsTitle": "Aucune annonce ne correspond",
     "noListingsDescription": "Assouplissez un filtre, élargissez la période ou changez de mode.",
     "refreshing": "Actualisation des résultats",
+    "unsearched": "Filtres modifiés · résultats de votre dernière recherche",
     "loadingMore": "Chargement…",
     "loadMoreFailed": "Impossible d'en charger plus",
     "rateLimitedUntil": "Limite de requêtes atteinte jusqu'à {{time}}",
@@ -138,6 +139,15 @@
     },
     "clearAll": "Effacer tous les filtres",
     "clearStats": "Retirer tous les filtres de stats",
+    "autoSearch": {
+      "label": "Recherche auto",
+      "on": "Recherche à chaque changement de filtre",
+      "off": "Recherche quand vous appuyez sur Rechercher",
+      "title": "Désactivée : modifiez autant de filtres que vous voulez, puis appuyez sur Rechercher (Ctrl+Entrée). Moins de recherches sur projectdiablo2.com."
+    },
+    "searchNow": "Rechercher",
+    "outOfDate": "Résultats obsolètes",
+    "upToDate": "Les résultats correspondent à vos filtres",
     "sections": {
       "stats": "Stats",
       "item": "Objet",

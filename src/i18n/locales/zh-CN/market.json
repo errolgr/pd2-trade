@@ -29,6 +29,7 @@
     "noListingsTitle": "没有匹配的挂单",
     "noListingsDescription": "放宽筛选、扩大时间范围或切换模式。",
     "refreshing": "正在刷新结果",
+    "unsearched": "筛选条件已更改 · 当前为上次搜索的结果",
     "loadingMore": "正在加载更多…",
     "loadMoreFailed": "无法加载更多",
     "rateLimitedUntil": "请求受限，直到 {{time}}",
@@ -122,6 +123,15 @@
     },
     "clearAll": "清除所有筛选",
     "clearStats": "移除所有属性筛选",
+    "autoSearch": {
+      "label": "自动搜索",
+      "on": "更改筛选条件时立即搜索",
+      "off": "按下“搜索”时才搜索",
+      "title": "关闭后：可随意调整筛选条件，再按“搜索”（Ctrl+Enter）。减少对 projectdiablo2.com 的搜索请求。"
+    },
+    "searchNow": "搜索",
+    "outOfDate": "结果已过期",
+    "upToDate": "结果与筛选条件一致",
     "sections": {
       "stats": "属性",
       "item": "物品",

@@ -13,12 +13,15 @@ export function ResultsFrame({
   status,
   toolbar,
   refetching,
+  stale = false,
   banner,
   children,
 }: {
   status: React.ReactNode;
   toolbar: React.ReactNode;
   refetching: boolean;
+  /** The results predate the filters (Auto search off, not searched yet): dimmed like a refetch, no progress bar. */
+  stale?: boolean;
   banner?: React.ReactNode;
   children: React.ReactNode;
 }) {
@@ -55,7 +58,7 @@ export function ResultsFrame({
       <div
         className={cn(
           'flex min-h-0 flex-1 flex-col transition-opacity duration-(--dur-med)',
-          refetching && 'opacity-70',
+          (refetching || stale) && 'opacity-70',
         )}
       >
         {children}
