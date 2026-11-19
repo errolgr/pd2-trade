@@ -1415,7 +1415,8 @@ function ResultsPane({
       banner={banner}
       status={
         <>
-          {status}
+          {/* The count keeps one line; the out-of-date notice beside it gives way */}
+          {status && <span className="shrink-0 whitespace-nowrap">{status}</span>}
           {tab === 'search' && search.status === 'ready' && search.priceStats && (
             <MatchesMedian
               stats={search.priceStats}

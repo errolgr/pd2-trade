@@ -97,7 +97,10 @@ export function UnsearchedNotice({ onSearch, className }: { onSearch: () => void
     >
       <RefreshCw aria-hidden
         className="size-3 shrink-0" />
-      <span className="truncate">{t('results.unsearched')}</span>
+      {/* A narrow window cuts the sentence short: the whole of it on hover */}
+      <Tip label={t('results.unsearched')}>
+        <span className="truncate">{t('results.unsearched')}</span>
+      </Tip>
       <button
         type="button"
         onClick={onSearch}
