@@ -1413,7 +1413,7 @@ describe('ItemOverlayWidget extra header behaviour', () => {
     expect(overlay.openPanel).toHaveBeenCalledWith('currency');
   });
 
-  it('titles a Rainbow Facet by element and rolls, and prices that exact facet', async () => {
+  it('titles a Rainbow Facet by element and rolls, prices that exact facet and searches its exact rolls', async () => {
     vi.mocked(fetchItemPrice).mockResolvedValue(null);
     renderWidget({
       name: 'Rainbow Facet',
@@ -1423,13 +1423,20 @@ describe('ItemOverlayWidget extra header behaviour', () => {
       stats: [
         { stat_id: 48, name: 'Fire Damage', value: 50 },
         { stat_id: 329, name: '+5% to Fire Skill Damage', value: 5 },
-        { stat_id: 333, name: '-5% to Enemy Fire Resistance', value: -5 },
+        { stat_id: 333, name: '-3% to Enemy Fire Resistance', value: -3 },
       ],
     });
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Fire Facet 5/5');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Fire Facet 5/3');
     await waitFor(() => expect(fetchItemPrice).toHaveBeenCalled());
-    expect(vi.mocked(fetchItemPrice).mock.calls[0][0]).toBe('rainbow_facet_fire_5_5');
+    expect(vi.mocked(fetchItemPrice).mock.calls[0][0]).toBe('rainbow_facet_fire_5_3');
     expect(fetchItemPriceByName).not.toHaveBeenCalled();
+
+    // Searched right away for exactly these rolls (the resistance one as stored: positive)
+    await waitFor(() => expect(realSearches()).toHaveLength(1));
+    expect(lastFilters().stats).toEqual([
+      expect.objectContaining({ key: 'passive_fire_mastery', min: 5, max: 5 }),
+      expect.objectContaining({ key: 'passive_fire_pierce', min: 3, max: 3 }),
+    ]);
   });
 
   it("shows the item's own corruption price separately from the top corruptions", async () => {
