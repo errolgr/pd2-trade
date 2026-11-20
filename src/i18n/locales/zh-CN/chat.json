@@ -188,15 +188,17 @@
     "buyRequestReceived": "求购",
     "buyRequestMade": "对方的求购",
     "forRequest": "用于 {{title}}",
-    "whisperBack": "私聊回复",
-    "whisperBackTitle": "复制给卖家的私聊回复",
-    "whisper": "私聊",
-    "whisperBuyerTitle": "再次复制给买家的私聊",
+    "whisperBack": "回复",
+    "whisperBackTitle": "在网站聊天中回复卖家",
+    "whisper": "发消息",
+    "whisperBuyerTitle": "在网站聊天中联系买家",
     "viewRequest": "查看求购",
     "viewRequestTitle": "在市场中打开该求购",
     "markFilled": "标记为已完成",
     "markFilledTitle": "关闭你的求购：这位卖家已满足",
-    "markFilledFailed": "无法关闭求购"
+    "markFilledFailed": "无法关闭求购",
+    "wtbOfferReceived": "对你求购的报价",
+    "wtbOfferMade": "你对其求购的报价"
   },
   "thread": {
     "muted": "已静音",

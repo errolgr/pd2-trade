@@ -21,6 +21,7 @@ import {
 import { listWtbResponses } from './wtb-api';
 import { notify } from '@/overlay';
 import type { WtbResponse } from '@/pages/market/lib/wtb';
+import { upsertMyOffer } from '@/pages/market/wtb/my-offers';
 import type * as MarketApi from './market-api';
 import { useMarketAlerts } from './useMarketAlerts';
 
@@ -30,6 +31,7 @@ vi.mock('@/hooks/useOptions', () => ({
   useOptions: () => ({ settings: h.settings, isLoading: false, updateSettings: h.updateSettings }),
 }));
 vi.mock('./wtb-api', () => ({ listWtbResponses: vi.fn() }));
+vi.mock('@/pages/market/wtb/my-offers', () => ({ upsertMyOffer: vi.fn() }));
 vi.mock('@/hooks/useSocketNotifications', () => ({ playNotificationSound: vi.fn() }));
 // notify() logs and toasts when asked: the toast half goes through the showToast mock
 vi.mock('@/overlay', () => {
@@ -124,6 +126,7 @@ beforeEach(() => {
   vi.mocked(listServerSavedSearches).mockReset().mockResolvedValue([]);
   vi.mocked(listWtbResponses).mockReset().mockResolvedValue({ items: [], nextCursor: null });
   vi.mocked(notify).mockClear();
+  vi.mocked(upsertMyOffer).mockClear();
   h.updateSettings.mockClear();
   h.settings = {};
   vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -374,5 +377,73 @@ describe('buy request responses on the stream', () => {
     expect(notify).toHaveBeenCalledTimes(1);
     expect(notify).toHaveBeenCalledWith('market', expect.anything(), { toast: false, groupKey: 'wtb:req1' });
     expect(showToast).not.toHaveBeenCalled();
+  });
+});
+
+describe('buy request offers on the stream', () => {
+  const offer = (over: Partial<WtbResponse> = {}): WtbResponse => ({
+    id: 'o1',
+    requestId: 'req1',
+    request: {
+      id: 'req1',
+      title: 'Rare Circlet',
+      offer: { amount: 2, currency: 'HR', hr: 2 },
+      status: 'open',
+      buyer: { userId: 'buyer', name: 'Errol' },
+      whisperTo: 'ErrolAcc',
+    },
+    seller: { userId: 'hammer', name: 'HammerTime', account: 'HammerAcc' },
+    item: { name: 'Grim Visage', quality: 'Rare', baseCode: 'ci0' },
+    met: [],
+    channel: 'message',
+    createdAt: '2026-10-21T08:05:00Z',
+    dismissed: false,
+    kind: 'offer',
+    price: { amount: 2, currency: 'HR', hr: 2 },
+    note: null,
+    status: 'pending',
+    decidedAt: null,
+    ...over,
+  });
+  const responseEvent = (r: WtbResponse) => `event: wtb.response\ndata: ${JSON.stringify(r)}\n\n`;
+  const offerEvent = (r: WtbResponse) => `event: wtb.offer\ndata: ${JSON.stringify({ response: r })}\n\n`;
+  const toasted = () => vi.mocked(notify).mock.calls.filter((call) => call[2].toast);
+
+  it('to the buyer: an offer toasts with its price; replaced (same id, updated) it is told again, a repeat is not', async () => {
+    h.settings = { pd2Token: 'tok', wtbResponsesSeenAt: '2026-10-21T07:00:00Z' };
+    savedFile({ savedSearches: [] });
+    // The server re-pushes a replaced pending offer with the same id and a new updatedAt
+    const asked = offer({ price: { amount: 1, currency: 'Ber', hr: 3 }, updatedAt: '2026-10-21T08:09:00Z' });
+    vi.mocked(openLiveSearchStream).mockResolvedValue(
+      stream(HELLO + responseEvent(offer()) + responseEvent(offer()) + responseEvent(asked)),
+    );
+    renderHook(() => useMarketAlerts());
+    await settle();
+    await settle();
+    expect(toasted().map((call) => call[1].title)).toEqual([
+      '🏷 HammerTime will sell you Grim Visage for 2 HR',
+      '🏷 HammerTime asks 1 Ber for Grim Visage',
+    ]);
+  });
+
+  it('to the seller: accepted / declined toast once each and update their offer', async () => {
+    h.settings = { pd2Token: 'tok', wtbResponsesSeenAt: '2026-10-21T07:00:00Z' };
+    savedFile({ savedSearches: [] });
+    const accepted = offer({ status: 'accepted' });
+    vi.mocked(openLiveSearchStream).mockResolvedValue(
+      stream(HELLO + offerEvent(accepted) + offerEvent(accepted) + offerEvent(offer({ id: 'o2', status: 'declined' }))),
+    );
+    renderHook(() => useMarketAlerts());
+    await settle();
+    await settle();
+    expect(toasted().map((call) => call[1])).toEqual([
+      expect.objectContaining({
+        title: 'Errol accepted your offer for Rare Circlet',
+        action: expect.objectContaining({ data: { userId: 'buyer', userName: 'Errol' } }),
+      }),
+      expect.objectContaining({ title: 'Errol declined your offer for Rare Circlet' }),
+    ]);
+    expect(upsertMyOffer).toHaveBeenCalledWith(accepted);
+    expect(upsertMyOffer).toHaveBeenCalledTimes(2);
   });
 });

@@ -6,6 +6,7 @@ import type { InboxFilter } from '@/pages/chat/lib/inbox';
 import type { SettingsSectionId } from '@/components/dialogs/optionsv2/settings-ui';
 import type { ListingPanelPayload, MarketPanelPayload } from '@/pages/market/lib/types';
 import type { WtbListPrice } from '@/pages/market/lib/wtb';
+import type { WtbContactItem } from '@/pages/market/alerts/wtb-api';
 import type { BuildsPanelPayload } from '@/pages/builds/lib/types';
 
 export type PanelId =
@@ -68,6 +69,12 @@ export interface PanelPayloads {
         draft?: string;
         /** Show the Trader sidebar on the opened thread (a market seller's name was clicked). */
         trader?: boolean;
+        /**
+         * A buy request's Message (the user is the seller): the contact recorded on the first message actually
+         * sent to `userId` from that thread (`message`; `copy` when sent as an in-game whisper); dropped when
+         * another thread is opened or the panel closes first.
+         */
+        wtbContact?: { requestId: string; item?: WtbContactItem };
       }
     | undefined;
   chatButton: undefined;

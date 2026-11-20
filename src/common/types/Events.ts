@@ -3,6 +3,7 @@ import type { ListingPanelPayload } from '@/pages/market/lib/types';
 export enum ToastActionType {
   OPEN_MARKET_LISTING = 'OPEN_MARKET_LISTING',
   UPDATE_AVAILABLE = 'UPDATE_AVAILABLE',
+  /** data: { conversationId } / { threadId } / { userId, userName }: that chat thread, composer focused. */
   OPEN_CHAT_CONVERSATION = 'OPEN_CHAT_CONVERSATION',
   /** data: { notificationId, accepted }: the chat at the thread of the offer a PD2 offer notification is about. */
   OPEN_CHAT_OFFER = 'OPEN_CHAT_OFFER',

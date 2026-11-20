@@ -194,15 +194,17 @@
     "buyRequestReceived": "Demande d'achat",
     "buyRequestMade": "Sa demande d'achat",
     "forRequest": "pour {{title}}",
-    "whisperBack": "Répondre en chuchotant",
-    "whisperBackTitle": "Copier une réponse chuchotée au vendeur",
-    "whisper": "Chuchoter",
-    "whisperBuyerTitle": "Recopier votre chuchotement à l'acheteur",
+    "whisperBack": "Répondre",
+    "whisperBackTitle": "Écrire au vendeur dans le chat du site",
+    "whisper": "Message",
+    "whisperBuyerTitle": "Écrire à l'acheteur dans le chat du site",
     "viewRequest": "Voir la demande",
     "viewRequestTitle": "Ouvrir la demande d'achat dans le marché",
     "markFilled": "Marquer remplie",
     "markFilledTitle": "Fermer votre demande : ce vendeur l'a remplie",
-    "markFilledFailed": "Impossible de fermer la demande"
+    "markFilledFailed": "Impossible de fermer la demande",
+    "wtbOfferReceived": "Offre sur votre demande",
+    "wtbOfferMade": "Votre offre sur sa demande"
   },
   "thread": {
     "muted": "En sourdine",

@@ -455,6 +455,8 @@ export interface WtbResponses {
   dismiss: (id: string) => Promise<void>;
   /** A request's new status shown on its responses (Mark filled closes it). */
   setRequestStatus: (requestId: string, status: WtbStatus) => void;
+  /** A response as it now stands (an offer accepted / declined): replaced where listed. */
+  upsert: (response: WtbResponse) => void;
 }
 
 const upsertResponse = (list: WtbResponse[], response: WtbResponse) =>
@@ -547,5 +549,19 @@ export function useWtbResponses(enabled: boolean, token: string | null, requestI
     reload: useCallback(() => setGeneration((g) => g + 1), []),
     dismiss,
     setRequestStatus,
+    upsert: useCallback(
+      (response: WtbResponse) =>
+        setState(
+          (s) =>
+            s && {
+              ...s,
+              received: s.received.some((r) => r.id === response.id)
+                ? upsertResponse(s.received, response)
+                : s.received,
+              made: s.made.some((r) => r.id === response.id) ? upsertResponse(s.made, response) : s.made,
+            },
+        ),
+      [],
+    ),
   };
 }

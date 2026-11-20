@@ -197,15 +197,17 @@
     "buyRequestReceived": "Заявка на покупку",
     "buyRequestMade": "Их заявка на покупку",
     "forRequest": "для {{title}}",
-    "whisperBack": "Ответить шёпотом",
-    "whisperBackTitle": "Скопировать ответ продавцу шёпотом",
-    "whisper": "Шепнуть",
-    "whisperBuyerTitle": "Снова скопировать ваш шёпот покупателю",
+    "whisperBack": "Ответить",
+    "whisperBackTitle": "Написать продавцу в чате сайта",
+    "whisper": "Написать",
+    "whisperBuyerTitle": "Написать покупателю в чате сайта",
     "viewRequest": "Открыть заявку",
     "viewRequestTitle": "Открыть заявку на покупку на рынке",
     "markFilled": "Отметить выполненной",
     "markFilledTitle": "Закрыть вашу заявку: этот продавец её выполнил",
-    "markFilledFailed": "Не удалось закрыть заявку"
+    "markFilledFailed": "Не удалось закрыть заявку",
+    "wtbOfferReceived": "Предложение на вашу заявку",
+    "wtbOfferMade": "Ваше предложение на их заявку"
   },
   "thread": {
     "muted": "Без звука",

@@ -194,15 +194,17 @@
     "buyRequestReceived": "Pedido de compra",
     "buyRequestMade": "Pedido de compra dele",
     "forRequest": "para {{title}}",
-    "whisperBack": "Responder por sussurro",
-    "whisperBackTitle": "Copiar um sussurro de resposta ao vendedor",
-    "whisper": "Sussurrar",
-    "whisperBuyerTitle": "Copiar seu sussurro ao comprador de novo",
+    "whisperBack": "Responder",
+    "whisperBackTitle": "Mandar mensagem ao vendedor no chat do site",
+    "whisper": "Mensagem",
+    "whisperBuyerTitle": "Mandar mensagem ao comprador no chat do site",
     "viewRequest": "Ver pedido",
     "viewRequestTitle": "Abrir o pedido de compra no mercado",
     "markFilled": "Marcar como atendido",
     "markFilledTitle": "Fechar seu pedido: este vendedor o atendeu",
-    "markFilledFailed": "Não foi possível fechar o pedido"
+    "markFilledFailed": "Não foi possível fechar o pedido",
+    "wtbOfferReceived": "Oferta no seu pedido",
+    "wtbOfferMade": "Sua oferta no pedido dele"
   },
   "thread": {
     "muted": "Silenciada",

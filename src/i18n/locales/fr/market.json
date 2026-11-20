@@ -599,7 +599,7 @@
       "hint": "Demandes d'achat : des joueurs cherchent un objet comme celui-ci. Cliquez pour voir qui et combien ils paient.",
       "hintOk": "Compris",
       "title": "Demandes d'achat pour cet objet",
-      "subtitle": "Des joueurs ont publié ce qu'ils cherchent. Chuchotez-leur pour vendre.",
+      "subtitle": "Des joueurs ont publié ce qu'ils cherchent. Écrivez-leur pour vendre.",
       "almost_one": "Presque ({{count}}) — acheteurs à 1 stat près",
       "almost_many": "Presque ({{count}}) — acheteurs à 1 stat près",
       "almost_other": "Presque ({{count}}) — acheteurs à 1 stat près",
@@ -607,17 +607,30 @@
       "needsNone": "veut {{stat}} (vous ne l'avez pas)",
       "allRequests": "Toutes les demandes"
     },
-    "whisperBuyer": "Chuchoter à {{name}}",
+    "whisperBuyer": "Écrire à {{name}}",
+    "message": "Message",
     "copyWhisper": "Copier le chuchotement",
     "listAt": "Mettre en vente à {{offer}}",
     "listItAt": "Le mettre en vente à {{offer}}",
     "nice": "Bonus",
     "must": "Requis",
     "flags": {
-      "corrupted": { "yes": "Corrompu", "no": "Non corrompu" },
-      "ethereal": { "yes": "Éthéré", "no": "Non éthéré" },
-      "desecrated": { "yes": "Profané", "no": "Non profané" },
-      "identified": { "yes": "Identifié", "no": "Non identifié" }
+      "corrupted": {
+        "yes": "Corrompu",
+        "no": "Non corrompu"
+      },
+      "ethereal": {
+        "yes": "Éthéré",
+        "no": "Non éthéré"
+      },
+      "desecrated": {
+        "yes": "Profané",
+        "no": "Non profané"
+      },
+      "identified": {
+        "yes": "Identifié",
+        "no": "Non identifié"
+      }
     },
     "sockets": {
       "exact_one": "{{count}} châsse",
@@ -820,19 +833,64 @@
       "body": "{{seller}} a ce qu'il faut pour {{title}} · votre offre {{offer}}",
       "bodyNoItem": "{{seller}} vous a chuchoté au sujet de {{title}}",
       "viewRequest": "Voir la demande",
-      "whisperBack": "Répondre en chuchotant",
+      "whisperBack": "Répondre",
       "requestGone": "Cette demande d'achat n'est plus ouverte"
     },
     "responses": {
       "title_one": "Réponses · {{count}}",
       "title_many": "Réponses · {{count}}",
       "title_other": "Réponses · {{count}}",
-      "noItem": "Vous a chuchoté (aucun objet indiqué)",
       "dismiss": "Ignorer",
       "markFilled": "Marquer remplie",
       "confirmClose": "Fermer cette demande ?",
       "confirmCloseDescription": "{{title}} · remplie par {{seller}}",
-      "close": "Fermer la demande"
+      "close": "Fermer la demande",
+      "summary": {
+        "atYourPrice": "vend à votre prix",
+        "asks": "demande {{price}}",
+        "messaged": "vous a écrit",
+        "whispered": "vous a chuchoté"
+      }
+    },
+    "offers": {
+      "sell": "Vendre pour {{offer}}",
+      "pending": "Offre envoyée · en attente",
+      "withdraw": "Retirer",
+      "accepted": "Acceptée · écrire à {{buyer}}",
+      "declined": "Refusée",
+      "askDifferent": "Proposer un autre prix",
+      "askTitle": "Votre prix (il propose {{offer}})",
+      "note": "Note",
+      "notePlaceholder": "Note pour l'acheteur (facultatif)",
+      "send": "Envoyer l'offre",
+      "sentToast": "Offre envoyée à {{buyer}}",
+      "sentToastDescription": "{{item}} pour {{price}}",
+      "fixedPrice": "Cet acheteur n'accepte que son propre prix",
+      "notOpen": "Cette demande d'achat n'est plus ouverte",
+      "throttled": "Trop d'offres pour le moment, réessayez plus tard",
+      "failed": "Impossible d'envoyer l'offre",
+      "signIn": "Connectez-vous pour vendre aux acheteurs",
+      "withdrawnToast": "Offre retirée",
+      "decideFailed": "Impossible de mettre à jour l'offre",
+      "willSell": "{{seller}} vend {{item}} · {{price}} (votre prix)",
+      "asks": "{{seller}} demande {{price}} pour {{item}} (vous proposiez {{offer}})",
+      "accept": "Accepter",
+      "acceptPrice": "Accepter {{price}}",
+      "decline": "Refuser",
+      "dealDraft": "Marché conclu : {{item}} pour {{price}}. Quand peut-on échanger ?",
+      "noticeWillSell": "🏷 {{seller}} vous vend {{item}} pour {{price}}",
+      "noticeAsks": "🏷 {{seller}} demande {{price}} pour {{item}}",
+      "forRequest": "Pour votre demande {{title}} (vous proposiez {{offer}})",
+      "acceptedBy": "{{buyer}} a accepté votre offre pour {{title}}",
+      "declinedBy": "{{buyer}} a refusé votre offre pour {{title}}",
+      "withdrawnBy": "{{seller}} a retiré son offre pour {{title}}",
+      "messageBuyer": "Écrire à {{buyer}}",
+      "status": {
+        "pending": "En attente",
+        "accepted": "Acceptée",
+        "declined": "Refusée",
+        "withdrawn": "Retirée"
+      }
     }
   }
 }
