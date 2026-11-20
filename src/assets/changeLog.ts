@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.12.2': [
+    '✨ Price check: Rainbow Facets search their exact rolls right away (a 5/3 Fire Facet finds 5/3 Fire Facets only)',
+  ],
   // 0.12.0 never shipped (its publish run was cancelled): its notes are 0.12.1's, the release users get
   '0.12.1': [
     '🆕 Market: buy requests. Post one from any search ("Want to buy"); browse everyone\'s under Wanted; sellers answer with a whisper or an offer',
