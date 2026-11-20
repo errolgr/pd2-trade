@@ -12,6 +12,9 @@ import {
   searchWtbRequests,
   matchWtbRequests,
   updateWtbRequest,
+  decideWtbOffer,
+  offerWtbRequest,
+  wtbOfferBody,
 } from './wtb-api';
 
 vi.mock('@/lib/browser-http', () => ({ fetch: vi.fn() }));
@@ -113,9 +116,9 @@ describe('wtb-api requests', () => {
       `${URL}/r1/contact`,
       { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"channel":"copy"}' },
     ]);
-    await contactWtbRequest('r1', { channel: 'whisper', account: 'MyAcc', text: '{"a":1}' }, 'tok');
+    await contactWtbRequest('r1', { channel: 'message', account: 'MyAcc', text: '{"a":1}' }, 'tok');
     expect(call(3)[1].headers).toEqual({ Authorization: 'Bearer tok', 'Content-Type': 'application/json' });
-    expect(body(3)).toEqual({ channel: 'whisper', account: 'MyAcc', text: '{"a":1}' });
+    expect(body(3)).toEqual({ channel: 'message', account: 'MyAcc', text: '{"a":1}' });
 
     // Mark filled: closed, with the response that filled it
     await updateWtbRequest('tok', 'req1', { status: 'closed', filledByResponseId: 'resp1' });
@@ -190,5 +193,60 @@ describe('wtb-api errors', () => {
     );
     const error = await matchWtbRequests({ ladder: true, hardcore: false }, []).catch((e) => e);
     expect(error).toMatchObject({ status: 429, retryAfterMs: 5000, message: 'slow, down' });
+  });
+});
+
+describe('offers (v6)', () => {
+  it('Sell for {offer}: the item, the account, and only an asked price / note', () => {
+    expect(wtbOfferBody({ text: '{"a":1}' }, 'MyAcc')).toEqual({ text: '{"a":1}', account: 'MyAcc' });
+    expect(wtbOfferBody(null, null)).toEqual({});
+    expect(
+      wtbOfferBody({ item: { name: 'Shako' } }, 'MyAcc', {
+        price: { amount: 3, currency: 'Ist' },
+        note: '  quick trade ',
+      }),
+    ).toEqual({
+      item: { name: 'Shako' },
+      account: 'MyAcc',
+      price: { amount: 3, currency: 'Ist' },
+      note: 'quick trade',
+    });
+    expect(wtbOfferBody(null, null, { price: { amount: 3, currency: 'Ist' }, note: '   ' })).toEqual({
+      price: { amount: 3, currency: 'Ist' },
+    });
+  });
+
+  it('posts the offer; accept / decline / withdraw by response id', async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(Response.json({ id: 'o1' }))
+      .mockResolvedValueOnce(Response.json({ id: 'o1', status: 'accepted' }))
+      .mockResolvedValueOnce(Response.json({ id: 'o1', status: 'declined' }))
+      .mockResolvedValueOnce(Response.json({ id: 'o1', status: 'withdrawn' }));
+    await offerWtbRequest('tok', 'req/1', { account: 'MyAcc' });
+    expect(call(0)[0]).toBe(`${URL}/req%2F1/offers`);
+    expect(call(0)[1]).toMatchObject({
+      method: 'POST',
+      headers: { Authorization: 'Bearer tok', 'Content-Type': 'application/json' },
+    });
+    expect(body(0)).toEqual({ account: 'MyAcc' });
+    await expect(decideWtbOffer('tok', 'o1', 'accept')).resolves.toMatchObject({ status: 'accepted' });
+    expect(call(1)).toEqual([
+      `${URL}/responses/o1/accept`,
+      { method: 'POST', headers: { Authorization: 'Bearer tok' } },
+    ]);
+    await decideWtbOffer('tok', 'o1', 'decline');
+    expect(call(2)[0]).toBe(`${URL}/responses/o1/decline`);
+    await decideWtbOffer('tok', 'o1', 'withdraw');
+    expect(call(3)[0]).toBe(`${URL}/responses/o1/withdraw`);
+  });
+
+  it('a fixed-price refusal carries its rule', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      Response.json({ message: 'Only at their price', rule: 'fixedPrice' }, { status: 400 }),
+    );
+    await expect(offerWtbRequest('tok', 'req1', { price: { amount: 5, currency: 'HR' } })).rejects.toMatchObject({
+      status: 400,
+      rule: 'fixedPrice',
+    });
   });
 });

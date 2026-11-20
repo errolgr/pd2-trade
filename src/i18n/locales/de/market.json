@@ -573,24 +573,37 @@
       "hint": "Kaufanfragen: Spieler, die ein Item wie dieses suchen. Klicke, um zu sehen, wer was zahlt.",
       "hintOk": "Verstanden",
       "title": "Kaufanfragen für dieses Item",
-      "subtitle": "Spieler, die gepostet haben, was sie suchen. Flüstere sie an, um zu verkaufen.",
+      "subtitle": "Spieler, die gepostet haben, was sie suchen. Schreib ihnen, um zu verkaufen.",
       "almost_one": "Fast ({{count}}) — Käufer 1 Wert entfernt",
       "almost_other": "Fast ({{count}}) — Käufer 1 Wert entfernt",
       "needs": "braucht {{stat}} ({{value}})",
       "needsNone": "braucht {{stat}} (hast du nicht)",
       "allRequests": "Alle Anfragen"
     },
-    "whisperBuyer": "{{name}} anflüstern",
+    "whisperBuyer": "{{name}} anschreiben",
+    "message": "Nachricht",
     "copyWhisper": "Flüstern kopieren",
     "listAt": "Für {{offer}} einstellen",
     "listItAt": "Für {{offer}} einstellen",
     "nice": "Optional",
     "must": "Pflicht",
     "flags": {
-      "corrupted": { "yes": "Korrumpiert", "no": "Nicht korrumpiert" },
-      "ethereal": { "yes": "Ätherisch", "no": "Nicht ätherisch" },
-      "desecrated": { "yes": "Entweiht", "no": "Nicht entweiht" },
-      "identified": { "yes": "Identifiziert", "no": "Unidentifiziert" }
+      "corrupted": {
+        "yes": "Korrumpiert",
+        "no": "Nicht korrumpiert"
+      },
+      "ethereal": {
+        "yes": "Ätherisch",
+        "no": "Nicht ätherisch"
+      },
+      "desecrated": {
+        "yes": "Entweiht",
+        "no": "Nicht entweiht"
+      },
+      "identified": {
+        "yes": "Identifiziert",
+        "no": "Unidentifiziert"
+      }
     },
     "sockets": {
       "exact_one": "{{count}} Sockel",
@@ -773,18 +786,63 @@
       "body": "{{seller}} hat einen Treffer für {{title}} · dein Angebot {{offer}}",
       "bodyNoItem": "{{seller}} hat dich wegen {{title}} angeflüstert",
       "viewRequest": "Gesuch ansehen",
-      "whisperBack": "Zurückflüstern",
+      "whisperBack": "Antworten",
       "requestGone": "Dieses Kaufgesuch ist nicht mehr offen"
     },
     "responses": {
       "title_one": "Antworten · {{count}}",
       "title_other": "Antworten · {{count}}",
-      "noItem": "Hat dich angeflüstert (kein Item genannt)",
       "dismiss": "Ausblenden",
       "markFilled": "Als erfüllt markieren",
       "confirmClose": "Dieses Gesuch schließen?",
       "confirmCloseDescription": "{{title}} · erfüllt von {{seller}}",
-      "close": "Gesuch schließen"
+      "close": "Gesuch schließen",
+      "summary": {
+        "atYourPrice": "verkauft zu deinem Preis",
+        "asks": "verlangt {{price}}",
+        "messaged": "hat dir geschrieben",
+        "whispered": "hat dich angeflüstert"
+      }
+    },
+    "offers": {
+      "sell": "Für {{offer}} verkaufen",
+      "pending": "Angebot gesendet · offen",
+      "withdraw": "Zurückziehen",
+      "accepted": "Angenommen · {{buyer}} schreiben",
+      "declined": "Abgelehnt",
+      "askDifferent": "Anderen Preis nennen",
+      "askTitle": "Dein Preis (geboten: {{offer}})",
+      "note": "Notiz",
+      "notePlaceholder": "Notiz für den Käufer (optional)",
+      "send": "Angebot senden",
+      "sentToast": "Angebot an {{buyer}} gesendet",
+      "sentToastDescription": "{{item}} für {{price}}",
+      "fixedPrice": "Dieser Käufer nimmt nur seinen eigenen Preis",
+      "notOpen": "Dieses Kaufgesuch ist nicht mehr offen",
+      "throttled": "Gerade zu viele Angebote – versuch es später",
+      "failed": "Angebot konnte nicht gesendet werden",
+      "signIn": "Melde dich an, um an Käufer zu verkaufen",
+      "withdrawnToast": "Angebot zurückgezogen",
+      "decideFailed": "Angebot konnte nicht aktualisiert werden",
+      "willSell": "{{seller}} verkauft {{item}} · {{price}} (dein Preis)",
+      "asks": "{{seller}} verlangt {{price}} für {{item}} (du bietest {{offer}})",
+      "accept": "Annehmen",
+      "acceptPrice": "{{price}} annehmen",
+      "decline": "Ablehnen",
+      "dealDraft": "Deal – {{item}} für {{price}}. Wann können wir handeln?",
+      "noticeWillSell": "🏷 {{seller}} verkauft dir {{item}} für {{price}}",
+      "noticeAsks": "🏷 {{seller}} verlangt {{price}} für {{item}}",
+      "forRequest": "Für dein Gesuch {{title}} (du bietest {{offer}})",
+      "acceptedBy": "{{buyer}} hat dein Angebot für {{title}} angenommen",
+      "declinedBy": "{{buyer}} hat dein Angebot für {{title}} abgelehnt",
+      "withdrawnBy": "{{seller}} hat das Angebot für {{title}} zurückgezogen",
+      "messageBuyer": "{{buyer}} schreiben",
+      "status": {
+        "pending": "Offen",
+        "accepted": "Angenommen",
+        "declined": "Abgelehnt",
+        "withdrawn": "Zurückgezogen"
+      }
     }
   }
 }

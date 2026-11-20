@@ -22,8 +22,10 @@ import {
   marketStoreActions,
   useMarketStore,
 } from '@/pages/market/store/useMarketStore';
-import type { WtbResponse } from '@/pages/market/lib/wtb';
+import { wtbResponseAt, wtbResponseSeenKey, type WtbResponse } from '@/pages/market/lib/wtb';
 import { wtbResponseToast } from '@/pages/market/wtb/wtb-responses';
+import { offerDecisionToast } from '@/pages/market/wtb/wtb-offers';
+import { upsertMyOffer } from '@/pages/market/wtb/my-offers';
 import { publishMarketAlerts, publishWtbResponse } from './alert-events';
 import { alertToasts } from './alert-logic';
 import { runWatchStream, type WatchTarget } from './alert-stream';
@@ -104,7 +106,16 @@ export function useMarketAlerts(): void {
       });
       if (sound.current.enabled) playNotificationSound(sound.current.volume);
       publishWtbResponse(response);
-      markSeen(response.createdAt);
+      markSeen(wtbResponseAt(response));
+    };
+    // An offer decided by the buyer (the user sold: accepted / declined) or withdrawn by its seller (the user buys)
+    const onWtbOffer = (response: WtbResponse) => {
+      if (response.status === 'withdrawn') publishWtbResponse(response);
+      else upsertMyOffer(response);
+      const toast = offerDecisionToast(response, toastMs.current);
+      if (!toast) return;
+      notify('market', toast, { toast: true, groupKey: `wtb-offer:${response.id}` });
+      if (sound.current.enabled) playNotificationSound(sound.current.volume);
     };
     // Responses that came while away: in the notification log as missed (oldest first), never toasted; the first
     // time ever, only where they start counting
@@ -115,17 +126,20 @@ export function useMarketAlerts(): void {
         if (controller.signal.aborted) return;
         const since = responsesSeenAt.current;
         const missed = since
-          ? items.filter((r) => Date.parse(r.createdAt) > Date.parse(since) && !seen.current.has(`wtb:${r.id}`))
+          ? items.filter(
+              (r) => Date.parse(wtbResponseAt(r)) > Date.parse(since) && !seen.current.has(wtbResponseSeenKey(r)),
+            )
           : [];
         for (const response of [...missed].reverse()) {
-          seen.current.add(`wtb:${response.id}`);
+          seen.current.add(wtbResponseSeenKey(response));
           notify('market', wtbResponseToast(response, toastMs.current), {
             toast: false,
             groupKey: `wtb:${response.requestId}`,
           });
           publishWtbResponse(response);
         }
-        if (items.length > 0) markSeen(items[0].createdAt);
+        const newest = items.map(wtbResponseAt).sort().at(-1);
+        if (newest) markSeen(newest);
         else if (!since) markSeen(new Date().toISOString());
       } catch (error) {
         console.warn('[market alerts] responses catch-up failed:', error);
@@ -140,6 +154,7 @@ export function useMarketAlerts(): void {
       onAlerts,
       onSeen: marketStoreActions.markSearchSeen,
       onWtbResponse,
+      onWtbOffer,
       onConnected: () => void catchUpResponses(),
       signal: controller.signal,
       seen: seen.current,

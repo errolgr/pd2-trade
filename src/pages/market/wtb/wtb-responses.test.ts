@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { ToastActionType } from '@/common/types/Events';
 import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import { wtbContactBody } from '../alerts/wtb-api';
-import { isWtbResponse, wtbBackWhisper, type WtbResponse } from '../lib/wtb';
+import { isWtbResponse, wtbBackWhisperText, type WtbResponse } from '../lib/wtb';
 import {
   markFilledPatch,
   responseMetLine,
   responseNotice,
+  responseSummary,
   selectionContactItem,
   sortResponses,
   wtbResponseToast,
@@ -39,8 +40,8 @@ describe('contact body per source', () => {
   it('sends the channel, the selected account and the item the source has', () => {
     const stash = { hash: 'h1', name: 'Grim Visage' } as unknown as GameStashItem;
     // Price check chip: the clipboard item
-    expect(wtbContactBody('whisper', { text: '{"name":"x"}' }, 'MyAcc')).toEqual({
-      channel: 'whisper',
+    expect(wtbContactBody('message', { text: '{"name":"x"}' }, 'MyAcc')).toEqual({
+      channel: 'message',
       account: 'MyAcc',
       text: '{"name":"x"}',
     });
@@ -51,7 +52,7 @@ describe('contact body per source', () => {
       item: stash,
     });
     // A board card without a matching item, signed out of an account: the channel alone
-    expect(wtbContactBody('whisper', null, null)).toEqual({ channel: 'whisper' });
+    expect(wtbContactBody('message', null, null)).toEqual({ channel: 'message' });
   });
 
   it("a drawer's item: the fitting stash item, the listing it came from, else the price-checked item", () => {
@@ -72,11 +73,12 @@ describe('notification for a wtb.response event', () => {
       body: 'HammerTime has a match for Rare Circlet · your offer 2 HR',
       itemName: 'Grim Visage',
       metLine: '✓ +20 Faster Cast Rate (20)',
+      note: '',
     });
     expect(responseNotice(wtbResponse({ item: null })).body).toBe('HammerTime whispered you about Rare Circlet');
   });
 
-  it('toast (and log entry): View request on the request, Whisper back, the item art', () => {
+  it('toast (and log entry): View request on the request, Message back, the item art', () => {
     const toast = wtbResponseToast(wtbResponse(), 8000);
     expect(toast).toMatchObject({
       title: '🛒 A seller can fill your buy request',
@@ -84,19 +86,15 @@ describe('notification for a wtb.response event', () => {
         'HammerTime has a match for Rare Circlet · your offer 2 HR\nGrim Visage\n✓ +20 Faster Cast Rate (20)',
       duration: 8000,
       action: { label: 'View request', type: ToastActionType.OPEN_MARKET_PANEL, data: { requestId: 'req1' } },
-      secondaryAction: { label: 'Whisper back', type: ToastActionType.WTB_WHISPER_BACK },
+      secondaryAction: { label: 'Message back', type: ToastActionType.WTB_WHISPER_BACK },
       art: { itemName: 'Grim Visage', baseCode: 'ci0' },
     });
     expect(wtbResponseToast(wtbResponse({ item: null }), 8000)).not.toHaveProperty('art');
   });
 
-  it('Whisper back asks the seller about the item on their account', () => {
-    expect(wtbBackWhisper(wtbResponse())).toBe(
-      '/w *HammerAcc Hi! About my Rare Circlet request — still have the Grim Visage?',
-    );
-    expect(wtbBackWhisper(wtbResponse({ seller: { userId: 's', name: 'Hammer', account: null }, item: null }))).toBe(
-      '/w *Hammer Hi! About my Rare Circlet request — still have one?',
-    );
+  it('Message back asks the seller about the item', () => {
+    expect(wtbBackWhisperText(wtbResponse())).toBe('Hi! About my Rare Circlet request — still have the Grim Visage?');
+    expect(wtbBackWhisperText(wtbResponse({ item: null }))).toBe('Hi! About my Rare Circlet request — still have one?');
   });
 
   it('skips malformed events', () => {
@@ -116,6 +114,52 @@ describe('Responses list', () => {
       wtbResponse({ id: 'old-plain', item: null, createdAt: '2026-11-16T07:00:00Z' }),
     ]);
     expect(list.map((r) => r.id)).toEqual(['new-item', 'old-item', 'new-plain', 'old-plain']);
+  });
+
+  it('pending offers to sell come first', () => {
+    const list = sortResponses([
+      wtbResponse({ id: 'contact', createdAt: '2026-11-16T12:00:00Z' }),
+      wtbResponse({ id: 'decided', kind: 'offer', price: { amount: 2, currency: 'HR', hr: 2 }, status: 'declined' }),
+      wtbResponse({
+        id: 'pending',
+        kind: 'offer',
+        price: { amount: 2, currency: 'HR', hr: 2 },
+        status: 'pending',
+        createdAt: '2026-11-16T08:00:00Z',
+      }),
+    ]);
+    expect(list.map((r) => r.id)).toEqual(['pending', 'contact', 'decided']);
+  });
+
+  it("an offer's notification: who sells for how much, the request, the met rows and the note", () => {
+    const notice = responseNotice(
+      wtbResponse({
+        kind: 'offer',
+        price: { amount: 1, currency: 'Ber', hr: 3 },
+        status: 'pending',
+        note: 'fast trade',
+      }),
+    );
+    expect(notice).toEqual({
+      title: '🏷 HammerTime asks 1 Ber for Grim Visage',
+      body: 'For your Rare Circlet request (you offered 2 HR)',
+      itemName: null,
+      metLine: '✓ +20 Faster Cast Rate (20)',
+      note: '“fast trade”',
+    });
+  });
+
+  it("row summary: an offer's price phrase or how they reached you, then the item when sent", () => {
+    const price = { amount: 2, currency: 'HR' as const, hr: 2 };
+    expect(responseSummary(wtbResponse({ kind: 'offer', price, status: 'pending' }))).toBe(
+      'will sell at your price · Grim Visage',
+    );
+    expect(
+      responseSummary(wtbResponse({ kind: 'offer', price: { amount: 1, currency: 'Ber', hr: 3 }, item: null })),
+    ).toBe('asks 1 Ber');
+    expect(responseSummary(wtbResponse({ channel: 'message' }))).toBe('messaged you · Grim Visage');
+    expect(responseSummary(wtbResponse({ channel: 'copy', item: null }))).toBe('whispered you');
+    expect(responseSummary(wtbResponse({ channel: 'whisper', item: null }))).toBe('whispered you');
   });
 
   it('met line: the met rows with their values', () => {

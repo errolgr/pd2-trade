@@ -22,8 +22,14 @@ import {
 } from '@/lib/chat-prefs';
 import { isOpenTrade, unreadWhispers, whisperCommand, whisperTarget } from '@/lib/whisper-history';
 import { setBadgeCount, showToast, undoToast, useOverlay, usePanel } from '@/overlay';
-import { updateWtbRequest } from '@/pages/market/alerts/wtb-api';
+import {
+  contactWtbRequest,
+  updateWtbRequest,
+  wtbContactBody,
+  type WtbContactItem,
+} from '@/pages/market/alerts/wtb-api';
 import { useWtbWhisper } from '@/pages/market/wtb/useWtbWhisper';
+import { useWtbOffers } from '@/pages/market/wtb/useWtbOffers';
 import { markFilledPatch } from '@/pages/market/wtb/wtb-responses';
 import { DUR, EASE_OUT, fadeIn, slideInRight } from '@/lib/motion';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
@@ -200,6 +206,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
     if (visible) reloadWtbResponses();
   }, [visible, reloadWtbResponses]);
   const wtbWhisper = useWtbWhisper('chat');
+  const wtbOffers = useWtbOffers('chat');
   const { openPanel } = useOverlay();
   /** A thread's Mark filled: closes the user's request with that response (failures toasted, then rethrown). */
   const markWtbFilled = useCallback(
@@ -517,6 +524,27 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   // The open that asked to show the Trader sidebar (a market seller's name); applied in an effect below since the
   // wide column's state lives in the saved chat prefs
   const [traderVersion, setTraderVersion] = useState(0);
+  /**
+   * A buy request's Message (chat payload `wtbContact`): the contact `/contact` records once the user actually sends
+   * that buyer a message from the opened thread (`message`, or `copy` as an in-game whisper); another thread opened
+   * or the panel closed first drops it.
+   */
+  const pendingWtbContact = useRef<{ userId: string; requestId: string; item?: WtbContactItem } | null>(null);
+  useEffect(() => {
+    const pending = pendingWtbContact.current;
+    if (pending && selectedThread && selectedThread.userId !== pending.userId) pendingWtbContact.current = null;
+  }, [selectedThread]);
+  useEffect(() => {
+    if (!visible) pendingWtbContact.current = null;
+  }, [visible]);
+  const recordWtbContact = (thread: InboxThread, channel: 'message' | 'copy') => {
+    const pending = pendingWtbContact.current;
+    if (!pending || thread.userId !== pending.userId) return;
+    pendingWtbContact.current = null;
+    contactWtbRequest(pending.requestId, wtbContactBody(channel, pending.item, settings?.account), wtbToken).catch(
+      (error) => console.warn('[wtb] contact not counted:', error),
+    );
+  };
   if (payloadVersion !== handledPayloadVersion) {
     setHandledPayloadVersion(payloadVersion);
     const conversationId = payload?.conversationId;
@@ -544,6 +572,9 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
         return { ...current, [contactThreadId]: unsent ? `${unsent}\n${draft}` : draft };
       });
     }
+    // A buy request's Message: its contact waits for the first message sent to that buyer (replaces any earlier one)
+    pendingWtbContact.current =
+      payload?.wtbContact && payload.userId ? { userId: payload.userId, ...payload.wtbContact } : null;
     const threadId = payload?.threadId ?? contactThreadId ?? newestUnread?.id;
     // A requested conversation shows in the full list; a filter (offers hotkey) applies as asked
     if (payload?.filter) setFilter(payload.filter);
@@ -898,6 +929,14 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                       }
                       onWtbViewRequest={(requestId) => openPanel('market', { requestId }, { focus: true })}
                       onWtbMarkFilled={markWtbFilled}
+                      onWtbAccept={async (response) => {
+                        const decided = await wtbOffers.accept(response);
+                        if (decided) wtbResponses.upsert(decided);
+                      }}
+                      onWtbDecline={async (response) => {
+                        const decided = await wtbOffers.decline(response);
+                        if (decided) wtbResponses.upsert(decided);
+                      }}
                       listingIds={linkedListingIds}
                       now={now}
                       onCounter={(text) => {
@@ -936,9 +975,14 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                     onSend={(text) => {
                       if (channel === 'website') {
                         // Shows right away as a pending bubble; a failure stays on it with a retry
-                        void sendWebsite(selectedThread, text);
+                        void sendWebsite(selectedThread, text).then(
+                          (sent) => sent && recordWtbContact(selectedThread, 'message'),
+                        );
                       } else if (whisperAccount) {
-                        void sendWhisper(person ?? { accountName: whisperAccount, playerName: whisperAccount }, text);
+                        void sendWhisper(
+                          person ?? { accountName: whisperAccount, playerName: whisperAccount },
+                          text,
+                        ).then((copied) => copied && recordWtbContact(selectedThread, 'copy'));
                       }
                     }}
                     placeholder={

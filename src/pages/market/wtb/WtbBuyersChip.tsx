@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, Check, ChevronRight, Copy, MessageSquare, ShoppingCart, Tag } from 'lucide-react';
+import { ArrowRight, Check, ChevronRight, ShoppingCart, Tag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -23,7 +23,7 @@ import {
 } from '../lib/wtb';
 import { buyerChipModel, metStats, nearMisses, type RowValue } from './wtb-chip';
 import { countWtbViews, useWtbOverlap } from './useWtbData';
-import { useWtbWhisper } from './useWtbWhisper';
+import { WtbSellActions } from './WtbSellActions';
 import type { WtbContactItem } from '../alerts/wtb-api';
 
 export interface WtbBuyersChipProps {
@@ -68,7 +68,6 @@ function BuyersChip({
   const { t } = useTranslation('market');
   const { settings, updateSettings } = useOptions();
   const { openPanel } = useOverlay();
-  const { whisper, copyWhisper } = useWtbWhisper(source);
   const now = useNow();
   const [open, setOpen] = useState(false);
   const [almostOpen, setAlmostOpen] = useState(false);
@@ -146,39 +145,23 @@ function BuyersChip({
                       </span>
                     </div>
                   )}
-                  {/* One line, right-aligned: the buyer is named above, so Whisper and Copy go without it */}
-                  <div className="flex flex-nowrap items-center justify-end gap-1 whitespace-nowrap">
-                    <Button
-                      size="sm"
-                      className="h-6 px-2 text-[11px]"
-                      aria-label={t('wtb.whisperBuyer', { name: request.buyer.name })}
-                      onClick={() => void whisper(request, contactItem)}
-                    >
-                      <MessageSquare className="size-3" />
-                      {t('whisper.button')}
-                    </Button>
-                    <Tip label={t('wtb.copyWhisper')}>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="size-6 p-0"
-                        aria-label={t('wtb.copyWhisper')}
-                        onClick={() => void copyWhisper(request, contactItem)}
-                      >
-                        <Copy className="size-3" />
-                      </Button>
-                    </Tip>
+                  {/* The buyer is named above: List at on the left, copy · Message · Sell for {offer} right-aligned */}
+                  <div className="flex items-start justify-end gap-1">
                     {(onListAt || itemText) && (
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-6 px-2 text-[11px]"
+                        className="mr-auto h-6 px-2 text-[11px]"
                         onClick={() => listAt(match)}
                       >
                         <Tag className="size-3" />
                         {t('wtb.listAt', { offer: formatOffer(request.offer) })}
                       </Button>
                     )}
+                    <WtbSellActions request={request}
+                      item={contactItem}
+                      layout="chip"
+                      source={source} />
                   </div>
                 </li>
               );

@@ -6,7 +6,8 @@ import { t } from '@/i18n';
 import { type CustomToastPayload, ToastActionType } from '@/common/types/Events';
 import { formatStat } from '../components/stat-text';
 import type { WtbContactItem, WtbPatch } from '../alerts/wtb-api';
-import { formatOffer, type WtbResponse } from '../lib/wtb';
+import { formatOffer, isWtbOffer, type WtbResponse } from '../lib/wtb';
+import { atTheirPrice, offerNoticeTitle } from './wtb-offers';
 import type { MarketPanelPayload } from '../lib/types';
 import type { WtbSelection } from './WtbRequestDrawer';
 
@@ -23,6 +24,21 @@ export function selectionContactItem(
   return null;
 }
 
+/**
+ * A response in a row's one-line summary: an offer "will sell at your price" / "asks {price}", a contact "messaged
+ * you" (website chat) / "whispered you" (in-game copy, or older clients); then " · {item}" when they sent one.
+ */
+export function responseSummary(response: WtbResponse): string {
+  const what = isWtbOffer(response)
+    ? atTheirPrice(response)
+      ? t('market:wtb.responses.summary.atYourPrice')
+      : t('market:wtb.responses.summary.asks', { price: formatOffer(response.price) })
+    : response.channel === 'message'
+      ? t('market:wtb.responses.summary.messaged')
+      : t('market:wtb.responses.summary.whispered');
+  return response.item ? `${what} · ${response.item.name}` : what;
+}
+
 /** "✓ +20 Faster Cast Rate (25) · ✓ +1 to All Skills": the request rows the item meets, with its values. */
 export function responseMetLine(response: Pick<WtbResponse, 'met'>): string {
   return response.met
@@ -31,11 +47,20 @@ export function responseMetLine(response: Pick<WtbResponse, 'met'>): string {
     .join(' · ');
 }
 
-/** The Responses list: the ones with an item first, newest first within each; dismissed ones left out. */
+/**
+ * The Responses list: pending offers to sell first, then the ones with an item, newest first within each;
+ * dismissed ones left out.
+ */
 export function sortResponses(responses: readonly WtbResponse[]): WtbResponse[] {
+  const pending = (r: WtbResponse) => Number(r.kind === 'offer' && r.status === 'pending');
   return responses
     .filter((r) => !r.dismissed)
-    .sort((a, b) => Number(!!b.item) - Number(!!a.item) || Date.parse(b.createdAt) - Date.parse(a.createdAt));
+    .sort(
+      (a, b) =>
+        pending(b) - pending(a) ||
+        Number(!!b.item) - Number(!!a.item) ||
+        Date.parse(b.createdAt) - Date.parse(a.createdAt),
+    );
 }
 
 /** The buyer's toast / notification log entry for a response. */
@@ -45,11 +70,22 @@ export interface WtbResponseNotice {
   /** The seller's item ("Grim Visage"), none for a plain whisper. */
   itemName: string | null;
   metLine: string;
+  /** An offer's note, quoted; empty otherwise. */
+  note: string;
 }
 
 export function responseNotice(response: WtbResponse): WtbResponseNotice {
   const seller = response.seller.name;
   const title = response.request.title;
+  // An offer to sell: who sells what for how much; the request it answers; the met rows and the seller's note
+  if (isWtbOffer(response))
+    return {
+      title: offerNoticeTitle(response),
+      body: t('market:wtb.offers.forRequest', { title, offer: formatOffer(response.request.offer) }),
+      itemName: null,
+      metLine: response.item ? responseMetLine(response) : '',
+      note: response.note ? `“${response.note}”` : '',
+    };
   return {
     title: t('market:wtb.response.title'),
     body: response.item
@@ -57,6 +93,7 @@ export function responseNotice(response: WtbResponse): WtbResponseNotice {
       : t('market:wtb.response.bodyNoItem', { seller, title }),
     itemName: response.item?.name ?? null,
     metLine: response.item ? responseMetLine(response) : '',
+    note: '',
   };
 }
 
@@ -74,7 +111,7 @@ export function wtbResponseToast(response: WtbResponse, durationMs: number): Cus
   const notice = responseNotice(response);
   return {
     title: notice.title,
-    description: [notice.body, notice.itemName, notice.metLine].filter(Boolean).join('\n'),
+    description: [notice.body, notice.itemName, notice.metLine, notice.note].filter(Boolean).join('\n'),
     duration: durationMs,
     action: {
       label: t('market:wtb.response.viewRequest'),

@@ -197,15 +197,17 @@
     "buyRequestReceived": "Prośba o kupno",
     "buyRequestMade": "Ich prośba o kupno",
     "forRequest": "na {{title}}",
-    "whisperBack": "Odpisz szeptem",
-    "whisperBackTitle": "Skopiuj odpowiedź szeptem do sprzedającego",
-    "whisper": "Szepnij",
-    "whisperBuyerTitle": "Skopiuj ponownie swój szept do kupującego",
+    "whisperBack": "Odpisz",
+    "whisperBackTitle": "Napisz do sprzedającego na czacie strony",
+    "whisper": "Wiadomość",
+    "whisperBuyerTitle": "Napisz do kupującego na czacie strony",
     "viewRequest": "Zobacz prośbę",
     "viewRequestTitle": "Otwórz prośbę o kupno na rynku",
     "markFilled": "Oznacz jako spełnioną",
     "markFilledTitle": "Zamknij swoją prośbę: ten sprzedający ją spełnił",
-    "markFilledFailed": "Nie udało się zamknąć prośby"
+    "markFilledFailed": "Nie udało się zamknąć prośby",
+    "wtbOfferReceived": "Oferta na twoją prośbę",
+    "wtbOfferMade": "Twoja oferta na ich prośbę"
   },
   "thread": {
     "muted": "Wyciszona",

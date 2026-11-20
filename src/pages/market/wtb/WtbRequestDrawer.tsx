@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Circle, Copy, MessageSquare, Tag, User as UserIcon, X } from 'lucide-react';
+import { Check, Circle, Tag, User as UserIcon, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -19,7 +19,7 @@ import { formatOffer, wtbDaysLeft, wtbStatRows, wtbWhisper, type WtbRequest } fr
 import { itemRowValue, summaryRowText, wtbTitleColor } from './wtb-text';
 import { WtbItemArt } from './WtbItemArt';
 import { WtbRequirementTags } from './WtbRequirementTags';
-import { useWtbWhisper } from './useWtbWhisper';
+import { WtbSellActions } from './WtbSellActions';
 import { ownerActionsFor, wtbTimes, wtbTimesLine } from './wtb-bump';
 import { markFilledPatch, selectionContactItem } from './wtb-responses';
 import { WtbOwnerActionButtons, type WtbOwnerActions } from './WtbOwnerActions';
@@ -103,7 +103,6 @@ export function WtbRequestDrawer({
 }) {
   const { t } = useTranslation('market');
   const now = useNow();
-  const { whisper, copyWhisper } = useWtbWhisper('market');
   const token = useOptions().settings?.pd2Token || null;
   const { request, niceToHave, stashItem, itemText } = selection;
   const offer = formatOffer(request.offer);
@@ -245,36 +244,19 @@ export function WtbRequestDrawer({
         </div>
       ) : (
         <div className="space-y-1.5 border-t border-border p-2.5">
-          <div className="grid grid-cols-2 gap-1.5">
-            <Button
+          <WtbSellActions request={request}
+            item={selectionContactItem(selection)}
+            layout="drawer"
+            source="market" />
+          {(itemText || stashItem) && (
+            <Button variant="outline"
               size="sm"
-              className="h-8 text-xs"
-              onClick={() => void whisper(request, selectionContactItem(selection))}
-            >
-              <MessageSquare className="size-3.5" />
-              <span className="truncate">{t('wtb.whisperBuyer', { name: request.buyer.name })}</span>
+              className="h-8 w-full text-xs"
+              onClick={() => onListAt(selection)}>
+              <Tag className="size-3.5" />
+              {t('wtb.listItAt', { offer })}
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs"
-              onClick={() => void copyWhisper(request, selectionContactItem(selection))}
-            >
-              <Copy className="size-3.5" />
-              {t('wtb.copyWhisper')}
-            </Button>
-            {(itemText || stashItem) && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="col-span-2 h-8 text-xs"
-                onClick={() => onListAt(selection)}
-              >
-                <Tag className="size-3.5" />
-                {t('wtb.listItAt', { offer })}
-              </Button>
-            )}
-          </div>
+          )}
           <p className="break-words text-[11px] text-muted-foreground">{wtbWhisper(request)}</p>
         </div>
       )}

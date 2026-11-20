@@ -573,24 +573,37 @@
       "hint": "Buy requests: players looking for an item like this. Click to see who and what they pay.",
       "hintOk": "Got it",
       "title": "Buy requests for this item",
-      "subtitle": "Players who posted what they want. Whisper them to sell.",
+      "subtitle": "Players who posted what they want. Message them to sell.",
       "almost_one": "Almost ({{count}}) — buyers 1 stat away",
       "almost_other": "Almost ({{count}}) — buyers 1 stat away",
       "needs": "needs {{stat}} ({{value}})",
       "needsNone": "needs {{stat}} (you have none)",
       "allRequests": "All requests"
     },
-    "whisperBuyer": "Whisper {{name}}",
+    "whisperBuyer": "Message {{name}}",
+    "message": "Message",
     "copyWhisper": "Copy whisper",
     "listAt": "List at {{offer}}",
     "listItAt": "List it at {{offer}}",
     "nice": "Nice",
     "must": "Must",
     "flags": {
-      "corrupted": { "yes": "Corrupted", "no": "Uncorrupted" },
-      "ethereal": { "yes": "Ethereal", "no": "Non-ethereal" },
-      "desecrated": { "yes": "Desecrated", "no": "Not desecrated" },
-      "identified": { "yes": "Identified", "no": "Unidentified" }
+      "corrupted": {
+        "yes": "Corrupted",
+        "no": "Uncorrupted"
+      },
+      "ethereal": {
+        "yes": "Ethereal",
+        "no": "Non-ethereal"
+      },
+      "desecrated": {
+        "yes": "Desecrated",
+        "no": "Not desecrated"
+      },
+      "identified": {
+        "yes": "Identified",
+        "no": "Unidentified"
+      }
     },
     "sockets": {
       "exact_one": "{{count}} socket",
@@ -773,18 +786,63 @@
       "body": "{{seller}} has a match for {{title}} · your offer {{offer}}",
       "bodyNoItem": "{{seller}} whispered you about {{title}}",
       "viewRequest": "View request",
-      "whisperBack": "Whisper back",
+      "whisperBack": "Message back",
       "requestGone": "That buy request is no longer open"
     },
     "responses": {
       "title_one": "Responses · {{count}}",
       "title_other": "Responses · {{count}}",
-      "noItem": "Whispered you (no item named)",
       "dismiss": "Dismiss",
       "markFilled": "Mark filled",
       "confirmClose": "Close this request?",
       "confirmCloseDescription": "{{title}} · filled by {{seller}}",
-      "close": "Close request"
+      "close": "Close request",
+      "summary": {
+        "atYourPrice": "will sell at your price",
+        "asks": "asks {{price}}",
+        "messaged": "messaged you",
+        "whispered": "whispered you"
+      }
+    },
+    "offers": {
+      "sell": "Sell for {{offer}}",
+      "pending": "Offer sent · pending",
+      "withdraw": "Withdraw",
+      "accepted": "Accepted · message {{buyer}}",
+      "declined": "Declined",
+      "askDifferent": "Ask a different price",
+      "askTitle": "Your price (they offer {{offer}})",
+      "note": "Note",
+      "notePlaceholder": "Note for the buyer (optional)",
+      "send": "Send offer",
+      "sentToast": "Offer sent to {{buyer}}",
+      "sentToastDescription": "{{item}} for {{price}}",
+      "fixedPrice": "This buyer only takes their own price",
+      "notOpen": "This buy request isn't open any more",
+      "throttled": "Too many offers right now — try again later",
+      "failed": "Couldn't send the offer",
+      "signIn": "Sign in to sell to buyers",
+      "withdrawnToast": "Offer withdrawn",
+      "decideFailed": "Couldn't update the offer",
+      "willSell": "{{seller}} will sell {{item}} · {{price}} (your price)",
+      "asks": "{{seller}} asks {{price}} for {{item}} (you offered {{offer}})",
+      "accept": "Accept",
+      "acceptPrice": "Accept {{price}}",
+      "decline": "Decline",
+      "dealDraft": "Deal — {{item}} for {{price}}. When can you trade?",
+      "noticeWillSell": "🏷 {{seller}} will sell you {{item}} for {{price}}",
+      "noticeAsks": "🏷 {{seller}} asks {{price}} for {{item}}",
+      "forRequest": "For your {{title}} request (you offered {{offer}})",
+      "acceptedBy": "{{buyer}} accepted your offer for {{title}}",
+      "declinedBy": "{{buyer}} declined your offer for {{title}}",
+      "withdrawnBy": "{{seller}} withdrew their offer for {{title}}",
+      "messageBuyer": "Message {{buyer}}",
+      "status": {
+        "pending": "Pending",
+        "accepted": "Accepted",
+        "declined": "Declined",
+        "withdrawn": "Withdrawn"
+      }
     }
   }
 }

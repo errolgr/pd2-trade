@@ -1,5 +1,8 @@
 export const changeLog = {
   '0.12.2': [
+    '✨ Buy requests: "Message" (price check, Quick List, Wanted, notifications, chat) opens the website chat with the player, message filled in, instead of copying a /w whisper. "Copy whisper" still copies it for the game chat',
+    '🆕 Buy requests: "Sell for {price}" sends the buyer an offer at their price; the ▾ next to it asks a different price when they\'re open to offers. Buyers Accept or Decline offers from the request, chat, or notifications; accepting opens a chat with the seller',
+    '🔧 Buy requests: answers on your request are compact two-line rows, and "sellers contacted you" counts each seller once, when they actually send',
     '✨ Price check: Rainbow Facets search their exact rolls right away (a 5/3 Fire Facet finds 5/3 Fire Facets only)',
   ],
   // 0.12.0 never shipped (its publish run was cancelled): its notes are 0.12.1's, the release users get
