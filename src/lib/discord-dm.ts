@@ -62,6 +62,10 @@ export interface TradeReport {
   itemName?: string;
   listingId?: string;
   offerText?: string;
+  /** PD2 ids the DM's Reply / Accept / Decline buttons act on (discord-dm-actions). */
+  offerId?: string;
+  conversationId?: string;
+  senderUserId?: string;
 }
 
 /** `POST /api/notify` answer (202). */
@@ -74,7 +78,7 @@ export interface NotifyResult {
 
 /** The server's limits (dm-notifier.service.ts TRADE_REPORT_LIMITS, notification-prefs.service.ts TRADER_NAME). */
 export const TRADER_NAME = /^[A-Za-z0-9._-]{1,32}$/;
-const LIMITS = { message: 500, itemName: 120, offerText: 200, listingId: 64 } as const;
+const LIMITS = { message: 500, itemName: 120, offerText: 200, id: 64 } as const;
 export const MAX_AWAY_MINUTES = 240;
 /** `from` of an offer or message whose sender the overlay can't name. */
 export const UNKNOWN_SENDER = 'Someone';
@@ -152,23 +156,32 @@ export interface TradeEvent {
   itemName?: string | null;
   listingId?: string | null;
   offerText?: string | null;
+  offerId?: string | null;
+  conversationId?: string | null;
+  senderUserId?: string | null;
 }
+
+const ID_FIELDS = ['listingId', 'offerId', 'conversationId', 'senderUserId'] as const;
 
 /** The `POST /api/notify` body of an event: names sanitized, texts clipped; null when it has no usable sender. */
 export function toTradeReport(event: TradeEvent): TradeReport | null {
   const from = sanitizeTraderName(event.from) ?? sanitizeTraderName(event.fallbackFrom);
   if (!from) return null;
   const account = sanitizeTraderName(event.account);
-  const listingId = event.listingId?.trim();
-  return {
+  const report: TradeReport = {
     type: event.type,
     from,
     ...(account && account !== from ? { account } : {}),
     message: clip(event.message, LIMITS.message) ?? defaultMessage(event.type),
     ...(clip(event.itemName, LIMITS.itemName) ? { itemName: clip(event.itemName, LIMITS.itemName) } : {}),
-    ...(listingId && listingId.length <= LIMITS.listingId && /^[A-Za-z0-9]+$/.test(listingId) ? { listingId } : {}),
     ...(clip(event.offerText, LIMITS.offerText) ? { offerText: clip(event.offerText, LIMITS.offerText) } : {}),
   };
+  // PD2 ids are alphanumeric (the server refuses anything else)
+  for (const field of ID_FIELDS) {
+    const id = event[field]?.trim();
+    if (id && id.length <= LIMITS.id && /^[A-Za-z0-9]+$/.test(id)) report[field] = id;
+  }
+  return report;
 }
 
 function defaultMessage(type: TradeEventType): string {
@@ -189,7 +202,7 @@ export type ReportSkip = 'signed_out' | 'unavailable' | 'not_linked' | 'disabled
 
 export function reportSkipReason(
   report: TradeReport,
-  settings: { prefs: DmPrefs; status: DmStatus } | null,
+  settings: DmSettings | null,
   idleMs: number | null,
   now: number,
 ): ReportSkip | null {
@@ -211,11 +224,17 @@ export function reportSkipReason(
 /** How long fetched prefs and status are trusted before the next report fetches them again. */
 export const DM_SETTINGS_TTL_MS = 5 * 60_000;
 
+/** The user's DM prefs and link status. */
+export interface DmSettings {
+  prefs: DmPrefs;
+  status: DmStatus;
+}
+
 interface CachedSettings {
   token: string;
   at: number;
   /** null: the server didn't answer (or has no DMs); nothing is reported until the next fetch. */
-  value: { prefs: DmPrefs; status: DmStatus } | null;
+  value: DmSettings | null;
 }
 
 export interface DmReporterDeps {
@@ -231,16 +250,25 @@ export interface DmReporter {
   report(
     event: TradeEvent,
   ): Promise<{ sent: boolean; skip?: ReportSkip | 'no_sender' | 'failed'; result?: NotifyResult }>;
+  /** The user's DM prefs and link status (cached up to DM_SETTINGS_TTL_MS); null when the server didn't answer. */
+  settings(token: string): Promise<DmSettings | null>;
   /** Fresh prefs and status (the settings page changed them, or just opened). */
-  setSettings(token: string, value: { prefs: DmPrefs; status: DmStatus }): void;
+  setSettings(token: string, value: DmSettings): void;
   /** Forgets the cached settings: the next report fetches them. */
   invalidate(): void;
+  /** Called with every fetched or set value (the action stream connects while the user is linked). */
+  subscribe(listener: (value: DmSettings | null) => void): () => void;
 }
 
 export function createDmReporter(deps: DmReporterDeps): DmReporter {
   const now = deps.now ?? Date.now;
   let cache: CachedSettings | null = null;
   let loading: Promise<CachedSettings['value']> | null = null;
+  const listeners = new Set<(value: DmSettings | null) => void>();
+  const store = (token: string, value: DmSettings | null) => {
+    cache = { token, at: now(), value };
+    for (const listener of [...listeners]) listener(value);
+  };
 
   const settingsFor = async (token: string) => {
     if (cache && cache.token === token && now() - cache.at < DM_SETTINGS_TTL_MS) return cache.value;
@@ -252,7 +280,7 @@ export function createDmReporter(deps: DmReporterDeps): DmReporter {
       } catch (error) {
         console.warn('[DiscordDm] Could not load DM settings:', error);
       }
-      cache = { token, at: now(), value };
+      store(token, value);
       return value;
     })().finally(() => {
       loading = null;
@@ -277,11 +305,16 @@ export function createDmReporter(deps: DmReporterDeps): DmReporter {
         return { sent: false, skip: 'failed' };
       }
     },
-    setSettings(token, value) {
-      cache = { token, at: now(), value };
-    },
+    settings: settingsFor,
+    setSettings: store,
     invalidate() {
       cache = null;
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
     },
   };
 }

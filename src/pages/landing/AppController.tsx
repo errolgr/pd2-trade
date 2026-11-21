@@ -9,6 +9,7 @@ import { usePD2Auth } from '@/hooks/usePD2Auth';
 import { useChangelog } from '@/hooks/useChangelog';
 import { useSocketNotifications } from '@/hooks/useSocketNotifications';
 import { useDiscordDmReporter } from '@/hooks/useDiscordDmReporter';
+import { useDiscordDmActions } from '@/hooks/useDiscordDmActions';
 import { useNetWorth } from '@/hooks/useNetWorth';
 import { useOverlayIntents } from '@/hooks/useOverlayIntents';
 import { useSimTryOn } from '@/hooks/useSimTryOn';
@@ -54,6 +55,8 @@ const AppController: React.FC = () => {
   useSocketNotifications({ settings, whisperNotificationsEnabled: true });
   // The same events, reported for Discord DMs while you are away - exactly one instance, here
   useDiscordDmReporter(settings);
+  // Reply / Accept / Decline clicked in those DMs, run here with the PD2 session - exactly one instance, here
+  useDiscordDmActions(settings);
 
   // Market Watch alerts (one live search stream of the watched searches) - exactly one instance, here
   useMarketAlerts();

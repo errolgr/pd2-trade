@@ -68,6 +68,8 @@ export function offerEvent(text: string | undefined, listingId: string | undefin
     itemName: offer?.itemName,
     listingId: listingId ?? offer?.listingId,
     offerText: offer?.price,
+    offerId: offer?.id,
+    senderUserId: offer?.userId,
   };
 }
 
@@ -167,6 +169,8 @@ export function useDiscordDmReporter(settings: ISettings | undefined) {
         from: msg.sender?.username,
         fallbackFrom: msg.sender?.display_name ?? UNKNOWN_SENDER,
         message: msg.content,
+        conversationId: msg.conversation_id,
+        senderUserId: msg.sender_id,
       });
     });
   }, [isConnected, subscribeSocket, token, ownUserId]);

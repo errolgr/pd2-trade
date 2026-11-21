@@ -158,16 +158,29 @@ describe('offer reports', () => {
   it('ignores offers made well before the notification', () => {
     expect(offerFor([offer('old', 30)], 'L1', at)).toBeUndefined();
   });
-  it('maps the offer: website user, account, item, price, listing', () => {
-    expect(toTradeReport(offerEvent('offered 2 Ist', 'L1', offer('a', 0)))).toEqual({
+  it('maps the offer: website user, account, item, price, listing, offer and sender ids', () => {
+    expect(toTradeReport(offerEvent('offered 2 Ist', 'L1', offer('a1', 0, { userId: 'u1' })))).toEqual({
       type: 'offer',
-      from: 'usera',
-      account: 'acca',
+      from: 'usera1',
+      account: 'acca1',
       message: 'offered 2 Ist',
       itemName: 'Shako',
       listingId: 'L1',
       offerText: '2 Ist',
+      offerId: 'a1',
+      senderUserId: 'u1',
     });
+  });
+  it('drops ids the server would refuse', () => {
+    const report = toTradeReport({
+      type: 'site_message',
+      from: 'x',
+      message: 'm',
+      conversationId: 'conv-1',
+      senderUserId: 'u'.repeat(65),
+      offerId: ' ',
+    });
+    expect(report).toEqual({ type: 'site_message', from: 'x', message: 'm' });
   });
   it('reports an offer whose sender never showed up as from someone', () => {
     expect(toTradeReport(offerEvent(undefined, 'L1'))).toEqual({
