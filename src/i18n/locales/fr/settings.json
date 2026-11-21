@@ -18,6 +18,30 @@
       "label": "Transparence des fenêtres : <num>{{value}} %</num>",
       "description": "Voir le jeu à travers l'arrière-plan des fenêtres. 0 % = totalement opaque."
     },
+    "windows": {
+      "group": "Fenêtres et focus",
+      "keyboardFocus": {
+        "label": "Focus clavier",
+        "description": "Quand une fenêtre prend le clavier au jeu. Tant qu'une fenêtre l'a, vos touches n'atteignent pas le jeu et le jeu peut devenir muet.",
+        "options": {
+          "typing": "En tapant dans un champ",
+          "click": "Au clic",
+          "open": "À l'ouverture"
+        }
+      },
+      "closeOnClickAway": {
+        "label": "Fermer les fenêtres en cliquant ailleurs",
+        "description": "Le prix, le chat, le marché, les builds et les fenêtres similaires se ferment quand vous cliquez en dehors ou passez à une autre application. Désactivé : elles restent ouvertes jusqu'à ce que vous les fermiez."
+      },
+      "outsideGame": {
+        "label": "Afficher les fenêtres hors du jeu",
+        "description": "Les fenêtres restent à l'écran quand Diablo II n'est pas au premier plan ou n'est pas lancé. Le bouton de chat, le ticker de patrimoine et le minuteur de zones restent affichés uniquement en jeu."
+      },
+      "hotkeysOutsideGame": {
+        "label": "Raccourcis hors du jeu",
+        "description": "Ouvrez les fenêtres avec leurs raccourcis depuis n'importe quelle application ; ces combinaisons de touches n'atteignent alors plus les autres applications. Les raccourcis qui copient l'objet sous le curseur (prix, mise en vente, retrait, essayage) ne fonctionnent qu'en jeu. Nécessite « Afficher les fenêtres hors du jeu »."
+      }
+    },
     "zoneTimer": {
       "enabled": {
         "label": "Minuteur des zones corrompues",
@@ -590,7 +614,6 @@
         },
         "exceptionMode": {
           "label": "Ne jamais retirer",
-          "description": "Une annonce marquée « Ne pas retirer cette annonce automatiquement » n'est jamais touchée.",
           "options": {
             "none": "Rien (par défaut)",
             "stackable": "La monnaie empilable et les objets choisis",

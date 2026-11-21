@@ -27,12 +27,12 @@ export const STACKABLE_CURRENCY_CODES: Readonly<Record<string, true>> = {
   fed: true,
 };
 
-/** Most per-listing exemptions kept (oldest dropped first): more than every listing of all four modes. */
-export const EXEMPT_LISTINGS_MAX = 200;
-
-/** What keeps a listing out of the auto-delist (Settings → Market, and the Quick List form). */
+/** What keeps a listing out of the auto-delist (Settings → Market). */
 export interface DelistExemptions {
-  /** Listing ids exempted one by one: they apply in every mode. */
+  /**
+   * Listing ids exempted one by one: they apply in every mode. Only older versions' Quick List form wrote them;
+   * the marks saved then are still honored.
+   */
   listingIds: readonly string[];
   /** The picked items; they apply unless the mode is 'none'. */
   exceptions: readonly DelistException[];
@@ -122,7 +122,7 @@ export function removeDelistException(
 }
 
 /**
- * The settings change that leaves `exception` alone from now on ("Never ask for …", "Remember for all …"): it joins
+ * The settings change that leaves `exception` alone from now on ("Never ask for …"): it joins
  * the picked items, and the mode goes from 'none' to 'selected' so that it takes effect.
  */
 export function rememberException(
@@ -133,43 +133,4 @@ export function rememberException(
   return (settings.delistExceptionMode ?? 'none') === 'none'
     ? { delistExceptions, delistExceptionMode: 'selected' }
     : { delistExceptions };
-}
-
-/** The exempt listing ids with `listingId` in or out; newest last, at most EXEMPT_LISTINGS_MAX. */
-export function setListingExempt(ids: readonly string[], listingId: string, exempt: boolean): string[] {
-  const rest = ids.filter((id) => id !== listingId);
-  return exempt ? [...rest, listingId].slice(-EXEMPT_LISTINGS_MAX) : rest;
-}
-
-/** The Quick List form's choices: `undefined` leaves that part as it is. */
-export interface DelistChoice {
-  /** "Don't auto-delist this listing". */
-  skip?: boolean;
-  /** "Remember for all {{name}}": the item's base in (or out of) the picked items. */
-  remember?: boolean;
-}
-
-/** The settings change a listing's Quick List choices make; null when nothing changes. */
-export function delistChoiceUpdate(
-  settings: ExemptionSettings,
-  listingId: string,
-  item: BaseFields,
-  { skip, remember }: DelistChoice,
-): ExemptionSettings | null {
-  const update: ExemptionSettings = {};
-  const ids = settings.delistExemptListings ?? [];
-  if (skip !== undefined && ids.includes(listingId) !== skip) {
-    update.delistExemptListings = setListingExempt(ids, listingId, skip);
-  }
-  const exception = remember === undefined ? null : exceptionOf(item);
-  if (exception) {
-    const exceptions = settings.delistExceptions ?? [];
-    const listed = isExcepted(exception.codes[0], exceptions);
-    // Under 'none' the list is dormant: remembering turns it on, and not remembering leaves it as it is
-    const active = (settings.delistExceptionMode ?? 'none') !== 'none';
-    if (remember && !(listed && active)) Object.assign(update, rememberException(settings, exception));
-    else if (!remember && listed && active)
-      update.delistExceptions = removeDelistException(exceptions, exception.codes);
-  }
-  return Object.keys(update).length > 0 ? update : null;
 }

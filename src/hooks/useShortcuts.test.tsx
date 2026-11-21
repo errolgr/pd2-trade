@@ -133,6 +133,22 @@ describe('useShortcuts', () => {
     expect(vi.mocked(register).mock.calls.length).toBe(registerCalls);
   });
 
+  it('outside the game keeps only the shortcuts that are not game-only, when hotkeys work there', async () => {
+    const shortcuts = [
+      { modifier: 'ctrl' as const, key: 'd', handler: vi.fn(), gameOnly: true },
+      { modifier: 'ctrl' as const, key: 'm', handler: vi.fn() },
+    ];
+    renderHook(() => useShortcuts(shortcuts, true));
+    await flush();
+    expect([...state.registered.keys()].sort()).toEqual(['Control+D', 'Control+M']);
+
+    await focus(false);
+    expect([...state.registered.keys()]).toEqual(['Control+M']);
+
+    await focus(true);
+    expect([...state.registered.keys()].sort()).toEqual(['Control+D', 'Control+M']);
+  });
+
   it('applies rapid focus toggles in order', async () => {
     const shortcuts = [{ modifier: 'ctrl' as const, key: 'd', handler: vi.fn() }];
     renderHook(() => useShortcuts(shortcuts));

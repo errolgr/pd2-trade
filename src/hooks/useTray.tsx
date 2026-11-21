@@ -2,6 +2,7 @@ import i18n, { t } from '@/i18n';
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import { useOptions } from '@/hooks/useOptions';
+import { hotkeysWorkOutsideGame } from '@/lib/window-behavior';
 import { useOverlay } from '@/overlay';
 import { listen } from '@/lib/browser-events';
 import { holdListener } from '@/lib/listener';
@@ -39,7 +40,8 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
   const trayRef = useRef<any | null>(null);
   const menuRef = useRef<Menu | null>(null);
   const lastShortcutRef = useRef<string | null>(null);
-  // Register global shortcut for opening settings (only when Diablo is focused)
+  // Register global shortcut for opening settings (only when Diablo is focused, unless hotkeys work outside the game)
+  const outsideGame = !!settings && hotkeysWorkOutsideGame(settings);
   useEffect(() => {
     const key = hotkeyKeyToken(settings?.hotkeyKeySettings);
     // A key the parser cannot take is flagged in the settings window; register nothing for it
@@ -94,20 +96,33 @@ export const TrayProvider: React.FC<{ children?: React.ReactNode }> = ({ childre
       chain = chain.then(op).catch((err) => console.warn('Settings shortcut operation failed:', err));
     };
 
-    // Listen for Diablo focus changes to register/unregister hotkey
-    const releaseFocusListener = holdListener(
-      listen<boolean>('diablo-focus-changed', ({ payload: isFocused }) => {
-        schedule(isFocused ? registerShortcut : unregisterShortcut);
-      }),
-      'diablo-focus-changed',
-    );
+    // Outside the game too: registered for good. Otherwise registered while Diablo has focus (a settings change
+    // re-runs this effect in the game, so start from the current focus rather than wait for the next change).
+    let disposed = false;
+    let releaseFocusListener = () => {};
+    if (outsideGame) {
+      schedule(registerShortcut);
+    } else {
+      void invoke<boolean>('is_diablo_focused')
+        .then((isFocused) => {
+          if (isFocused && !disposed) schedule(registerShortcut);
+        })
+        .catch(() => {});
+      releaseFocusListener = holdListener(
+        listen<boolean>('diablo-focus-changed', ({ payload: isFocused }) => {
+          schedule(isFocused ? registerShortcut : unregisterShortcut);
+        }),
+        'diablo-focus-changed',
+      );
+    }
 
     return () => {
+      disposed = true;
       releaseFocusListener();
       // Unregister shortcut on cleanup
       schedule(unregisterShortcut);
     };
-  }, [settings?.hotkeyModifierSettings, settings?.hotkeyKeySettings, openPanel]);
+  }, [settings?.hotkeyModifierSettings, settings?.hotkeyKeySettings, outsideGame, openPanel]);
 
   useEffect(() => {
     if (!isTauri()) {

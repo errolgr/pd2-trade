@@ -87,7 +87,7 @@ export function resizeRect(
 
 /** Panel frame: position/size, drag via [data-panel-drag], resize, z-order and keyboard policy. */
 export const Panel: React.FC<{ id: PanelId }> = ({ id }) => {
-  const { defs, state, gameFocused, commitRect } = useOverlayInternals();
+  const { defs, state, gameFocused, behavior, commitRect } = useOverlayInternals();
   const { bringToFront, closePanel } = useOverlay();
   const def = defs[id];
   const panel = state.panels[id];
@@ -98,7 +98,7 @@ export const Panel: React.FC<{ id: PanelId }> = ({ id }) => {
   const close = useCallback(() => closePanel(id), [closePanel, id]);
   const setRect = useCallback((r: Partial<OverlayRect>) => commitRect(id, r), [commitRect, id]);
   const rect = panel?.rect ?? { x: 0, y: 0, ...def.size };
-  const visible = isPanelVisible(def, panel, gameFocused);
+  const visible = isPanelVisible(def, panel, gameFocused, behavior.showOutsideGame);
 
   const ctx = useMemo<PanelContextValue>(
     () => ({
@@ -153,15 +153,19 @@ export const Panel: React.FC<{ id: PanelId }> = ({ id }) => {
   const onPointerDownCapture = (e: React.PointerEvent<HTMLDivElement>) => {
     bringToFront(id);
     if (def.keyboard !== 'onPointerDown') return;
-    // Take the keyboard only to type or to copy selected text: anything else leaves the game in front (and its
-    // sound playing). Over a fullscreen game the panel stays in front instead: handing the foreground back would
-    // hide it (see showOverFullscreenGame).
+    // By default take the keyboard only to type or to copy selected text: anything else leaves the game in front
+    // (and its sound playing). The user can have any click in the panel take it (keyboardFocus 'click' / 'open').
+    // Over a fullscreen game the panel stays in front instead: handing the foreground back would hide it (see
+    // showOverFullscreenGame).
     const field = textEntryAt(e.target);
     if (field) {
       void claimKeyboard().then(() => {
         if (field.isConnected && document.activeElement !== field) field.focus();
       });
-    } else if (e.target instanceof Element && e.target.closest(KEEP_KEYBOARD_SELECTOR)) {
+    } else if (
+      behavior.keyboardFocus !== 'typing' ||
+      (e.target instanceof Element && e.target.closest(KEEP_KEYBOARD_SELECTOR))
+    ) {
       void claimKeyboard();
     } else if (isKeyboardClaimed() && !isHeldOverFullscreenGame()) {
       void releaseKeyboard();

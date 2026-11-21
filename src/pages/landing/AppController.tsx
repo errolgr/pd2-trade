@@ -35,6 +35,7 @@ import { useMarketAlerts } from '@/pages/market/alerts/useMarketAlerts';
 import { useWtbResponseActions } from '@/pages/market/wtb/useWtbResponseActions';
 import { loadNotificationLog } from '@/lib/notification-log';
 import { t } from '@/i18n';
+import { hotkeysWorkOutsideGame } from '@/lib/window-behavior';
 
 /** Prefix of the error start_chat_watcher returns when the chat log can't be found or created (chat_watcher.rs). */
 const CHAT_LOG_MISSING = 'Could not find or create chat log file';
@@ -77,7 +78,8 @@ const AppController: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Hotkeys only act while Diablo is the foreground window
+  // Hotkeys act only while Diablo is the foreground window; the ones that don't copy an item also outside the game
+  // when the user turned that on (Settings → Interface)
   const checkDiabloFocus = useCallback(async (): Promise<boolean> => {
     if (!isTauri()) return true;
     try {
@@ -194,7 +196,7 @@ const AppController: React.FC = () => {
     itemSearch: fireSearch,
     quickList: openQuickList,
     currency: async () => {
-      if (await checkDiabloFocus()) openPanel('currency');
+      if (hotkeysWorkOutsideGame(settings) || (await checkDiabloFocus())) openPanel('currency');
     },
     // Opening with unread messages lands on the newest unread thread (the badge leaves out muted ones)
     chat: () => (getBadgeCount('chatUnread') > 0 ? togglePanel('chat', { newestUnread: true }) : togglePanel('chat')),

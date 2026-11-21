@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { isTauri } from '@tauri-apps/api/core';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
@@ -10,7 +10,7 @@ import { initTheme } from '@/lib/themes';
 import { initUiScale } from '@/lib/ui-scale';
 import { initTelemetryFromSettings } from '@/lib/telemetry-opt-out';
 import { Pd2WebsiteProvider } from '@/hooks/pd2website/usePD2Website';
-import { OptionsProvider } from './hooks/useOptions';
+import { OptionsProvider, useOptions } from './hooks/useOptions';
 import { DialogProvider } from './hooks/useDialog';
 import { TrayProvider } from './hooks/useTray';
 import { ItemsProvider } from './hooks/useItems';
@@ -28,6 +28,7 @@ import PrimitivesGallery from './pages/dev/PrimitivesGallery';
 import { SignInWindowPage } from './pages/sign-in/SignInPage';
 import { SignInProvider } from './hooks/useSignIn';
 import { TooltipProvider } from './components/ui/tooltip';
+import { overlayBehavior } from './lib/window-behavior';
 
 // Apply the cached theme and UI scale before the first render (no flash of the defaults)
 initTheme();
@@ -43,6 +44,22 @@ initTelemetryFromSettings();
 // (Inspect / DevTools)
 if (isTauri()) document.addEventListener('contextmenu', (e) => e.preventDefault());
 
+/** The overlay with the window behavior from Settings → Interface (the defaults until the settings load). */
+const SettingsOverlayProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { settings } = useOptions();
+  const { keyboardFocus, closeOnBlur, showOutsideGame } = overlayBehavior(settings);
+  const behavior = useMemo(
+    () => ({ keyboardFocus, closeOnBlur, showOutsideGame }),
+    [keyboardFocus, closeOnBlur, showOutsideGame],
+  );
+  return (
+    <OverlayProvider defs={PANEL_DEFS}
+      behavior={behavior}>
+      {children}
+    </OverlayProvider>
+  );
+};
+
 /**
  * The single overlay window: every provider mounted once, every UI surface a panel.
  * OverlayProvider sits above the domain providers so they (sign-in, tray settings, net worth) can open panels.
@@ -50,7 +67,7 @@ if (isTauri()) document.addEventListener('contextmenu', (e) => e.preventDefault(
 const AppRoot: React.FC = () => (
   <DialogProvider>
     <OptionsProvider>
-      <OverlayProvider defs={PANEL_DEFS}>
+      <SettingsOverlayProvider>
         <SignInProvider>
           <TrayProvider>
             <ItemsProvider>
@@ -70,7 +87,7 @@ const AppRoot: React.FC = () => (
             </ItemsProvider>
           </TrayProvider>
         </SignInProvider>
-      </OverlayProvider>
+      </SettingsOverlayProvider>
     </OptionsProvider>
   </DialogProvider>
 );

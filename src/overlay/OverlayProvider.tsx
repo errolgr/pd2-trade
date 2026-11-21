@@ -23,7 +23,16 @@ import { clampRectInto, loadPanelRect, savePanelRect } from './layout-storage';
 import { setToastBridge } from './toast';
 import { installDevHook } from './dev';
 import { browserLaunchFromUrl } from './browser-launch';
-import type { OpenOptions, OverlayRect, PanelDef, PanelDefs, PanelId, PanelPayloads, Placement } from './types';
+import type {
+  OpenOptions,
+  OverlayBehavior,
+  OverlayRect,
+  PanelDef,
+  PanelDefs,
+  PanelId,
+  PanelPayloads,
+  Placement,
+} from './types';
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Pure state machine
@@ -111,9 +120,19 @@ export function overlayReducer(state: OverlayState, action: OverlayAction): Over
   }
 }
 
+/** Hidden by game blur: outside the game, unless the user shows windows there (never the in-game HUD). */
+function hiddenByGameBlur(def: PanelDef, gameFocused: boolean, showOutsideGame: boolean): boolean {
+  return def.hideOnGameBlur && !gameFocused && !(showOutsideGame && !def.gameHud);
+}
+
 /** True when the panel occupies the screen: open, placed and not hidden by game blur. */
-export function isPanelVisible(def: PanelDef, panel: PanelState | undefined, gameFocused: boolean): boolean {
-  return !!panel?.open && !panel.placing && !(def.hideOnGameBlur && !gameFocused);
+export function isPanelVisible(
+  def: PanelDef,
+  panel: PanelState | undefined,
+  gameFocused: boolean,
+  showOutsideGame = false,
+): boolean {
+  return !!panel?.open && !panel.placing && !hiddenByGameBlur(def, gameFocused, showOutsideGame);
 }
 
 const isGameAnchored = (placement: Placement): placement is 'gameCenter' | 'gameRight' =>
@@ -186,6 +205,12 @@ export interface OverlayApi {
 
 /** Same delay the old per-window focus-loss handler used before hiding its window. */
 export const CLOSE_ON_BLUR_MS = 150;
+/** The settings defaults: keyboard only for typing, panels close when left, in-game panels hidden outside the game. */
+export const DEFAULT_OVERLAY_BEHAVIOR: OverlayBehavior = {
+  keyboardFocus: 'typing',
+  closeOnBlur: true,
+  showOutsideGame: false,
+};
 /** Rust (window::outside_click): a mouse button went down outside every panel. */
 export const OUTSIDE_CLICK_EVENT = 'overlay-outside-click';
 
@@ -193,6 +218,7 @@ interface OverlayInternals {
   defs: PanelDefs;
   state: OverlayState;
   gameFocused: boolean;
+  behavior: OverlayBehavior;
   /** Commit a panel rect (drag/resize end, usePanel().setRect); persisted when def.persist. */
   commitRect(id: PanelId, rect: Partial<OverlayRect>): void;
 }
@@ -217,11 +243,19 @@ export function usePanelOpen(id: PanelId): boolean {
   return !!useOverlayInternals().state.panels[id]?.open;
 }
 
-export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.ReactNode }> = ({ defs, children }) => {
+export const OverlayProvider: React.FC<{ defs: PanelDefs; behavior?: OverlayBehavior; children?: React.ReactNode }> = ({
+  defs,
+  behavior = DEFAULT_OVERLAY_BEHAVIOR,
+  children,
+}) => {
   const [state, setState] = useState(() => initialOverlayState(defs));
   const stateRef = useRef(state);
   const { gameRect, gameFocused } = useGameState();
   const gameRef = useRef({ gameRect, gameFocused });
+  const behaviorRef = useRef(behavior);
+  useLayoutEffect(() => {
+    behaviorRef.current = behavior;
+  }, [behavior]);
   // Layout effect: callbacks and the reflow effect below read the committed game state
   useLayoutEffect(() => {
     gameRef.current = { gameRect, gameFocused };
@@ -280,10 +314,16 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
         }
       }
 
-      // Opening never takes focus from the game (it would mute it): panels claim the keyboard only when the user
-      // clicks into a text field (Panel). Except over a fullscreen game, which hides every other window while it
-      // holds the foreground: there a panel the user can interact with takes it, or it never shows.
-      if (opts.focus) void claimKeyboard();
+      // Opening never takes focus from the game (it would mute it) unless the user asked for it (keyboardFocus
+      // 'open'): panels claim the keyboard when the user clicks into a text field (Panel). Except over a fullscreen
+      // game, which hides every other window while it holds the foreground: there a panel the user can interact with
+      // takes it, or it never shows.
+      const { keyboardFocus, showOutsideGame } = behaviorRef.current;
+      const focusOnOpen =
+        keyboardFocus === 'open' &&
+        def.keyboard === 'onPointerDown' &&
+        !hiddenByGameBlur(def, gameRef.current.gameFocused, showOutsideGame);
+      if (opts.focus || focusOnOpen) void claimKeyboard();
       else if (def.keyboard === 'onPointerDown') void showOverFullscreenGame();
     },
     [apply, defs],
@@ -325,7 +365,13 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
 
   const togglePanel = useCallback(
     <K extends PanelId>(id: K, payload?: PanelPayloads[K], opts?: OpenOptions) => {
-      if (isPanelVisible(defs[id], stateRef.current.panels[id], gameRef.current.gameFocused)) closePanel(id);
+      const visible = isPanelVisible(
+        defs[id],
+        stateRef.current.panels[id],
+        gameRef.current.gameFocused,
+        behaviorRef.current.showOutsideGame,
+      );
+      if (visible) closePanel(id);
       else openPanel(id, payload, opts);
     },
     [closePanel, defs, openPanel],
@@ -340,14 +386,16 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
     [openPanel, closePanel, togglePanel, isOpen, bringToFront, gameRect, gameFocused],
   );
   const internals = useMemo<OverlayInternals>(
-    () => ({ defs, state, gameFocused, commitRect }),
-    [defs, state, gameFocused, commitRect],
+    () => ({ defs, state, gameFocused, behavior, commitRect }),
+    [defs, state, gameFocused, behavior, commitRect],
   );
 
   // Main lost OS focus (the user clicked into the game or another app): close closeOnBlur panels unless focus
   // comes back within CLOSE_ON_BLUR_MS, like the old per-window focus-loss handler hid its window. Our own
-  // hand-off to the game (e.g. before a hotkey copies the next item) isn't the user leaving.
+  // hand-off to the game (e.g. before a hotkey copies the next item) isn't the user leaving. Off in the settings:
+  // panels stay open until closed.
   const closeDismissablePanels = useCallback(() => {
+    if (!behaviorRef.current.closeOnBlur) return;
     for (const [id, panel] of Object.entries(stateRef.current.panels) as [PanelId, PanelState][]) {
       if (panel.open && defs[id].closeOnBlur) closePanel(id);
     }
@@ -372,9 +420,9 @@ export const OverlayProvider: React.FC<{ defs: PanelDefs; children?: React.React
 
   // A click outside every panel (into the game or another app) closes closeOnBlur panels even though the overlay
   // never took focus from the game. The Rust mouse hook behind it only runs while one is open.
-  const dismissableOpen = Object.entries(state.panels).some(
-    ([id, panel]) => panel?.open && defs[id as PanelId].closeOnBlur,
-  );
+  const dismissableOpen =
+    behavior.closeOnBlur &&
+    Object.entries(state.panels).some(([id, panel]) => panel?.open && defs[id as PanelId].closeOnBlur);
   useEffect(() => {
     if (!isTauri()) return;
     invoke('set_outside_click_watch', { enabled: dismissableOpen }).catch((error) =>

@@ -18,6 +18,30 @@
       "label": "Przezroczystość okien: <num>{{value}}%</num>",
       "description": "Widok gry przez tła okien. 0% to pełne krycie."
     },
+    "windows": {
+      "group": "Okna i fokus",
+      "keyboardFocus": {
+        "label": "Fokus klawiatury",
+        "description": "Kiedy okno przejmuje klawiaturę od gry. Dopóki okno ją ma, klawisze nie trafiają do gry, a gra może ucichnąć.",
+        "options": {
+          "typing": "Przy pisaniu w polu",
+          "click": "Po kliknięciu",
+          "open": "Po otwarciu"
+        }
+      },
+      "closeOnClickAway": {
+        "label": "Zamykaj okna po kliknięciu obok",
+        "description": "Sprawdzanie ceny, czat, rynek, buildy i podobne okna zamykają się po kliknięciu poza nimi lub przełączeniu na inną aplikację. Wyłączone: zostają otwarte, dopóki ich nie zamkniesz."
+      },
+      "outsideGame": {
+        "label": "Pokazuj okna poza grą",
+        "description": "Okna zostają na ekranie, gdy Diablo II nie jest na pierwszym planie lub nie działa. Przycisk czatu, ticker majątku i licznik stref nadal pokazują się tylko w grze."
+      },
+      "hotkeysOutsideGame": {
+        "label": "Skróty poza grą",
+        "description": "Otwieraj okna skrótami z dowolnej aplikacji; te kombinacje klawiszy przestają wtedy docierać do innych aplikacji. Skróty kopiujące przedmiot pod kursorem (sprawdzanie ceny, wystawianie, zdejmowanie, przymierzanie) nadal działają tylko w grze. Wymaga „Pokazuj okna poza grą”."
+      }
+    },
     "zoneTimer": {
       "enabled": {
         "label": "Licznik skażonych stref",
@@ -595,7 +619,6 @@
         },
         "exceptionMode": {
           "label": "Nigdy nie usuwaj",
-          "description": "Ogłoszenie oznaczone „Nie usuwaj automatycznie tego ogłoszenia” zawsze zostaje.",
           "options": {
             "none": "Nic (domyślnie)",
             "stackable": "Walutę w stosach i wybrane przedmioty",

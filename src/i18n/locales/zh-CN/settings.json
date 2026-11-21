@@ -18,6 +18,30 @@
       "label": "窗口透明度：<num>{{value}}%</num>",
       "description": "透过窗口背景看到游戏。0% 为完全不透明。"
     },
+    "windows": {
+      "group": "窗口与焦点",
+      "keyboardFocus": {
+        "label": "键盘焦点",
+        "description": "窗口何时从游戏接管键盘。窗口持有键盘时，按键不会传到游戏，游戏也可能静音。",
+        "options": {
+          "typing": "在输入框中输入时",
+          "click": "点击时",
+          "open": "打开时"
+        }
+      },
+      "closeOnClickAway": {
+        "label": "点击外部时关闭窗口",
+        "description": "价格查询、聊天、市场、构筑等窗口在你点击窗口外或切换到其他应用时关闭。关闭此项：窗口保持打开，直到你手动关闭。"
+      },
+      "outsideGame": {
+        "label": "在游戏外显示窗口",
+        "description": "Diablo II 不在前台或未运行时，窗口仍留在屏幕上。聊天按钮、资产滚动条和区域计时器仍只在游戏中显示。"
+      },
+      "hotkeysOutsideGame": {
+        "label": "游戏外快捷键",
+        "description": "在任何应用中都可用快捷键打开窗口；这些组合键将不再传给其他应用。复制光标下物品的快捷键（价格查询、上架、下架、试穿）仍只在游戏中有效。需要开启“在游戏外显示窗口”。"
+      }
+    },
     "zoneTimer": {
       "enabled": {
         "label": "腐化区域计时器",
@@ -580,7 +604,6 @@
         },
         "exceptionMode": {
           "label": "从不下架",
-          "description": "勾选了“不自动下架此挂单”的挂单始终保留。",
           "options": {
             "none": "无（默认）",
             "stackable": "可堆叠货币和我选的物品",

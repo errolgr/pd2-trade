@@ -3,13 +3,10 @@ import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketLis
 import {
   addDelistException,
   baseCodeOf,
-  delistChoiceUpdate,
-  EXEMPT_LISTINGS_MAX,
   exemptionsOf,
   isDelistExempt,
   rememberException,
   removeDelistException,
-  setListingExempt,
   withoutExempt,
   type DelistExemptions,
 } from './delist-exemptions';
@@ -92,18 +89,6 @@ describe('exception list', () => {
   });
 });
 
-describe('setListingExempt', () => {
-  it('adds newest last, removes, and keeps at most EXEMPT_LISTINGS_MAX', () => {
-    expect(setListingExempt(['a', 'b'], 'a', true)).toEqual(['b', 'a']);
-    expect(setListingExempt(['a', 'b'], 'a', false)).toEqual(['b']);
-    const full = Array.from({ length: EXEMPT_LISTINGS_MAX }, (_, i) => `id${i}`);
-    const next = setListingExempt(full, 'new', true);
-    expect(next).toHaveLength(EXEMPT_LISTINGS_MAX);
-    expect(next[0]).toBe('id1');
-    expect(next[next.length - 1]).toBe('new');
-  });
-});
-
 describe('rememberException', () => {
   const token = { name: 'Token of Absolution', codes: ['toa'] };
 
@@ -112,41 +97,5 @@ describe('rememberException', () => {
     expect(rememberException({ delistExceptionMode: 'stackable', delistExceptions: [ber] }, token)).toEqual({
       delistExceptions: [ber, token],
     });
-  });
-});
-
-describe('delistChoiceUpdate', () => {
-  const token = { base_code: 'toa', base: { name: 'Token of Absolution' } };
-  const tokenException = { name: 'Token of Absolution', codes: ['toa'] };
-
-  it('exempts the listing and remembers its base (turning the picked items on)', () => {
-    expect(delistChoiceUpdate({}, 'L1', token, { skip: true, remember: true })).toEqual({
-      delistExemptListings: ['L1'],
-      delistExceptions: [tokenException],
-      delistExceptionMode: 'selected',
-    });
-  });
-
-  it('undoes both when unchecked, and changes nothing that is already so', () => {
-    const settings = {
-      delistExemptListings: ['L1'],
-      delistExceptions: [tokenException],
-      delistExceptionMode: 'selected' as const,
-    };
-    expect(delistChoiceUpdate(settings, 'L1', token, { skip: false, remember: false })).toEqual({
-      delistExemptListings: [],
-      delistExceptions: [],
-    });
-    expect(delistChoiceUpdate(settings, 'L1', token, { skip: true, remember: true })).toBeNull();
-    expect(delistChoiceUpdate(settings, 'L1', token, {})).toBeNull();
-  });
-
-  it('under none, remembering a listed base turns the list on, and not remembering leaves the list alone', () => {
-    const settings = { delistExceptions: [tokenException], delistExceptionMode: 'none' as const };
-    expect(delistChoiceUpdate(settings, 'L1', token, { remember: true })).toEqual({
-      delistExceptions: [tokenException],
-      delistExceptionMode: 'selected',
-    });
-    expect(delistChoiceUpdate(settings, 'L1', token, { remember: false })).toBeNull();
   });
 });

@@ -27,7 +27,7 @@ import {
   showOverFullscreenGame,
 } from './keyboard';
 import { LAYOUT_STORAGE_KEY, savePanelRect } from './layout-storage';
-import type { PanelDef, PanelDefs, PanelId } from './types';
+import type { OverlayBehavior, PanelDef, PanelDefs, PanelId } from './types';
 
 const game = vi.hoisted(() => ({
   state: { gameRect: { x: 100, y: 50, width: 1280, height: 720 }, gameFocused: true },
@@ -131,7 +131,7 @@ const DEFS = {
   quickList: def('quickList', { placement: 'cursor' }),
   currency: def('currency', { placement: 'screenCenter', persist: true }),
   chat: def('chat', { keepMounted: true, closeOnBlur: true }),
-  chatButton: def('chatButton', { placement: 'gameRight', keyboard: 'never', keepMounted: true }),
+  chatButton: def('chatButton', { placement: 'gameRight', keyboard: 'never', keepMounted: true, gameHud: true }),
   settings: def('settings', { closeOnBlur: true }),
   changeLog: def('changeLog'),
   signIn: def('signIn', { hideOnGameBlur: false }),
@@ -154,9 +154,10 @@ const Capture: React.FC = () => {
   return null;
 };
 
-function mount() {
+function mount(behavior?: OverlayBehavior) {
   return render(
-    <OverlayProvider defs={DEFS}>
+    <OverlayProvider defs={DEFS}
+      behavior={behavior}>
       <Capture />
       <OverlayRoot />
     </OverlayProvider>,
@@ -713,6 +714,66 @@ describe('closeOnBlur', () => {
     act(() => focus.onChange!(true));
     act(() => vi.advanceTimersByTime(CLOSE_ON_BLUR_MS * 2));
     expect(api.isOpen('chat')).toBe(true);
+  });
+});
+
+describe('user window behavior (Settings → Interface)', () => {
+  const behavior = (over: Partial<OverlayBehavior>): OverlayBehavior => ({
+    keyboardFocus: 'typing',
+    closeOnBlur: true,
+    showOutsideGame: false,
+    ...over,
+  });
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it('without close on click-away, leaving the overlay or clicking outside keeps panels open', async () => {
+    tauri.on = true;
+    mount(behavior({ closeOnBlur: false }));
+    await act(async () => {});
+    act(() => api.openPanel('chat'));
+    expect(invoke).not.toHaveBeenCalledWith('set_outside_click_watch', { enabled: true });
+    act(() => events.get(OUTSIDE_CLICK_EVENT)!());
+    act(() => focus.onChange!(false));
+    act(() => vi.advanceTimersByTime(CLOSE_ON_BLUR_MS * 2));
+    expect(api.isOpen('chat')).toBe(true);
+  });
+
+  it('shows windows outside the game but keeps the in-game HUD hidden; toggle closes a shown window', () => {
+    mount(behavior({ showOutsideGame: true }));
+    act(() => {
+      api.openPanel('chat');
+      api.openPanel('chatButton');
+    });
+    setGame({ gameFocused: false });
+    expect(shown('chat')).toBe(true);
+    expect(shown('chatButton')).toBe(false);
+    act(() => api.togglePanel('chat'));
+    expect(api.isOpen('chat')).toBe(false);
+  });
+
+  it('keyboard focus "open" claims the keyboard when a window opens, not for widgets or hidden windows', () => {
+    mount(behavior({ keyboardFocus: 'open' }));
+    act(() => api.openPanel('chatButton'));
+    expect(claimKeyboard).not.toHaveBeenCalled();
+    act(() => api.openPanel('currency'));
+    expect(claimKeyboard).toHaveBeenCalledTimes(1);
+    setGame({ gameFocused: false });
+    act(() => api.openPanel('market'));
+    expect(claimKeyboard).toHaveBeenCalledTimes(1);
+  });
+
+  it('keyboard focus "click" takes the keyboard on any click in a window and keeps it', () => {
+    mount(behavior({ keyboardFocus: 'click' }));
+    act(() => api.openPanel('chat'));
+    expect(claimKeyboard).not.toHaveBeenCalled();
+    vi.mocked(isKeyboardClaimed).mockReturnValue(true);
+    act(() => {
+      screen.getByTestId('button-chat').dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    });
+    expect(claimKeyboard).toHaveBeenCalledTimes(1);
+    expect(releaseKeyboard).not.toHaveBeenCalled();
+    vi.mocked(isKeyboardClaimed).mockReturnValue(false);
   });
 });
 

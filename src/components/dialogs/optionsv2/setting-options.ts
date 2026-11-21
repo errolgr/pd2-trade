@@ -76,6 +76,12 @@ export const TIMER_LAYOUT_OPTIONS: SettingOption[] = [
   { value: 'vertical', labelKey: 'settings:interface.timerLayoutOptions.vertical' },
 ];
 
+export const WINDOW_KEYBOARD_FOCUS_VALUES = ['typing', 'click', 'open'] as const;
+export const WINDOW_KEYBOARD_FOCUS_OPTIONS: SettingOption[] = keyed(
+  WINDOW_KEYBOARD_FOCUS_VALUES,
+  'settings:interface.windows.keyboardFocus.options',
+);
+
 // Chat
 export const CHAT_TIMING_OPTIONS: SettingOption[] = [
   { value: 'in-game', labelKey: 'settings:chat.timing.options.inGame' },

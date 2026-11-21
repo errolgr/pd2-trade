@@ -92,12 +92,7 @@
     "update": "Aktualizuj",
     "queueItem": "Dodaj do kolejki",
     "post": "Opublikuj",
-    "noteOrPriceRequired": "Wypełnij pole notatki lub ceny w HR.",
-    "autoDelist": {
-      "skip": "Nie usuwaj automatycznie tego ogłoszenia",
-      "skipHint": "Wkładanie go do skrzyni lub wyjmowanie nie wywoła pytania.",
-      "remember": "Zapamiętaj dla wszystkich: {{name}}"
-    }
+    "noteOrPriceRequired": "Wypełnij pole notatki lub ceny w HR."
   },
   "macros": {
     "duplicate": "Makro o nazwie „{{label}}” już istnieje.",

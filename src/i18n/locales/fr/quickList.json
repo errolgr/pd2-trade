@@ -89,12 +89,7 @@
     "update": "Mettre à jour",
     "queueItem": "Mettre en attente",
     "post": "Publier",
-    "noteOrPriceRequired": "Renseignez la note ou le prix en HR.",
-    "autoDelist": {
-      "skip": "Ne pas retirer cette annonce automatiquement",
-      "skipHint": "La ranger dans le coffre ou l'en sortir ne déclenchera aucune question.",
-      "remember": "Retenir pour tous les {{name}}"
-    }
+    "noteOrPriceRequired": "Renseignez la note ou le prix en HR."
   },
   "macros": {
     "duplicate": "Une macro nommée « {{label}} » existe déjà.",

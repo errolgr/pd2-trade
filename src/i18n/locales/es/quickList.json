@@ -89,12 +89,7 @@
     "update": "Actualizar",
     "queueItem": "Poner en cola",
     "post": "Publicar",
-    "noteOrPriceRequired": "Rellena la nota o el precio en HR.",
-    "autoDelist": {
-      "skip": "No retirar este anuncio automáticamente",
-      "skipHint": "Meterlo en el alijo o sacarlo no te preguntará nada.",
-      "remember": "Recordar para todos los {{name}}"
-    }
+    "noteOrPriceRequired": "Rellena la nota o el precio en HR."
   },
   "macros": {
     "duplicate": "Ya existe una macro llamada \"{{label}}\".",

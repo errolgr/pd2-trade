@@ -40,6 +40,14 @@ const TIMER_DEFAULTS = {
   corruptedZoneAlertLeadMinutes: 0,
   corruptedZoneFollowed: [],
 };
+const WINDOW_DEFAULTS = {
+  windowKeyboardFocus: 'typing',
+  windowsCloseOnClickAway: true,
+  windowsOutsideGame: false,
+  hotkeysOutsideGame: false,
+};
+const outsideGameSwitch = () => screen.getByRole('switch', { name: 'Show windows outside the game' });
+const hotkeysOutsideSwitch = () => screen.getByRole('switch', { name: 'Hotkeys work outside the game' });
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -73,6 +81,7 @@ describe('InterfaceForm', () => {
       chatButtonOverlayEnabled: false,
       windowTransparency: 0,
       uiScale: 100,
+      ...WINDOW_DEFAULTS,
       ...TIMER_DEFAULTS,
     });
   });
@@ -101,6 +110,7 @@ describe('InterfaceForm', () => {
       chatButtonOverlayEnabled: true,
       windowTransparency: 90,
       uiScale: 100,
+      ...WINDOW_DEFAULTS,
       ...TIMER_DEFAULTS,
     });
   });
@@ -155,6 +165,7 @@ describe('InterfaceForm', () => {
       chatButtonOverlayEnabled: true,
       windowTransparency: 0,
       uiScale: 100,
+      ...WINDOW_DEFAULTS,
       ...TIMER_DEFAULTS,
       corruptedZoneTimerEnabled: true,
       corruptedZoneTimerAnchor: 'bottom-left',
@@ -187,6 +198,29 @@ describe('InterfaceForm', () => {
     expect(overlaySwitch().getAttribute('aria-checked')).toBe('false');
     await advance(300);
     expect(store.updateSettings).not.toHaveBeenCalled();
+  });
+
+  it('keeps the current window behavior by default', () => {
+    renderForm({});
+    expect((screen.getByLabelText('Keyboard focus') as HTMLSelectElement).value).toBe('typing');
+    expect(screen.getByRole('switch', { name: 'Close windows when clicking away' }).getAttribute('aria-checked')).toBe(
+      'true',
+    );
+    expect(outsideGameSwitch().getAttribute('aria-checked')).toBe('false');
+    expect(hotkeysOutsideSwitch().getAttribute('aria-checked')).toBe('false');
+  });
+
+  it('lets hotkeys work outside the game only once windows show there', async () => {
+    renderForm({});
+    expect(hotkeysOutsideSwitch().hasAttribute('disabled')).toBe(true);
+    fireEvent.click(outsideGameSwitch());
+    expect(hotkeysOutsideSwitch().hasAttribute('disabled')).toBe(false);
+    fireEvent.click(hotkeysOutsideSwitch());
+    fireEvent.change(screen.getByLabelText('Keyboard focus'), { target: { value: 'open' } });
+    await advance(300);
+    expect(store.updateSettings).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ windowsOutsideGame: true, hotkeysOutsideGame: true, windowKeyboardFocus: 'open' }),
+    );
   });
 
   it.each(['Zone notifications', 'Timer shows'])(

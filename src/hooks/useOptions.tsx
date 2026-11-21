@@ -12,7 +12,7 @@ import { applyUiScale, UI_SCALE_DEFAULT } from '@/lib/ui-scale';
 import { DEFAULT_PRICE_WINDOW_HOURS, type PriceWindowHours } from '@/lib/price-window';
 import { DEFAULT_CHAT_TEMPLATES, type ChatTemplate } from '@/lib/message-templates';
 import { DEFAULT_TOAST_POPUP_TYPES } from '@/lib/toast-types';
-import { showToast } from '@/overlay';
+import { showToast, type OverlayBehavior } from '@/overlay';
 import * as Sentry from '@sentry/react';
 import type { BuildsMode } from '@/lib/builds-api';
 import { applyLanguage, type LanguageSetting, t } from '@/i18n';
@@ -130,7 +130,7 @@ export interface ISettings {
   stashAutoDelist?: StashAutoDelistMode; // a listed item leaves the stash: leave it, ask to delist, or delist it
   delistExceptionMode?: DelistExceptionMode; // which item bases the auto-delist leaves alone
   delistExceptions?: DelistException[]; // the picked items: bases the auto-delist leaves alone (Settings → Market chips)
-  delistExemptListings?: string[]; // listing ids the auto-delist leaves alone (Quick List checkbox), newest last
+  delistExemptListings?: string[]; // listing ids the auto-delist leaves alone (older versions' Quick List checkbox), newest last
   marketDefaultSort?: MarketDefaultSort; // a fresh / reset market search's order
   marketDefaultSeller?: 'all' | 'online' | 'in-game'; // a fresh search's seller filter: anyone, online on the site, in game
   marketDefaultHasBuyout?: 'any' | 'yes' | 'no'; // a fresh search's buyout filter
@@ -159,6 +159,11 @@ export interface ISettings {
   windowTransparency?: number; // 0-WINDOW_TRANSPARENCY_MAX (%) from src/lib/themes.ts; 0 = opaque
   uiScale?: number; // overlay zoom (%), see src/lib/ui-scale.ts; 100 = unscaled
   language?: LanguageSetting; // UI language (src/i18n); 'system' follows the OS language
+  // Settings → Interface → Windows & focus (src/lib/window-behavior.ts)
+  windowKeyboardFocus?: OverlayBehavior['keyboardFocus']; // when a window takes the keyboard from the game
+  windowsCloseOnClickAway?: boolean; // windows close on a click outside them or on switching apps
+  windowsOutsideGame?: boolean; // windows stay on screen while Diablo II isn't in front (or running)
+  hotkeysOutsideGame?: boolean; // hotkeys that don't copy an item also work outside the game (with windowsOutsideGame)
   hotkeyModifierPalette?: 'ctrl' | 'alt';
   hotkeyKeyPalette?: string; // command palette; '' = unbound
   palettePins?: PaletteRef[]; // command palette: pinned results shown on the empty state, in order
@@ -263,6 +268,10 @@ const DEFAULT_SETTINGS: ISettings = {
   windowTransparency: 0,
   uiScale: UI_SCALE_DEFAULT,
   language: 'system',
+  windowKeyboardFocus: 'typing',
+  windowsCloseOnClickAway: true,
+  windowsOutsideGame: false,
+  hotkeysOutsideGame: false,
   hotkeyModifierPalette: 'ctrl',
   hotkeyKeyPalette: 'space',
   palettePins: [

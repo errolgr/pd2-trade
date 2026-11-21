@@ -18,6 +18,30 @@
       "label": "Transparência da janela: <num>{{value}}%</num>",
       "description": "Veja o jogo através do fundo das janelas. 0% é totalmente opaco."
     },
+    "windows": {
+      "group": "Janelas e foco",
+      "keyboardFocus": {
+        "label": "Foco do teclado",
+        "description": "Quando uma janela pega o teclado do jogo. Enquanto uma janela o tem, suas teclas não chegam ao jogo e o jogo pode ficar mudo.",
+        "options": {
+          "typing": "Ao digitar em um campo",
+          "click": "Ao clicar",
+          "open": "Ao abrir"
+        }
+      },
+      "closeOnClickAway": {
+        "label": "Fechar janelas ao clicar fora",
+        "description": "Consulta de preço, chat, mercado, builds e janelas parecidas fecham quando você clica fora delas ou muda para outro app. Desligado: ficam abertas até você fechá-las."
+      },
+      "outsideGame": {
+        "label": "Mostrar janelas fora do jogo",
+        "description": "As janelas continuam na tela quando o Diablo II não está em primeiro plano ou não está aberto. O botão de chat, o ticker de patrimônio e o timer de zonas continuam aparecendo só no jogo."
+      },
+      "hotkeysOutsideGame": {
+        "label": "Atalhos fora do jogo",
+        "description": "Abra janelas com seus atalhos de qualquer app; essas combinações de teclas deixam de chegar a outros apps. Atalhos que copiam o item sob o cursor (consulta de preço, anunciar, remover, experimentar) continuam funcionando só no jogo. Requer \"Mostrar janelas fora do jogo\"."
+      }
+    },
     "zoneTimer": {
       "enabled": {
         "label": "Timer de zonas Corrupted",
@@ -590,7 +614,6 @@
         },
         "exceptionMode": {
           "label": "Nunca remover",
-          "description": "Um anúncio marcado com \"Não remover este anúncio automaticamente\" nunca é removido.",
           "options": {
             "none": "Nada (padrão)",
             "stackable": "Moeda empilhável e itens que eu escolher",

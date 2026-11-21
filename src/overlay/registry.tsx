@@ -98,6 +98,7 @@ export const PANEL_DEFS: PanelDefs = {
     keyboard: 'never',
     keepMounted: true,
     hideOnGameBlur: true,
+    gameHud: true,
     // click-through frame: only the tab (and its open menu) take clicks
     interactive: 'children',
   },
@@ -172,6 +173,7 @@ export const PANEL_DEFS: PanelDefs = {
     keyboard: 'never',
     keepMounted: true,
     hideOnGameBlur: true,
+    gameHud: true,
   },
 
   // ---- netWorthPanel (Group ChatButton/NetWorth) ----
@@ -228,6 +230,7 @@ export const PANEL_DEFS: PanelDefs = {
     keyboard: 'never',
     keepMounted: false,
     hideOnGameBlur: true,
+    gameHud: true,
     // click-through frame: only the pill and the open schedule take clicks (not the corner beside a narrow pill)
     interactive: 'children',
   },

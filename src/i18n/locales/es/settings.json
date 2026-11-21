@@ -18,6 +18,30 @@
       "label": "Transparencia de ventana: <num>{{value}}%</num>",
       "description": "Ve el juego a través del fondo de las ventanas. 0% es totalmente opaco."
     },
+    "windows": {
+      "group": "Ventanas y foco",
+      "keyboardFocus": {
+        "label": "Foco del teclado",
+        "description": "Cuándo una ventana toma el teclado del juego. Mientras una ventana lo tiene, tus teclas no llegan al juego y el juego puede silenciarse.",
+        "options": {
+          "typing": "Al escribir en un campo",
+          "click": "Al hacer clic",
+          "open": "Al abrirse"
+        }
+      },
+      "closeOnClickAway": {
+        "label": "Cerrar ventanas al hacer clic fuera",
+        "description": "La consulta de precios, el chat, el mercado, las builds y ventanas similares se cierran al hacer clic fuera de ellas o al cambiar a otra aplicación. Desactivado: siguen abiertas hasta que las cierres."
+      },
+      "outsideGame": {
+        "label": "Mostrar ventanas fuera del juego",
+        "description": "Las ventanas siguen en pantalla cuando Diablo II no está en primer plano o no se está ejecutando. El botón de chat, el ticker de patrimonio y el temporizador de zonas solo se muestran en el juego."
+      },
+      "hotkeysOutsideGame": {
+        "label": "Atajos fuera del juego",
+        "description": "Abre ventanas con sus atajos desde cualquier aplicación; esas combinaciones de teclas dejan de llegar a otras aplicaciones. Los atajos que copian el objeto bajo el cursor (consulta de precios, publicar, retirar, probar) solo funcionan en el juego. Requiere «Mostrar ventanas fuera del juego»."
+      }
+    },
     "zoneTimer": {
       "enabled": {
         "label": "Temporizador de zonas corruptas",
@@ -590,7 +614,6 @@
         },
         "exceptionMode": {
           "label": "Nunca retirar",
-          "description": "Un anuncio marcado con «No retirar este anuncio automáticamente» nunca se toca.",
           "options": {
             "none": "Nada (predeterminado)",
             "stackable": "Moneda apilable y objetos que elija",
