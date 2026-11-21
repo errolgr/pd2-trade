@@ -41,8 +41,11 @@ import { clampUiScale } from '@/lib/ui-scale';
  * Values fall back to the same defaults the forms show.
  */
 
-/** An ISettings key, or a row whose state lives elsewhere (the leaderboard profile is stored server-side). */
-export type SettingsFieldKey = keyof ISettings | 'publicProfile';
+/**
+ * An ISettings key, or a row whose state lives elsewhere (the leaderboard profile is stored server-side, Auto search
+ * in the market's market-prefs.json).
+ */
+export type SettingsFieldKey = keyof ISettings | 'publicProfile' | 'marketAutoSearch';
 
 type Text = (t: TFunction, settings: ISettings) => string;
 
@@ -627,6 +630,14 @@ export const SETTINGS_REGISTRY: readonly SettingEntry[] = [
     groupKeys: ['settings:market.browser.group'],
     keywords: ['seller', 'card'],
     value: (s) => s.marketShowSellerCard ?? true,
+  },
+  {
+    kind: 'open',
+    key: 'marketAutoSearch',
+    section: 'Market',
+    labelKey: 'settings:market.browser.autoSearch.label',
+    groupKeys: ['settings:market.browser.group'],
+    keywords: ['auto', 'search', 'live', 'instant', 'filter', 'ctrl+enter'],
   },
   {
     kind: 'select',

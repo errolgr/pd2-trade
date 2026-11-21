@@ -1,37 +1,35 @@
-import React, { useId } from 'react';
+import React from 'react';
 import { RefreshCw, Search, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import { Tip } from '@/components/ui/tooltip';
 import { useTranslation } from '@/i18n';
 
 /*
  * Auto search on / off. On (the default), every filter change searches; off, filter edits wait for Search, so
- * building a query doesn't send projectdiablo2.com a search per click.
+ * building a query doesn't send projectdiablo2.com a search per click. Also a switch in Settings › Market.
  */
 
-/** The sidebar row above Stats: the Auto search switch and what it does right now. */
-export function AutoSearchSwitch({ value, onChange }: { value: boolean; onChange: (on: boolean) => void }) {
+/** The sidebar's lightning bolt beside Clear: lit while Auto search is on, a click flips it. */
+export function AutoSearchToggle({ value, onChange }: { value: boolean; onChange: (on: boolean) => void }) {
   const { t } = useTranslation('market');
-  const id = useId();
   return (
-    <Tip label={t('filters.autoSearch.title')}>
-      <div className="flex items-center gap-2 border-b border-border px-2.5 py-1.5">
-        <Zap aria-hidden
-          className="size-3.5 shrink-0 text-muted-foreground" />
-        <label htmlFor={id}
-          className="min-w-0 flex-1 cursor-pointer">
-          <span className="block text-xs font-medium">{t('filters.autoSearch.label')}</span>
-          <span className="block truncate text-[11px] text-muted-foreground">
-            {value ? t('filters.autoSearch.on') : t('filters.autoSearch.off')}
-          </span>
-        </label>
-        <Switch id={id}
-          aria-label={t('filters.autoSearch.label')}
-          checked={value}
-          onCheckedChange={onChange} />
-      </div>
+    // Below: above it, the tip would cover the panel's title bar
+    <Tip side="bottom"
+      label={value ? t('filters.autoSearch.on') : t('filters.autoSearch.off')}>
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-label={t('filters.autoSearch.label')}
+        aria-pressed={value}
+        className={cn(
+          'size-7 shrink-0 p-0 text-muted-foreground',
+          value && 'bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary',
+        )}
+        onClick={() => onChange(!value)}
+      >
+        <Zap className={cn('size-3.5', value && 'fill-current')} />
+      </Button>
     </Tip>
   );
 }

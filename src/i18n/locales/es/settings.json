@@ -655,6 +655,10 @@
       "sellerCard": {
         "label": "Ficha del vendedor",
         "description": "Muestra el estado del vendedor y sus otros anuncios en los detalles de un anuncio."
+      },
+      "autoSearch": {
+        "label": "Búsqueda automática",
+        "description": "Busca al cambiar los filtros del mercado. Desactivada: los cambios esperan a que pulses Buscar (Ctrl+Intro). También con el rayo junto a Limpiar en los filtros."
       }
     },
     "alerts": {

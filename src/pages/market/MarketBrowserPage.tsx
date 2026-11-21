@@ -147,11 +147,14 @@ const MarketBrowserPage: React.FC = () => {
   const runSearch = () => {
     if (filters && unsearched) setFilters(filters);
   };
-  const changeAutoSearch = (on: boolean) => {
-    store.setAutoSearch(on);
-    // Back on: what the sidebar shows is searched, like any other change
-    if (on && filters) setFilters(filters);
-  };
+  // Auto search turned back on (the sidebar's bolt or Settings › Market): what the sidebar shows is searched, like
+  // any other change
+  const autoSearchWas = useRef(autoSearch);
+  useEffect(() => {
+    const turnedOn = autoSearch && !autoSearchWas.current;
+    autoSearchWas.current = autoSearch;
+    if (turnedOn && filters && filters !== searchFilters) setFilters(filters);
+  }, [autoSearch, filters, searchFilters, setFilters]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   /** A listing shown in the detail pane that is not in the list (picked from the seller card). */
@@ -874,7 +877,7 @@ const MarketBrowserPage: React.FC = () => {
                         onChange={editFilters}
                         onReset={resetFilters}
                         autoSearch={autoSearch}
-                        onAutoSearchChange={changeAutoSearch}
+                        onAutoSearchChange={store.setAutoSearch}
                         unsearchedEdits={unsearched ? Math.max(unsearchedEdits, 1) : 0}
                         onSearch={runSearch}
                         searchDefaults={searchDefaults}

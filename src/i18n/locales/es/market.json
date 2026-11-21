@@ -141,9 +141,8 @@
     "clearStats": "Quitar todos los filtros de estadísticas",
     "autoSearch": {
       "label": "Búsqueda automática",
-      "on": "Busca al cambiar los filtros",
-      "off": "Busca al pulsar Buscar",
-      "title": "Desactivada: cambia los filtros que quieras y pulsa Buscar (Ctrl+Intro). Menos búsquedas en projectdiablo2.com."
+      "on": "Búsqueda automática activada: los resultados se actualizan al cambiar los filtros. Haz clic para buscar solo al pulsar Buscar.",
+      "off": "Búsqueda automática desactivada: pulsa Buscar (Ctrl+Intro) para aplicar los cambios de filtros. Haz clic para buscar mientras escribes."
     },
     "searchNow": "Buscar",
     "outOfDate": "Los resultados están desactualizados",

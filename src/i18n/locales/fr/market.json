@@ -141,9 +141,8 @@
     "clearStats": "Retirer tous les filtres de stats",
     "autoSearch": {
       "label": "Recherche auto",
-      "on": "Recherche à chaque changement de filtre",
-      "off": "Recherche quand vous appuyez sur Rechercher",
-      "title": "Désactivée : modifiez autant de filtres que vous voulez, puis appuyez sur Rechercher (Ctrl+Entrée). Moins de recherches sur projectdiablo2.com."
+      "on": "Recherche auto activée : les résultats se mettent à jour quand vous changez les filtres. Cliquez pour ne rechercher qu'en appuyant sur Rechercher.",
+      "off": "Recherche auto désactivée : appuyez sur Rechercher (Ctrl+Entrée) pour appliquer vos changements de filtres. Cliquez pour rechercher pendant la saisie."
     },
     "searchNow": "Rechercher",
     "outOfDate": "Résultats obsolètes",

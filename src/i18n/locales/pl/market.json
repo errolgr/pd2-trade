@@ -149,9 +149,8 @@
     "clearStats": "Usuń wszystkie filtry statystyk",
     "autoSearch": {
       "label": "Automatyczne wyszukiwanie",
-      "on": "Szuka przy każdej zmianie filtrów",
-      "off": "Szuka po naciśnięciu Szukaj",
-      "title": "Wyłączone: zmień dowolne filtry, a potem naciśnij Szukaj (Ctrl+Enter). Mniej wyszukiwań w projectdiablo2.com."
+      "on": "Automatyczne wyszukiwanie włączone: wyniki odświeżają się przy zmianie filtrów. Kliknij, aby szukać tylko po naciśnięciu Szukaj.",
+      "off": "Automatyczne wyszukiwanie wyłączone: naciśnij Szukaj (Ctrl+Enter), aby zastosować zmiany filtrów. Kliknij, aby szukać podczas pisania."
     },
     "searchNow": "Szukaj",
     "outOfDate": "Wyniki są nieaktualne",

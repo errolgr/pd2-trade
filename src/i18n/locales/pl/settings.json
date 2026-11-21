@@ -660,6 +660,10 @@
       "sellerCard": {
         "label": "Karta sprzedawcy",
         "description": "Pokazuje status sprzedawcy i jego inne ogłoszenia w szczegółach ogłoszenia."
+      },
+      "autoSearch": {
+        "label": "Automatyczne wyszukiwanie",
+        "description": "Szuka przy każdej zmianie filtrów rynku. Wyłączone: zmiany czekają, aż naciśniesz Szukaj (Ctrl+Enter). Również błyskawica obok Wyczyść w filtrach."
       }
     },
     "alerts": {

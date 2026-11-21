@@ -133,9 +133,8 @@
     "clearStats": "Alle Wertefilter entfernen",
     "autoSearch": {
       "label": "Automatische Suche",
-      "on": "Sucht bei jeder Filteränderung",
-      "off": "Sucht, wenn du auf Suchen drückst",
-      "title": "Aus: Ändere beliebig viele Filter und drücke dann Suchen (Strg+Enter). Weniger Suchen bei projectdiablo2.com."
+      "on": "Automatische Suche an: Die Ergebnisse aktualisieren sich, sobald du Filter änderst. Klicke, um nur beim Drücken von Suchen zu suchen.",
+      "off": "Automatische Suche aus: Drücke Suchen (Strg+Enter), um deine Filteränderungen auszuführen. Klicke, um schon beim Tippen zu suchen."
     },
     "searchNow": "Suchen",
     "outOfDate": "Ergebnisse sind veraltet",
