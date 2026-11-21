@@ -191,15 +191,17 @@
     "buyRequestReceived": "Buy request",
     "buyRequestMade": "Their buy request",
     "forRequest": "for {{title}}",
-    "whisperBack": "Whisper back",
-    "whisperBackTitle": "Copy a whisper back to the seller",
-    "whisper": "Whisper",
-    "whisperBuyerTitle": "Copy your whisper to the buyer again",
+    "whisperBack": "Message back",
+    "whisperBackTitle": "Message the seller in the website chat",
+    "whisper": "Message",
+    "whisperBuyerTitle": "Message the buyer in the website chat",
     "viewRequest": "View request",
     "viewRequestTitle": "Open the buy request in the market",
     "markFilled": "Mark filled",
     "markFilledTitle": "Close your request: this seller filled it",
-    "markFilledFailed": "Couldn't close the request"
+    "markFilledFailed": "Couldn't close the request",
+    "wtbOfferReceived": "Offer on your buy request",
+    "wtbOfferMade": "Your offer on their request"
   },
   "thread": {
     "muted": "Muted",

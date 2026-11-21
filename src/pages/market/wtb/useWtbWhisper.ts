@@ -1,32 +1,25 @@
 import { useCallback } from 'react';
-import { showToast } from '@/overlay';
+import { showToast, useOverlay } from '@/overlay';
 import { writeText } from '@/lib/browser-clipboard';
 import { trackEvent } from '@/lib/telemetry';
 import { useWhisperHistory } from '@/hooks/useWhisperHistory';
 import { useOptions } from '@/hooks/useOptions';
 import { t } from '@/i18n';
-import { contactWtbRequest, wtbContactBody, type WtbContactChannel, type WtbContactItem } from '../alerts/wtb-api';
-import {
-  wtbBackWhisper,
-  wtbBackWhisperText,
-  wtbResponseAccount,
-  wtbWhisper,
-  wtbWhisperText,
-  type WtbRequest,
-  type WtbResponse,
-} from '../lib/wtb';
+import { contactWtbRequest, wtbContactBody, type WtbContactItem } from '../alerts/wtb-api';
+import { wtbBackWhisperText, wtbWhisper, wtbWhisperText, type WtbRequest, type WtbResponse } from '../lib/wtb';
 
 export interface WtbWhisperActions {
   /**
-   * Whisper the buyer the chat's way: `/w *account …` on the clipboard, kept as an outgoing whisper in Chat. `item`:
-   * what the user has for the request (the price-checked item, a stash or listing item), sent with the contact so
-   * the buyer is told what they have.
+   * Message the buyer in the website chat (Chat panel, draft filled in). `item`: what the user has for the request
+   * (the price-checked item, a stash or listing item); the contact (with it) is recorded by the chat once a message
+   * to the buyer is actually sent from that thread (see `wtbContact` on the chat payload).
    */
   whisper: (request: WtbRequest, item?: WtbContactItem | null) => Promise<void>;
-  /** Only copies the `/w *account …` line (the contact is sent the same). */
+  /** Copies the `/w *account …` line for the game chat; the contact is recorded right away. */
   copyWhisper: (request: WtbRequest, item?: WtbContactItem | null) => Promise<void>;
+  /** The buyer messages a seller who answered their request (website chat; never a contact). */
   whisperBack: (response: WtbResponse) => Promise<void>;
-  /** The seller whispers the buyer of a request they answered again (copied and kept in Chat; not a new contact). */
+  /** The seller messages the buyer of a request they answered again (website chat; never a contact). */
   whisperBuyer: (response: WtbResponse) => Promise<void>;
 }
 
@@ -46,26 +39,48 @@ async function copyLine(line: string): Promise<boolean> {
 }
 
 /**
- * Contacting a buyer: the whisper (wtbWhisper) goes on the clipboard for the game chat, and the request counts the
- * contact (`/contact`, best effort; signed in, with the user's account and the item: a response the buyer is told
- * about). Must render under WhisperHistoryProvider.
+ * Contacting a buyer or seller: "Message" opens the website chat with them (draft filled in, like a listing's
+ * Message seller), the contact recorded only once a message is actually sent there; "Copy whisper" puts
+ * `/w *account …` on the clipboard for the game chat and records the contact (`/contact`, best effort; signed in,
+ * with the user's account and the item: a response the buyer is told about). Must render under
+ * WhisperHistoryProvider.
  */
 export function useWtbWhisper(source: 'priceCheck' | 'listItem' | 'market' | 'chat' | 'alert'): WtbWhisperActions {
   const { recordCopied } = useWhisperHistory();
+  const { openPanel } = useOverlay();
   const { settings } = useOptions();
   const token = settings?.pd2Token || null;
   const account = settings?.account || null;
-  const send = useCallback(
-    async (request: WtbRequest, channel: WtbContactChannel, item: WtbContactItem | null | undefined) => {
+  const openChat = useCallback(
+    (
+      user: { userId: string; name: string },
+      draft: string,
+      wtbContact?: { requestId: string; item?: WtbContactItem },
+    ) =>
+      openPanel(
+        'chat',
+        { userId: user.userId, userName: user.name, draft, reply: true, ...(wtbContact && { wtbContact }) },
+        { focus: true },
+      ),
+    [openPanel],
+  );
+  const message = useCallback(
+    async (request: WtbRequest, item?: WtbContactItem | null) => {
+      openChat(request.buyer, wtbWhisperText(request), { requestId: request.id, ...(item && { item }) });
+      trackEvent('wtb_buyer_contacted', { source, action: 'message', item: !!item });
+    },
+    [openChat, source],
+  );
+  const copyWhisper = useCallback(
+    async (request: WtbRequest, item?: WtbContactItem | null) => {
       if (!(await copyLine(wtbWhisper(request)))) return;
-      if (channel === 'whisper')
-        recordCopied({ accountName: request.whisperTo, playerName: request.whisperTo }, wtbWhisperText(request));
+      recordCopied({ accountName: request.whisperTo, playerName: request.whisperTo }, wtbWhisperText(request));
       showToast({
         title: t('market:actions.whisperCopied'),
         description: t('market:actions.whisperCopiedDescription', { account: request.whisperTo }),
       });
-      trackEvent('wtb_buyer_contacted', { source, action: channel, item: !!item });
-      contactWtbRequest(request.id, wtbContactBody(channel, item, account), token).catch((error) =>
+      trackEvent('wtb_buyer_contacted', { source, action: 'copy', item: !!item });
+      contactWtbRequest(request.id, wtbContactBody('copy', item, account), token).catch((error) =>
         console.warn('[wtb] contact not counted:', error),
       );
     },
@@ -73,33 +88,14 @@ export function useWtbWhisper(source: 'priceCheck' | 'listItem' | 'market' | 'ch
   );
   const whisperBack = useCallback(
     async (response: WtbResponse) => {
-      if (!(await copyLine(wtbBackWhisper(response)))) return;
-      const seller = wtbResponseAccount(response);
-      recordCopied({ accountName: seller, playerName: seller }, wtbBackWhisperText(response));
-      showToast({
-        title: t('market:actions.whisperCopied'),
-        description: t('market:actions.whisperCopiedDescription', { account: seller }),
-      });
+      openChat(response.seller, wtbBackWhisperText(response));
       trackEvent('wtb_response_whisper_back', { source });
     },
-    [recordCopied, source],
+    [openChat, source],
   );
   const whisperBuyer = useCallback(
-    async (response: WtbResponse) => {
-      const { request } = response;
-      if (!(await copyLine(wtbWhisper(request)))) return;
-      recordCopied({ accountName: request.whisperTo, playerName: request.whisperTo }, wtbWhisperText(request));
-      showToast({
-        title: t('market:actions.whisperCopied'),
-        description: t('market:actions.whisperCopiedDescription', { account: request.whisperTo }),
-      });
-    },
-    [recordCopied],
+    async (response: WtbResponse) => openChat(response.request.buyer, wtbWhisperText(response.request)),
+    [openChat],
   );
-  return {
-    whisper: useCallback((request, item) => send(request, 'whisper', item), [send]),
-    copyWhisper: useCallback((request, item) => send(request, 'copy', item), [send]),
-    whisperBack,
-    whisperBuyer,
-  };
+  return { whisper: message, copyWhisper, whisperBack, whisperBuyer };
 }

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, Check, ChevronDown, Copy, HandCoins, MessageSquare, Tag } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, HandCoins, Tag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,7 +10,6 @@ import { EmptyState } from '@/pages/currency/components/StatePanel';
 import { useNow } from '@/pages/market/enrich/useNow';
 import { t as translate, useTranslation } from '@/i18n';
 import type { WtbContactItem, WtbSort } from '../alerts/wtb-api';
-import { iconActionClass } from '../components/ListingActions';
 import { ROW_HEIGHT } from '../components/ResultsList';
 import { ResultsFrame } from '../components/ResultsFrame';
 import type { EnterTracker } from '../components/EnterOnce';
@@ -40,7 +39,7 @@ import { WtbItemArt } from './WtbItemArt';
 import { WtbOwnerActionButtons, type WtbOwnerActions } from './WtbOwnerActions';
 import { selectionContactItem } from './wtb-responses';
 import { WantToBuyButton } from './WantToBuyButton';
-import { useWtbWhisper } from './useWtbWhisper';
+import { WtbSellActions } from './WtbSellActions';
 
 /** The selection a request opens in the drawer, with the user's stash item when it fits. */
 export function wtbSelectionOf(request: WtbRequest, stash: StashWtbMatches): WtbSelection {
@@ -119,7 +118,7 @@ function WtbBadges({ model, compact = false }: { model: WtbCardModel; compact?: 
   );
 }
 
-/** Copy whisper · Whisper · List at {offer} (when the user's stash item fits). */
+/** List at {offer} (when the user's stash item fits), then the seller's actions: copy · Message · Sell for {offer}. */
 function ContactActions({
   request,
   model,
@@ -132,39 +131,26 @@ function ContactActions({
   onListAt: () => void;
 }) {
   const { t } = useTranslation('market');
-  const { whisper, copyWhisper } = useWtbWhisper('market');
-  const stop = (run: () => void) => (e: React.MouseEvent) => {
-    e.stopPropagation();
-    run();
-  };
   return (
     <>
-      <Tip label={t('wtb.copyWhisper')}>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={iconActionClass}
-          aria-label={t('wtb.copyWhisper')}
-          onClick={stop(() => void copyWhisper(request, contactItem))}
-        >
-          <Copy className="size-3.5" />
-        </Button>
-      </Tip>
       {model.listPrice && (
-        <Button variant="outline"
+        <Button
+          variant="outline"
           size="sm"
           className="h-7 px-2.5 text-xs"
-          onClick={stop(onListAt)}>
+          onClick={(e) => {
+            e.stopPropagation();
+            onListAt();
+          }}
+        >
           <Tag className="size-3.5" />
           {t('wtb.listAt', { offer: model.offer })}
         </Button>
       )}
-      <Button size="sm"
-        className="h-7 px-2.5 text-xs"
-        onClick={stop(() => void whisper(request, contactItem))}>
-        <MessageSquare className="size-3.5" />
-        {t('wtb.whisperBuyer', { name: request.buyer.name })}
-      </Button>
+      <WtbSellActions request={request}
+        item={contactItem}
+        layout="card"
+        source="market" />
     </>
   );
 }

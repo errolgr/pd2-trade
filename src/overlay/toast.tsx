@@ -67,9 +67,10 @@ async function runToastAction(action: NonNullable<CustomToastPayload['action']>)
         break;
       }
       case ToastActionType.OPEN_CHAT_CONVERSATION: {
-        // Reply: the conversation (or a whisper sender's thread) with the composer focused
-        const { conversationId, threadId } = action.data ?? {};
-        if (conversationId || threadId) bridge?.openChat({ conversationId, threadId, reply: true });
+        // Reply: the conversation (or a whisper sender's thread, or a website user's) with the composer focused
+        const { conversationId, threadId, userId, userName } = action.data ?? {};
+        if (conversationId || threadId || userId)
+          bridge?.openChat({ conversationId, threadId, userId, userName, reply: true });
         break;
       }
       case ToastActionType.OPEN_CHAT_OFFER: {

@@ -152,8 +152,8 @@ export async function matchWtbRequests(
   return out;
 }
 
-/** How a seller reached the buyer. */
-export type WtbContactChannel = 'whisper' | 'copy';
+/** How a seller reached the buyer: the website chat (`message`), or the game chat whisper (copied, `copy`). */
+export type WtbContactChannel = 'message' | 'copy';
 
 /** The item a seller has for a request: the raw clipboard JSON (`text`) or a PD2 item object (stash / listing). */
 export type WtbContactItem = { text: string } | { item: object };
@@ -214,5 +214,48 @@ export function dismissWtbResponse(token: string, id: string): Promise<WtbRespon
     method: 'PATCH',
     headers: { ...auth(token), ...json },
     body: JSON.stringify({ dismissed: true }),
+  });
+}
+
+/** "Sell for {offer}": the item (when the source has one), the seller's account, and a price / note when asked. */
+export interface WtbOfferBody {
+  item?: object;
+  text?: string;
+  account?: string;
+  /** None: the request's offer. Another price needs the request open to offers (else 400 `fixedPrice`). */
+  price?: { amount: number; currency: WtbCurrency };
+  note?: string;
+}
+
+export function wtbOfferBody(
+  item: WtbContactItem | null | undefined,
+  account: string | null | undefined,
+  ask?: { price: { amount: number; currency: WtbCurrency }; note?: string },
+): WtbOfferBody {
+  const note = ask?.note?.trim();
+  return { ...item, ...(account && { account }), ...(ask && { price: ask.price }), ...(note && { note }) };
+}
+
+/**
+ * Offers to sell the buyer what they asked for (a response of kind `offer`; replaces the seller's pending one).
+ * 400 `fixedPrice` (another price on a request not open to offers) or own request, 409 not open, 429 throttled.
+ */
+export function offerWtbRequest(token: string, id: string, body: WtbOfferBody): Promise<WtbResponse> {
+  return send<WtbResponse>(`${WTB_URL}/${encodeURIComponent(id)}/offers`, {
+    method: 'POST',
+    headers: { ...auth(token), ...json },
+    body: JSON.stringify(body),
+  });
+}
+
+/** The buyer accepts / declines a pending offer, or the seller withdraws theirs (404 / 409 otherwise). */
+export function decideWtbOffer(
+  token: string,
+  responseId: string,
+  decision: 'accept' | 'decline' | 'withdraw',
+): Promise<WtbResponse> {
+  return send<WtbResponse>(`${WTB_URL}/responses/${encodeURIComponent(responseId)}/${decision}`, {
+    method: 'POST',
+    headers: auth(token),
   });
 }

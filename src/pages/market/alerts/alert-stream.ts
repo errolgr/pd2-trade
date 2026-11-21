@@ -5,7 +5,7 @@
  * the last one that search saw) and deduping alerts by search and listing.
  */
 import type { MarketAlert, MarketListingSummary, MarketMatch } from './market-api';
-import { isWtbResponse, type WtbResponse } from '../lib/wtb';
+import { isWtbResponse, wtbResponseSeenKey, type WtbResponse } from '../lib/wtb';
 
 export interface SseEvent {
   event: string;
@@ -130,6 +130,8 @@ export interface WatchStreamOptions {
   onSeen: (searchId: string, bumpedAt: string) => void;
   /** Signed in: a response to one of the user's buy requests (`wtb.response`), once per response id. */
   onWtbResponse?: (response: WtbResponse) => void;
+  /** Signed in: an offer decided by the buyer (to its seller) or withdrawn by the seller (to the buyer): `wtb.offer`. */
+  onWtbOffer?: (response: WtbResponse) => void;
   /** Each (re)connect's `hello`: what was missed while away is caught up (responses: `listWtbResponses`). */
   onConnected?: () => void;
   signal: AbortSignal;
@@ -238,8 +240,8 @@ export async function runWatchStream(options: WatchStreamOptions): Promise<void>
     deliver(alerts, 'live');
   };
 
-  // A response to one of the user's buy requests: deduped by the response id (a repeat contact updates the same
-  // response and is not pushed again; a reconnect may replay one)
+  // A response to one of the user's buy requests: deduped by the response id and its last update (a reconnect may
+  // replay one; a replaced pending offer comes again with the same id, updated, and is told again)
   const onResponse = (data: string) => {
     let response: WtbResponse;
     try {
@@ -248,9 +250,28 @@ export async function runWatchStream(options: WatchStreamOptions): Promise<void>
       console.warn('[market alerts] bad wtb.response event:', error);
       return;
     }
-    if (!isWtbResponse(response) || seen.has(`wtb:${response.id}`)) return;
-    seen.add(`wtb:${response.id}`);
+    if (!isWtbResponse(response)) return;
+    const key = wtbResponseSeenKey(response);
+    if (seen.has(key)) return;
+    seen.add(key);
     options.onWtbResponse?.(response);
+  };
+
+  // An offer decided (to its seller: accepted / declined) or withdrawn (to the buyer): once per status
+  const onOffer = (data: string) => {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(data);
+    } catch (error) {
+      console.warn('[market alerts] bad wtb.offer event:', error);
+      return;
+    }
+    const response = parsed && typeof parsed === 'object' && 'response' in parsed ? parsed.response : undefined;
+    if (!isWtbResponse(response) || !response.status) return;
+    const key = `wtb-offer:${response.id}:${response.status}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    options.onWtbOffer?.(response);
   };
 
   while (!signal.aborted) {
@@ -280,6 +301,7 @@ export async function runWatchStream(options: WatchStreamOptions): Promise<void>
             options.onConnected?.();
           } else if (event.event === 'market.match') onMatch(event.data);
           else if (event.event === 'wtb.response') onResponse(event.data);
+          else if (event.event === 'wtb.offer') onOffer(event.data);
         },
         (ms) => {
           serverRetryMs = ms;

@@ -635,7 +635,7 @@
       "hint": "Prośby o kupno: gracze szukający takiego przedmiotu. Kliknij, aby zobaczyć kto i ile płaci.",
       "hintOk": "Rozumiem",
       "title": "Prośby o kupno tego przedmiotu",
-      "subtitle": "Gracze, którzy napisali, czego szukają. Szepnij do nich, aby sprzedać.",
+      "subtitle": "Gracze, którzy napisali, czego szukają. Napisz do nich, aby sprzedać.",
       "almost_one": "Prawie ({{count}}) — brakuje 1 statystyki",
       "almost_few": "Prawie ({{count}}) — brakuje 1 statystyki",
       "almost_many": "Prawie ({{count}}) — brakuje 1 statystyki",
@@ -644,17 +644,30 @@
       "needsNone": "chce {{stat}} (nie masz)",
       "allRequests": "Wszystkie prośby"
     },
-    "whisperBuyer": "Szepnij do {{name}}",
+    "whisperBuyer": "Napisz do {{name}}",
+    "message": "Wiadomość",
     "copyWhisper": "Kopiuj szept",
     "listAt": "Wystaw za {{offer}}",
     "listItAt": "Wystaw za {{offer}}",
     "nice": "Opcja",
     "must": "Wymóg",
     "flags": {
-      "corrupted": { "yes": "Spaczony", "no": "Niespaczony" },
-      "ethereal": { "yes": "Eteryczny", "no": "Nieeteryczny" },
-      "desecrated": { "yes": "Zbezczeszczony", "no": "Niezbezczeszczony" },
-      "identified": { "yes": "Zidentyfikowany", "no": "Niezidentyfikowany" }
+      "corrupted": {
+        "yes": "Spaczony",
+        "no": "Niespaczony"
+      },
+      "ethereal": {
+        "yes": "Eteryczny",
+        "no": "Nieeteryczny"
+      },
+      "desecrated": {
+        "yes": "Zbezczeszczony",
+        "no": "Niezbezczeszczony"
+      },
+      "identified": {
+        "yes": "Zidentyfikowany",
+        "no": "Niezidentyfikowany"
+      }
     },
     "sockets": {
       "exact_one": "{{count}} gniazdo",
@@ -877,7 +890,7 @@
       "body": "{{seller}} ma coś dla {{title}} · twoja oferta {{offer}}",
       "bodyNoItem": "{{seller}} szepnął do ciebie w sprawie {{title}}",
       "viewRequest": "Zobacz prośbę",
-      "whisperBack": "Odpisz szeptem",
+      "whisperBack": "Odpisz",
       "requestGone": "Ta prośba o kupno nie jest już otwarta"
     },
     "responses": {
@@ -885,12 +898,57 @@
       "title_few": "Odpowiedzi · {{count}}",
       "title_many": "Odpowiedzi · {{count}}",
       "title_other": "Odpowiedzi · {{count}}",
-      "noItem": "Szepnął do ciebie (bez przedmiotu)",
       "dismiss": "Odrzuć",
       "markFilled": "Oznacz jako spełnioną",
       "confirmClose": "Zamknąć tę prośbę?",
       "confirmCloseDescription": "{{title}} · spełniona przez {{seller}}",
-      "close": "Zamknij prośbę"
+      "close": "Zamknij prośbę",
+      "summary": {
+        "atYourPrice": "sprzeda po twojej cenie",
+        "asks": "chce {{price}}",
+        "messaged": "napisał do ciebie",
+        "whispered": "szepnął do ciebie"
+      }
+    },
+    "offers": {
+      "sell": "Sprzedaj za {{offer}}",
+      "pending": "Oferta wysłana · oczekuje",
+      "withdraw": "Wycofaj",
+      "accepted": "Przyjęta · napisz do {{buyer}}",
+      "declined": "Odrzucona",
+      "askDifferent": "Zaproponuj inną cenę",
+      "askTitle": "Twoja cena (oferuje {{offer}})",
+      "note": "Notatka",
+      "notePlaceholder": "Notatka dla kupującego (opcjonalnie)",
+      "send": "Wyślij ofertę",
+      "sentToast": "Wysłano ofertę do {{buyer}}",
+      "sentToastDescription": "{{item}} za {{price}}",
+      "fixedPrice": "Ten kupujący przyjmuje tylko swoją cenę",
+      "notOpen": "Ta prośba o kupno nie jest już otwarta",
+      "throttled": "Za dużo ofert – spróbuj później",
+      "failed": "Nie udało się wysłać oferty",
+      "signIn": "Zaloguj się, aby sprzedawać kupującym",
+      "withdrawnToast": "Oferta wycofana",
+      "decideFailed": "Nie udało się zaktualizować oferty",
+      "willSell": "{{seller}} sprzeda {{item}} · {{price}} (twoja cena)",
+      "asks": "{{seller}} chce {{price}} za {{item}} (oferowałeś {{offer}})",
+      "accept": "Przyjmij",
+      "acceptPrice": "Przyjmij {{price}}",
+      "decline": "Odrzuć",
+      "dealDraft": "Umowa – {{item}} za {{price}}. Kiedy możemy się wymienić?",
+      "noticeWillSell": "🏷 {{seller}} sprzeda ci {{item}} za {{price}}",
+      "noticeAsks": "🏷 {{seller}} chce {{price}} za {{item}}",
+      "forRequest": "Na twoją prośbę {{title}} (oferowałeś {{offer}})",
+      "acceptedBy": "{{buyer}} przyjął twoją ofertę na {{title}}",
+      "declinedBy": "{{buyer}} odrzucił twoją ofertę na {{title}}",
+      "withdrawnBy": "{{seller}} wycofał ofertę na {{title}}",
+      "messageBuyer": "Napisz do {{buyer}}",
+      "status": {
+        "pending": "Oczekuje",
+        "accepted": "Przyjęta",
+        "declined": "Odrzucona",
+        "withdrawn": "Wycofana"
+      }
     }
   }
 }

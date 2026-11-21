@@ -635,7 +635,7 @@
       "hint": "Запросы на покупку: игроки ищут такой предмет. Нажмите, чтобы увидеть, кто и сколько платит.",
       "hintOk": "Понятно",
       "title": "Запросы на покупку этого предмета",
-      "subtitle": "Игроки, которые написали, что ищут. Шепните им, чтобы продать.",
+      "subtitle": "Игроки, которые написали, что ищут. Напишите им, чтобы продать.",
       "almost_one": "Почти ({{count}}) — не хватает 1 свойства",
       "almost_few": "Почти ({{count}}) — не хватает 1 свойства",
       "almost_many": "Почти ({{count}}) — не хватает 1 свойства",
@@ -644,17 +644,30 @@
       "needsNone": "нужно {{stat}} (у вас нет)",
       "allRequests": "Все запросы"
     },
-    "whisperBuyer": "Шепнуть {{name}}",
+    "whisperBuyer": "Написать {{name}}",
+    "message": "Написать",
     "copyWhisper": "Копировать шёпот",
     "listAt": "Выставить за {{offer}}",
     "listItAt": "Выставить за {{offer}}",
     "nice": "Желательно",
     "must": "Обязательно",
     "flags": {
-      "corrupted": { "yes": "Осквернён", "no": "Не осквернён" },
-      "ethereal": { "yes": "Эфирный", "no": "Не эфирный" },
-      "desecrated": { "yes": "Порченый", "no": "Не порченый" },
-      "identified": { "yes": "Опознан", "no": "Не опознан" }
+      "corrupted": {
+        "yes": "Осквернён",
+        "no": "Не осквернён"
+      },
+      "ethereal": {
+        "yes": "Эфирный",
+        "no": "Не эфирный"
+      },
+      "desecrated": {
+        "yes": "Порченый",
+        "no": "Не порченый"
+      },
+      "identified": {
+        "yes": "Опознан",
+        "no": "Не опознан"
+      }
     },
     "sockets": {
       "exact_one": "{{count}} сокет",
@@ -877,7 +890,7 @@
       "body": "У {{seller}} есть подходящее для {{title}} · ваше предложение {{offer}}",
       "bodyNoItem": "{{seller}} написал вам о {{title}}",
       "viewRequest": "Открыть заявку",
-      "whisperBack": "Ответить шёпотом",
+      "whisperBack": "Ответить",
       "requestGone": "Эта заявка на покупку больше не открыта"
     },
     "responses": {
@@ -885,12 +898,57 @@
       "title_few": "Ответы · {{count}}",
       "title_many": "Ответы · {{count}}",
       "title_other": "Ответы · {{count}}",
-      "noItem": "Написал вам (без предмета)",
       "dismiss": "Скрыть",
       "markFilled": "Отметить выполненной",
       "confirmClose": "Закрыть эту заявку?",
       "confirmCloseDescription": "{{title}} · выполнена {{seller}}",
-      "close": "Закрыть заявку"
+      "close": "Закрыть заявку",
+      "summary": {
+        "atYourPrice": "продаст по вашей цене",
+        "asks": "просит {{price}}",
+        "messaged": "написал вам",
+        "whispered": "шепнул вам"
+      }
+    },
+    "offers": {
+      "sell": "Продать за {{offer}}",
+      "pending": "Предложение отправлено · ожидает",
+      "withdraw": "Отозвать",
+      "accepted": "Принято · написать {{buyer}}",
+      "declined": "Отклонено",
+      "askDifferent": "Предложить другую цену",
+      "askTitle": "Ваша цена (предлагают {{offer}})",
+      "note": "Заметка",
+      "notePlaceholder": "Заметка покупателю (необязательно)",
+      "send": "Отправить предложение",
+      "sentToast": "Предложение отправлено {{buyer}}",
+      "sentToastDescription": "{{item}} за {{price}}",
+      "fixedPrice": "Этот покупатель принимает только свою цену",
+      "notOpen": "Эта заявка на покупку больше не открыта",
+      "throttled": "Слишком много предложений — попробуйте позже",
+      "failed": "Не удалось отправить предложение",
+      "signIn": "Войдите, чтобы продавать покупателям",
+      "withdrawnToast": "Предложение отозвано",
+      "decideFailed": "Не удалось обновить предложение",
+      "willSell": "{{seller}} продаст {{item}} · {{price}} (ваша цена)",
+      "asks": "{{seller}} просит {{price}} за {{item}} (вы предлагали {{offer}})",
+      "accept": "Принять",
+      "acceptPrice": "Принять {{price}}",
+      "decline": "Отклонить",
+      "dealDraft": "Сделка — {{item}} за {{price}}. Когда сможем обменяться?",
+      "noticeWillSell": "🏷 {{seller}} продаст вам {{item}} за {{price}}",
+      "noticeAsks": "🏷 {{seller}} просит {{price}} за {{item}}",
+      "forRequest": "На вашу заявку {{title}} (вы предлагали {{offer}})",
+      "acceptedBy": "{{buyer}} принял ваше предложение по {{title}}",
+      "declinedBy": "{{buyer}} отклонил ваше предложение по {{title}}",
+      "withdrawnBy": "{{seller}} отозвал предложение по {{title}}",
+      "messageBuyer": "Написать {{buyer}}",
+      "status": {
+        "pending": "Ожидает",
+        "accepted": "Принято",
+        "declined": "Отклонено",
+        "withdrawn": "Отозвано"
+      }
     }
   }
 }

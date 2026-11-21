@@ -557,23 +557,36 @@
       "hint": "求购：正在寻找此类物品的玩家。点击查看是谁以及出价多少。",
       "hintOk": "知道了",
       "title": "此物品的求购",
-      "subtitle": "发布了需求的玩家。私聊他们即可出售。",
+      "subtitle": "发布了需求的玩家。发消息给他们即可出售。",
       "almost_other": "差一点（{{count}}）— 差 1 条属性的买家",
       "needs": "需要 {{stat}}（{{value}}）",
       "needsNone": "需要 {{stat}}（你没有）",
       "allRequests": "全部求购"
     },
-    "whisperBuyer": "密语 {{name}}",
+    "whisperBuyer": "发消息给 {{name}}",
+    "message": "发消息",
     "copyWhisper": "复制密语",
     "listAt": "以 {{offer}} 上架",
     "listItAt": "以 {{offer}} 上架",
     "nice": "可选",
     "must": "必需",
     "flags": {
-      "corrupted": { "yes": "已腐化", "no": "未腐化" },
-      "ethereal": { "yes": "无形", "no": "非无形" },
-      "desecrated": { "yes": "已亵渎", "no": "未亵渎" },
-      "identified": { "yes": "已鉴定", "no": "未鉴定" }
+      "corrupted": {
+        "yes": "已腐化",
+        "no": "未腐化"
+      },
+      "ethereal": {
+        "yes": "无形",
+        "no": "非无形"
+      },
+      "desecrated": {
+        "yes": "已亵渎",
+        "no": "未亵渎"
+      },
+      "identified": {
+        "yes": "已鉴定",
+        "no": "未鉴定"
+      }
     },
     "sockets": {
       "exact_other": "{{count}} 孔",
@@ -736,17 +749,62 @@
       "body": "{{seller}} 有符合 {{title}} 的物品 · 你的出价 {{offer}}",
       "bodyNoItem": "{{seller}} 就 {{title}} 私聊了你",
       "viewRequest": "查看求购",
-      "whisperBack": "私聊回复",
+      "whisperBack": "回复",
       "requestGone": "该求购已不再开放"
     },
     "responses": {
       "title_other": "回复 · {{count}}",
-      "noItem": "私聊了你（未注明物品）",
       "dismiss": "忽略",
       "markFilled": "标记为已完成",
       "confirmClose": "关闭此求购？",
       "confirmCloseDescription": "{{title}} · 由 {{seller}} 完成",
-      "close": "关闭求购"
+      "close": "关闭求购",
+      "summary": {
+        "atYourPrice": "按你的出价出售",
+        "asks": "要价 {{price}}",
+        "messaged": "给你发了消息",
+        "whispered": "私聊了你"
+      }
+    },
+    "offers": {
+      "sell": "以 {{offer}} 出售",
+      "pending": "已发送报价 · 等待中",
+      "withdraw": "撤回",
+      "accepted": "已接受 · 联系 {{buyer}}",
+      "declined": "已拒绝",
+      "askDifferent": "提出其他价格",
+      "askTitle": "你的价格（对方出价 {{offer}}）",
+      "note": "备注",
+      "notePlaceholder": "给买家的备注（可选）",
+      "send": "发送报价",
+      "sentToast": "已向 {{buyer}} 发送报价",
+      "sentToastDescription": "{{item}} 售价 {{price}}",
+      "fixedPrice": "该买家只接受自己的出价",
+      "notOpen": "该求购已不再开放",
+      "throttled": "报价过于频繁，请稍后再试",
+      "failed": "无法发送报价",
+      "signIn": "登录后才能向买家出售",
+      "withdrawnToast": "报价已撤回",
+      "decideFailed": "无法更新报价",
+      "willSell": "{{seller}} 将以 {{price}} 出售 {{item}}（你的出价）",
+      "asks": "{{seller}} 要价 {{price}} 出售 {{item}}（你出价 {{offer}}）",
+      "accept": "接受",
+      "acceptPrice": "接受 {{price}}",
+      "decline": "拒绝",
+      "dealDraft": "成交 — {{item}} 售价 {{price}}。什么时候可以交易？",
+      "noticeWillSell": "🏷 {{seller}} 将以 {{price}} 卖给你 {{item}}",
+      "noticeAsks": "🏷 {{seller}} 要价 {{price}} 出售 {{item}}",
+      "forRequest": "针对你的求购 {{title}}（你出价 {{offer}}）",
+      "acceptedBy": "{{buyer}} 接受了你对 {{title}} 的报价",
+      "declinedBy": "{{buyer}} 拒绝了你对 {{title}} 的报价",
+      "withdrawnBy": "{{seller}} 撤回了对 {{title}} 的报价",
+      "messageBuyer": "联系 {{buyer}}",
+      "status": {
+        "pending": "等待中",
+        "accepted": "已接受",
+        "declined": "已拒绝",
+        "withdrawn": "已撤回"
+      }
     }
   }
 }

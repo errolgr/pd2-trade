@@ -106,8 +106,33 @@ export interface WtbResponse {
   met: { id: string; label: string; value: number | null; met: boolean }[];
   channel: 'whisper' | 'copy' | 'message';
   createdAt: string;
+  /** Its last change (a replaced pending offer, a decision); a replaced offer keeps its id. */
+  updatedAt?: string;
   dismissed: boolean;
+  /** A contact (whisper / message), or an offer to sell ("Sell for {offer}", v6). */
+  kind?: 'contact' | 'offer';
+  /** Offers: the asked price (the request's offer for "at your price"); null on contacts. */
+  price?: WtbOffer | null;
+  /** Offers: the seller's note (≤ 140 chars, plain text). */
+  note?: string | null;
+  /** Offers: where the buyer's answer stands; null on contacts. */
+  status?: WtbOfferStatus | null;
+  decidedAt?: string | null;
 }
+
+export type WtbOfferStatus = 'pending' | 'accepted' | 'declined' | 'withdrawn';
+
+/** An offer to sell (with its price), not a plain contact. */
+export const isWtbOffer = (response: WtbResponse): response is WtbResponse & { price: WtbOffer } =>
+  response.kind === 'offer' && !!response.price;
+
+/** When a response last changed (its update, else its creation). */
+export const wtbResponseAt = (response: Pick<WtbResponse, 'createdAt' | 'updatedAt'>): string =>
+  response.updatedAt ?? response.createdAt;
+
+/** The key a response is told once by: its id and its last change (a replaced pending offer is told again). */
+export const wtbResponseSeenKey = (response: Pick<WtbResponse, 'id' | 'createdAt' | 'updatedAt'>): string =>
+  `wtb:${response.id}:${wtbResponseAt(response)}`;
 
 /** A pushed or listed response whole enough to show (a malformed row is skipped, never shown half). */
 export function isWtbResponse(value: unknown): value is WtbResponse {
@@ -210,19 +235,11 @@ export const wtbWhisperText = (request: Pick<WtbRequest, 'title' | 'offer'>): st
 export const wtbWhisper = (request: Pick<WtbRequest, 'whisperTo' | 'title' | 'offer'>): string =>
   whisperCommand(oneLine(request.whisperTo), wtbWhisperText(request));
 
-/** The account the buyer whispers back: the seller's selected one, else their name. */
-export const wtbResponseAccount = (response: Pick<WtbResponse, 'seller'>): string =>
-  oneLine(response.seller.account || response.seller.name);
-
 /** The buyer's reply to a response: "Hi! About my {title} request — still have the {item}?" (or "…one?"). */
 export const wtbBackWhisperText = (response: Pick<WtbResponse, 'request' | 'item'>): string =>
   response.item
     ? `Hi! About my ${oneLine(response.request.title)} request — still have the ${oneLine(response.item.name)}?`
     : `Hi! About my ${oneLine(response.request.title)} request — still have one?`;
-
-/** `/w *{seller account} {wtbBackWhisperText}`. */
-export const wtbBackWhisper = (response: Pick<WtbResponse, 'seller' | 'request' | 'item'>): string =>
-  whisperCommand(wtbResponseAccount(response), wtbBackWhisperText(response));
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

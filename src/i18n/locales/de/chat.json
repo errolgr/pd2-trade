@@ -191,15 +191,17 @@
     "buyRequestReceived": "Kaufgesuch",
     "buyRequestMade": "Ihr Kaufgesuch",
     "forRequest": "für {{title}}",
-    "whisperBack": "Zurückflüstern",
-    "whisperBackTitle": "Flüster-Antwort an den Verkäufer kopieren",
-    "whisper": "Flüstern",
-    "whisperBuyerTitle": "Deine Flüsternachricht an den Käufer erneut kopieren",
+    "whisperBack": "Antworten",
+    "whisperBackTitle": "Dem Verkäufer im Website-Chat schreiben",
+    "whisper": "Nachricht",
+    "whisperBuyerTitle": "Dem Käufer im Website-Chat schreiben",
     "viewRequest": "Gesuch ansehen",
     "viewRequestTitle": "Das Kaufgesuch im Markt öffnen",
     "markFilled": "Als erfüllt markieren",
     "markFilledTitle": "Dein Gesuch schließen: dieser Verkäufer hat es erfüllt",
-    "markFilledFailed": "Gesuch konnte nicht geschlossen werden"
+    "markFilledFailed": "Gesuch konnte nicht geschlossen werden",
+    "wtbOfferReceived": "Angebot auf dein Kaufgesuch",
+    "wtbOfferMade": "Dein Angebot auf ihr Gesuch"
   },
   "thread": {
     "muted": "Stummgeschaltet",

@@ -149,7 +149,7 @@
   "nav": {
     "general": "Allgemein",
     "account": "Konto",
-    "chat": "Chat",
+    "chat": "Chat & Benachrichtigungen",
     "interface": "Oberfläche",
     "priceCheck": "Preischeck",
     "netWorth": "Vermögen",
@@ -526,8 +526,8 @@
       "description": "Farbschema für alle Overlay-Fenster. Wird sofort angewendet."
     },
     "chat": {
-      "title": "Chat",
-      "description": "Chat- und Flüster-Benachrichtigungen sowie deine Nachrichtenvorlagen einstellen."
+      "title": "Chat & Benachrichtigungen",
+      "description": "Chat- und Flüster-Benachrichtigungen sowie deine Nachrichtenvorlagen einstellen. Discord-DMs vom PD2-Trader-Bot."
     },
     "general": {
       "title": "Allgemein",

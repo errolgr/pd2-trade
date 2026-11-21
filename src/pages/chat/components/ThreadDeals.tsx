@@ -42,7 +42,8 @@ import { useChatListings } from '../hooks/useChatListings';
 import { type ListingMarketPrice, useListingMarketPrices } from '../hooks/useListingMarketPrices';
 import { shortAgo } from '../hooks/useTraderProfile';
 import { useDelist } from '@/pages/delist/DelistHandler';
-import { formatOffer, type WtbResponse } from '@/pages/market/lib/wtb';
+import { formatOffer, isWtbOffer, type WtbResponse } from '@/pages/market/lib/wtb';
+import { acceptLabel } from '@/pages/market/wtb/wtb-offers';
 import { responseMetLine } from '@/pages/market/wtb/wtb-responses';
 import { confirmMarkFilled, WtbResponseArt } from '@/pages/market/wtb/WtbResponses';
 import { ListingDetails, ListingThumb } from './ListingCard';
@@ -123,7 +124,7 @@ function dealView(deal: Deal): { isIncoming: boolean; itemName?: string; price?:
       return {
         isIncoming: !deal.received,
         itemName: deal.response.item?.name ?? deal.response.request.title,
-        price: formatOffer(deal.response.request.offer),
+        price: formatOffer(isWtbOffer(deal.response) ? deal.response.price : deal.response.request.offer),
         at: Date.parse(deal.response.createdAt) || 0,
       };
   }
@@ -424,6 +425,8 @@ export function ThreadDeals({
   onWtbWhisper,
   onWtbViewRequest,
   onWtbMarkFilled,
+  onWtbAccept,
+  onWtbDecline,
 }: {
   /** Website offers with this person, both directions. */
   offers: readonly TradeOffer[];
@@ -452,6 +455,9 @@ export function ThreadDeals({
   onWtbViewRequest?: (requestId: string) => void;
   /** Mark filled (confirmed first): closes your request with this response; rejects (toasted) when it failed. */
   onWtbMarkFilled?: (response: WtbResponse) => Promise<void>;
+  /** A pending offer to sell on your request: Accept (the seller is told; the chat drafts the deal) / Decline. */
+  onWtbAccept?: (response: WtbResponse) => Promise<void>;
+  onWtbDecline?: (response: WtbResponse) => Promise<void>;
 }): React.JSX.Element | null {
   const { t } = useTranslation(['chat', 'common']);
   const {
@@ -693,42 +699,72 @@ export function ThreadDeals({
   };
 
   /**
-   * A buy request response: on your request (received) Whisper back, View request and Mark filled; yours to their
-   * request (made) Whisper them again and View request.
+   * A buy request response. A pending offer to sell on your request: Accept · Decline · Message; a decided one: its
+   * status and Message. Otherwise on your request (received) Message back, View request and Mark filled; yours to
+   * their request (made) Message them again and View request.
    */
-  const wtbActions = (response: WtbResponse, received: boolean, disabled: boolean) => (
-    <>
+  const wtbActions = (response: WtbResponse, received: boolean, disabled: boolean) => {
+    const message = (
       <ActionButton
         title={received ? t('deals.whisperBackTitle') : t('deals.whisperBuyerTitle')}
         label={received ? t('deals.whisperBack') : t('deals.whisper')}
-        tone="filled"
+        tone={received && isWtbOffer(response) && response.status === 'pending' ? 'outline' : 'filled'}
         disabled={disabled}
         onClick={() => onWtbWhisper?.(response, received)}
       >
         <MessageSquare className="size-3.5" />
       </ActionButton>
-      <ActionButton
-        title={t('deals.viewRequestTitle')}
-        label={t('deals.viewRequest')}
-        tone="outline"
-        disabled={disabled}
-        onClick={() => onWtbViewRequest?.(response.requestId)}
-      >
-        <ExternalLink className="size-3.5" />
-      </ActionButton>
-      {received && onWtbMarkFilled && response.request.status !== 'closed' && (
+    );
+    if (received && isWtbOffer(response) && response.status === 'pending' && onWtbAccept && onWtbDecline)
+      return (
+        <>
+          <ActionButton
+            title={acceptLabel(response)}
+            label={acceptLabel(response)}
+            tone="filled"
+            disabled={disabled}
+            onClick={() => void run(response.id, () => onWtbAccept(response))}
+          >
+            <Check className="size-3.5" />
+          </ActionButton>
+          <ActionButton
+            title={tGlobal('market:wtb.offers.decline')}
+            label={tGlobal('market:wtb.offers.decline')}
+            tone="muted"
+            disabled={disabled}
+            onClick={() => void run(response.id, () => onWtbDecline(response))}
+          >
+            <X className="size-3.5" />
+          </ActionButton>
+          {message}
+        </>
+      );
+    return (
+      <>
+        {message}
         <ActionButton
-          title={t('deals.markFilledTitle')}
-          label={t('deals.markFilled')}
-          tone="muted"
+          title={t('deals.viewRequestTitle')}
+          label={t('deals.viewRequest')}
+          tone="outline"
           disabled={disabled}
-          onClick={() => confirmMarkFilled(response, () => run(response.id, () => onWtbMarkFilled(response)))}
+          onClick={() => onWtbViewRequest?.(response.requestId)}
         >
-          <CheckCheck className="size-3.5" />
+          <ExternalLink className="size-3.5" />
         </ActionButton>
-      )}
-    </>
-  );
+        {received && onWtbMarkFilled && response.request.status !== 'closed' && (
+          <ActionButton
+            title={t('deals.markFilledTitle')}
+            label={t('deals.markFilled')}
+            tone="muted"
+            disabled={disabled}
+            onClick={() => confirmMarkFilled(response, () => run(response.id, () => onWtbMarkFilled(response)))}
+          >
+            <CheckCheck className="size-3.5" />
+          </ActionButton>
+        )}
+      </>
+    );
+  };
 
   const whisperActions = (person: WhisperPerson, trade: WhisperTrade, disabled: boolean) => {
     const vars = {
@@ -840,7 +876,14 @@ export function ThreadDeals({
               : 'settled';
           const colors = TONE[tone];
           let label = dealStatusLabel(status);
-          if (deal.kind === 'wtb' && status === 'open')
+          if (deal.kind === 'wtb' && isWtbOffer(deal.response))
+            label =
+              deal.response.status === 'pending' || !deal.response.status
+                ? deal.received
+                  ? t('deals.wtbOfferReceived')
+                  : t('deals.wtbOfferMade')
+                : tGlobal(`market:wtb.offers.status.${deal.response.status}`);
+          else if (deal.kind === 'wtb' && status === 'open')
             label = deal.received ? t('deals.buyRequestReceived') : t('deals.buyRequestMade');
           else if (status === 'open') label = isIncoming ? t('deals.newOffer') : t('deals.yourOffer');
           else if (status === 'in-game') label = isIncoming ? t('deals.inGameOffer') : t('deals.yourInGameOffer');
@@ -855,6 +898,7 @@ export function ThreadDeals({
               ? [
                   deal.response.item && t('deals.forRequest', { title: deal.response.request.title }),
                   responseMetLine(deal.response),
+                  deal.response.note && `“${deal.response.note}”`,
                 ].filter(Boolean)
               : [
                   asking && t('deals.asking', { price: asking }),

@@ -129,6 +129,9 @@ const WTB_NEAR_LOOKUP = 50;
 /** The header's "Any" quality: searches every base quality (e.g. Rare and Crafted together). */
 const ANY_QUALITY = 'any' as const;
 
+/** Rainbow Facet rolls: elemental skill damage (329-332) and enemy resistance (333-336). */
+const FACET_ROLL_STAT_IDS = new Set([329, 330, 331, 332, 333, 334, 335, 336]);
+
 /** The search whose results are listed. */
 interface ActiveSearch {
   /** The same search as a PD2 query: searches the market service can't express, and pages it fails to answer. */
@@ -615,6 +618,27 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appraisal]);
 
+  // A Rainbow Facet searches its exact rolls (5/5 finds 5/5 only): its skill damage and enemy resistance rows are
+  // selected at their own value as min and max, and the search runs right away. Rolls are stored positive (the game
+  // shows the resistance one negated).
+  useEffect(() => {
+    if (!extractRainbowFacetData()) return;
+    const rollRows = sortedStats.filter((s) => s.stat_id !== undefined && FACET_ROLL_STAT_IDS.has(s.stat_id));
+    if (rollRows.length === 0) return;
+    setSelected(new Set(rollRows.map(getStatKey)));
+    setFilters(
+      Object.fromEntries(
+        rollRows.map((s) => {
+          const roll = String(Math.abs(s.value ?? 0));
+          return [getStatKey(s), { min: roll, max: roll }];
+        }),
+      ),
+    );
+    setSearchPending(true);
+    // Once per item: later edits to the selection are the user's.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item?.name, item?.quality, item?.stats, extractRainbowFacetData]);
+
   // Fetch average price for unique items
   useEffect(() => {
     const fetchAveragePrice = async () => {
@@ -1051,10 +1075,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
   // Corruption/socket price clicks and a Keep rare search once their filter changes have applied
   useEffect(() => {
-    if (!searchPending) return;
+    if (!searchPending || settingsLoading) return;
     setSearchPending(false);
     runSearch(selectedCorruptionNames);
-  }, [searchPending, runSearch, selectedCorruptionNames]);
+  }, [searchPending, settingsLoading, runSearch, selectedCorruptionNames]);
 
   // Infinite scroll: the next page of the listed search
   useEffect(() => {

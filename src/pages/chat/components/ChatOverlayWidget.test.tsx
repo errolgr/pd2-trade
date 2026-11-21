@@ -15,6 +15,8 @@ import { WhisperHistoryProvider } from '@/hooks/useWhisperHistory';
 import { writeText } from '@/lib/browser-clipboard';
 import { openUrl } from '@/lib/browser-opener';
 import { exists, readTextFile, writeTextFile } from '@/lib/browser-fs';
+import { contactWtbRequest } from '@/pages/market/alerts/wtb-api';
+import type * as WtbApi from '@/pages/market/alerts/wtb-api';
 import {
   CHAT_PREFS_FILENAME,
   changeChatPrefs,
@@ -94,6 +96,10 @@ vi.mock('@/pages/chat/lib/seller-lookup', async (importOriginal) => ({
     const seller = sellerOwners.get(name.toLowerCase());
     return seller ? { status: 'found', seller } : { status: 'none' };
   }),
+}));
+vi.mock('@/pages/market/alerts/wtb-api', async (importOriginal) => ({
+  ...(await importOriginal<typeof WtbApi>()),
+  contactWtbRequest: vi.fn(async () => {}),
 }));
 
 const NOW = new Date('2026-05-01T12:00:00Z');
@@ -2501,5 +2507,88 @@ describe('ChatOverlayWidget trade whispers about your listings', () => {
       "Hi, I'm interested in your Silkweave listed for 10 wss",
       "Hi, I'm interested in your Griffon's Eye listed for 3 HR",
     ]);
+  });
+});
+
+describe("ChatOverlayWidget a buy request's Message", () => {
+  const composer = () => screen.getByRole('textbox', { name: 'Message' });
+  const ERIN = { userId: 'erin', userName: 'erin' };
+  const DRAFT = 'Hi! I have the Rare Circlet you want for 2 HR (pd2trader)';
+  async function send(text?: string) {
+    if (text !== undefined)
+      await act(async () => {
+        typeDraft(composer(), text);
+      });
+    await act(async () => {
+      fireEvent.keyDown(composer(), { key: 'Enter' });
+    });
+    await flush();
+  }
+
+  beforeEach(() => {
+    settings = { pd2Token: 'tok', account: 'MyAcc' };
+    vi.mocked(contactWtbRequest).mockClear();
+    createConversation.mockResolvedValue(conv('c9', { id: 'erin', username: 'erin' }));
+    api.sendMessage.mockImplementation(async (c, content, sender) => msg(`sent-${content}`, c, sender, content, 0));
+  });
+
+  it('records the contact on the first message actually sent to that buyer, once, with the item', async () => {
+    await renderWidget([]);
+    await openChat({
+      ...ERIN,
+      draft: DRAFT,
+      reply: true,
+      wtbContact: { requestId: 'req1', item: { text: '{"x":1}' } },
+    });
+    // Opening the chat records nothing
+    expect(contactWtbRequest).not.toHaveBeenCalled();
+
+    await send();
+    expect(api.sendMessage).toHaveBeenCalledWith('c9', DRAFT, ME);
+    expect(contactWtbRequest).toHaveBeenCalledExactlyOnceWith(
+      'req1',
+      { channel: 'message', account: 'MyAcc', text: '{"x":1}' },
+      'tok',
+    );
+
+    await send('anything else?');
+    expect(contactWtbRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it('opening another thread first drops it: a later message records nothing', async () => {
+    await renderWidget([conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) })]);
+    await openChat({ ...ERIN, draft: DRAFT, wtbContact: { requestId: 'req1' } });
+    await select('Alice');
+    await send('hello alice');
+    await openChat({ ...ERIN });
+    await send('hi erin');
+    expect(api.sendMessage).toHaveBeenCalledWith('c9', expect.stringContaining('hi erin'), ME);
+    expect(contactWtbRequest).not.toHaveBeenCalled();
+  });
+
+  it('closing the panel first drops it', async () => {
+    await renderWidget([]);
+    await openChat({ ...ERIN, draft: DRAFT, wtbContact: { requestId: 'req1' } });
+    panel.visible = false;
+    await act(async () => rerenderWidget());
+    panel.visible = true;
+    await act(async () => rerenderWidget());
+    await flush();
+    await send();
+    expect(api.sendMessage).toHaveBeenCalled();
+    expect(contactWtbRequest).not.toHaveBeenCalled();
+  });
+
+  it("sent as an in-game whisper instead (the composer's Whisper channel): records copy", async () => {
+    const alice = conv('c1', ALICE, { latest: msg('a1', 'c1', 'alice', 'hi', 10) });
+    alice.participants[1].game = { accounts: ['AliceAcc'] };
+    await renderWidget([alice]);
+    await openChat({ userId: 'alice', userName: 'alice', draft: DRAFT, wtbContact: { requestId: 'req2' } });
+    await act(async () => {
+      fireEvent.click(within(screen.getByRole('group', { name: 'Reply via' })).getByRole('radio', { name: /Whisper/ }));
+    });
+    await send();
+    expect(writeText).toHaveBeenCalledWith(`/w *AliceAcc ${DRAFT}`);
+    expect(contactWtbRequest).toHaveBeenCalledExactlyOnceWith('req2', { channel: 'copy', account: 'MyAcc' }, 'tok');
   });
 });
