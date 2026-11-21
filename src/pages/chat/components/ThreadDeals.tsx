@@ -975,13 +975,13 @@ export function ThreadDeals({
                 </span>
               )}
               {price && (
-                <span
-                  className={cn(
-                    'shrink-0 whitespace-nowrap text-lg font-extrabold tabular-nums leading-none text-foreground',
-                  )}
-                >
-                  {price}
-                </span>
+                // Free-text prices ("Swap 1:1 Eth Tal Ral…") can be any length: cap them so the actions stay on
+                // the row, full text on hover
+                <Tip label={price}>
+                  <span className="max-w-[40%] shrink-0 truncate text-lg font-extrabold tabular-nums leading-tight text-foreground">
+                    {price}
+                  </span>
+                </Tip>
               )}
               <div className="flex shrink-0 items-center gap-1">
                 {deal.kind === 'offer'
