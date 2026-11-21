@@ -8,6 +8,7 @@ import { useAppUpdates } from '@/hooks/useAppUpdates';
 import { usePD2Auth } from '@/hooks/usePD2Auth';
 import { useChangelog } from '@/hooks/useChangelog';
 import { useSocketNotifications } from '@/hooks/useSocketNotifications';
+import { useDiscordDmReporter } from '@/hooks/useDiscordDmReporter';
 import { useNetWorth } from '@/hooks/useNetWorth';
 import { useOverlayIntents } from '@/hooks/useOverlayIntents';
 import { useSimTryOn } from '@/hooks/useSimTryOn';
@@ -51,6 +52,8 @@ const AppController: React.FC = () => {
 
   // Socket notifications (offers and whispers) - exactly one instance, here
   useSocketNotifications({ settings, whisperNotificationsEnabled: true });
+  // The same events, reported for Discord DMs while you are away - exactly one instance, here
+  useDiscordDmReporter(settings);
 
   // Market Watch alerts (one live search stream of the watched searches) - exactly one instance, here
   useMarketAlerts();

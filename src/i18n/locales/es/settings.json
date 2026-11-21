@@ -156,7 +156,8 @@
     "netWorth": "Patrimonio",
     "hotkeys": "Atajos",
     "about": "Acerca de",
-    "market": "Mercado"
+    "market": "Mercado",
+    "discord": "Discord"
   },
   "layout": {
     "title": "Ajustes",

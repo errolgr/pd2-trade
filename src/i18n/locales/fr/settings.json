@@ -156,7 +156,8 @@
     "netWorth": "Valeur nette",
     "hotkeys": "Raccourcis",
     "about": "À propos",
-    "market": "Marché"
+    "market": "Marché",
+    "discord": "Discord"
   },
   "layout": {
     "title": "Paramètres",

@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {
   ArrowRight,
+  BellRing,
   Info,
   Keyboard,
   LayoutPanelTop,
@@ -25,6 +26,7 @@ export type SettingsSectionId =
   | 'General'
   | 'Account'
   | 'Chat'
+  | 'Discord'
   | 'Interface'
   | 'Price Check'
   | 'Market'
@@ -37,6 +39,7 @@ export const SETTINGS_SECTIONS: readonly { id: SettingsSectionId; titleKey: stri
   { id: 'General', titleKey: 'settings:nav.general', icon: SlidersHorizontal },
   { id: 'Account', titleKey: 'settings:nav.account', icon: UserRound },
   { id: 'Chat', titleKey: 'settings:nav.chat', icon: MessageSquare },
+  { id: 'Discord', titleKey: 'settings:nav.discord', icon: BellRing },
   { id: 'Interface', titleKey: 'settings:nav.interface', icon: LayoutPanelTop },
   { id: 'Price Check', titleKey: 'settings:nav.priceCheck', icon: Search },
   { id: 'Market', titleKey: 'settings:nav.market', icon: Store },

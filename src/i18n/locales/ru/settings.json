@@ -157,7 +157,8 @@
     "netWorth": "Состояние",
     "hotkeys": "Горячие клавиши",
     "about": "О программе",
-    "market": "Рынок"
+    "market": "Рынок",
+    "discord": "Discord"
   },
   "layout": {
     "title": "Настройки",

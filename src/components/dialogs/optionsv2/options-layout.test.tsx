@@ -29,8 +29,20 @@ vi.mock('./market/layout', () => ({ default: () => <p>market-body</p> }));
 vi.mock('./networth/layout', () => ({ default: () => <p>net-worth-body</p> }));
 vi.mock('./hotkeys/layout', () => ({ default: () => <p>hotkeys-body</p> }));
 vi.mock('./about/layout', () => ({ default: () => <p>about-body</p> }));
+vi.mock('./discord/layout', () => ({ default: () => <p>discord-body</p> }));
 
-const SECTIONS = ['General', 'Account', 'Chat', 'Interface', 'Price Check', 'Market', 'Net Worth', 'Hotkeys', 'About'];
+const SECTIONS = [
+  'General',
+  'Account',
+  'Chat',
+  'Discord',
+  'Interface',
+  'Price Check',
+  'Market',
+  'Net Worth',
+  'Hotkeys',
+  'About',
+];
 
 let store: OptionsStore;
 const close = vi.fn();

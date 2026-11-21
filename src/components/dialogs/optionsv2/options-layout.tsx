@@ -12,6 +12,7 @@ import SettingsHotkeys from './hotkeys/layout';
 import SettingsAbout from './about/layout';
 import SettingsAccount from './account/layout';
 import SettingsChat from './chat/layout';
+import SettingsDiscord from './discord/layout';
 import SettingsInterface from './interface/layout';
 import SettingsStats from './stats/layout';
 import SettingsNetWorth from './networth/layout';
@@ -29,6 +30,7 @@ const SECTION_CONTENT: Record<SettingsSectionId, React.ReactNode> = {
   General: <SettingGenereal />,
   Account: <SettingsAccount />,
   Chat: <SettingsChat />,
+  Discord: <SettingsDiscord />,
   Interface: <SettingsInterface />,
   'Price Check': <SettingsStats />,
   Market: <SettingsMarket />,
