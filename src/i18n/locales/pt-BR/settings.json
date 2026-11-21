@@ -150,7 +150,7 @@
   "nav": {
     "general": "Geral",
     "account": "Conta",
-    "chat": "Chat",
+    "chat": "Chat e notificações",
     "interface": "Interface",
     "priceCheck": "Consulta de preço",
     "netWorth": "Patrimônio",
@@ -531,8 +531,8 @@
       "description": "Tema de cores para todas as janelas do overlay. Aplica na hora."
     },
     "chat": {
-      "title": "Chat",
-      "description": "Configure as notificações de chat e sussurro e seus modelos de mensagem."
+      "title": "Chat e notificações",
+      "description": "Configure as notificações de chat e sussurro e seus modelos de mensagem. DMs no Discord do bot PD2 Trader."
     },
     "general": {
       "title": "Geral",

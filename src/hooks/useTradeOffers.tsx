@@ -287,13 +287,13 @@ const revokeOffer = async (
   await handleApiResponse(response, onAuthError);
 };
 
-// Accept an offer (PUT market/listing/:listingId)
-const acceptOffer = async (
-  settings: ISettings,
+/** Accepts an offer (PATCH market/listing/:listingId); false when the session expired (401). Throws on a refusal. */
+export const acceptOffer = async (
+  settings: Pick<ISettings, 'pd2Token'>,
   listingId: string,
   offerId: string,
   onAuthError?: () => void | Promise<void>,
-): Promise<void> => {
+): Promise<boolean> => {
   const response = await tauriFetch(`https://api.projectdiablo2.com/market/listing/${listingId}`, {
     method: 'PATCH',
     headers: {
@@ -302,15 +302,15 @@ const acceptOffer = async (
     },
     body: JSON.stringify({ accepted_offer_id: offerId }),
   });
-  await handleApiResponse(response, onAuthError);
+  return (await handleApiResponse(response, onAuthError)) !== null;
 };
 
-// Reject an offer (PUT market/offer/:offerId)
-const rejectOffer = async (
-  settings: ISettings,
+/** Rejects an offer (PATCH market/offer/:offerId); false when the session expired (401). Throws on a refusal. */
+export const rejectOffer = async (
+  settings: Pick<ISettings, 'pd2Token'>,
   offerId: string,
   onAuthError?: () => void | Promise<void>,
-): Promise<void> => {
+): Promise<boolean> => {
   const response = await tauriFetch(`https://api.projectdiablo2.com/market/offer/${offerId}`, {
     method: 'PATCH',
     headers: {
@@ -319,7 +319,7 @@ const rejectOffer = async (
     },
     body: JSON.stringify({ rejected: true }),
   });
-  await handleApiResponse(response, onAuthError);
+  return (await handleApiResponse(response, onAuthError)) !== null;
 };
 
 // Unaccept an offer (PATCH market/listing/:listingId)

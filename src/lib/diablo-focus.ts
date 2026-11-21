@@ -10,6 +10,16 @@ export async function isDiabloFocused(): Promise<boolean> {
   }
 }
 
+/** Milliseconds since the last keyboard or mouse input (any app); null when unknown (not Windows, browser mode). */
+export async function inputIdleMs(): Promise<number | null> {
+  if (!isTauri()) return null;
+  try {
+    return await invoke<number | null>('input_idle_ms');
+  } catch {
+    return null;
+  }
+}
+
 /** No keyboard or mouse input for this long (any app) reads as away from the keyboard. */
 export const AFK_AFTER_MS = 60_000;
 
