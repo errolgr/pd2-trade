@@ -506,7 +506,9 @@
     "anyItem": "Any item",
     "capSearches_one": "You can keep up to {{count}} saved searches. Delete one first.",
     "capSearches_other": "You can keep up to {{count}} saved searches. Delete one first.",
-    "tooManySearches": "Too many saved searches"
+    "tooManySearches": "Too many saved searches",
+    "capFavorites": "You can keep up to {{count}} favorites. Remove one first.",
+    "tooManyFavorites": "Too many favorites"
   },
   "deal": {
     "marketAverage": "{{window}} market average",
@@ -542,10 +544,7 @@
     "newSeller": "new seller"
   },
   "favorites": {
-    "loadFailed": "Could not load favorites",
-    "notRemoved": "Favorite not removed",
-    "notSaved": "Favorite not saved",
-    "refused": "projectdiablo2.com refused the change. Try again in a moment."
+    "loadFailed": "Could not load favorites"
   },
   "palette": {
     "openInMarket": "Search the market",

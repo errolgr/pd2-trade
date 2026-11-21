@@ -2,6 +2,7 @@ export const changeLog = {
   '0.12.4': [
     '🆕 Settings › Interface › Windows & focus: choose when a window takes the keyboard (typing, any click, or on open), turn off closing windows when you click away, and show windows (and their hotkeys) outside the game. The defaults keep the current behavior',
     '✨ Quick List: the auto-delist checkboxes under the note are gone. Settings › Market › "Never delist" still leaves the items you pick alone, and listings you already marked stay marked',
+    "🔧 Market: favorites are saved on this PC now.",
   ],
   '0.12.3': [
     '🆕 Discord DMs: link your Discord account (Settings › Chat & notifications) and the PD2 Trader bot DMs you whispers, offers on your listings and website chat messages while you are away from the keyboard. Pick the events and the away time, snooze, mute traders, and send a test DM',

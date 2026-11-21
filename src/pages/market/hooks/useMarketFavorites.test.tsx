@@ -1,70 +1,78 @@
 // @vitest-environment happy-dom
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { MarketApi, MarketFavorite } from '../lib/types';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { MarketListingEntry, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { lookupListing } from '../alerts/listing-lookup';
+import type { MarketApi } from '../lib/types';
+import { getMarketPrefs, marketStoreActions, resetMarketPrefs } from '../store/useMarketStore';
 import { useMarketFavorites } from './useMarketFavorites';
 
+vi.mock('@/lib/browser-fs', () => ({
+  BaseDirectory: { AppConfig: 13 },
+  exists: vi.fn(async () => false),
+  mkdir: vi.fn(async () => {}),
+  readTextFile: vi.fn(),
+  writeTextFile: vi.fn(async () => {}),
+}));
 vi.mock('@/overlay', () => ({ showToast: vi.fn() }));
+vi.mock('../alerts/listing-lookup', () => ({ lookupListing: vi.fn() }));
 
-const fav = (id: string): MarketFavorite => ({
-  _id: `f-${id}`,
-  listing_id: id,
-  seller_id: 's',
-  user_id: 'u',
-  created_at: '2026-10-21T00:00:00Z',
-});
+const listing = (id: string, hr = 1) =>
+  ({ _id: id, hr_price: hr, user_id: 's', item: { name: `Item ${id}` } }) as unknown as MarketListingEntry;
+const page = (...data: MarketListingEntry[]) => ({ total: data.length, data }) as unknown as MarketListingResult;
 
-/** getFavorites resolves only when the test says so, per call. */
-function deferredApi() {
-  const calls: { resolve: (v: { total: number; data: MarketFavorite[] }) => void; reject: (e: Error) => void }[] = [];
-  const getFavorites = vi.fn(
-    () =>
-      new Promise<{ total: number; data: MarketFavorite[] }>((resolve, reject) => {
-        calls.push({ resolve, reject });
-      }),
-  );
-  return { api: { getFavorites } as unknown as MarketApi, calls };
+function apiAnswering(...answers: (MarketListingResult | null)[]) {
+  const getMarketListings = vi.fn(async () => (answers.length > 0 ? answers.shift() : page()));
+  return { api: { getMarketListings } as unknown as MarketApi, getMarketListings };
 }
 
-afterEach(() => {
-  cleanup();
+beforeEach(() => {
+  resetMarketPrefs();
+  vi.mocked(lookupListing).mockReset();
 });
+afterEach(cleanup);
 
 describe('useMarketFavorites', () => {
-  it('drops a slow load for the previous account when a newer one lands first', async () => {
-    const oldAccount = deferredApi();
-    const newAccount = deferredApi();
-    const { result, rerender } = renderHook(({ api }) => useMarketFavorites(api, true), {
-      initialProps: { api: oldAccount.api },
-    });
-    await waitFor(() => expect(oldAccount.calls).toHaveLength(1));
+  it("refresh shows PD2's current copy of a live favorite and how one that left the market ended", async () => {
+    marketStoreActions.toggleFavorite(listing('sold'));
+    marketStoreActions.toggleFavorite(listing('live', 1));
+    vi.mocked(lookupListing).mockResolvedValue({ listing: listing('sold'), status: 'sold' });
+    const { api, getMarketListings } = apiAnswering(page(listing('live', 3)));
 
-    rerender({ api: newAccount.api });
-    await waitFor(() => expect(newAccount.calls).toHaveLength(1));
-    await act(async () => newAccount.calls[0].resolve({ total: 1, data: [fav('new')] }));
-    expect(result.current.favorites.map((f) => f.listing_id)).toEqual(['new']);
+    const { result } = renderHook(() => useMarketFavorites(api));
+    await waitFor(() => expect(result.current.status).toBe('ready'));
 
-    await act(async () => oldAccount.calls[0].resolve({ total: 1, data: [fav('old')] }));
-    expect(result.current.favorites.map((f) => f.listing_id)).toEqual(['new']);
-    expect(result.current.status).toBe('ready');
+    expect(getMarketListings).toHaveBeenCalledWith(expect.objectContaining({ _id: { $in: ['live', 'sold'] } }));
+    expect(result.current.favorites.map((f) => [f.listingId, f.listing.hr_price, f.ended])).toEqual([
+      ['live', 3, undefined],
+      ['sold', 1, 'sold'],
+    ]);
+
+    // An ended favorite is final: the next refresh asks PD2 only about the live one
+    act(() => result.current.reload());
+    await waitFor(() => expect(getMarketListings).toHaveBeenCalledTimes(2));
+    expect(getMarketListings).toHaveBeenLastCalledWith(expect.objectContaining({ _id: { $in: ['live'] } }));
   });
 
-  it('a load still in flight at sign-out neither fills the list nor reports its error', async () => {
-    const { api, calls } = deferredApi();
-    const { result, rerender } = renderHook(({ signedIn }) => useMarketFavorites(api, signedIn), {
-      initialProps: { signedIn: true },
-    });
-    await waitFor(() => expect(calls).toHaveLength(1));
-    rerender({ signedIn: false });
-    expect(result.current).toMatchObject({ favorites: [], status: 'idle' });
+  it('a refresh PD2 refuses (401) keeps the saved favorites and reports the failure', async () => {
+    marketStoreActions.toggleFavorite(listing('a', 2));
+    const { api } = apiAnswering(null);
 
-    await act(async () => calls[0].resolve({ total: 1, data: [fav('stale')] }));
-    expect(result.current).toMatchObject({ favorites: [], status: 'idle', error: null });
+    const { result } = renderHook(() => useMarketFavorites(api));
+    await waitFor(() => expect(result.current.status).toBe('error'));
 
-    rerender({ signedIn: true });
-    await waitFor(() => expect(calls).toHaveLength(2));
-    rerender({ signedIn: false });
-    await act(async () => calls[1].reject(new Error('API Error: 500')));
+    expect(result.current.error).toBe('Could not load favorites');
+    expect(result.current.favorites.map((f) => [f.listingId, f.listing.hr_price])).toEqual([['a', 2]]);
+    expect(lookupListing).not.toHaveBeenCalled();
+  });
+
+  it('signed out: favorites still show and toggle, nothing is refreshed', async () => {
+    const { result } = renderHook(() => useMarketFavorites(null));
+    act(() => result.current.toggle(listing('x')));
     expect(result.current).toMatchObject({ status: 'idle', error: null });
+    expect(result.current.favorites.map((f) => f.listingId)).toEqual(['x']);
+
+    act(() => result.current.toggle(listing('x')));
+    expect(getMarketPrefs().favorites).toEqual([]);
   });
 });

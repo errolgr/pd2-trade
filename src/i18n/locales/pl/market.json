@@ -550,7 +550,9 @@
     "capSearches_few": "Możesz mieć do {{count}} zapisanych wyszukiwań. Najpierw usuń jedno.",
     "capSearches_many": "Możesz mieć do {{count}} zapisanych wyszukiwań. Najpierw usuń jedno.",
     "capSearches_other": "Możesz mieć do {{count}} zapisanego wyszukiwania. Najpierw usuń jedno.",
-    "tooManySearches": "Za dużo zapisanych wyszukiwań"
+    "tooManySearches": "Za dużo zapisanych wyszukiwań",
+    "capFavorites": "Możesz mieć do {{count}} ulubionych. Najpierw usuń jedno.",
+    "tooManyFavorites": "Za dużo ulubionych"
   },
   "deal": {
     "marketAverage": "Średnia rynkowa {{window}}",
@@ -590,10 +592,7 @@
     "newSeller": "nowy sprzedawca"
   },
   "favorites": {
-    "loadFailed": "Nie można wczytać ulubionych",
-    "notRemoved": "Nie usunięto z ulubionych",
-    "notSaved": "Nie zapisano w ulubionych",
-    "refused": "projectdiablo2.com odrzuciło zmianę. Spróbuj ponownie za chwilę."
+    "loadFailed": "Nie można wczytać ulubionych"
   },
   "palette": {
     "openInMarket": "Szukaj na rynku",

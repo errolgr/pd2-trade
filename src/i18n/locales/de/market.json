@@ -506,7 +506,9 @@
     "anyItem": "Beliebiger Gegenstand",
     "capSearches_one": "Du kannst bis zu {{count}} gespeicherte Suche behalten. Lösche zuerst eine.",
     "capSearches_other": "Du kannst bis zu {{count}} gespeicherte Suchen behalten. Lösche zuerst eine.",
-    "tooManySearches": "Zu viele gespeicherte Suchen"
+    "tooManySearches": "Zu viele gespeicherte Suchen",
+    "capFavorites": "Du kannst bis zu {{count}} Favoriten behalten. Entferne zuerst einen.",
+    "tooManyFavorites": "Zu viele Favoriten"
   },
   "deal": {
     "marketAverage": "Marktdurchschnitt {{window}}",
@@ -542,10 +544,7 @@
     "newSeller": "neuer Verkäufer"
   },
   "favorites": {
-    "loadFailed": "Favoriten konnten nicht geladen werden",
-    "notRemoved": "Favorit nicht entfernt",
-    "notSaved": "Favorit nicht gespeichert",
-    "refused": "projectdiablo2.com hat die Änderung abgelehnt. Versuche es gleich erneut."
+    "loadFailed": "Favoriten konnten nicht geladen werden"
   },
   "palette": {
     "openInMarket": "Im Marktplatz suchen",
