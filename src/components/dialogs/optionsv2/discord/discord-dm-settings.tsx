@@ -1,6 +1,6 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { AlertTriangle, Check, Copy, ExternalLink, Loader2, RotateCw, Send, X } from 'lucide-react';
+import { AlertTriangle, Loader2, RotateCw, Send, X } from 'lucide-react';
 import { Form, FormControl } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,23 +8,19 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useOptions } from '@/hooks/useOptions';
 import { dmReporter } from '@/hooks/useDiscordDmReporter';
-import { writeText } from '@/lib/browser-clipboard';
-import { openUrl } from '@/lib/browser-opener';
 import {
   DiscordDmApiError,
-  type DiscordLinkCode,
   type DmPrefs,
   type DmPrefsUpdate,
   type DmStatus,
   type DmType,
   getDmPrefs,
   getDmStatus,
-  issueDiscordLinkCode,
   sendTestDm,
   TRADER_NAME,
   updateDmPrefs,
 } from '@/lib/discord-dm';
-import { SettingsGroup, SettingsHint, SettingsRow } from '../settings-ui';
+import { SettingsGroup, SettingsHint, SettingsNavContext, SettingsRow } from '../settings-ui';
 
 type LoadState =
   | { kind: 'loading' }
@@ -54,9 +50,9 @@ const SNOOZE_HOURS = [1, 8];
 const formatTime = (iso: string) => new Date(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
 
 /**
- * Discord DMs (Settings › Discord): the Discord link (a `/link` code to type in the PD2 Trader Discord), the last DM
- * Discord refused, which events DM you, after how long away, a snooze, muted traders and a test DM. Stored on
- * pd2trader.com per PD2 login; every change saves at once, and the app's DM reporter uses it straight away.
+ * Discord DMs (Settings › Discord): the last DM Discord refused, which events DM you, after how long away, a snooze,
+ * muted traders and a test DM. Linking the Discord account is under Settings › Account. Stored on pd2trader.com per
+ * PD2 login; every change saves at once, and the app's DM reporter uses it straight away.
  */
 export function DiscordDmSettings() {
   const { settings } = useOptions();
@@ -66,8 +62,7 @@ export function DiscordDmSettings() {
   const [state, setState] = React.useState<LoadState>({ kind: 'loading' });
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [code, setCode] = React.useState<DiscordLinkCode | null>(null);
-  const [copied, setCopied] = React.useState(false);
+  const goTo = React.useContext(SettingsNavContext);
   const [testResult, setTestResult] = React.useState<{ ok: boolean; text: string } | null>(null);
   const [testing, setTesting] = React.useState(false);
   const [mutedInput, setMutedInput] = React.useState('');
@@ -146,23 +141,6 @@ export function DiscordDmSettings() {
     }
   };
 
-  const getCode = async () => {
-    if (!token) return;
-    setError(null);
-    setCopied(false);
-    try {
-      setCode(await issueDiscordLinkCode(token));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not get a link code');
-    }
-  };
-
-  const copyCommand = async () => {
-    if (!code) return;
-    await writeText(code.command);
-    setCopied(true);
-  };
-
   const test = async () => {
     if (!token) return;
     setTesting(true);
@@ -206,67 +184,25 @@ export function DiscordDmSettings() {
         aside={saving ? <Loader2 className="size-3.5 animate-spin text-muted-foreground" /> : null}
       >
         <SettingsRow
-          settingKey="discordLink"
           label={linked ? `Linked to ${status.discordName ?? 'your Discord account'}` : 'Not linked'}
           description={
             !status.enabled
               ? 'Discord DMs are switched off on pd2trader.com right now.'
               : linked
-                ? 'The PD2 Trader bot DMs this Discord account. Link again to move it to another account.'
-                : 'Link your Discord account to get DMs from the PD2 Trader bot.'
+                ? 'The PD2 Trader bot DMs this Discord account.'
+                : 'Link your Discord account under Settings › Account to get DMs.'
           }
           control={
-            status.enabled ? (
-              <>
-                <Button type="button"
-                  size="sm"
-                  variant={linked ? 'outline' : 'default'}
-                  onClick={() => void getCode()}>
-                  {linked ? 'Relink' : 'Get link code'}
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  aria-label="Refresh link status"
-                  onClick={() => void load()}
-                >
-                  <RotateCw className="size-3.5" />
-                </Button>
-              </>
+            status.enabled && goTo ? (
+              <Button type="button"
+                size="sm"
+                variant={linked ? 'ghost' : 'default'}
+                onClick={() => goTo('Account')}>
+                {linked ? 'Change' : 'Link Discord'}
+              </Button>
             ) : null
           }
-        >
-          {code && (
-            <div className="space-y-2 rounded-md border border-border/70 bg-muted/30 p-3 text-xs">
-              <div className="flex items-center gap-2">
-                <code className="flex-1 rounded bg-background px-2 py-1 font-mono text-sm">{code.command}</code>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5"
-                  onClick={() => void copyCommand()}
-                >
-                  {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-                  {copied ? 'Copied' : 'Copy'}
-                </Button>
-              </div>
-              <p className="text-muted-foreground">{code.instructions}</p>
-              {code.inviteUrl && (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5"
-                  onClick={() => void openUrl(code.inviteUrl!)}
-                >
-                  <ExternalLink className="size-3.5" /> Join the PD2 Trader Discord
-                </Button>
-              )}
-            </div>
-          )}
-        </SettingsRow>
+        />
         {status.lastDmFailure && (
           <div role="alert"
             className="flex items-start gap-2 px-4 py-3 text-xs text-destructive">
