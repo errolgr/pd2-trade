@@ -150,14 +150,13 @@
   "nav": {
     "general": "Général",
     "account": "Compte",
-    "chat": "Chat",
+    "chat": "Chat et notifications",
     "interface": "Interface",
     "priceCheck": "Estimation",
     "netWorth": "Valeur nette",
     "hotkeys": "Raccourcis",
     "about": "À propos",
-    "market": "Marché",
-    "discord": "Discord"
+    "market": "Marché"
   },
   "layout": {
     "title": "Paramètres",
@@ -532,8 +531,8 @@
       "description": "Thème de couleurs de toutes les fenêtres de l'overlay. Appliqué immédiatement."
     },
     "chat": {
-      "title": "Chat",
-      "description": "Configurer les notifications de chat et de messages privés, ainsi que vos modèles de message."
+      "title": "Chat et notifications",
+      "description": "Configurer les notifications de chat et de messages privés, ainsi que vos modèles de message. MP Discord du bot PD2 Trader."
     },
     "general": {
       "title": "Général",

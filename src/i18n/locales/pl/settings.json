@@ -151,14 +151,13 @@
   "nav": {
     "general": "Ogólne",
     "account": "Konto",
-    "chat": "Czat",
+    "chat": "Czat i powiadomienia",
     "interface": "Interfejs",
     "priceCheck": "Wycena",
     "netWorth": "Majątek",
     "hotkeys": "Skróty klawiszowe",
     "about": "O aplikacji",
-    "market": "Rynek",
-    "discord": "Discord"
+    "market": "Rynek"
   },
   "layout": {
     "title": "Ustawienia",
@@ -537,8 +536,8 @@
       "description": "Motyw kolorów każdego okna nakładki. Działa natychmiast."
     },
     "chat": {
-      "title": "Czat",
-      "description": "Konfiguruj powiadomienia czatu i szeptów oraz szablony wiadomości."
+      "title": "Czat i powiadomienia",
+      "description": "Konfiguruj powiadomienia czatu i szeptów oraz szablony wiadomości. Wiadomości prywatne na Discordzie od bota PD2 Trader."
     },
     "general": {
       "title": "Ogólne",

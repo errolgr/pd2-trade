@@ -1,6 +1,6 @@
 export const changeLog = {
   '0.12.3': [
-    '🆕 Discord DMs: link your Discord account (Settings › Discord) and the PD2 Trader bot DMs you whispers, offers on your listings and website chat messages while you are away from the keyboard. Pick the events and the away time, snooze, mute traders, and send a test DM',
+    '🆕 Discord DMs: link your Discord account (Settings › Chat & notifications) and the PD2 Trader bot DMs you whispers, offers on your listings and website chat messages while you are away from the keyboard. Pick the events and the away time, snooze, mute traders, and send a test DM',
     '🆕 Discord DMs: Reply, Accept and Decline right in the DM. PD2 Trader on your PC sends the website message or answers the offer for you',
   ],
   '0.12.2': [

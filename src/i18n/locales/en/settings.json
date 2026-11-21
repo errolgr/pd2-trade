@@ -149,14 +149,13 @@
   "nav": {
     "general": "General",
     "account": "Account",
-    "chat": "Chat",
+    "chat": "Chat & notifications",
     "interface": "Interface",
     "priceCheck": "Price Check",
     "netWorth": "Net Worth",
     "hotkeys": "Hotkeys",
     "about": "About",
-    "market": "Market",
-    "discord": "Discord"
+    "market": "Market"
   },
   "layout": {
     "title": "Settings",
@@ -527,8 +526,8 @@
       "description": "Color theme for every overlay window. Applies instantly."
     },
     "chat": {
-      "title": "Chat",
-      "description": "Configure chat and whisper notifications, and your message templates."
+      "title": "Chat & notifications",
+      "description": "Configure chat and whisper notifications, and your message templates. Discord DMs from the PD2 Trader bot."
     },
     "general": {
       "title": "General",

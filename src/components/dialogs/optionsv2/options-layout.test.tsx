@@ -29,13 +29,11 @@ vi.mock('./market/layout', () => ({ default: () => <p>market-body</p> }));
 vi.mock('./networth/layout', () => ({ default: () => <p>net-worth-body</p> }));
 vi.mock('./hotkeys/layout', () => ({ default: () => <p>hotkeys-body</p> }));
 vi.mock('./about/layout', () => ({ default: () => <p>about-body</p> }));
-vi.mock('./discord/layout', () => ({ default: () => <p>discord-body</p> }));
 
 const SECTIONS = [
   'General',
   'Account',
-  'Chat',
-  'Discord',
+  'Chat & notifications',
   'Interface',
   'Price Check',
   'Market',
@@ -133,7 +131,7 @@ describe('SettingsLayout navigation', () => {
   it('opens on the section asked for, and switches to it on every re-open', () => {
     vi.mocked(usePanel).mockReturnValue({ close, payload: { section: 'Chat' }, payloadVersion: 1 } as never);
     const view = renderLayout();
-    expect(selected()).toEqual(['Chat']);
+    expect(selected()).toEqual(['Chat & notifications']);
     expect(panelText()).toBe('chat-body');
 
     fireEvent.click(tab('Hotkeys'));
@@ -144,7 +142,7 @@ describe('SettingsLayout navigation', () => {
 
     vi.mocked(usePanel).mockReturnValue({ close, payload: { section: 'Chat' }, payloadVersion: 3 } as never);
     view.rerender(<SettingsLayout />);
-    expect(selected()).toEqual(['Chat']);
+    expect(selected()).toEqual(['Chat & notifications']);
   });
 });
 
@@ -160,7 +158,7 @@ describe('SettingsLayout field jump', () => {
     const payload = { section: 'Chat', field: 'whisperNotificationVolume' };
     vi.mocked(usePanel).mockReturnValue({ close, payload, payloadVersion: 1 } as never);
     const view = renderLayout();
-    expect(selected()).toEqual(['Chat']);
+    expect(selected()).toEqual(['Chat & notifications']);
     expect(row().hasAttribute('data-highlighted')).toBe(true);
     expect(scrollIntoView.mock.contexts).toEqual([row()]);
 
@@ -179,7 +177,7 @@ describe('SettingsLayout field jump', () => {
       payloadVersion: 1,
     } as never);
     renderLayout();
-    expect(selected()).toEqual(['Chat']);
+    expect(selected()).toEqual(['Chat & notifications']);
     expect(row().hasAttribute('data-highlighted')).toBe(false);
   });
 });

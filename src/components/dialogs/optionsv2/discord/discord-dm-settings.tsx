@@ -54,7 +54,7 @@ const SNOOZE_HOURS = [1, 8];
 const formatTime = (iso: string) => new Date(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
 
 /**
- * Discord DMs (Settings › Discord): the Discord link (a `/link` code to type in the PD2 Trader Discord), the last DM
+ * Discord DMs (Settings › Chat & notifications): the Discord link (a `/link` code to type in the PD2 Trader Discord), the last DM
  * Discord refused, which events DM you, after how long away, a snooze, muted traders and a test DM. Stored on
  * pd2trader.com per PD2 login; every change saves at once, and the app's DM reporter uses it straight away.
  */

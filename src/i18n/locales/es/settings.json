@@ -150,14 +150,13 @@
   "nav": {
     "general": "General",
     "account": "Cuenta",
-    "chat": "Chat",
+    "chat": "Chat y notificaciones",
     "interface": "Interfaz",
     "priceCheck": "Consulta de precio",
     "netWorth": "Patrimonio",
     "hotkeys": "Atajos",
     "about": "Acerca de",
-    "market": "Mercado",
-    "discord": "Discord"
+    "market": "Mercado"
   },
   "layout": {
     "title": "Ajustes",
@@ -532,8 +531,8 @@
       "description": "Tema de color para todas las ventanas del overlay. Se aplica al instante."
     },
     "chat": {
-      "title": "Chat",
-      "description": "Configura las notificaciones de chat y susurros, y tus plantillas de mensaje."
+      "title": "Chat y notificaciones",
+      "description": "Configura las notificaciones de chat y susurros, y tus plantillas de mensaje. MDs de Discord del bot de PD2 Trader."
     },
     "general": {
       "title": "General",

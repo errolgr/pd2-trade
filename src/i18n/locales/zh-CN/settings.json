@@ -148,14 +148,13 @@
   "nav": {
     "general": "通用",
     "account": "账号",
-    "chat": "聊天",
+    "chat": "聊天与通知",
     "interface": "界面",
     "priceCheck": "查价",
     "netWorth": "净资产",
     "hotkeys": "快捷键",
     "about": "关于",
-    "market": "市场",
-    "discord": "Discord"
+    "market": "市场"
   },
   "layout": {
     "title": "设置",
@@ -522,8 +521,8 @@
       "description": "所有悬浮窗的配色主题，即时生效。"
     },
     "chat": {
-      "title": "聊天",
-      "description": "配置聊天和私聊通知，以及你的消息模板。"
+      "title": "聊天与通知",
+      "description": "配置聊天和私聊通知，以及你的消息模板。PD2 Trader 机器人的 Discord 私信。"
     },
     "general": {
       "title": "通用",
