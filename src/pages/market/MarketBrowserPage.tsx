@@ -320,7 +320,7 @@ const MarketBrowserPage: React.FC = () => {
           now,
         })
       : null;
-  const favorites = useMarketFavorites(marketApi ?? null, signedIn && activated);
+  const favorites = useMarketFavorites(signedIn && activated ? (marketApi ?? null) : null);
   // A search that found nothing: count what dropping each of its filters would find
   const relaxations = useRelaxations(
     marketApi?.searchListings ?? null,
@@ -349,22 +349,25 @@ const MarketBrowserPage: React.FC = () => {
     if (wantedRan && filtersRef.current?.source === 'wanted') setLastFilters(filtersRef.current);
   }, [wantedRan, setLastFilters]);
 
-  const favoriteIds = useMemo(() => new Set(favorites.favorites.map((f) => f.listing_id)), [favorites.favorites]);
-  const { toggle: toggleFavoriteAsync } = favorites;
-  const toggleFavorite = useCallback((l: MarketListingEntry) => void toggleFavoriteAsync(l), [toggleFavoriteAsync]);
+  const favoriteIds = useMemo(() => new Set(favorites.favorites.map((f) => f.listingId)), [favorites.favorites]);
+  const { toggle: toggleFavorite } = favorites;
+  // Scored like search rows; a favorite that left the market carries how it ended (its row shows Sold / Removed)
   const favoriteRows = useMemo(
     () =>
       filters
         ? scoreListings(
-            favorites.favorites.flatMap((f) => (f.listing ? [f.listing] : [])),
+            favorites.favorites.map((f) => f.listing),
             filters,
-          )
+          ).map((row, i) => {
+            const ended = favorites.favorites[i].ended;
+            return ended ? { ...row, status: ended } : row;
+          })
         : [],
     [favorites.favorites, filters],
   );
 
   // Seller presence pops in on search results: they render as the market service sent them, then PD2's current
-  // last-seen times (live listings only; asked with the user's token) merge in. Favorites come from PD2 already.
+  // last-seen times (live listings only; asked with the user's token) merge in. Favorites refresh from PD2 themselves.
   const presenceIds = useMemo(
     () => search.items.filter((r) => !r.status || r.status === 'active').map((r) => r.listing._id),
     [search.items],

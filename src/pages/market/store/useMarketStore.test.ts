@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { exists, readTextFile, writeTextFile } from '@/lib/browser-fs';
 import { showToast } from '@/overlay';
 import type { MarketFilters, SavedSearch } from '@/pages/market/lib/types';
+import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { listServerSavedSearches, type ServerSavedSearch } from '@/pages/market/alerts/market-api';
 import type * as MarketApi from '@/pages/market/alerts/market-api';
 import {
@@ -13,6 +14,7 @@ import {
   MARKET_PREFS_FILENAME,
   marketStoreActions as actions,
   MAX_SAVED_SEARCHES,
+  MAX_FAVORITES,
   MAX_WATCHED_SEARCHES,
   mergeServerSavedSearches,
   moveSearchTo,
@@ -404,5 +406,46 @@ describe('import from pd2trader.com (deprecated saved searches)', () => {
     await first;
     expect(listServerSavedSearches).toHaveBeenCalledTimes(2);
     expect(getMarketPrefs().savedSearchesImported).toBe(true);
+  });
+});
+
+describe('favorites', () => {
+  const listing = (id: string) =>
+    ({ _id: id, hr_price: 1, item: { name: `Item ${id}` } }) as unknown as MarketListingEntry;
+
+  it('favorites newest first, unfavorites, and saves each change', async () => {
+    await loadFrom({});
+    actions.toggleFavorite(listing('a'));
+    actions.toggleFavorite(listing('b'));
+    actions.toggleFavorite(listing('a'));
+    await flush();
+    expect(getMarketPrefs().favorites.map((f) => f.listingId)).toEqual(['b']);
+    expect(written().at(-1).favorites).toEqual([expect.objectContaining({ listingId: 'b', listing: listing('b') })]);
+  });
+
+  it('refuses past the cap with a toast; unfavoriting still works there', async () => {
+    await loadFrom({});
+    for (let i = 0; i < MAX_FAVORITES; i++) actions.toggleFavorite(listing(`l${i}`));
+    expect(actions.toggleFavorite(listing('over'))).toBe(false);
+    expect(showToast).toHaveBeenCalledWith(expect.objectContaining({ title: 'Too many favorites' }));
+    expect(actions.toggleFavorite(listing('l0'))).toBe(true);
+    expect(getMarketPrefs().favorites).toHaveLength(MAX_FAVORITES - 1);
+  });
+
+  it('reads saved favorites back, skipping entries without a listing or with an unknown end', () => {
+    const prefs = parseMarketPrefs(
+      JSON.stringify({
+        favorites: [
+          { listingId: 'a', addedAt: 'x', listing: listing('a'), ended: 'sold' },
+          { listingId: 'b', addedAt: 'x' },
+          { listingId: 'c', addedAt: 'x', listing: listing('c'), ended: 'stolen' },
+          { listingId: 'd', addedAt: 'x', listing: listing('d') },
+        ],
+      }),
+    );
+    expect(prefs.favorites).toEqual([
+      { listingId: 'a', addedAt: 'x', listing: listing('a'), ended: 'sold' },
+      { listingId: 'd', addedAt: 'x', listing: listing('d') },
+    ]);
   });
 });

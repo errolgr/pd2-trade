@@ -235,13 +235,17 @@ export type ListingFreshness =
   /** The check itself failed (network, PD2 down, signed out); callers proceed as before. */
   | { status: 'unknown' };
 
-export interface MarketFavorite {
-  _id: string;
-  listing_id: string;
-  seller_id: string;
-  user_id: string;
-  created_at: string;
-  listing?: MarketListingEntry;
+/**
+ * A favorited listing, kept locally (market-prefs.json): PD2's favorites API refuses PD2 Trader's sign-in token.
+ * Newest first.
+ */
+export interface SavedFavorite {
+  listingId: string;
+  addedAt: string;
+  /** The listing as last seen: when it was favorited, then PD2's copy on each refresh while it is live. */
+  listing: MarketListingEntry;
+  /** How it left the live market (pd2trader.com's archive); final once set. */
+  ended?: Exclude<MarketListingStatus, 'active'>;
 }
 
 /**
@@ -279,11 +283,9 @@ export interface MarketApi {
    * listing id; ids PD2 no longer lists are absent. Throws on any failure (401 included: it never starts a sign-in).
    */
   getListingPresence: (listingIds: string[]) => Promise<Map<string, ListingPresence>>;
-  getMarketListings: (query: Record<string, unknown>) => Promise<MarketListingResult>;
-  getMarketListingsArchive: (query: Record<string, unknown>) => Promise<MarketListingResult>;
-  getFavorites: (opts?: { limit?: number; skip?: number }) => Promise<{ total: number; data: MarketFavorite[] }>;
-  addFavorite: (listingId: string, sellerId: string) => Promise<MarketFavorite>;
-  removeFavorite: (favoriteId: string) => Promise<void>;
+  /** null on a 401 (handleApiResponse hands it to the auth flow): not an empty result. */
+  getMarketListings: (query: Record<string, unknown>) => Promise<MarketListingResult | null>;
+  getMarketListingsArchive: (query: Record<string, unknown>) => Promise<MarketListingResult | null>;
   /**
    * Make an offer on a listing (site parity: POST market/offer `{listing_id, offer, hr_offer}`).
    * `price` is the offer text shown to the seller, `hrPrice` its optional HR value.

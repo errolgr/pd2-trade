@@ -528,7 +528,9 @@
     "capSearches_one": "Vous pouvez garder jusqu'à {{count}} recherche enregistrée. Supprimez-en une d'abord.",
     "capSearches_many": "Vous pouvez garder jusqu'à {{count}} de recherches enregistrées. Supprimez-en une d'abord.",
     "capSearches_other": "Vous pouvez garder jusqu'à {{count}} recherches enregistrées. Supprimez-en une d'abord.",
-    "tooManySearches": "Trop de recherches enregistrées"
+    "tooManySearches": "Trop de recherches enregistrées",
+    "capFavorites": "Vous pouvez garder jusqu'à {{count}} favoris. Retirez-en un d'abord.",
+    "tooManyFavorites": "Trop de favoris"
   },
   "deal": {
     "marketAverage": "Moyenne du marché sur {{window}}",
@@ -566,10 +568,7 @@
     "newSeller": "nouveau vendeur"
   },
   "favorites": {
-    "loadFailed": "Impossible de charger les favoris",
-    "notRemoved": "Favori non retiré",
-    "notSaved": "Favori non enregistré",
-    "refused": "projectdiablo2.com a refusé la modification. Réessayez dans un instant."
+    "loadFailed": "Impossible de charger les favoris"
   },
   "palette": {
     "openInMarket": "Rechercher sur le marché",

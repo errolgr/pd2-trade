@@ -484,7 +484,9 @@
   "store": {
     "anyItem": "任意物品",
     "capSearches_other": "你最多可保存 {{count}} 个搜索。请先删除一个。",
-    "tooManySearches": "已保存搜索过多"
+    "tooManySearches": "已保存搜索过多",
+    "capFavorites": "你最多可收藏 {{count}} 个。请先移除一个。",
+    "tooManyFavorites": "收藏过多"
   },
   "deal": {
     "marketAverage": "{{window}} 市场均价",
@@ -518,10 +520,7 @@
     "newSeller": "新卖家"
   },
   "favorites": {
-    "loadFailed": "无法加载收藏",
-    "notRemoved": "收藏未移除",
-    "notSaved": "收藏未保存",
-    "refused": "projectdiablo2.com 拒绝了此更改，请稍后重试。"
+    "loadFailed": "无法加载收藏"
   },
   "palette": {
     "openInMarket": "在市场中搜索",

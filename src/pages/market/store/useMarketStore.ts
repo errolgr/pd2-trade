@@ -1,8 +1,8 @@
 /**
  * The market browser's state, shared by the market panel and the app-level watch stream (`useMarketAlerts`), all
  * kept in market-prefs.json (app config dir; localStorage in a browser): saved searches with their Watch toggle,
- * stat presets (and the built-in ones deleted), the last search, the alerts switch, the results layout and the
- * filter sections opened/closed.
+ * favorited listings, stat presets (and the built-in ones deleted), the last search, the alerts switch, the results
+ * layout and the filter sections opened/closed.
  *
  * Saved searches were kept on pd2trader.com for a while (that API is deprecated): `importServerSavedSearches`
  * copies them here once, on the first sign-in after the update. Files from before then hold theirs under the
@@ -10,6 +10,8 @@
  *
  * The saved searches' order is the user's (`moveSearch`); it is the array order, so files from before searches
  * could be reordered keep the newest-first order they were written in.
+ *
+ * Favorites are kept here too, not on projectdiablo2.com: PD2's favorites API refuses PD2 Trader's sign-in token.
  *
  * Module-level stores like `lib/chat-prefs.ts`; changes are saved right away, in order.
  */
@@ -19,7 +21,8 @@ import { BaseDirectory, exists, mkdir, readTextFile, writeTextFile } from '@/lib
 import { showToast } from '@/overlay';
 import { pickedBases, typeValueLabel } from '@/pages/market/lib/type-selection';
 import { upgradeFilters } from '@/pages/market/lib/defaults';
-import type { MarketFilters, SavedSearch, StatPreset } from '@/pages/market/lib/types';
+import type { MarketFilters, SavedFavorite, SavedSearch, StatPreset } from '@/pages/market/lib/types';
+import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { watchKey } from '@/pages/market/alerts/alert-logic';
 import { listServerSavedSearches, type ServerSavedSearch } from '@/pages/market/alerts/market-api';
 import { t } from '@/i18n';
@@ -31,6 +34,8 @@ const PREFS_DIR = BaseDirectory.AppConfig;
 export const MAX_SAVED_SEARCHES = 25;
 /** Searches watched at once: one live stream carries them all. */
 export const MAX_WATCHED_SEARCHES = 10;
+/** Favorites kept at most: each keeps its listing, so the file stays small enough to rewrite on every change. */
+export const MAX_FAVORITES = 100;
 const MAX_NAME = 80;
 
 export type MarketViewMode = 'rows' | 'cards';
@@ -39,6 +44,8 @@ export type MarketViewMode = 'rows' | 'cards';
 export interface MarketPrefs {
   /** In the user's order (`moveSearch`); a new search goes first. */
   savedSearches: SavedSearch[];
+  /** Newest first. */
+  favorites: SavedFavorite[];
   /** The deprecated pd2trader.com saved searches were imported (once; never asked for again). */
   savedSearchesImported: boolean;
   userPresets: StatPreset[];
@@ -60,6 +67,7 @@ export interface MarketPrefs {
 
 export const EMPTY_MARKET_PREFS: MarketPrefs = {
   savedSearches: [],
+  favorites: [],
   savedSearchesImported: false,
   userPresets: [],
   hiddenPresets: [],
@@ -93,6 +101,13 @@ const PresetSchema = z.object({
 });
 const HiddenPresetsSchema = z.array(z.string().max(100)).max(100);
 const SectionsOpenSchema = z.record(z.string().max(40), z.boolean());
+// The listing is kept as PD2 sent it; only what the Favorites tab needs to show it is checked.
+const FavoriteSchema = z.object({
+  listingId: z.string().min(1),
+  addedAt: z.string(),
+  listing: z.object({ _id: z.string(), item: z.object({}).passthrough() }).passthrough(),
+  ended: z.enum(['sold', 'removed', 'expired']).optional(),
+});
 
 function entries<S extends z.ZodTypeAny>(raw: unknown, schema: S): z.infer<S>[] {
   if (!Array.isArray(raw)) return [];
@@ -127,6 +142,12 @@ export function parseMarketPrefs(text: string): MarketPrefs {
       createdAt: s.createdAt,
       updatedAt: s.updatedAt ?? s.createdAt,
       ...(s.lastSeenBumpedAt ? { lastSeenBumpedAt: s.lastSeenBumpedAt } : {}),
+    })),
+    favorites: entries(file.favorites, FavoriteSchema).map((f) => ({
+      listingId: f.listingId,
+      addedAt: f.addedAt,
+      listing: f.listing as unknown as MarketListingEntry,
+      ...(f.ended ? { ended: f.ended } : {}),
     })),
     savedSearchesImported: file.savedSearchesImported === true,
     userPresets: entries(file.userPresets, PresetSchema).map(
@@ -288,6 +309,12 @@ const setSearches = (change: (searches: SavedSearch[]) => SavedSearch[]) =>
     return savedSearches === prefs.savedSearches ? prefs : { ...prefs, savedSearches };
   });
 
+const setFavorites = (change: (favorites: SavedFavorite[]) => SavedFavorite[]) =>
+  changeMarketPrefs((prefs) => {
+    const favorites = change(prefs.favorites);
+    return favorites === prefs.favorites ? prefs : { ...prefs, favorites };
+  });
+
 const editSearch = (id: string, change: (search: SavedSearch) => SavedSearch) =>
   setSearches((searches) =>
     searches.some((s) => s.id === id) ? searches.map((s) => (s.id === id ? change(s) : s)) : searches,
@@ -321,6 +348,14 @@ function toastWatchCap(): void {
   showToast({
     title: t('market:watch.tooManyTitle'),
     description: t('market:watch.tooManyDescription', { count: MAX_WATCHED_SEARCHES }),
+    variant: 'warning',
+  });
+}
+
+function toastFavoritesCap(): void {
+  showToast({
+    title: t('market:store.tooManyFavorites'),
+    description: t('market:store.capFavorites', { count: MAX_FAVORITES }),
     variant: 'warning',
   });
 }
@@ -399,6 +434,31 @@ export const marketStoreActions = {
   /** Moves a search to position `to` in the list (clamped); the order is saved. */
   moveSearch(id: string, to: number): void {
     setSearches((searches) => moveSearchTo(searches, id, to));
+  },
+  /** Favorites a listing, or unfavorites it; false when refused (favorites cap: a toast says why). */
+  toggleFavorite(listing: MarketListingEntry): boolean {
+    if (local.favorites.some((f) => f.listingId === listing._id)) {
+      setFavorites((favorites) => favorites.filter((f) => f.listingId !== listing._id));
+      return true;
+    }
+    if (local.favorites.length >= MAX_FAVORITES) {
+      toastFavoritesCap();
+      return false;
+    }
+    const favorite: SavedFavorite = { listingId: listing._id, addedAt: new Date().toISOString(), listing };
+    setFavorites((favorites) => [favorite, ...favorites]);
+    return true;
+  },
+  /** A refresh's answers by listing id: PD2's current copy of a live favorite, or how an ended one ended. */
+  updateFavorites(updates: ReadonlyMap<string, Pick<SavedFavorite, 'listing'> | Pick<SavedFavorite, 'ended'>>): void {
+    setFavorites((favorites) =>
+      favorites.some((f) => updates.has(f.listingId))
+        ? favorites.map((f) => {
+            const update = updates.get(f.listingId);
+            return update ? { ...f, ...update } : f;
+          })
+        : favorites,
+    );
   },
   addPreset(preset: Omit<StatPreset, 'id' | 'builtIn'>): StatPreset {
     const created: StatPreset = { ...preset, id: crypto.randomUUID(), builtIn: false };
