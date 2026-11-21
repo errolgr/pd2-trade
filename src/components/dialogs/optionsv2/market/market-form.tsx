@@ -140,9 +140,11 @@ function AutoSearchRow() {
       description={t('market.browser.autoSearch.description')}
       control={
         <FormControl>
-          <Switch checked={autoSearch}
+          <Switch
+            checked={autoSearch}
             onCheckedChange={setAutoSearch}
-            aria-label={t('market.browser.autoSearch.label')} />
+            aria-label={t('market.browser.autoSearch.label')}
+          />
         </FormControl>
       }
     />
@@ -249,7 +251,6 @@ export function MarketForm() {
                   <SelectRow
                     settingKey="delistExceptionMode"
                     label={t('market.listings.autoDelist.exceptionMode.label')}
-                    description={t('market.listings.autoDelist.exceptionMode.description')}
                     value={field.value}
                     options={DELIST_EXCEPTION_OPTIONS}
                     onChange={field.onChange}

@@ -55,7 +55,6 @@ import { useWtbItemMatches, useWtbSession } from '@/pages/market/wtb/useWtbData'
 import { WtbBuyersChip } from '@/pages/market/wtb/WtbBuyersChip';
 import { stashItemSearch } from '@/pages/market/wtb/wtb-chip';
 import { itemRowValue } from '@/pages/market/wtb/wtb-text';
-import { delistChoiceUpdate } from '@/pages/delist/delist-exemptions';
 
 /** Overlapping requests read for the buyers chip's "Almost" (requests one stat away). */
 const WTB_NEAR_LOOKUP = 50;
@@ -75,21 +74,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     deleteMarketListing,
   } = usePd2Website();
   const { t } = useTranslation(['quickList', 'common']);
-  const { settings, updateSettings } = useOptions();
-  // Read after an await (a queued listing goes up long after the form was sent)
-  const settingsRef = useRef(settings);
-  settingsRef.current = settings;
-  /** The form's auto-delist choices for a listing that is up now. */
-  const saveDelistChoice = useCallback(
-    (listingId: string, stashItem: GameStashItem, values: ShortcutFormData) => {
-      const update = delistChoiceUpdate(settingsRef.current, listingId, stashItem, {
-        skip: values.skipAutoDelist,
-        remember: values.rememberAutoDelist,
-      });
-      if (update) void updateSettings(update);
-    },
-    [updateSettings],
-  );
+  const { settings } = useOptions();
   const {
     addPendingListing,
     removePendingListing,
@@ -395,7 +380,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           values.note || '',
           listingType,
         );
-        saveDelistChoice(listing._id, stashItem, values);
 
         await fetchAllListings();
 
@@ -435,7 +419,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         showToast(errorToast);
       }
     },
-    [listSpecificItem, fetchAllListings, allListingsQuery, getMarketListings, totalListingsCount, saveDelistChoice],
+    [listSpecificItem, fetchAllListings, allListingsQuery, getMarketListings, totalListingsCount],
   );
 
   // Poll for all queued items
@@ -706,7 +690,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           updateFields.price = values.note || '';
         }
         await updateMarketListing(currentListingForSelected._id, updateFields);
-        saveDelistChoice(currentListingForSelected._id, selectedItem, values);
         await updateItemByHash(selectedItem.hash, updateFields);
         await fetchAllListings(); // Refresh all listings
         showToast({ title: 'PD2 Trader', description: t('toasts.listingUpdated') });
@@ -736,7 +719,6 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           values.note || '',
           listingType,
         );
-        saveDelistChoice(listing._id, selectedItem, values);
         form.reset({ type: 'exact', note: '', price: '', currency: 'HR' });
 
         trackMeasurement(

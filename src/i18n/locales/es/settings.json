@@ -590,7 +590,6 @@
         },
         "exceptionMode": {
           "label": "Nunca retirar",
-          "description": "Un anuncio marcado con «No retirar este anuncio automáticamente» nunca se toca.",
           "options": {
             "none": "Nada (predeterminado)",
             "stackable": "Moneda apilable y objetos que elija",

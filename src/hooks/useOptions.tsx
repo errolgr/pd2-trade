@@ -130,7 +130,7 @@ export interface ISettings {
   stashAutoDelist?: StashAutoDelistMode; // a listed item leaves the stash: leave it, ask to delist, or delist it
   delistExceptionMode?: DelistExceptionMode; // which item bases the auto-delist leaves alone
   delistExceptions?: DelistException[]; // the picked items: bases the auto-delist leaves alone (Settings → Market chips)
-  delistExemptListings?: string[]; // listing ids the auto-delist leaves alone (Quick List checkbox), newest last
+  delistExemptListings?: string[]; // listing ids the auto-delist leaves alone (older versions' Quick List checkbox), newest last
   marketDefaultSort?: MarketDefaultSort; // a fresh / reset market search's order
   marketDefaultSeller?: 'all' | 'online' | 'in-game'; // a fresh search's seller filter: anyone, online on the site, in game
   marketDefaultHasBuyout?: 'any' | 'yes' | 'no'; // a fresh search's buyout filter

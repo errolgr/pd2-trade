@@ -585,7 +585,6 @@
         },
         "exceptionMode": {
           "label": "Never delist",
-          "description": "A listing you marked \"Don't auto-delist this listing\" is always left alone.",
           "options": {
             "none": "Nothing (default)",
             "stackable": "Stackable currency and items I pick",

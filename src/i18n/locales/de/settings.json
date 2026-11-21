@@ -585,7 +585,6 @@
         },
         "exceptionMode": {
           "label": "Nie entfernen",
-          "description": "Ein Inserat, bei dem du „Dieses Inserat nicht automatisch entfernen“ gewählt hast, bleibt immer bestehen.",
           "options": {
             "none": "Nichts (Standard)",
             "stackable": "Stapelbare Währung und ausgewählte Gegenstände",

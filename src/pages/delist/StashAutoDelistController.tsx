@@ -37,8 +37,8 @@ const PROMPT_MS = 20_000;
  * first (a toast to confirm), or delist right away (a toast says so). Each minute while the game is focused it
  * reads the stash and compares it with the last read: a move between tabs is no removal, and when look-alike
  * items make it unclear which one left, the user picks the listing in any mode. Exempt listings are left alone
- * (delist-exemptions.ts): ones the Quick List form exempted, and, as Settings → "Never delist" says, the picked
- * items ("Never ask for …" on the prompt adds one) and stackable currency.
+ * (delist-exemptions.ts): ones an older version's Quick List form exempted, and, as Settings → "Never delist"
+ * says, the picked items ("Never ask for …" on the prompt adds one) and stackable currency.
  */
 const StashAutoDelistController: React.FC = () => {
   const { settings, updateSettings } = useOptions();
@@ -140,7 +140,7 @@ const StashAutoDelistController: React.FC = () => {
         // Fresh: a listing sold or removed since the last look is left alone
         const current = await ownListings();
         if (stopped) return;
-        // Exempt listings (Quick List checkbox, picked items, stackable currency) are never asked about
+        // Exempt listings (older Quick List marks, picked items, stackable currency) are never asked about
         const { removed, ambiguous } = withoutExempt(
           detectStashRemovals(prev, snapshot, current),
           exemptionsOf(latest.current.settings),

@@ -590,7 +590,6 @@
         },
         "exceptionMode": {
           "label": "Nunca remover",
-          "description": "Um anúncio marcado com \"Não remover este anúncio automaticamente\" nunca é removido.",
           "options": {
             "none": "Nada (padrão)",
             "stackable": "Moeda empilhável e itens que eu escolher",

@@ -580,7 +580,6 @@
         },
         "exceptionMode": {
           "label": "从不下架",
-          "description": "勾选了“不自动下架此挂单”的挂单始终保留。",
           "options": {
             "none": "无（默认）",
             "stackable": "可堆叠货币和我选的物品",

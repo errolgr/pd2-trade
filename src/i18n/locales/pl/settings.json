@@ -595,7 +595,6 @@
         },
         "exceptionMode": {
           "label": "Nigdy nie usuwaj",
-          "description": "Ogłoszenie oznaczone „Nie usuwaj automatycznie tego ogłoszenia” zawsze zostaje.",
           "options": {
             "none": "Nic (domyślnie)",
             "stackable": "Walutę w stosach i wybrane przedmioty",

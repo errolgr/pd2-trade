@@ -590,7 +590,6 @@
         },
         "exceptionMode": {
           "label": "Ne jamais retirer",
-          "description": "Une annonce marquée « Ne pas retirer cette annonce automatiquement » n'est jamais touchée.",
           "options": {
             "none": "Rien (par défaut)",
             "stackable": "La monnaie empilable et les objets choisis",
