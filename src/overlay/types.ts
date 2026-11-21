@@ -152,8 +152,10 @@ export interface PanelDef {
   keyboard: 'never' | 'onPointerDown';
   /** Closed => display:none but still mounted (state/listeners survive). Mounted (closed) from startup. */
   keepMounted: boolean;
-  /** Hidden (not unmounted) while gameFocused === false. */
+  /** Hidden (not unmounted) while gameFocused === false, unless OverlayBehavior.showOutsideGame (and not gameHud). */
   hideOnGameBlur: boolean;
+  /** In-game HUD (chat dock, ticker, zone timer): hidden outside the game even with OverlayBehavior.showOutsideGame. */
+  gameHud?: boolean;
   /**
    * Close (keepMounted: hide, state kept) when the user clicks outside every panel (Windows mouse hook), or
    * 150 ms after leaving the overlay or the game for another app unless they come back first. Tauri only.
@@ -168,3 +170,16 @@ export interface PanelDef {
 }
 
 export type PanelDefs = Record<PanelId, PanelDef>;
+
+/** Settings → Interface → Windows & focus: how every panel treats focus, clicks away and the game. */
+export interface OverlayBehavior {
+  /**
+   * When an 'onPointerDown' panel takes the keyboard from the game: 'typing' a click into a text field (any other
+   * click hands it back), 'click' any click in the panel, 'open' as soon as it opens (and on any click).
+   */
+  keyboardFocus: 'typing' | 'click' | 'open';
+  /** closeOnBlur panels close on a click outside every panel or on leaving the overlay. */
+  closeOnBlur: boolean;
+  /** hideOnGameBlur panels (except gameHud ones) stay on screen outside the game. */
+  showOutsideGame: boolean;
+}

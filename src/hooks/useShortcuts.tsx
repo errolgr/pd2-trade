@@ -5,6 +5,7 @@ import { listen } from '@/lib/browser-events';
 import { holdListener } from '@/lib/listener';
 import { hotkeyKeyToken } from '@/lib/hotkey-keys';
 import { useOptions } from './useOptions';
+import { hotkeysWorkOutsideGame } from '@/lib/window-behavior';
 
 type ShortcutHandler = () => void | Promise<void>;
 
@@ -12,6 +13,8 @@ interface ShortcutConfig {
   modifier: 'ctrl' | 'alt';
   key: string;
   handler: ShortcutHandler;
+  /** Copies the item under the cursor: registered only in the game, even when hotkeys work outside it. */
+  gameOnly?: boolean;
 }
 
 // Right Alt is AltGr on many keyboard layouts; Windows reports it as Ctrl+Alt, so an Alt
@@ -23,7 +26,11 @@ const formatShortcuts = (modifier: 'ctrl' | 'alt', key: string): string[] => {
   return modifier === 'ctrl' ? [`Control+${k}`] : [`Alt+${k}`, `Control+Alt+${k}`];
 };
 
-export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
+/**
+ * Registers the shortcuts while the game context lasts (Diablo II in front); with `outsideGame`, the ones that
+ * aren't gameOnly stay registered outside it too.
+ */
+export const useShortcuts = (shortcuts: ShortcutConfig[], outsideGame = false) => {
   const registeredShortcuts = useRef<string[]>([]);
   const shortcutsRef = useRef<ShortcutConfig[]>(shortcuts);
   const lastFocusState = useRef<boolean | null>(null);
@@ -53,32 +60,34 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
         .catch((err) => console.error('Shortcut operation failed:', err));
     };
 
-    const registerShortcuts = async () => {
+    const registerShortcuts = async (inGame: boolean) => {
       try {
         // Unregister previous shortcuts first
         await unregisterAllShortcuts();
 
-        // Register new shortcuts in parallel
+        // Register the active ones in parallel
         await Promise.all(
-          shortcutsRef.current.flatMap(({ modifier, key, handler }) =>
-            formatShortcuts(modifier, key).map(async (shortcut) => {
-              try {
-                await register(shortcut, (e) => {
-                  if (e.state === 'Pressed') {
-                    handler();
-                  }
-                });
-                registeredShortcuts.current.push(shortcut);
-              } catch (error: unknown) {
-                const msg = error ? String(error).toLowerCase() : '';
-                if (msg.includes('already') || msg.includes('exists') || msg.includes('conflict')) {
+          shortcutsRef.current
+            .filter(({ gameOnly }) => inGame || (outsideGame && !gameOnly))
+            .flatMap(({ modifier, key, handler }) =>
+              formatShortcuts(modifier, key).map(async (shortcut) => {
+                try {
+                  await register(shortcut, (e) => {
+                    if (e.state === 'Pressed') {
+                      handler();
+                    }
+                  });
                   registeredShortcuts.current.push(shortcut);
-                } else {
-                  console.error(`Failed to register shortcut ${shortcut}:`, error);
+                } catch (error: unknown) {
+                  const msg = error ? String(error).toLowerCase() : '';
+                  if (msg.includes('already') || msg.includes('exists') || msg.includes('conflict')) {
+                    registeredShortcuts.current.push(shortcut);
+                  } else {
+                    console.error(`Failed to register shortcut ${shortcut}:`, error);
+                  }
                 }
-              }
-            }),
-          ),
+              }),
+            ),
         );
       } catch (error) {
         console.error('Failed to load global shortcut plugin:', error);
@@ -94,7 +103,7 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
         scheduleOperation(async () => {
           // Optimistically set focused
           lastFocusState.current = true;
-          await registerShortcuts();
+          await registerShortcuts(true);
         });
 
         // 1. Check actual state to correct if needed
@@ -104,8 +113,7 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
           // Update state based on reality
           if (lastFocusState.current !== isFocused) {
             lastFocusState.current = isFocused;
-            if (isFocused) await registerShortcuts();
-            else await unregisterAllShortcuts();
+            await registerShortcuts(isFocused);
           }
         });
 
@@ -115,9 +123,7 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
             scheduleOperation(async () => {
               if (lastFocusState.current === isFocused) return;
               lastFocusState.current = isFocused;
-
-              if (isFocused) await registerShortcuts();
-              else await unregisterAllShortcuts();
+              await registerShortcuts(isFocused);
             });
           }),
           'diablo-focus-changed',
@@ -140,7 +146,7 @@ export const useShortcuts = (shortcuts: ShortcutConfig[]) => {
         await unregisterAllShortcuts();
       });
     };
-  }, [shortcuts]);
+  }, [shortcuts, outsideGame]);
 };
 
 export const useAppShortcuts = (
@@ -169,6 +175,7 @@ export const useAppShortcuts = (
         modifier: settings.hotkeyModifier,
         key: settings.hotkeyKey,
         handler: onItemSearch,
+        gameOnly: true,
       });
     }
 
@@ -177,6 +184,7 @@ export const useAppShortcuts = (
         modifier: settings.hotkeyModifierListItem,
         key: settings.hotkeyKeyListItem,
         handler: onQuickList,
+        gameOnly: true,
       });
     }
 
@@ -214,6 +222,7 @@ export const useAppShortcuts = (
         modifier: settings.hotkeyModifierDelist,
         key: settings.hotkeyKeyDelist,
         handler: onDelist,
+        gameOnly: true,
       });
     } else {
       console.log('[useShortcuts] Delist shortcut NOT registered:', {
@@ -259,6 +268,7 @@ export const useAppShortcuts = (
         modifier: settings.hotkeyModifierSimTryOn ?? 'ctrl',
         key: settings.hotkeyKeySimTryOn,
         handler: onSimTryOn,
+        gameOnly: true,
       });
     }
 
@@ -311,5 +321,5 @@ export const useAppShortcuts = (
     onNotifications,
   ]);
 
-  useShortcuts(shortcuts);
+  useShortcuts(shortcuts, hotkeysWorkOutsideGame(settings));
 };

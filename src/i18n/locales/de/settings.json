@@ -18,6 +18,30 @@
       "label": "Fenstertransparenz: <num>{{value}}%</num>",
       "description": "Das Spiel durch Fensterhintergründe sehen. 0 % ist vollständig deckend."
     },
+    "windows": {
+      "group": "Fenster & Fokus",
+      "keyboardFocus": {
+        "label": "Tastaturfokus",
+        "description": "Wann ein Fenster dem Spiel die Tastatur abnimmt. Solange ein Fenster sie hat, erreichen deine Tasten das Spiel nicht und das Spiel wird eventuell stumm.",
+        "options": {
+          "typing": "Beim Tippen in ein Feld",
+          "click": "Beim Anklicken",
+          "open": "Beim Öffnen"
+        }
+      },
+      "closeOnClickAway": {
+        "label": "Fenster beim Wegklicken schließen",
+        "description": "Preischeck, Chat, Markt, Builds und ähnliche Fenster schließen sich, wenn du außerhalb klickst oder zu einer anderen App wechselst. Aus: Sie bleiben offen, bis du sie schließt."
+      },
+      "outsideGame": {
+        "label": "Fenster außerhalb des Spiels anzeigen",
+        "description": "Fenster bleiben sichtbar, wenn Diablo II nicht im Vordergrund ist oder nicht läuft. Chat-Button, Vermögensticker und Zonen-Timer erscheinen weiterhin nur im Spiel."
+      },
+      "hotkeysOutsideGame": {
+        "label": "Hotkeys außerhalb des Spiels",
+        "description": "Öffne Fenster mit ihren Hotkeys aus jeder App; diese Tastenkombinationen erreichen andere Apps dann nicht mehr. Hotkeys, die den Gegenstand unter dem Cursor kopieren (Preischeck, Einstellen, Entfernen, Anprobieren), funktionieren weiterhin nur im Spiel. Benötigt „Fenster außerhalb des Spiels anzeigen“."
+      }
+    },
     "zoneTimer": {
       "enabled": {
         "label": "Corrupted-Zone-Timer",

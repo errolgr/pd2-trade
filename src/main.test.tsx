@@ -34,7 +34,7 @@ vi.mock('@/hooks/pd2website/usePD2Website', async (importOriginal) => {
 });
 
 // Providers and root components are stubs that name themselves, so the tree is observable without booting the app.
-vi.mock('./hooks/useOptions', () => ({ OptionsProvider: wrap('options') }));
+vi.mock('./hooks/useOptions', () => ({ OptionsProvider: wrap('options'), useOptions: () => ({ settings: {} }) }));
 vi.mock('./hooks/useDialog', () => ({ DialogProvider: wrap('dialog') }));
 vi.mock('./hooks/useSignIn', () => ({ SignInProvider: wrap('signin') }));
 vi.mock('./pages/sign-in/SignInPage', () => ({ SignInWindowPage: () => <p>sign-in-window</p> }));

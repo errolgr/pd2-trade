@@ -18,6 +18,30 @@
       "label": "Window transparency: <num>{{value}}%</num>",
       "description": "See the game through window backgrounds. 0% is fully opaque."
     },
+    "windows": {
+      "group": "Windows & focus",
+      "keyboardFocus": {
+        "label": "Keyboard focus",
+        "description": "When a window takes the keyboard from the game. While a window has it, your keys don't reach the game and the game may go quiet.",
+        "options": {
+          "typing": "When typing in a field",
+          "click": "When clicked",
+          "open": "When it opens"
+        }
+      },
+      "closeOnClickAway": {
+        "label": "Close windows when clicking away",
+        "description": "Price check, chat, market, builds and similar windows close when you click outside them or switch to another app. Off: they stay open until you close them."
+      },
+      "outsideGame": {
+        "label": "Show windows outside the game",
+        "description": "Windows stay on screen while Diablo II isn't in front or isn't running. The chat button, net worth ticker and zone timer still show only in the game."
+      },
+      "hotkeysOutsideGame": {
+        "label": "Hotkeys work outside the game",
+        "description": "Open windows with their hotkeys from any app; those key combinations then no longer reach other apps. Hotkeys that copy the item under the cursor (price check, list, delist, try on) still work only in the game. Needs Show windows outside the game."
+      }
+    },
     "zoneTimer": {
       "enabled": {
         "label": "Corrupted zone timer",
