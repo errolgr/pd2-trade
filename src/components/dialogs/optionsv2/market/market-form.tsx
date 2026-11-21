@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DEFAULT_WHISPER_TEMPLATE } from '@/pages/market/lib/whisper';
+import { useMarketStore } from '@/pages/market/store/useMarketStore';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
 import { VolumeControl } from '../volume-control';
 import { DelistExceptions } from './delist-exceptions';
@@ -122,6 +123,29 @@ function SelectRow({
     >
       <FormMessage />
     </SettingsRow>
+  );
+}
+
+/**
+ * Auto search lives in market-prefs.json (the market store), not ISettings: the same value as the lightning bolt
+ * beside Clear in the market filters, so flipping either shows in the other at once.
+ */
+function AutoSearchRow() {
+  const { t } = useTranslation('settings');
+  const { autoSearch, setAutoSearch } = useMarketStore();
+  return (
+    <SettingsRow
+      settingKey="marketAutoSearch"
+      label={t('market.browser.autoSearch.label')}
+      description={t('market.browser.autoSearch.description')}
+      control={
+        <FormControl>
+          <Switch checked={autoSearch}
+            onCheckedChange={setAutoSearch}
+            aria-label={t('market.browser.autoSearch.label')} />
+        </FormControl>
+      }
+    />
   );
 }
 
@@ -367,6 +391,7 @@ export function MarketForm() {
           {switchRow('marketShowDealBadges', 'market.browser.dealBadges')}
           {switchRow('marketShowPriceHistory', 'market.browser.priceHistory')}
           {switchRow('marketShowSellerCard', 'market.browser.sellerCard')}
+          <AutoSearchRow />
         </SettingsGroup>
 
         <SettingsGroup title={t('market.alerts.group')}>

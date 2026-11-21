@@ -650,6 +650,10 @@
       "sellerCard": {
         "label": "Verkäuferkarte",
         "description": "Zeigt Status und weitere Inserate des Verkäufers in den Inseratsdetails."
+      },
+      "autoSearch": {
+        "label": "Automatische Suche",
+        "description": "Sucht, sobald du die Marktfilter änderst. Aus: Filteränderungen warten, bis du Suchen (Strg+Enter) drückst. Auch über den Blitz neben Leeren in den Filtern."
       }
     },
     "alerts": {

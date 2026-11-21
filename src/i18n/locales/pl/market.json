@@ -32,6 +32,7 @@
     "noListingsTitle": "Brak pasujących ogłoszeń",
     "noListingsDescription": "Poluzuj filtr, poszerz zakres wieku lub zmień tryb.",
     "refreshing": "Odświeżanie wyników",
+    "unsearched": "Filtry zmienione · wyniki z ostatniego wyszukiwania",
     "loadingMore": "Wczytywanie kolejnych…",
     "loadMoreFailed": "Nie można wczytać więcej",
     "rateLimitedUntil": "Limit zapytań do {{time}}",
@@ -146,6 +147,14 @@
     },
     "clearAll": "Wyczyść wszystkie filtry",
     "clearStats": "Usuń wszystkie filtry statystyk",
+    "autoSearch": {
+      "label": "Automatyczne wyszukiwanie",
+      "on": "Automatyczne wyszukiwanie włączone: wyniki odświeżają się przy zmianie filtrów. Kliknij, aby szukać tylko po naciśnięciu Szukaj.",
+      "off": "Automatyczne wyszukiwanie wyłączone: naciśnij Szukaj (Ctrl+Enter), aby zastosować zmiany filtrów. Kliknij, aby szukać podczas pisania."
+    },
+    "searchNow": "Szukaj",
+    "outOfDate": "Wyniki są nieaktualne",
+    "upToDate": "Wyniki pasują do filtrów",
     "sections": {
       "stats": "Statystyki",
       "item": "Przedmiot",

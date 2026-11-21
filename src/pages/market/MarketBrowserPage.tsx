@@ -32,6 +32,7 @@ import { useActiveFilterText, useFilterHighlight } from './components/active-fil
 import { FilterHighlightContext } from './components/controls';
 import { RelaxationChips, relaxationChips } from './components/RelaxationChips';
 import { FilterSidebar } from './components/FilterSidebar';
+import { UnsearchedNotice } from './components/SearchControls';
 import { ItemNameSearch } from './components/ItemNameSearch';
 import { PresenceAsOf, ResultsList } from './components/ResultsList';
 import type { LoadMoreState } from './components/card-parts';
@@ -108,7 +109,52 @@ const MarketBrowserPage: React.FC = () => {
   const searchDefaults = useSearchDefaults();
 
   const [tab, setTab] = useState<MarketTab>('search');
-  const [filters, setFilters] = useState<MarketFilters | null>(null);
+  /** The filters as the sidebar shows them. */
+  const [filters, setDraftFilters] = useState<MarketFilters | null>(null);
+  /**
+   * The filters searches run with: `filters` itself while Auto search is on; with it off, `filters` as of the last
+   * Search, so editing them sends nothing until the user asks.
+   */
+  const [searchFilters, setSearchFilters] = useState<MarketFilters | null>(null);
+  /** Filter edits made since the last search (Auto search off): the Search button's count. */
+  const [unsearchedEdits, setUnsearchedEdits] = useState(0);
+  const { autoSearch } = store;
+  /** Show these filters and search them now: opening a saved search, a price check, a seller, a buy request… */
+  const setFilters = useCallback((next: MarketFilters) => {
+    setDraftFilters(next);
+    setSearchFilters(next);
+    setUnsearchedEdits(0);
+  }, []);
+  /**
+   * A filter the user changed in the sidebar (or the name search, a preset, a mod menu): searched now with Auto
+   * search on, else held for Search. Switching Live / Archive / Wanted swaps the whole results pane, so it searches.
+   */
+  const editFilters = useCallback(
+    (next: MarketFilters) => {
+      if (autoSearch || !filters || next.source !== filters.source) {
+        setFilters(next);
+        return;
+      }
+      setDraftFilters(next);
+      setUnsearchedEdits((n) => n + 1);
+    },
+    [autoSearch, filters, setFilters],
+  );
+  /** Auto search off and the sidebar differs from what the results were searched with. */
+  const unsearched =
+    !autoSearch && !!filters && filters !== searchFilters && JSON.stringify(filters) !== JSON.stringify(searchFilters);
+  /** The sidebar's Search (and Ctrl+Enter): search the filters as they are now. */
+  const runSearch = () => {
+    if (filters && unsearched) setFilters(filters);
+  };
+  // Auto search turned back on (the sidebar's bolt or Settings › Market): what the sidebar shows is searched, like
+  // any other change
+  const autoSearchWas = useRef(autoSearch);
+  useEffect(() => {
+    const turnedOn = autoSearch && !autoSearchWas.current;
+    autoSearchWas.current = autoSearch;
+    if (turnedOn && filters && filters !== searchFilters) setFilters(filters);
+  }, [autoSearch, filters, searchFilters, setFilters]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   /** A listing shown in the detail pane that is not in the list (picked from the seller card). */
@@ -219,37 +265,41 @@ const MarketBrowserPage: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [pendingRequest, signedIn, mine.status, mine.items, mode, token, searchDefaults, t]);
+  }, [pendingRequest, signedIn, mine.status, mine.items, mode, token, searchDefaults, t, setFilters]);
 
   /** Search on the Wanted source: buy requests instead of listings (the market search doesn't run). */
   const wantedSource = tab === 'search' && filters?.source === 'wanted';
-  const search = useMarketSearch(marketApi ?? null, activated && filters?.source !== 'wanted' ? filters : null, {
-    signedIn,
-    pageSize: settings?.marketPageSize,
-  });
+  const search = useMarketSearch(
+    marketApi ?? null,
+    activated && searchFilters?.source !== 'wanted' ? searchFilters : null,
+    {
+      signedIn,
+      pageSize: settings?.marketPageSize,
+    },
+  );
 
   // Wanted: Fits my stash (the stash run through /match in the board's realm), the price check's rune prices for
-  // the lowest offer
+  // the lowest offer. Like the listing search, it runs on the searched filters (Auto search off: as of Search).
   const boardRealm = useMemo(
-    () => ({ ladder: filters?.ladder ?? mode.ladder, hardcore: filters?.hardcore ?? mode.hardcore }),
-    [filters?.ladder, filters?.hardcore, mode],
+    () => ({ ladder: searchFilters?.ladder ?? mode.ladder, hardcore: searchFilters?.hardcore ?? mode.hardcore }),
+    [searchFilters?.ladder, searchFilters?.hardcore, mode],
   );
   const stash = useStashWtbMatches(activated && signedIn && wantedSource, boardRealm, token);
   const { calculatedRuneValues } = useEconomyData();
-  const wantedFilters = wantedSource && filters ? (filters.wanted ?? {}) : null;
+  const wantedFilters = wantedSource && searchFilters ? (searchFilters.wanted ?? {}) : null;
   const fitsStash = !!token && !!wantedFilters?.fitsStash;
   const wantedBody = useMemo(() => {
-    if (!wantedSource || !filters) return null;
+    if (!wantedSource || !searchFilters) return null;
     // Fits my stash waits for the stash; signed out, Mine only and Fits my stash don't apply
     if (fitsStash && stash.status !== 'ready' && stash.status !== 'error') return null;
     const scoped: MarketFilters = token
-      ? filters
-      : { ...filters, wanted: { ...filters.wanted, mine: false, fitsStash: false } };
+      ? searchFilters
+      : { ...searchFilters, wanted: { ...searchFilters.wanted, mine: false, fitsStash: false } };
     return wtbSearchBody(scoped, {
       stashIds: fitsStash ? [...stash.byRequest.keys()] : null,
       runeValues: calculatedRuneValues,
     });
-  }, [wantedSource, filters, fitsStash, stash.status, stash.byRequest, token, calculatedRuneValues]);
+  }, [wantedSource, searchFilters, fitsStash, stash.status, stash.byRequest, token, calculatedRuneValues]);
   const wanted = useWtbSearch(wantedBody, token);
   const wantedIds = useMemo(() => wanted.items.map((r) => r.id), [wanted.items]);
   const wantedEnter = useEnterTracker(wantedBody && JSON.stringify(wantedBody), wantedIds);
@@ -293,8 +343,8 @@ const MarketBrowserPage: React.FC = () => {
     if (search.ranFilters) setLastFilters(search.ranFilters);
   }, [search.ranFilters, setLastFilters]);
   const wantedRan = wanted.status === 'ready' ? wantedBody : null;
-  const filtersRef = useRef(filters);
-  filtersRef.current = filters;
+  const filtersRef = useRef(searchFilters);
+  filtersRef.current = searchFilters;
   useEffect(() => {
     if (wantedRan && filtersRef.current?.source === 'wanted') setLastFilters(filtersRef.current);
   }, [wantedRan, setLastFilters]);
@@ -345,7 +395,7 @@ const MarketBrowserPage: React.FC = () => {
       if (!pendingFocus.searched) setPendingFocus({ ...pendingFocus, searched: true });
     } else if (search.status === 'error' || search.status === 'auth') {
       setPendingFocus(null);
-    } else if (pendingFocus.searched && filters && search.filters === filters) {
+    } else if (pendingFocus.searched && searchFilters && search.filters === searchFilters) {
       setPendingFocus(null);
       if (search.items.some((r) => r.listing._id === pendingFocus.id)) {
         setSelectedId(pendingFocus.id);
@@ -582,12 +632,12 @@ const MarketBrowserPage: React.FC = () => {
   /** The user's defaults for the current realm and source (Reset, "browse seller"). */
   const freshFilters = (f: MarketFilters) =>
     withSource(defaultFilters({ hardcore: f.hardcore, ladder: f.ladder }, searchDefaults), f.source, searchDefaults);
-  const resetFilters = () => filters && setFilters(freshFilters(filters));
+  const resetFilters = () => filters && editFilters(freshFilters(filters));
 
   const presets = {
     builtInPresets: BUILT_IN_PRESETS.filter((p) => !store.hiddenPresets.includes(p.id)),
     userPresets: store.userPresets,
-    onApplyPreset: (preset: StatPreset) => filters && setFilters(applyPreset(filters, preset)),
+    onApplyPreset: (preset: StatPreset) => filters && editFilters(applyPreset(filters, preset)),
     onSavePreset: (name: string) => {
       if (!filters) return;
       store.addPreset({
@@ -613,12 +663,12 @@ const MarketBrowserPage: React.FC = () => {
       addFilters: (rows) => {
         if (rows.length === 0) return;
         const merge = mergeStatFilters(filters.stats, rows);
-        setFilters({ ...filters, stats: merge.stats });
+        editFilters({ ...filters, stats: merge.stats });
         setTab('search');
         setStatHighlight({ id: merge.id, nonce: Date.now() });
       },
       sortByStat: (key, dir) => {
-        setFilters({ ...filters, sort: { by: 'stat', key, dir } });
+        editFilters({ ...filters, sort: { by: 'stat', key, dir } });
         setTab('search');
       },
       fill: {
@@ -627,7 +677,7 @@ const MarketBrowserPage: React.FC = () => {
         leaveMinEmpty: settings?.statFillLeaveMinEmpty ?? false,
       },
     };
-  }, [filters, settings?.fillStatValue, settings?.statFillMarginUnit, settings?.statFillLeaveMinEmpty]);
+  }, [filters, editFilters, settings?.fillStatValue, settings?.statFillMarginUnit, settings?.statFillLeaveMinEmpty]);
 
   const browseSeller = (listing: MarketListingEntry) => {
     if (!filters) return;
@@ -645,6 +695,12 @@ const MarketBrowserPage: React.FC = () => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    // Ctrl+Enter: the sidebar's Search (Auto search off), from anywhere in the panel, typing included
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !autoSearch && tab === 'search') {
+      e.preventDefault();
+      runSearch();
+      return;
+    }
     if (e.altKey || e.ctrlKey || e.metaKey || !(e.target instanceof HTMLElement)) return;
     // Menus, selects and popovers handle their own keys (Escape closes just them)
     if (e.target.closest('[data-radix-popper-content-wrapper]')) return;
@@ -726,9 +782,9 @@ const MarketBrowserPage: React.FC = () => {
                 filters && (
                   <ItemNameSearch
                     value={filters.itemName}
-                    onChange={(itemName) => setFilters({ ...filters, itemName })}
+                    onChange={(itemName) => editFilters({ ...filters, itemName })}
                     onPickGroup={(group) =>
-                      setFilters({ ...filters, itemName: undefined, typeCode: group.typeCode, baseCode: group.code })
+                      editFilters({ ...filters, itemName: undefined, typeCode: group.typeCode, baseCode: group.code })
                     }
                     ladder={filters.ladder}
                     hardcore={filters.hardcore}
@@ -818,8 +874,12 @@ const MarketBrowserPage: React.FC = () => {
                     <FilterHighlightContext.Provider value={highlight}>
                       <FilterSidebar
                         filters={filters}
-                        onChange={setFilters}
+                        onChange={editFilters}
                         onReset={resetFilters}
+                        autoSearch={autoSearch}
+                        onAutoSearchChange={store.setAutoSearch}
+                        unsearchedEdits={unsearched ? Math.max(unsearchedEdits, 1) : 0}
+                        onSearch={runSearch}
                         searchDefaults={searchDefaults}
                         stats={presets}
                         sectionsOpen={store.sectionsOpen}
@@ -892,22 +952,24 @@ const MarketBrowserPage: React.FC = () => {
                           relaxations={relaxations}
                           onRelax={(r) => search.filters && setFilters(r.value.clear(search.filters))}
                           onRelaxHover={setHoveredRelax}
-                          itemName={filters?.itemName}
+                          unsearched={tab === 'search' && unsearched}
+                          onSearch={runSearch}
+                          itemName={(searchFilters ?? filters).itemName}
                           banner={
                             tab === 'search' &&
                             demand && (
-                              <DemandBar
-                                model={demand}
-                                onViewRequests={() => setFilters(wouldTakeBoard(filters))}
-                              />
+                              <DemandBar model={demand}
+                                onViewRequests={() => setFilters(wouldTakeBoard(filters))} />
                             )
                           }
                           // Nothing listed: ask for it instead (live searches only, like Watch)
                           onPostRequest={tab === 'search' && filters?.source === 'live' ? togglePost : undefined}
                           emptySubline={[
                             t('wtb.cta.live'),
-                            t('wtb.cta.stats', { count: filters.stats.filter((s) => s.enabled && s.key).length }),
-                            ...(filters.corrupted === 'yes' ? [t('wtb.cta.corrupted')] : []),
+                            t('wtb.cta.stats', {
+                              count: (searchFilters ?? filters).stats.filter((s) => s.enabled && s.key).length,
+                            }),
+                            ...((searchFilters ?? filters).corrupted === 'yes' ? [t('wtb.cta.corrupted')] : []),
                           ].join(' · ')}
                           toolbar={
                             <>
@@ -1148,11 +1210,16 @@ function ResultsPane({
   relaxations,
   onRelax,
   onRelaxHover,
+  unsearched,
+  onSearch,
   toolbar,
   banner,
   children,
 }: {
   tab: MarketTab;
+  /** Auto search off and the filters changed since these results were searched: say so, and offer Search. */
+  unsearched: boolean;
+  onSearch: () => void;
   /** Cards view: card-shaped loading skeletons. */
   cards: boolean;
   signedIn: boolean;
@@ -1346,11 +1413,13 @@ function ResultsPane({
   return (
     <ResultsFrame
       refetching={refetching}
+      stale={unsearched && !refetching}
       toolbar={toolbar}
       banner={banner}
       status={
         <>
-          {status}
+          {/* The count keeps one line; the out-of-date notice beside it gives way */}
+          {status && <span className="shrink-0 whitespace-nowrap">{status}</span>}
           {tab === 'search' && search.status === 'ready' && search.priceStats && (
             <MatchesMedian
               stats={search.priceStats}
@@ -1360,6 +1429,7 @@ function ResultsPane({
             />
           )}
           {error && rows.length > 0 && <span className="min-w-0 truncate text-destructive">{error}</span>}
+          {unsearched && <UnsearchedNotice onSearch={onSearch} />}
         </>
       }
     >

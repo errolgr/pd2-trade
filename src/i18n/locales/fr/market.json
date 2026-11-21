@@ -31,6 +31,7 @@
     "noListingsTitle": "Aucune annonce ne correspond",
     "noListingsDescription": "Assouplissez un filtre, élargissez la période ou changez de mode.",
     "refreshing": "Actualisation des résultats",
+    "unsearched": "Filtres modifiés · résultats de votre dernière recherche",
     "loadingMore": "Chargement…",
     "loadMoreFailed": "Impossible d'en charger plus",
     "rateLimitedUntil": "Limite de requêtes atteinte jusqu'à {{time}}",
@@ -138,6 +139,14 @@
     },
     "clearAll": "Effacer tous les filtres",
     "clearStats": "Retirer tous les filtres de stats",
+    "autoSearch": {
+      "label": "Recherche auto",
+      "on": "Recherche auto activée : les résultats se mettent à jour quand vous changez les filtres. Cliquez pour ne rechercher qu'en appuyant sur Rechercher.",
+      "off": "Recherche auto désactivée : appuyez sur Rechercher (Ctrl+Entrée) pour appliquer vos changements de filtres. Cliquez pour rechercher pendant la saisie."
+    },
+    "searchNow": "Rechercher",
+    "outOfDate": "Résultats obsolètes",
+    "upToDate": "Les résultats correspondent à vos filtres",
     "sections": {
       "stats": "Stats",
       "item": "Objet",

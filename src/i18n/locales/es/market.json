@@ -31,6 +31,7 @@
     "noListingsTitle": "Ningún anuncio coincide",
     "noListingsDescription": "Relaja un filtro, amplía el rango de antigüedad o cambia el modo.",
     "refreshing": "Actualizando resultados",
+    "unsearched": "Filtros cambiados · resultados de tu última búsqueda",
     "loadingMore": "Cargando más…",
     "loadMoreFailed": "No se pudo cargar más",
     "rateLimitedUntil": "Límite de solicitudes hasta las {{time}}",
@@ -138,6 +139,14 @@
     },
     "clearAll": "Limpiar todos los filtros",
     "clearStats": "Quitar todos los filtros de estadísticas",
+    "autoSearch": {
+      "label": "Búsqueda automática",
+      "on": "Búsqueda automática activada: los resultados se actualizan al cambiar los filtros. Haz clic para buscar solo al pulsar Buscar.",
+      "off": "Búsqueda automática desactivada: pulsa Buscar (Ctrl+Intro) para aplicar los cambios de filtros. Haz clic para buscar mientras escribes."
+    },
+    "searchNow": "Buscar",
+    "outOfDate": "Los resultados están desactualizados",
+    "upToDate": "Los resultados coinciden con tus filtros",
     "sections": {
       "stats": "Estadísticas",
       "item": "Objeto",

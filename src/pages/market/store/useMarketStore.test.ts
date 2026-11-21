@@ -101,6 +101,18 @@ describe('local preferences (market-prefs.json)', () => {
     expect(parseMarketPrefs(JSON.stringify({ viewMode: 'rows' })).viewMode).toBe('rows');
   });
 
+  it('searches as the filters change unless the user turned Auto search off', async () => {
+    expect(EMPTY_MARKET_PREFS.autoSearch).toBe(true);
+    expect(parseMarketPrefs('{}').autoSearch).toBe(true);
+    expect(parseMarketPrefs(JSON.stringify({ autoSearch: 'no' })).autoSearch).toBe(true);
+    expect(parseMarketPrefs(JSON.stringify({ autoSearch: false })).autoSearch).toBe(false);
+    await loadFrom({});
+    actions.setAutoSearch(false);
+    await flush();
+    expect(getMarketPrefs().autoSearch).toBe(false);
+    expect(written().at(-1)).toMatchObject({ autoSearch: false });
+  });
+
   it('reads presets, last search, switches and saved searches (stat weights of old files are dropped)', () => {
     const prefs = parseMarketPrefs(
       JSON.stringify({

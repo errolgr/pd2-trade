@@ -645,6 +645,10 @@
       "sellerCard": {
         "label": "卖家卡片",
         "description": "在挂单详情中显示卖家状态及其其他挂单。"
+      },
+      "autoSearch": {
+        "label": "自动搜索",
+        "description": "更改市场筛选条件时立即搜索。关闭后：筛选更改会等到你按下“搜索”（Ctrl+Enter）才生效。也可点击筛选栏中“清除”旁的闪电图标切换。"
       }
     },
     "alerts": {

@@ -655,6 +655,10 @@
       "sellerCard": {
         "label": "Fiche vendeur",
         "description": "Affiche le statut du vendeur et ses autres annonces dans les détails d'une annonce."
+      },
+      "autoSearch": {
+        "label": "Recherche auto",
+        "description": "Recherche dès que vous changez les filtres du marché. Désactivée : les changements attendent que vous appuyiez sur Rechercher (Ctrl+Entrée). Aussi via l'éclair à côté d'Effacer dans les filtres."
       }
     },
     "alerts": {

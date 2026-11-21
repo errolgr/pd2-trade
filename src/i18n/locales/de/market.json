@@ -30,6 +30,7 @@
     "noListingsTitle": "Keine passenden Inserate",
     "noListingsDescription": "Lockere einen Filter, erweitere den Zeitraum oder wechsle den Modus.",
     "refreshing": "Ergebnisse werden aktualisiert",
+    "unsearched": "Filter geändert · Ergebnisse stammen aus deiner letzten Suche",
     "loadingMore": "Weitere werden geladen…",
     "loadMoreFailed": "Weitere konnten nicht geladen werden",
     "rateLimitedUntil": "Anfragelimit bis {{time}}",
@@ -130,6 +131,14 @@
     },
     "clearAll": "Alle Filter löschen",
     "clearStats": "Alle Wertefilter entfernen",
+    "autoSearch": {
+      "label": "Automatische Suche",
+      "on": "Automatische Suche an: Die Ergebnisse aktualisieren sich, sobald du Filter änderst. Klicke, um nur beim Drücken von Suchen zu suchen.",
+      "off": "Automatische Suche aus: Drücke Suchen (Strg+Enter), um deine Filteränderungen auszuführen. Klicke, um schon beim Tippen zu suchen."
+    },
+    "searchNow": "Suchen",
+    "outOfDate": "Ergebnisse sind veraltet",
+    "upToDate": "Ergebnisse passen zu deinen Filtern",
     "sections": {
       "stats": "Werte",
       "item": "Item",

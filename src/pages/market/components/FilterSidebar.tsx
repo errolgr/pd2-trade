@@ -51,6 +51,7 @@ import {
 } from './controls';
 import { FACET_DIM, FacetCount, useFacetText } from './FacetCounts';
 import { PriceControl } from './PriceControl';
+import { AutoSearchToggle, SearchFooter } from './SearchControls';
 import { StatFilters, type StatFiltersProps } from './StatFilters';
 import { statName } from './stat-text';
 import { useTranslation } from '@/i18n';
@@ -241,6 +242,12 @@ export interface FilterSidebarProps {
   facets?: MarketFacets | null;
   /** Wanted source: whether the user is signed in, and the Fits my stash / Mine only counts (null: unknown yet). */
   wantedCounts?: { signedIn: boolean; stash: number | null; mine: number | null };
+  /** Search as the filters change; off, edits wait for the Search footer. Omitted: no toggle, always on. */
+  autoSearch?: boolean;
+  onAutoSearchChange?: (on: boolean) => void;
+  /** Auto search off: filter edits since the last search (0: the results match the filters). */
+  unsearchedEdits?: number;
+  onSearch?: () => void;
 }
 
 /**
@@ -268,6 +275,10 @@ export function FilterSidebar({
   onSectionOpen,
   facets,
   wantedCounts,
+  autoSearch = true,
+  onAutoSearchChange,
+  unsearchedEdits = 0,
+  onSearch,
 }: FilterSidebarProps) {
   const { t } = useTranslation('market');
   const set = (changes: Partial<MarketFilters>) => onChange({ ...f, ...changes });
@@ -343,6 +354,8 @@ export function FilterSidebar({
             },
           ]}
         />
+        {onAutoSearchChange && <AutoSearchToggle value={autoSearch}
+          onChange={onAutoSearchChange} />}
         <Tip label={t('filters.clearAll')}>
           <Button
             variant="ghost"
@@ -736,6 +749,8 @@ export function FilterSidebar({
           </Section>
         )}
       </ScrollArea>
+      {!autoSearch && onSearch && <SearchFooter unsearchedEdits={unsearchedEdits}
+        onSearch={onSearch} />}
     </aside>
   );
 }

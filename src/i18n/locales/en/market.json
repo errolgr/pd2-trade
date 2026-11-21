@@ -30,6 +30,7 @@
     "noListingsTitle": "No listings match",
     "noListingsDescription": "Loosen a filter, widen the age window or switch the mode.",
     "refreshing": "Refreshing results",
+    "unsearched": "Filters changed · results are from your last search",
     "loadingMore": "Loading more…",
     "loadMoreFailed": "Couldn't load more",
     "rateLimitedUntil": "Rate limited until {{time}}",
@@ -130,6 +131,14 @@
     },
     "clearAll": "Clear all filters",
     "clearStats": "Remove every stat filter",
+    "autoSearch": {
+      "label": "Auto search",
+      "on": "Auto search on: results update as you change filters. Click to search only when you press Search.",
+      "off": "Auto search off: press Search (Ctrl+Enter) to run your filter changes. Click to search as you type."
+    },
+    "searchNow": "Search",
+    "outOfDate": "Results are out of date",
+    "upToDate": "Results match your filters",
     "sections": {
       "stats": "Stats",
       "item": "Item",

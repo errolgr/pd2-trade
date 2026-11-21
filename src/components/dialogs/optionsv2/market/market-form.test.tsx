@@ -6,11 +6,28 @@ import { useOptions, type ISettings } from '@/hooks/useOptions';
 import { playNotificationSound } from '@/hooks/useSocketNotifications';
 import { createOptionsStore, type OptionsStore } from '../test-utils';
 import { MarketForm } from './market-form';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { exists, readTextFile, writeTextFile } from '@/lib/browser-fs';
+import { AutoSearchToggle } from '@/pages/market/components/SearchControls';
+import {
+  getMarketPrefs,
+  loadMarketPrefs,
+  MARKET_PREFS_FILENAME,
+  resetMarketPrefs,
+  useMarketStore,
+} from '@/pages/market/store/useMarketStore';
 
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 // vi.mock factories are hoisted above static imports, so the shim must be loaded inside the factory.
 vi.mock('@/components/ui/select', async () => (await import('../test-utils')).selectShim);
 vi.mock('@/hooks/useSocketNotifications', () => ({ playNotificationSound: vi.fn() }));
+vi.mock('@/lib/browser-fs', () => ({
+  BaseDirectory: { AppConfig: 13 },
+  exists: vi.fn(async () => false),
+  mkdir: vi.fn(async () => {}),
+  readTextFile: vi.fn(),
+  writeTextFile: vi.fn(async () => {}),
+}));
 
 let store: OptionsStore;
 
@@ -30,11 +47,14 @@ beforeAll(() => {
 afterAll(() => {
   MotionGlobalConfig.skipAnimations = false;
 });
-beforeEach(() => {
+beforeEach(async () => {
   vi.useFakeTimers();
+  // The Auto search row reads market-prefs.json: loaded up front, so it doesn't re-render mid-test
+  await loadMarketPrefs();
 });
 afterEach(() => {
   cleanup();
+  resetMarketPrefs();
   vi.useRealTimers();
 });
 
@@ -111,5 +131,43 @@ describe('MarketForm', () => {
     renderForm({ stashAutoDelist: 'off', delistExceptionMode: 'selected', delistExceptions: [ber] });
     expect(screen.queryByLabelText('Never delist')).toBeNull();
     expect(screen.queryByText('Ber Rune')).toBeNull();
+  });
+
+  it('Auto search is the market sidebar bolt: the saved value, and flipping either shows in the other', async () => {
+    vi.mocked(exists).mockResolvedValue(true);
+    vi.mocked(readTextFile).mockResolvedValue(JSON.stringify({ autoSearch: false }));
+    resetMarketPrefs();
+    await loadMarketPrefs();
+    store = createOptionsStore({});
+    vi.mocked(useOptions).mockImplementation(store.useOptions);
+    function Bolt() {
+      const { autoSearch, setAutoSearch } = useMarketStore();
+      return <AutoSearchToggle value={autoSearch}
+        onChange={setAutoSearch} />;
+    }
+    render(
+      <TooltipProvider>
+        <Bolt />
+        <MarketForm />
+      </TooltipProvider>,
+    );
+    const toggle = screen.getByRole('switch', { name: 'Auto search' });
+    const bolt = screen.getByRole('button', { name: 'Auto search' });
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    expect(bolt.getAttribute('aria-pressed')).toBe('false');
+
+    fireEvent.click(toggle);
+    expect(bolt.getAttribute('aria-pressed')).toBe('true');
+    expect(getMarketPrefs().autoSearch).toBe(true);
+    fireEvent.click(bolt);
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    // Market preferences, not the settings file
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    expect(store.updateSettings).not.toHaveBeenCalled();
+    expect(writeTextFile).toHaveBeenLastCalledWith(MARKET_PREFS_FILENAME, expect.stringContaining('"autoSearch":false'), {
+      baseDir: 13,
+    });
   });
 });

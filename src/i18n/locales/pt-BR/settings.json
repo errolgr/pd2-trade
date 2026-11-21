@@ -655,6 +655,10 @@
       "sellerCard": {
         "label": "Cartão do vendedor",
         "description": "Mostra o status do vendedor e seus outros anúncios nos detalhes de um anúncio."
+      },
+      "autoSearch": {
+        "label": "Busca automática",
+        "description": "Busca ao mudar os filtros do mercado. Desligada: as mudanças esperam até você clicar em Buscar (Ctrl+Enter). Também pelo raio ao lado de Limpar nos filtros."
       }
     },
     "alerts": {

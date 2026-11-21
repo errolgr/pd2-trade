@@ -650,6 +650,10 @@
       "sellerCard": {
         "label": "Seller card",
         "description": "Show the seller's status and other listings in a listing's details."
+      },
+      "autoSearch": {
+        "label": "Auto search",
+        "description": "Search as you change the market filters. Off: filter changes wait until you press Search (Ctrl+Enter). Also the lightning bolt beside Clear in the filters."
       }
     },
     "alerts": {
