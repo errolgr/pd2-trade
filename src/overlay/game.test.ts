@@ -11,6 +11,8 @@ const state = vi.hoisted(() => ({
   overlayFocus: null as ((e: { payload: boolean }) => void) | null,
   /** `get_diablo_rect`: the Diablo II window in physical screen px. */
   diabloRect: null as { x: number; y: number; width: number; height: number } | null,
+  /** `get_cursor_lock`: where a windowed game locks the cursor, in physical screen px. */
+  cursorLock: null as { x: number; y: number; width: number; height: number } | null,
   /** UI scale (webview zoom factor). */
   zoom: 1,
 }));
@@ -28,7 +30,13 @@ const win = vi.hoisted(() => ({
 vi.mock('@tauri-apps/api/core', () => ({
   isTauri: () => true,
   invoke: vi.fn(async (command: string) =>
-    command === 'is_diablo_focused' ? state.inGame : command === 'get_diablo_rect' ? state.diabloRect : null,
+    command === 'is_diablo_focused'
+      ? state.inGame
+      : command === 'get_diablo_rect'
+        ? state.diabloRect
+        : command === 'get_cursor_lock'
+          ? state.cursorLock
+          : null,
   ),
 }));
 vi.mock('@tauri-apps/api/window', () => ({ getCurrentWindow: () => win, cursorPosition: vi.fn() }));
@@ -57,6 +65,7 @@ beforeEach(() => {
   state.gameContext = null;
   state.overlayFocus = null;
   state.diabloRect = null;
+  state.cursorLock = null;
   state.zoom = 1;
 });
 
@@ -121,7 +130,7 @@ describe('gamePlayRect', () => {
   it.each([
     ['16:9 1920x1080', { x: 0, y: 0, width: 1920, height: 1080 }, { x: 0, y: 0, width: 1920, height: 1080 }],
     ['16:9 1366x768', { x: 0, y: 0, width: 1366, height: 768 }, { x: 0, y: 0, width: 1366, height: 768 }],
-    ['16:10 1920x1200', { x: 0, y: 0, width: 1920, height: 1200 }, { x: 0, y: 0, width: 1920, height: 1200 }],
+    ['16:10 1920x1200', { x: 0, y: 0, width: 1920, height: 1200 }, { x: 0, y: 60, width: 1920, height: 1080 }],
     ['21:9 3440x1440', { x: 0, y: 0, width: 3440, height: 1440 }, { x: 440, y: 0, width: 2560, height: 1440 }],
     ['21:9 2560x1080', { x: 0, y: 0, width: 2560, height: 1080 }, { x: 320, y: 0, width: 1920, height: 1080 }],
     ['21:9 3433x1437 (#128)', { x: 0, y: 0, width: 3433, height: 1437 }, { x: 439, y: 0, width: 2555, height: 1437 }],
@@ -131,10 +140,11 @@ describe('gamePlayRect', () => {
       { x: -5120, y: 200, width: 5120, height: 1440 },
       { x: -3840, y: 200, width: 2560, height: 1440 },
     ],
+    ['windowed 1068x600', { x: 300, y: 100, width: 1068, height: 600 }, { x: 300, y: 100, width: 1068, height: 600 }],
     [
-      'windowed 1068x600 + frame',
-      { x: 300, y: 100, width: 1084, height: 639 },
-      { x: 300, y: 100, width: 1084, height: 639 },
+      'windowed 2370x1390, letterboxed',
+      { x: 2743, y: 31, width: 2370, height: 1390 },
+      { x: 2743, y: 60, width: 2370, height: 1333 },
     ],
   ])('%s', (_name, rect, expected) => {
     expect(gamePlayRect(rect)).toEqual(expected);
@@ -161,5 +171,31 @@ describe('useGameState rect', () => {
     state.zoom = 2;
     await act(async () => void window.dispatchEvent(new Event('resize')));
     expect(result.current.gameRect).toEqual({ x: 0, y: 0, width: 960, height: 540 });
+  });
+});
+
+describe('useGameState cursor lock', () => {
+  it('reports where a windowed game locks the cursor, in CSS px of the scaled UI', async () => {
+    state.diabloRect = { x: 2743, y: 31, width: 2370, height: 1390 };
+    state.cursorLock = { x: 2743, y: 60, width: 2370, height: 1332 };
+    state.zoom = 2;
+    const { result } = await renderGameState();
+    expect(result.current.cursorLock).toEqual({ x: 1371.5, y: 30, width: 1185, height: 666 });
+  });
+
+  it('reports none while the cursor is free, and follows the game locking and releasing it', async () => {
+    state.diabloRect = { x: 2743, y: 31, width: 2370, height: 1390 };
+    const { result } = await renderGameState();
+    expect(result.current.cursorLock).toBeNull();
+
+    state.cursorLock = { x: 2743, y: 60, width: 2370, height: 1332 };
+    gameContext(true);
+    await act(async () => {});
+    expect(result.current.cursorLock).toEqual({ x: 2743, y: 60, width: 2370, height: 1332 });
+
+    state.cursorLock = null; // switched to fullscreen / unlocked
+    gameContext(false);
+    await act(async () => {});
+    expect(result.current.cursorLock).toBeNull();
   });
 });

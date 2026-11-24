@@ -1,4 +1,7 @@
 export const changeLog = {
+  '0.12.5': [
+    '🔧 Windowed D2GL with the cursor locked: panels open over the game and ones left outside it move inside, where the cursor can reach them. The zone timer and net worth ticker sit on the game picture, not in the title bar or black bars',
+  ],
   '0.12.4': [
     '🆕 Settings › Interface › Windows & focus: choose when a window takes the keyboard (typing, any click, or on open), turn off closing windows when you click away, and show windows (and their hotkeys) outside the game. The defaults keep the current behavior',
     '✨ Quick List: the auto-delist checkboxes under the note are gone. Settings › Market › "Never delist" still leaves the items you pick alone, and listings you already marked stay marked',

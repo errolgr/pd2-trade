@@ -267,6 +267,16 @@ describe('NetWorthTicker placement', () => {
     expect(setRect.mock.calls).toEqual([[{ x: 1920 - 181, y: 10, width: 181, height: 28 }]]);
   });
 
+  it('keeps a custom ticker inside the cursor lock of a windowed game as it grows', () => {
+    settings = { netWorthTickerAnchor: 'custom' };
+    panelRect = { x: 1300, y: 100, width: 80, height: 28 }; // near the right edge of the game (x 100..1380)
+    vi.mocked(useOverlay).mockImplementation(
+      () => ({ gameRect, cursorLock: GAME, togglePanel }) as unknown as OverlayApi,
+    );
+    render(<NetWorthTickerPage />);
+    expect(setRect.mock.calls).toEqual([[{ x: 1380 - 181, y: 100, width: 181, height: 28 }]]);
+  });
+
   it('ignores zero-size reads while the panel is hidden', () => {
     vi.mocked(HTMLElement.prototype.getBoundingClientRect).mockReturnValue({ width: 0, height: 0 } as DOMRect);
     render(<NetWorthTickerPage />);
