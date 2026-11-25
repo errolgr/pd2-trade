@@ -239,11 +239,9 @@ beforeEach(() => {
   h.payloadVersion = 0;
   h.store = {
     savedSearches: [] as SavedSearch[],
-    syncStatus: 'ready',
     alertsEnabled: true,
-    limits: { maxSearches: 25, maxAlerting: 10 },
     saveSearch: vi.fn(),
-    setSearchAlert: vi.fn(() => true),
+    setSearchWatching: vi.fn(() => true),
     setAlertsEnabled: vi.fn(),
   };
   vi.mocked(useSimAccess).mockReturnValue(access(true));
@@ -417,19 +415,19 @@ describe('SimPage', () => {
     expect(h.openPanel).toHaveBeenCalledWith('market', { filters: { itemName: 'Harlequin Crest' } });
   });
 
-  it('Watch saves one alerting search named for the item, then shows Watching', async () => {
+  it('Watch saves one watched search named for the item, then shows Watching', async () => {
     const view = await show([done('tg', 'top_gear', 5)]);
     const watch = () => within(screen.getAllByTestId('sim-change')[0]).getByRole('button', { name: /watch/i });
     expect(watch().textContent).toBe('Watch');
     fireEvent.click(watch());
     expect(h.store.saveSearch).toHaveBeenCalledTimes(1);
-    const [name, filters, alert] = h.store.saveSearch.mock.calls[0];
+    const [name, filters, watching] = h.store.saveSearch.mock.calls[0];
     expect(name).toBe('Harlequin Crest (sim upgrade)');
     expect(filters).toMatchObject({ itemName: 'Harlequin Crest', source: 'live', ladder: true, hardcore: false });
-    expect(alert).toBe(true);
+    expect(watching).toBe(true);
 
     // The store now has it: Watching, and no second save
-    h.store = { ...h.store, savedSearches: [{ id: 's1', name, filters, alert: true, createdAt: '' }] };
+    h.store = { ...h.store, savedSearches: [{ id: 's1', name, filters, watching: true, createdAt: '', updatedAt: '' }] };
     view.rerender(<SimPage />);
     expect(watch().textContent).toBe('Watching');
     expect((watch() as HTMLButtonElement).disabled).toBe(true);
@@ -437,16 +435,16 @@ describe('SimPage', () => {
     expect(h.store.saveSearch).toHaveBeenCalledTimes(1);
   });
 
-  it('Watch turns alerts on for an existing saved search instead of saving another', async () => {
+  it('Watch watches an existing saved search instead of saving another', async () => {
     const view = await show([done('tg', 'top_gear', 5)]);
     const watch = () => within(screen.getAllByTestId('sim-change')[0]).getByRole('button', { name: /watch/i });
     fireEvent.click(watch());
     const filters = h.store.saveSearch.mock.calls[0][1];
     h.store.saveSearch.mockClear();
-    h.store = { ...h.store, savedSearches: [{ id: 's2', name: 'Shako', filters, alert: false, createdAt: '' }] };
+    h.store = { ...h.store, savedSearches: [{ id: 's2', name: 'Shako', filters, watching: false, createdAt: '', updatedAt: '' }] };
     view.rerender(<SimPage />);
     fireEvent.click(watch());
-    expect(h.store.setSearchAlert).toHaveBeenCalledWith('s2', true);
+    expect(h.store.setSearchWatching).toHaveBeenCalledWith('s2', true);
     expect(h.store.saveSearch).not.toHaveBeenCalled();
   });
 

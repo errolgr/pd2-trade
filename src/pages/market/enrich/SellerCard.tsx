@@ -1,7 +1,10 @@
 import React from 'react';
 import { ChevronRight, Store, User as UserIcon } from 'lucide-react';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { TombGlyph } from '@/components/glyph/TombGlyph';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tip } from '@/components/ui/tooltip';
+import { glyphCodeForName } from '@/lib/glyph-code';
 import { cn } from '@/lib/utils';
 import { ListingThumb, nameColor } from '@/pages/chat/components/ListingCard';
 import type { TraderPresence } from '@/pages/chat/hooks/useTraderProfile';
@@ -9,11 +12,12 @@ import { DealBadge } from './DealBadge';
 import { useSellerContext } from './useSellerContext';
 import { useDealIndicators } from './useDealIndicators';
 import { SellerName } from '../components/SellerName';
+import { sellerGlyphName } from '../lib/listing';
 import { useOpenTrader } from '../hooks/useListingActions';
 import { currentLocale, useTranslation } from '@/i18n';
 
 /** Same tones as the chat Trader sidebar's presence dot. */
-const PRESENCE_TONE: Record<TraderPresence['kind'], string> = {
+export const PRESENCE_TONE: Record<TraderPresence['kind'], string> = {
   ingame: 'bg-success shadow-[0_0_6px] shadow-success/60',
   online: 'bg-warning',
   seen: 'bg-muted-foreground/50',
@@ -42,6 +46,7 @@ export function SellerCard({
   const seller = useSellerContext(listing);
   const deals = useDealIndicators(seller.others);
   const openTrader = useOpenTrader(listing);
+  const glyphName = sellerGlyphName(listing);
 
   let others: React.ReactNode;
   if (seller.status === 'loading') {
@@ -92,9 +97,15 @@ export function SellerCard({
     <section aria-label={t('filters.seller')}
       className={cn('space-y-2', className)}>
       <div className="flex items-start gap-2">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted/60 text-muted-foreground">
-          <UserIcon className="size-4" />
-        </span>
+        {glyphName ? (
+          <TombGlyph code={glyphCodeForName(glyphName)}
+            size={32}
+            className="shrink-0" />
+        ) : (
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted/60 text-muted-foreground">
+            <UserIcon className="size-4" />
+          </span>
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-baseline gap-1.5">
             {listing.user_id ? (
@@ -116,9 +127,9 @@ export function SellerCard({
               {seller.presenceText}
             </span>
             {seller.accountCreatedAt !== null && (
-              <span title={new Date(seller.accountCreatedAt).toLocaleDateString(currentLocale())}>
-                {t('seller.joined', { ago: seller.accountAgeText })}
-              </span>
+              <Tip label={new Date(seller.accountCreatedAt).toLocaleDateString(currentLocale())}>
+                <span>{t('seller.joined', { ago: seller.accountAgeText })}</span>
+              </Tip>
             )}
           </div>
         </div>

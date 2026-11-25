@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, ChevronDown, RotateCcw, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tip } from '@/components/ui/tooltip';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -13,21 +14,44 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
-import { CLASSES, RARITIES, TYPE_OPTIONS, basesForType, optionCodes } from '../lib/catalog';
-import { defaultAgeDays, MAX_FILTER_TEXT, MAX_SELLER_NAME, type SearchDefaults, withSource } from '../lib/defaults';
-import { anniversaryTri, withAnniversary } from '../lib/anniversary';
+import { RARITIES, TYPE_OPTIONS, optionCodes } from '../lib/catalog';
 import {
-  codeCounts,
-  CODE_FACET_SIZE,
-  type CodeCounts,
-  countsByValue,
-  facetShare,
-  type MarketFacets,
-} from '../lib/facets';
-import type { MarketFilters, OnlineFilter, Rarity, SortBy } from '../lib/types';
-import { Field, RangeField, Section, Segmented, SelectField, TriField, fieldInputClass, ClearButton } from './controls';
-import { FACET_DIM, FacetRowTip, facetFill, useFacetText } from './FacetCounts';
+  basesForTypeValue,
+  baseValueLabel,
+  isTypeOptionSelected,
+  pickedBases,
+  toggleTypeOption,
+  typeValueLabel,
+} from '../lib/type-selection';
+import { weaponGroupByCode } from '../lib/weapon-groups';
+import {
+  ARCHIVE_STATUSES,
+  defaultAgeDays,
+  MAX_FILTER_TEXT,
+  MAX_SELLER_NAME,
+  type SearchDefaults,
+  withSource,
+} from '../lib/defaults';
+import { anniversaryTri, withAnniversary } from '../lib/anniversary';
+import { codeCounts, CODE_FACET_SIZE, type CodeCounts, countsByValue, type MarketFacets } from '../lib/facets';
+import type { MarketFilters, MarketListingStatus, OnlineFilter, Rarity, SortBy, WantedFilters } from '../lib/types';
+import { WTB_CURRENCY_OPTIONS, type WtbCurrency } from '../lib/wtb';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Field,
+  NumberInput,
+  RangeField,
+  Section,
+  Segmented,
+  SelectField,
+  SelectMenu,
+  TriField,
+  fieldInputClass,
+  ClearButton,
+} from './controls';
+import { FACET_DIM, FacetCount, useFacetText } from './FacetCounts';
 import { PriceControl } from './PriceControl';
+import { AutoSearchToggle, SearchFooter } from './SearchControls';
 import { StatFilters, type StatFiltersProps } from './StatFilters';
 import { statName } from './stat-text';
 import { useTranslation } from '@/i18n';
@@ -63,7 +87,6 @@ function RarityField({
     ) : (
       t('filters.selected', { count: value.length })
     );
-  const peak = Math.max(0, ...counts.values());
   return (
     <Field label={t('filters.rarity')}>
       <DropdownMenu>
@@ -81,7 +104,6 @@ function RarityField({
               key={r}
               rarity={r}
               count={counts.get(r)}
-              peak={peak}
               checked={value.includes(r)}
               onCheckedChange={(on) => onChange(on ? [...value, r] : value.filter((x) => x !== r))}
             />
@@ -101,22 +123,19 @@ function RarityField({
   );
 }
 
-/** One rarity in the dropdown, with its facet count (if any): row fill as its share of the busiest, dimmed at 0. */
+/** One rarity in the dropdown, with its facet count (if any) on the right, dimmed at 0. */
 function RarityItem({
   rarity,
   count,
-  peak,
   checked,
   onCheckedChange,
 }: {
   rarity: Rarity;
   count: number | undefined;
-  peak: number;
   checked: boolean;
   onCheckedChange: (on: boolean) => void;
 }) {
   const facetText = useFacetText();
-  const [focused, setFocused] = useState(false);
   const text = count === undefined ? undefined : facetText(rarity, count);
   return (
     <DropdownMenuCheckboxItem
@@ -125,15 +144,83 @@ function RarityItem({
       // Stay open: several rarities are usually picked in a row
       onSelect={(e) => e.preventDefault()}
       onCheckedChange={onCheckedChange}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
-      style={facetFill(facetShare(count, peak))}
       className={cn('text-xs', rarityColor(rarity), count === 0 && !checked && FACET_DIM)}
     >
-      {rarity}
-      {text && <FacetRowTip text={text}
-        open={focused} />}
+      <span className="min-w-0 flex-1 truncate">{rarity}</span>
+      <FacetCount count={count} />
     </DropdownMenuCheckboxItem>
+  );
+}
+
+const STATUS_COLOR: Partial<Record<MarketListingStatus, string>> = { sold: 'text-success' };
+
+/**
+ * The archive's statuses: a multi-select dropdown, every one picked by default (the site's Archive). `counts`
+ * (facets): listings each status alone finds.
+ */
+function StatusField({
+  value,
+  onChange,
+  counts,
+}: {
+  value: MarketListingStatus[] | undefined;
+  onChange: (v: MarketListingStatus[] | undefined) => void;
+  counts: Map<MarketListingStatus, number>;
+}) {
+  const { t } = useTranslation('market');
+  const facetText = useFacetText();
+  const picked = ARCHIVE_STATUSES.filter((s) => !value?.length || value.includes(s));
+  const toggle = (status: MarketListingStatus, on: boolean) => {
+    const next = ARCHIVE_STATUSES.filter((s) => (s === status ? on : picked.includes(s)));
+    onChange(next.length === ARCHIVE_STATUSES.length ? undefined : next);
+  };
+  const summary =
+    picked.length === ARCHIVE_STATUSES.length
+      ? t('filters.status.all')
+      : picked.map((s, i) => (
+          <React.Fragment key={s}>
+            {i > 0 && <span className="text-muted-foreground">, </span>}
+            <span className={STATUS_COLOR[s]}>{t(`filters.status.${s}`)}</span>
+          </React.Fragment>
+        ));
+  return (
+    <Field label={t('filters.status.label')}>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          aria-label={t('filters.status.label')}
+          className="flex h-7 w-full items-center justify-between gap-2 rounded-md border border-input bg-transparent px-2 text-xs whitespace-nowrap outline-none transition-[border-color,box-shadow] duration-(--dur-fast) ease-out hover:border-ring/40 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 data-[state=open]:border-ring [&[data-state=open]>svg]:rotate-180"
+        >
+          <span className="min-w-0 truncate">{summary}</span>
+          <ChevronDown className="size-4 shrink-0 opacity-50 transition-transform duration-(--dur-fast) ease-out" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start"
+          className="w-(--radix-dropdown-menu-trigger-width) min-w-40">
+          {ARCHIVE_STATUSES.map((s) => {
+            const checked = picked.includes(s);
+            const last = checked && picked.length === 1;
+            const count = counts.get(s);
+            const label = t(`filters.status.${s}`);
+            return (
+              <DropdownMenuCheckboxItem
+                key={s}
+                checked={checked}
+                // The last picked status stays: an empty pick would mean every status again
+                disabled={last}
+                title={t(`filters.status.${s}Title`)}
+                aria-label={count === undefined ? label : facetText(label, count)}
+                // Stay open: several statuses are usually toggled in a row
+                onSelect={(e) => e.preventDefault()}
+                onCheckedChange={(on) => toggle(s, on)}
+                className={cn('text-xs', STATUS_COLOR[s], count === 0 && !checked && FACET_DIM)}
+              >
+                <span className="min-w-0 flex-1 truncate">{label}</span>
+                <FacetCount count={count} />
+              </DropdownMenuCheckboxItem>
+            );
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </Field>
   );
 }
 
@@ -153,6 +240,14 @@ export interface FilterSidebarProps {
   onSectionOpen: (title: string, open: boolean) => void;
   /** Facet counts of the current search (shown beside the options); null hides them. */
   facets?: MarketFacets | null;
+  /** Wanted source: whether the user is signed in, and the Fits my stash / Mine only counts (null: unknown yet). */
+  wantedCounts?: { signedIn: boolean; stash: number | null; mine: number | null };
+  /** Search as the filters change; off, edits wait for the Search footer. Omitted: no toggle, always on. */
+  autoSearch?: boolean;
+  onAutoSearchChange?: (on: boolean) => void;
+  /** Auto search off: filter edits since the last search (0: the results match the filters). */
+  unsearchedEdits?: number;
+  onSearch?: () => void;
 }
 
 /**
@@ -179,6 +274,11 @@ export function FilterSidebar({
   sectionsOpen,
   onSectionOpen,
   facets,
+  wantedCounts,
+  autoSearch = true,
+  onAutoSearchChange,
+  unsearchedEdits = 0,
+  onSearch,
 }: FilterSidebarProps) {
   const { t } = useTranslation('market');
   const set = (changes: Partial<MarketFilters>) => onChange({ ...f, ...changes });
@@ -201,7 +301,12 @@ export function FilterSidebar({
   ];
   const setReq = (changes: Partial<MarketFilters['requirements']>) =>
     set({ requirements: { ...f.requirements, ...changes } });
-  const bases = useMemo(() => (f.typeCode ? basesForType(f.typeCode) : []), [f.typeCode]);
+  const bases = useMemo(() => {
+    const all = basesForTypeValue(f.typeCode);
+    // With picked bases (1H, 2H…), the bases picked
+    const picked = pickedBases(f);
+    return picked ? all.filter((b) => optionCodes(b.code).every((c) => picked.has(c))) : all;
+  }, [f]);
   const req = f.requirements;
   const counts = useMemo(
     () => ({
@@ -210,10 +315,14 @@ export function FilterSidebar({
       baseCode: codeCounts(facets?.baseCode, CODE_FACET_SIZE.baseCode),
       ethereal: countsByValue(facets?.ethereal),
       corrupted: countsByValue(facets?.corrupted),
+      status: countsByValue(facets?.status),
     }),
     [facets],
   );
   const yesNo = (m: Map<boolean, number>) => ({ yes: m.get(true), no: m.get(false) });
+  /** Wanted source: its own filters (offer, requests); null on the listing sources. */
+  const wanted = f.source === 'wanted' ? (f.wanted ?? {}) : null;
+  const setWanted = (changes: Partial<WantedFilters>) => set({ wanted: { ...f.wanted, ...changes } });
 
   return (
     <aside aria-label={t('filters.label')}
@@ -223,21 +332,41 @@ export function FilterSidebar({
           label={t('filters.source.label')}
           value={f.source}
           onChange={(source) => onChange(withSource(f, source, defaults))}
+          // Short labels fit the 300px sidebar beside Clear; the full names (and what each holds) on hover / for readers
           options={[
-            { value: 'live', label: t('filters.source.live') },
-            { value: 'archive', label: t('filters.source.archive'), title: t('filters.source.archiveTitle') },
+            {
+              value: 'live',
+              label: t('filters.source.short.live'),
+              ariaLabel: t('filters.source.live'),
+              title: t('filters.source.live'),
+            },
+            {
+              value: 'archive',
+              label: t('filters.source.short.archive'),
+              ariaLabel: t('filters.source.archive'),
+              title: `${t('filters.source.archive')} · ${t('filters.source.archiveTitle')}`,
+            },
+            {
+              value: 'wanted',
+              label: t('filters.source.short.wanted'),
+              ariaLabel: t('filters.source.wanted'),
+              title: `${t('filters.source.wanted')} · ${t('filters.source.wantedTitle')}`,
+            },
           ]}
         />
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 shrink-0 gap-1 px-2 text-xs text-muted-foreground"
-          onClick={onReset}
-          title={t('filters.clearAll')}
-        >
-          <RotateCcw className="size-3.5" />
-          {t('common:actions.clear')}
-        </Button>
+        {onAutoSearchChange && <AutoSearchToggle value={autoSearch}
+          onChange={onAutoSearchChange} />}
+        <Tip label={t('filters.clearAll')}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 shrink-0 gap-1 px-2 text-xs text-muted-foreground"
+            onClick={onReset}
+          >
+            <RotateCcw className="size-3.5" />
+            {t('common:actions.clear')}
+          </Button>
+        </Tip>
       </div>
       <ScrollArea className="min-h-0 flex-1 [&_[data-radix-scroll-area-viewport]>div]:!block">
         <Section
@@ -245,15 +374,16 @@ export function FilterSidebar({
           active={f.stats.filter((s) => s.enabled).length}
           actions={
             f.stats.length > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 shrink-0 px-1.5 text-[11px] text-muted-foreground hover:text-destructive"
-                onClick={() => set({ stats: [] })}
-                title={t('filters.clearStats')}
-              >
-                {t('common:actions.clear')}
-              </Button>
+              <Tip label={t('filters.clearStats')}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 shrink-0 px-1.5 text-[11px] text-muted-foreground hover:text-destructive"
+                  onClick={() => set({ stats: [] })}
+                >
+                  {t('common:actions.clear')}
+                </Button>
+              </Tip>
             )
           }
         >
@@ -264,7 +394,7 @@ export function FilterSidebar({
 
         <Section
           {...section('Item', t('filters.sections.item'))}
-          active={countDefined(f.typeCode, f.baseCode, req.class) + (f.rarity.length ? 1 : 0)}
+          active={countDefined(f.typeCode, f.baseCode) + (f.rarity.length ? 1 : 0)}
         >
           <SelectField
             label={t('filters.type')}
@@ -273,9 +403,16 @@ export function FilterSidebar({
               value: o.code,
               label: o.label,
               depth: o.depth,
-              count: optionCount(o.code, counts.typeCode),
+              // The type facet can't count a hand group (it takes only some bases of a type)
+              count: weaponGroupByCode(o.code)?.bases ? undefined : optionCount(o.code, counts.typeCode),
             }))}
             onChange={(typeCode) => set({ typeCode, baseCode: undefined })}
+            onToggle={(code) => {
+              const { typeCode, baseCode } = toggleTypeOption(f, code);
+              set({ typeCode, baseCode });
+            }}
+            selected={(code) => isTypeOptionSelected(f, code)}
+            valueLabel={typeValueLabel(f)}
           />
           <SelectField
             label={t('filters.base')}
@@ -284,26 +421,23 @@ export function FilterSidebar({
             anyLabel={f.typeCode ? t('filters.any') : t('filters.pickTypeFirst')}
             options={bases.map((b) => ({ value: b.code, label: b.label, count: optionCount(b.code, counts.baseCode) }))}
             onChange={(baseCode) => set({ baseCode })}
+            valueLabel={baseValueLabel(f)}
           />
           <RarityField value={f.rarity}
             counts={counts.quality}
             onChange={(rarity) => set({ rarity })} />
-          <SelectField
-            label={t('filters.class')}
-            value={req.class}
-            options={CLASSES.map((c) => ({ value: c.value, label: c.label }))}
-            onChange={(v) => setReq({ class: CLASSES.find((c) => c.value === v)?.value })}
-          />
         </Section>
 
+        {/* On Wanted, the properties a buy request can ask for (the board filters on these); not Identified or
+            Anniversary, which no request is posted for */}
         <Section
           {...section('Properties', t('filters.sections.properties'))}
           active={countDefined(
             f.ethereal,
             f.corrupted,
             f.desecrated,
-            f.identified,
-            anniversaryTri(f.stats),
+            wanted ? undefined : f.identified,
+            wanted ? undefined : anniversaryTri(f.stats),
             f.socketsMin,
             f.socketsMax,
           )}
@@ -311,7 +445,7 @@ export function FilterSidebar({
           <TriField
             label={t('filters.corrupted')}
             value={f.corrupted}
-            counts={yesNo(counts.corrupted)}
+            counts={wanted ? undefined : yesNo(counts.corrupted)}
             onChange={(corrupted) => set({ corrupted })}
           />
           <RangeField
@@ -323,7 +457,7 @@ export function FilterSidebar({
           <TriField
             label={t('filters.ethereal')}
             value={f.ethereal}
-            counts={yesNo(counts.ethereal)}
+            counts={wanted ? undefined : yesNo(counts.ethereal)}
             onChange={(ethereal) => set({ ethereal })}
           />
           <TriField
@@ -331,27 +465,39 @@ export function FilterSidebar({
             value={f.desecrated}
             onChange={(desecrated) => set({ desecrated })}
           />
-          <TriField
-            label={t('filters.identified')}
-            value={f.identified}
-            onChange={(identified) => set({ identified })}
-          />
-          <TriField
-            label={t('filters.anniversary')}
-            value={anniversaryTri(f.stats)}
-            onChange={(value) => set({ stats: withAnniversary(f.stats, value) })}
-          />
+          {!wanted && (
+            <>
+              <TriField
+                label={t('filters.identified')}
+                value={f.identified}
+                onChange={(identified) => set({ identified })}
+              />
+              <TriField
+                label={t('filters.anniversary')}
+                value={anniversaryTri(f.stats)}
+                onChange={(value) => set({ stats: withAnniversary(f.stats, value) })}
+              />
+            </>
+          )}
         </Section>
 
         <Section
-          {...section('Listing', t('filters.sections.listing'))}
+          {...section('Listing', wanted ? t('filters.sections.realm') : t('filters.sections.listing'))}
           // Collapsed by default: a window or sort other than the user's default (e.g. "sort by this" from a mod
           // menu) shows in the badge
           active={
-            (f.maxAgeDays !== defaultAgeDays(f.source, defaults) ? 1 : 0) +
-            (f.sort.by !== defaults.sort.by || f.sort.dir !== defaults.sort.dir ? 1 : 0)
+            wanted
+              ? 0
+              : (f.maxAgeDays !== defaultAgeDays(f.source, defaults) ? 1 : 0) +
+                (f.sort.by !== defaults.sort.by || f.sort.dir !== defaults.sort.dir ? 1 : 0) +
+                (f.source === 'archive' && f.status?.length ? 1 : 0)
           }
         >
+          {f.source === 'archive' && (
+            <StatusField value={f.status}
+              counts={counts.status}
+              onChange={(status) => set({ status })} />
+          )}
           <Field label={t('filters.mode')}>
             <div className="flex gap-1">
               <Segmented
@@ -374,191 +520,315 @@ export function FilterSidebar({
               />
             </div>
           </Field>
-          <SelectField
-            label={t('filters.listedWithin')}
-            value={String(f.maxAgeDays)}
-            options={
-              ageOptions.some((o) => o.value === String(f.maxAgeDays))
-                ? ageOptions
-                : [...ageOptions, { value: String(f.maxAgeDays), label: ageLabel(f.maxAgeDays) }]
-            }
-            anyLabel={null}
-            onChange={(v) => v && set({ maxAgeDays: Number(v) })}
-          />
-          <Field label={t('filters.sort.label')}>
-            <Segmented
-              label={t('filters.sort.label')}
-              value={f.sort.by}
-              options={sortOptions}
-              onChange={(by) => set({ sort: { by, dir: f.sort.dir } })}
-            />
-          </Field>
-          {f.sort.by === 'stat' && f.sort.key && (
-            <Field label="">
-              <span className="inline-flex h-6 max-w-full items-center gap-1 rounded-full border border-primary/40 bg-primary/10 pl-2 pr-0.5 text-[11px] text-primary">
-                <span className="truncate">{t('filters.sort.stat', { stat: statName(f.sort.key) })}</span>
-                <button
-                  type="button"
-                  aria-label={t('filters.sort.stopStat')}
-                  title={t('filters.sort.stopStat')}
-                  onClick={() => set({ sort: { ...defaults.sort } })}
-                  className="inline-flex size-5 shrink-0 items-center justify-center rounded-full hover:bg-primary/20"
-                >
-                  <X className="size-3" />
-                </button>
-              </span>
-            </Field>
+          {!wanted && (
+            <>
+              <SelectField
+                label={t('filters.listedWithin')}
+                value={f.maxAgeDays === undefined ? undefined : String(f.maxAgeDays)}
+                options={
+                  f.maxAgeDays === undefined || ageOptions.some((o) => o.value === String(f.maxAgeDays))
+                    ? ageOptions
+                    : [...ageOptions, { value: String(f.maxAgeDays), label: ageLabel(f.maxAgeDays) }]
+                }
+                onChange={(v) => set({ maxAgeDays: v ? Number(v) : undefined })}
+              />
+              <Field label={t('filters.sort.label')}>
+                <Segmented
+                  label={t('filters.sort.label')}
+                  value={f.sort.by}
+                  options={sortOptions}
+                  onChange={(by) => set({ sort: { by, dir: f.sort.dir } })}
+                />
+              </Field>
+              {f.sort.by === 'stat' && f.sort.key && (
+                <Field label="">
+                  <span className="inline-flex h-6 max-w-full items-center gap-1 rounded-full border border-primary/40 bg-primary/10 pl-2 pr-0.5 text-[11px] text-primary">
+                    <span className="truncate">{t('filters.sort.stat', { stat: statName(f.sort.key) })}</span>
+                    <Tip label={t('filters.sort.stopStat')}>
+                      <button
+                        type="button"
+                        aria-label={t('filters.sort.stopStat')}
+                        onClick={() => set({ sort: { ...defaults.sort } })}
+                        className="inline-flex size-5 shrink-0 items-center justify-center rounded-full hover:bg-primary/20"
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </Tip>
+                  </span>
+                </Field>
+              )}
+              <Field label={t('filters.order.label')}>
+                <Segmented
+                  label={t('filters.order.ariaLabel')}
+                  value={f.sort.dir}
+                  onChange={(dir) => set({ sort: { ...f.sort, dir } })}
+                  options={[
+                    {
+                      value: 'desc',
+                      title: t('filters.order.descending'),
+                      label: (
+                        <span className="inline-flex items-center gap-1">
+                          <ArrowDownWideNarrow className="size-3" />
+                          {f.sort.by === 'bumped' ? t('filters.order.newest') : t('filters.order.highFirst')}
+                        </span>
+                      ),
+                    },
+                    {
+                      value: 'asc',
+                      title: t('filters.order.ascending'),
+                      label: (
+                        <span className="inline-flex items-center gap-1">
+                          <ArrowUpNarrowWide className="size-3" />
+                          {f.sort.by === 'bumped' ? t('filters.order.oldest') : t('filters.order.lowFirst')}
+                        </span>
+                      ),
+                    },
+                  ]}
+                />
+              </Field>
+            </>
           )}
-          <Field label={t('filters.order.label')}>
-            <Segmented
-              label={t('filters.order.ariaLabel')}
-              value={f.sort.dir}
-              onChange={(dir) => set({ sort: { ...f.sort, dir } })}
-              options={[
-                {
-                  value: 'desc',
-                  title: t('filters.order.descending'),
-                  label: (
-                    <span className="inline-flex items-center gap-1">
-                      <ArrowDownWideNarrow className="size-3" />
-                      {f.sort.by === 'bumped' ? t('filters.order.newest') : t('filters.order.highFirst')}
-                    </span>
-                  ),
-                },
-                {
-                  value: 'asc',
-                  title: t('filters.order.ascending'),
-                  label: (
-                    <span className="inline-flex items-center gap-1">
-                      <ArrowUpNarrowWide className="size-3" />
-                      {f.sort.by === 'bumped' ? t('filters.order.oldest') : t('filters.order.lowFirst')}
-                    </span>
-                  ),
-                },
-              ]}
-            />
-          </Field>
         </Section>
 
-        <Section
-          {...section('Price', t('filters.sections.price'))}
-          active={countDefined(f.priceText, f.hrMin, f.hrMax) + (f.hasBuyout !== defaults.hasBuyout ? 1 : 0)}
-        >
-          <Field label={t('filters.priceNote')}
-            htmlFor="market-price-text">
-            <Input
-              id="market-price-text"
-              placeholder={t('filters.priceNotePlaceholder')}
-              maxLength={MAX_FILTER_TEXT}
-              value={f.priceText ?? ''}
-              onChange={(e) => set({ priceText: e.target.value.slice(0, MAX_FILTER_TEXT) || undefined })}
-              className={fieldInputClass}
-            />
-          </Field>
-          <Field label={t('filters.hrPrice')}>
-            <PriceControl
-              label={t('filters.hrPrice')}
-              buckets={facets?.price}
-              value={{ hrMin: f.hrMin, hrMax: f.hrMax, hrMaxExclusive: f.hrMaxExclusive }}
-              onChange={set}
-            />
-          </Field>
-          <TriField label={t('filters.hasBuyout')}
-            value={f.hasBuyout}
-            onChange={(hasBuyout) => set({ hasBuyout })} />
-        </Section>
+        {wanted ? (
+          <Section {...section('Offer', t('filters.sections.offer'))}
+            active={countDefined(wanted.minOffer)}>
+            <Field label={t('filters.minOffer')}>
+              <div className="flex items-center gap-1">
+                <NumberInput
+                  ariaLabel={t('filters.minOffer')}
+                  placeholder={t('controls.min')}
+                  value={wanted.minOffer}
+                  min={0}
+                  step={0.5}
+                  onChange={(minOffer) => setWanted({ minOffer })}
+                />
+                <SelectMenu
+                  label={t('wtb.post.currency')}
+                  value={wanted.offerCurrency ?? 'HR'}
+                  options={WTB_CURRENCY_OPTIONS}
+                  anyLabel={null}
+                  onChange={(v) => setWanted({ offerCurrency: v as WtbCurrency })}
+                  className="w-24 shrink-0"
+                />
+              </div>
+            </Field>
+          </Section>
+        ) : (
+          <Section
+            {...section('Price', t('filters.sections.price'))}
+            active={countDefined(f.priceText, f.hrMin, f.hrMax) + (f.hasBuyout !== defaults.hasBuyout ? 1 : 0)}
+          >
+            <Field label={t('filters.priceNote')}
+              htmlFor="market-price-text">
+              <Input
+                id="market-price-text"
+                placeholder={t('filters.priceNotePlaceholder')}
+                maxLength={MAX_FILTER_TEXT}
+                value={f.priceText ?? ''}
+                onChange={(e) => set({ priceText: e.target.value.slice(0, MAX_FILTER_TEXT) || undefined })}
+                className={fieldInputClass}
+              />
+            </Field>
+            <Field label={t('filters.hrPrice')}>
+              <PriceControl
+                label={t('filters.hrPrice')}
+                buckets={facets?.price}
+                value={{ hrMin: f.hrMin, hrMax: f.hrMax, hrMaxExclusive: f.hrMaxExclusive }}
+                onChange={set}
+              />
+            </Field>
+            <TriField label={t('filters.hasBuyout')}
+              value={f.hasBuyout}
+              onChange={(hasBuyout) => set({ hasBuyout })} />
+          </Section>
+        )}
 
-        <Section
-          {...section('Seller', t('filters.sections.seller'))}
-          active={
-            countDefined(f.sellerUserId ?? f.sellerName) +
-            (f.userOnlineSite !== defaults.userOnlineSite ? 1 : 0) +
-            (f.userOnlineGame !== defaults.userOnlineGame ? 1 : 0)
-          }
-        >
-          <Field label={t('filters.seller')}
-            htmlFor="market-seller">
-            <SellerInput
-              userId={f.sellerUserId}
-              name={f.sellerName}
-              onChange={(sellerUserId, sellerName) => set({ sellerUserId, sellerName })}
-            />
-          </Field>
-          <Field label={t('filters.onlineSite')}>
-            <Segmented
-              label={t('filters.onlineSiteLabel')}
-              value={f.userOnlineSite}
-              options={onlineOptions}
-              onChange={(userOnlineSite) => set({ userOnlineSite })}
-            />
-          </Field>
-          <Field label={t('filters.onlineGame')}>
-            <Segmented
-              label={t('filters.onlineGameLabel')}
-              value={f.userOnlineGame}
-              options={onlineOptions}
-              onChange={(userOnlineGame) => set({ userOnlineGame })}
-            />
-          </Field>
-        </Section>
+        {wanted ? (
+          <>
+            <Section {...section('Buyer', t('filters.sections.buyer'))}
+              active={countDefined(f.sellerName)}>
+              <Field label={t('filters.buyer')}
+                htmlFor="market-seller">
+                <SellerInput
+                  userId={undefined}
+                  name={f.sellerName}
+                  placeholder={t('filters.buyerPlaceholder')}
+                  onChange={(_, sellerName) => set({ sellerUserId: undefined, sellerName })}
+                />
+              </Field>
+            </Section>
+            <Section
+              {...section('Requests', t('filters.sections.requests'))}
+              active={(wanted.overlap ? 1 : 0) + (wanted.fitsStash ? 1 : 0) + (wanted.mine ? 1 : 0)}
+            >
+              <WantedToggle
+                label={t('filters.wouldTake')}
+                hint={t('filters.wouldTakeTitle')}
+                count={null}
+                checked={!!wanted.overlap}
+                disabledReason={null}
+                onChange={(overlap) => setWanted({ overlap: overlap || undefined })}
+              />
+              <WantedToggle
+                label={t('filters.fitsStash')}
+                count={wantedCounts?.stash ?? null}
+                checked={!!wanted.fitsStash}
+                disabledReason={wantedCounts?.signedIn ? null : t('wtb.signInStash')}
+                onChange={(fitsStash) => setWanted({ fitsStash })}
+              />
+              <WantedToggle
+                label={t('filters.mineOnly')}
+                count={wantedCounts?.mine ?? null}
+                checked={!!wanted.mine}
+                disabledReason={wantedCounts?.signedIn ? null : t('wtb.signInMine')}
+                onChange={(mine) => setWanted({ mine })}
+              />
+            </Section>
+          </>
+        ) : (
+          <Section
+            {...section('Seller', t('filters.sections.seller'))}
+            active={
+              countDefined(f.sellerUserId ?? f.sellerName) +
+              (f.userOnlineSite !== defaults.userOnlineSite ? 1 : 0) +
+              (f.userOnlineGame !== defaults.userOnlineGame ? 1 : 0)
+            }
+          >
+            <Field label={t('filters.seller')}
+              htmlFor="market-seller">
+              <SellerInput
+                userId={f.sellerUserId}
+                name={f.sellerName}
+                placeholder={t('filters.sellerPlaceholder')}
+                onChange={(sellerUserId, sellerName) => set({ sellerUserId, sellerName })}
+              />
+            </Field>
+            <Field label={t('filters.onlineSite')}>
+              <Segmented
+                label={t('filters.onlineSiteLabel')}
+                value={f.userOnlineSite}
+                options={onlineOptions}
+                onChange={(userOnlineSite) => set({ userOnlineSite })}
+              />
+            </Field>
+            <Field label={t('filters.onlineGame')}>
+              <Segmented
+                label={t('filters.onlineGameLabel')}
+                value={f.userOnlineGame}
+                options={onlineOptions}
+                onChange={(userOnlineGame) => set({ userOnlineGame })}
+              />
+            </Field>
+          </Section>
+        )}
 
-        <Section
-          {...section('Requirements', t('filters.sections.requirements'))}
-          active={countDefined(req.levelMin, req.levelMax, req.strMin, req.strMax, req.dexMin, req.dexMax)}
-        >
-          <RangeField
-            label={t('filters.level')}
-            min={req.levelMin}
-            max={req.levelMax}
-            onChange={(levelMin, levelMax) => setReq({ levelMin, levelMax })}
-          />
-          <RangeField
-            label={t('filters.strength')}
-            min={req.strMin}
-            max={req.strMax}
-            onChange={(strMin, strMax) => setReq({ strMin, strMax })}
-          />
-          <RangeField
-            label={t('filters.dexterity')}
-            min={req.dexMin}
-            max={req.dexMax}
-            onChange={(dexMin, dexMax) => setReq({ dexMin, dexMax })}
-          />
-        </Section>
+        {!wanted && (
+          <Section
+            {...section('Requirements', t('filters.sections.requirements'))}
+            active={countDefined(req.levelMin, req.levelMax, req.strMin, req.strMax, req.dexMin, req.dexMax)}
+          >
+            <RangeField
+              label={t('filters.level')}
+              min={req.levelMin}
+              max={req.levelMax}
+              onChange={(levelMin, levelMax) => setReq({ levelMin, levelMax })}
+            />
+            <RangeField
+              label={t('filters.strength')}
+              min={req.strMin}
+              max={req.strMax}
+              onChange={(strMin, strMax) => setReq({ strMin, strMax })}
+            />
+            <RangeField
+              label={t('filters.dexterity')}
+              min={req.dexMin}
+              max={req.dexMax}
+              onChange={(dexMin, dexMax) => setReq({ dexMin, dexMax })}
+            />
+          </Section>
+        )}
       </ScrollArea>
+      {!autoSearch && onSearch && <SearchFooter unsearchedEdits={unsearchedEdits}
+        onSearch={onSearch} />}
     </aside>
   );
 }
 
 /**
- * Seller name: the website username or an in-game account, matched exactly (any case) by the market service.
- * Typing applies it like the other text filters and replaces a seller picked with "browse seller" (by id).
+ * Seller name (or, on Wanted, the buyer's): the website username or an in-game account, matched exactly (any case)
+ * by the service. Typing applies it like the other text filters and replaces a seller picked with "browse seller"
+ * (by id).
  */
 function SellerInput({
   userId,
   name,
+  placeholder,
   onChange,
 }: {
   userId: string | undefined;
   name: string | undefined;
+  placeholder: string;
   onChange: (userId: string | undefined, name: string | undefined) => void;
 }) {
   const { t } = useTranslation('market');
   return (
     <div className="relative">
-      <Input
-        id="market-seller"
-        placeholder={t('filters.sellerPlaceholder')}
-        maxLength={MAX_SELLER_NAME}
-        value={name ?? ''}
-        onChange={(e) => onChange(undefined, e.target.value.slice(0, MAX_SELLER_NAME) || undefined)}
-        title={userId ? t('filters.sellerPicked') : undefined}
-        className={cn(fieldInputClass, 'pr-6', userId && 'border-primary/50')}
-      />
+      <Tip label={userId ? t('filters.sellerPicked') : undefined}>
+        <Input
+          id="market-seller"
+          placeholder={placeholder}
+          maxLength={MAX_SELLER_NAME}
+          value={name ?? ''}
+          onChange={(e) => onChange(undefined, e.target.value.slice(0, MAX_SELLER_NAME) || undefined)}
+          className={cn(fieldInputClass, 'pr-6', userId && 'border-primary/50')}
+        />
+      </Tip>
       {(name || userId) && (
         <ClearButton label={t('filters.clearSeller')}
           onClick={() => onChange(undefined, undefined)} />
       )}
     </div>
+  );
+}
+
+/**
+ * A Requests checkbox (Would take these items, Fits my stash, Mine only) with its count and `hint` on hover; signed
+ * out a sign-in one is off, the reason on hover.
+ */
+function WantedToggle({
+  label,
+  hint,
+  count,
+  checked,
+  disabledReason,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  count: number | null;
+  checked: boolean;
+  disabledReason: string | null;
+  onChange: (on: boolean) => void;
+}) {
+  return (
+    <Tip label={disabledReason ?? hint}>
+      <label
+        className={cn(
+          'flex items-center gap-2 text-xs',
+          disabledReason ? 'cursor-not-allowed text-muted-foreground' : 'cursor-pointer',
+        )}
+      >
+        <Checkbox
+          checked={checked && !disabledReason}
+          disabled={!!disabledReason}
+          onCheckedChange={(v) => onChange(v === true)}
+        />
+        <span className="min-w-0 flex-1 truncate">{label}</span>
+        {count !== null && !disabledReason && (
+          <span className="text-[10px] tabular-nums text-muted-foreground">{count}</span>
+        )}
+      </label>
+    </Tip>
   );
 }

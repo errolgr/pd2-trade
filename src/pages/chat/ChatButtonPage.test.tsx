@@ -58,6 +58,9 @@ afterEach(() => {
   act(() => resetNotificationLog());
 });
 
+/** The tab (its favorite buttons and the menu caret). */
+const dockTab = () => screen.getByRole('button', { name: 'More' }).parentElement!;
+
 describe('ChatButtonPage', () => {
   it('shows the unread chat badge count', async () => {
     render(<ChatButtonPage />);
@@ -95,7 +98,10 @@ describe('ChatButtonPage', () => {
     act(() => void logNotification({ kind: 'offer', title: 'New Offer', description: 'Bob: 2 Ist' }, { missed: true }));
     expect(logButton()?.getAttribute('aria-label')).toBe('1 missed notification');
     expect(logButton()?.className).toContain('text-warning');
-    expect(logButton()?.getAttribute('title')).toBe('Bob: 2 Ist');
+    act(() => {
+      fireEvent.focus(logButton()!);
+    });
+    expect(screen.getByRole('tooltip').textContent).toBe('Bob: 2 Ist');
 
     fireEvent.click(logButton()!);
     expect(overlay.openPanel).toHaveBeenCalledWith('notifications', undefined, expect.anything());
@@ -144,19 +150,20 @@ describe('ChatButtonPage', () => {
     // Offers: chat on the Selling filter
     ['Offers', ['chat', { filter: 'selling' }]],
     // keepPayload: an open quick list keeps the item being listed
-    ['Manage listings', ['quickList', undefined, { placement: 'gameCenter', keepPayload: true }]],
+    ['Manage listings', ['quickList', undefined, { keepPayload: true }]],
     ['Settings', ['settings']],
-  ] as const)('menu: %s opens its window and closes the menu', (name, args) => {
+  ] as const)('menu: %s opens its window and closes the menu', async (name, args) => {
     render(<ChatButtonPage />);
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
     fireEvent.click(screen.getByRole('menuitem', { name }));
     expect(overlay.openPanel.mock.calls).toEqual([args]);
     expect(screen.getByRole('button', { name: 'More' }).getAttribute('aria-expanded')).toBe('false');
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
   });
 
   it('slides along the edge when dragged, saves the spot on release, and the drag does not click', () => {
     render(<ChatButtonPage />);
-    const tab = screen.getByTitle('Drag to move');
+    const tab = dockTab();
     const dock = () => tab.closest<HTMLElement>('.absolute.right-0')!;
     expect(dock().style.top).toBe('953px');
 
@@ -181,7 +188,7 @@ describe('ChatButtonPage', () => {
   it('holds the favorites from settings, growing upward from its spot, and saves favorite changes', () => {
     settings = { chatDockFavorites: ['chat', 'offers', 'settings'] };
     render(<ChatButtonPage />);
-    const dock = () => screen.getByTitle('Drag to move').closest<HTMLElement>('.absolute.right-0')!;
+    const dock = () => dockTab().closest<HTMLElement>('.absolute.right-0')!;
     // A third button adds a tab width (43px) above the default 118px tab: 43x161, same 9px above the bottom
     expect(dock().style.height).toBe('161px');
     expect(dock().style.top).toBe(`${953 - 43}px`);
@@ -199,7 +206,7 @@ describe('ChatButtonPage', () => {
       chatDockFavorites: ['bogus', 'offers', 'settings'],
     };
     render(<ChatButtonPage />);
-    const tab = screen.getByTitle('Drag to move');
+    const tab = dockTab();
     expect(Array.from(tab.querySelectorAll('button')).map((b) => b.getAttribute('aria-label'))).toEqual([
       'Settings',
       'Offers',
@@ -331,7 +338,7 @@ describe('ChatButtonPage feed', () => {
       expect((screen.getByRole('button', { name: 'Mark all read' }) as HTMLButtonElement).disabled).toBe(true);
     });
 
-    it('Open chat opens chat, on the newest unread with unread messages', () => {
+    it('Open chat opens chat, on the newest unread with unread messages', async () => {
       render(<ChatButtonPage />);
       hover();
       fireEvent.click(screen.getByRole('button', { name: 'Open chat' }));
@@ -342,6 +349,9 @@ describe('ChatButtonPage feed', () => {
         ['chat', undefined],
         ['chat', { newestUnread: true }],
       ]);
+      // the exit animation runs on real frames
+      vi.useRealTimers();
+      await waitFor(() => expect(peek()).toBeNull());
     });
 
     it("an empty feed shows You're all caught up", () => {

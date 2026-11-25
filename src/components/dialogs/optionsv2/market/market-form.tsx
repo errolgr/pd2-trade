@@ -2,20 +2,24 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import React from 'react';
-import { Volume1, Volume2, VolumeX } from 'lucide-react';
 import { Form, FormControl, FormField, FormMessage } from '@/components/ui/form';
 import { ISettings, useOptions } from '@/hooks/useOptions';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
-import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DEFAULT_WHISPER_TEMPLATE } from '@/pages/market/lib/whisper';
+import { useMarketStore } from '@/pages/market/store/useMarketStore';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
+import { VolumeControl } from '../volume-control';
+import { DelistExceptions } from './delist-exceptions';
+import type { DelistException } from '@/pages/delist/delist-exemptions';
 import {
   ageDayOptions,
   alertSecondsOptions,
   AUTO_DELIST_OPTIONS,
   AUTO_DELIST_VALUES,
+  DELIST_EXCEPTION_OPTIONS,
+  DELIST_EXCEPTION_VALUES,
   BUYOUT_OPTIONS,
   BUYOUT_VALUES,
   LISTINGS_VIEW_OPTIONS,
@@ -32,11 +36,14 @@ import { Trans, useTranslation } from '@/i18n';
 
 const marketFormSchema = z.object({
   stashAutoDelist: z.enum(AUTO_DELIST_VALUES),
+  // Only DelistExceptions edits it (zod's inferred object fields would come out optional)
+  delistExceptions: z.custom<DelistException[]>((value) => Array.isArray(value)),
+  delistExceptionMode: z.enum(DELIST_EXCEPTION_VALUES),
   myListingsView: z.enum(LISTINGS_VIEW_VALUES),
   marketDefaultSort: z.enum(SORT_VALUES),
   marketDefaultSeller: z.enum(SELLER_VALUES),
   marketDefaultHasBuyout: z.enum(BUYOUT_VALUES),
-  marketDefaultMaxAgeDays: z.number().int().positive(),
+  marketDefaultListedWithinDays: z.number().int().min(0),
   marketPageSize: z.union([z.literal(25), z.literal(50), z.literal(100)]),
   marketWhisperTemplate: z.string(),
   marketShowDealBadges: z.boolean(),
@@ -45,6 +52,7 @@ const marketFormSchema = z.object({
   marketAlertSoundEnabled: z.boolean(),
   marketAlertVolume: z.number().int().min(0).max(100),
   marketAlertToastSeconds: z.number().int().positive(),
+  marketWtbPromptEnabled: z.boolean(),
 });
 
 type MarketFormValues = z.infer<typeof marketFormSchema>;
@@ -52,11 +60,13 @@ type MarketFormValues = z.infer<typeof marketFormSchema>;
 function toFormValues(settings: ISettings | undefined): MarketFormValues {
   return {
     stashAutoDelist: settings?.stashAutoDelist ?? 'ask',
+    delistExceptions: settings?.delistExceptions ?? [],
+    delistExceptionMode: settings?.delistExceptionMode ?? 'none',
     myListingsView: settings?.myListingsView ?? 'cards',
     marketDefaultSort: settings?.marketDefaultSort ?? 'newest',
     marketDefaultSeller: settings?.marketDefaultSeller ?? 'all',
     marketDefaultHasBuyout: settings?.marketDefaultHasBuyout ?? 'any',
-    marketDefaultMaxAgeDays: settings?.marketDefaultMaxAgeDays ?? 3,
+    marketDefaultListedWithinDays: settings?.marketDefaultListedWithinDays ?? 0,
     marketPageSize: settings?.marketPageSize ?? 25,
     marketWhisperTemplate: settings?.marketWhisperTemplate ?? '',
     marketShowDealBadges: settings?.marketShowDealBadges ?? true,
@@ -65,6 +75,7 @@ function toFormValues(settings: ISettings | undefined): MarketFormValues {
     marketAlertSoundEnabled: settings?.marketAlertSoundEnabled ?? true,
     marketAlertVolume: settings?.marketAlertVolume ?? 70,
     marketAlertToastSeconds: settings?.marketAlertToastSeconds ?? 8,
+    marketWtbPromptEnabled: settings?.marketWtbPromptEnabled ?? true,
   };
 }
 
@@ -115,6 +126,31 @@ function SelectRow({
   );
 }
 
+/**
+ * Auto search lives in market-prefs.json (the market store), not ISettings: the same value as the lightning bolt
+ * beside Clear in the market filters, so flipping either shows in the other at once.
+ */
+function AutoSearchRow() {
+  const { t } = useTranslation('settings');
+  const { autoSearch, setAutoSearch } = useMarketStore();
+  return (
+    <SettingsRow
+      settingKey="marketAutoSearch"
+      label={t('market.browser.autoSearch.label')}
+      description={t('market.browser.autoSearch.description')}
+      control={
+        <FormControl>
+          <Switch
+            checked={autoSearch}
+            onCheckedChange={setAutoSearch}
+            aria-label={t('market.browser.autoSearch.label')}
+          />
+        </FormControl>
+      }
+    />
+  );
+}
+
 export function MarketForm() {
   const { t } = useTranslation('settings');
   const { settings, isLoading, updateSettings } = useOptions();
@@ -140,8 +176,11 @@ export function MarketForm() {
         const parsed = marketFormSchema.safeParse(form.getValues());
         if (!parsed.success) return;
         const current = toFormValues(settingsRef.current);
+        // JSON: the exception list is a fresh array after parsing
         const changed = Object.fromEntries(
-          Object.entries(parsed.data).filter(([key, val]) => current[key as keyof MarketFormValues] !== val),
+          Object.entries(parsed.data).filter(
+            ([key, val]) => JSON.stringify(current[key as keyof MarketFormValues]) !== JSON.stringify(val),
+          ),
         ) as Partial<ISettings>;
         if (Object.keys(changed).length > 0) updateSettings(changed);
       }, 300);
@@ -157,7 +196,12 @@ export function MarketForm() {
   }
 
   const switchRow = (
-    name: 'marketShowDealBadges' | 'marketShowPriceHistory' | 'marketShowSellerCard' | 'marketAlertSoundEnabled',
+    name:
+      | 'marketShowDealBadges'
+      | 'marketShowPriceHistory'
+      | 'marketShowSellerCard'
+      | 'marketAlertSoundEnabled'
+      | 'marketWtbPromptEnabled',
     key: string,
   ) => (
     <FormField
@@ -198,6 +242,45 @@ export function MarketForm() {
               />
             )}
           />
+          {form.watch('stashAutoDelist') !== 'off' && (
+            <>
+              <FormField
+                control={form.control}
+                name="delistExceptionMode"
+                render={({ field }) => (
+                  <SelectRow
+                    settingKey="delistExceptionMode"
+                    label={t('market.listings.autoDelist.exceptionMode.label')}
+                    value={field.value}
+                    options={DELIST_EXCEPTION_OPTIONS}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
+              {form.watch('delistExceptionMode') !== 'none' && (
+                <FormField
+                  control={form.control}
+                  name="delistExceptions"
+                  render={({ field }) => (
+                    <SettingsRow
+                      settingKey="delistExceptions"
+                      layout="stacked"
+                      label={t('market.listings.autoDelist.exceptions.label')}
+                      description={t('market.listings.autoDelist.exceptions.description')}
+                      control={<DelistExceptions value={field.value}
+                        onChange={field.onChange} />}
+                    >
+                      {form.watch('delistExceptionMode') === 'stackable' && (
+                        <p className="text-xs text-muted-foreground">
+                          {t('market.listings.autoDelist.exceptions.stackableNote')}
+                        </p>
+                      )}
+                    </SettingsRow>
+                  )}
+                />
+              )}
+            </>
+          )}
           <FormField
             control={form.control}
             name="myListingsView"
@@ -257,10 +340,10 @@ export function MarketForm() {
           />
           <FormField
             control={form.control}
-            name="marketDefaultMaxAgeDays"
+            name="marketDefaultListedWithinDays"
             render={({ field }) => (
               <SelectRow
-                settingKey="marketDefaultMaxAgeDays"
+                settingKey="marketDefaultListedWithinDays"
                 label={t('market.browser.age.label')}
                 value={String(field.value)}
                 options={ageDayOptions(field.value)}
@@ -309,6 +392,7 @@ export function MarketForm() {
           {switchRow('marketShowDealBadges', 'market.browser.dealBadges')}
           {switchRow('marketShowPriceHistory', 'market.browser.priceHistory')}
           {switchRow('marketShowSellerCard', 'market.browser.sellerCard')}
+          <AutoSearchRow />
         </SettingsGroup>
 
         <SettingsGroup title={t('market.alerts.group')}>
@@ -332,7 +416,6 @@ export function MarketForm() {
             name="marketAlertVolume"
             render={({ field }) => {
               const volume = field.value;
-              const VolumeIcon = volume === 0 ? VolumeX : volume < 50 ? Volume1 : Volume2;
               const soundOff = !form.watch('marketAlertSoundEnabled');
               return (
                 <SettingsRow
@@ -348,22 +431,12 @@ export function MarketForm() {
                   }
                   description={t('market.alerts.volume.description')}
                   control={
-                    <div className="flex w-[240px] items-center gap-3">
-                      <VolumeIcon aria-hidden
-                        className="size-4 shrink-0 text-muted-foreground" />
-                      <FormControl>
-                        <Slider
-                          aria-label={t('market.alerts.volume.ariaLabel')}
-                          min={0}
-                          max={100}
-                          step={1}
-                          value={[volume]}
-                          onValueChange={(value) => field.onChange(value[0])}
-                          disabled={soundOff}
-                          className="flex-1"
-                        />
-                      </FormControl>
-                    </div>
+                    <VolumeControl
+                      value={volume}
+                      onChange={field.onChange}
+                      disabled={soundOff}
+                      ariaLabel={t('market.alerts.volume.ariaLabel')}
+                    />
                   }
                 >
                   <FormMessage />
@@ -371,6 +444,7 @@ export function MarketForm() {
               );
             }}
           />
+          {switchRow('marketWtbPromptEnabled', 'market.alerts.wtbPrompt')}
         </SettingsGroup>
       </div>
     </Form>

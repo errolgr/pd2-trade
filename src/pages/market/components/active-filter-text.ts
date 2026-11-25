@@ -1,6 +1,8 @@
 import { useCallback } from 'react';
 import { currentLocale, useTranslation } from '@/i18n';
-import { CLASSES, basesForType, findTypeOption } from '../lib/catalog';
+import { CLASSES } from '../lib/catalog';
+import { baseValueLabel, typeValueLabel } from '../lib/type-selection';
+import { isDamageRangeKey, lowDamageRange } from '../lib/stats';
 import type { ActiveFilterSpec, RangeField, TriField } from '../lib/active-filters';
 import type { OnlineFilter, Tri } from '../lib/types';
 import type { FilterHighlight } from './controls';
@@ -39,6 +41,7 @@ function sectionOf(spec: ActiveFilterSpec): string | undefined {
     case 'range':
       return spec.field === 'sockets' ? 'properties' : spec.field === 'hr' ? 'price' : 'requirements';
     case 'age':
+    case 'status':
       return 'listing';
     case 'priceText':
       return 'price';
@@ -65,6 +68,8 @@ function fieldOf(spec: ActiveFilterSpec): string | undefined {
       return RANGE_LABELS[spec.field];
     case 'age':
       return 'filters.listedWithin';
+    case 'status':
+      return 'filters.status.label';
     case 'priceText':
       return 'filters.priceNote';
     case 'seller':
@@ -117,9 +122,9 @@ export function useActiveFilterText(): (spec: ActiveFilterSpec) => string {
         case 'priceText':
           return `${t('filters.priceNote')}: “${spec.value}”`;
         case 'type':
-          return findTypeOption(spec.code)?.label ?? spec.code;
+          return typeValueLabel({ typeCode: spec.code, baseCode: spec.baseCode }) ?? spec.code;
         case 'base':
-          return basesForType(spec.typeCode).find((b) => b.code === spec.code)?.label ?? spec.code;
+          return baseValueLabel({ typeCode: spec.typeCode, baseCode: spec.code }) ?? spec.code;
         case 'rarity':
           return spec.value.join(', ');
         case 'class':
@@ -129,17 +134,26 @@ export function useActiveFilterText(): (spec: ActiveFilterSpec) => string {
         case 'range':
           return rangeText(t(RANGE_LABELS[spec.field]), spec.min, spec.max);
         case 'age':
-          return `${t('filters.listedWithin')}: ${t('filters.days', { count: spec.days })}`;
+          return `${t('filters.listedWithin')}: ${spec.days === undefined ? t('filters.any') : t('filters.days', { count: spec.days })}`;
+        case 'status':
+          return `${t('filters.status.label')}: ${spec.value.map((s) => t(`filters.status.${s}`)).join(', ')}`;
         case 'seller':
           return `${t('filters.seller')}: ${spec.name ?? t('filters.sellerPicked')}`;
         case 'online':
           return `${t(spec.field === 'site' ? 'filters.onlineSite' : 'filters.onlineGame')}: ${online(spec.value)}`;
         case 'stat': {
           const { row } = spec;
-          const name =
-            row.min === undefined && row.max === undefined
-              ? filterName(row)
-              : rangeText(filterName(row), row.min, row.max);
+          const low = row.kind !== 'corruption' && isDamageRangeKey(row.key) ? lowDamageRange(row.key) : {};
+          const bounded = (r: { min?: number; max?: number }) => r.min !== undefined || r.max !== undefined;
+          let name: string;
+          if (bounded(low)) {
+            // "Adds Fire Damage: Min dmg 4–10, Max dmg ≥ 15", the price check's damage pair ends
+            const ends = [rangeText(t('priceCheck:statRow.minDamage'), low.min, low.max)];
+            if (bounded(row)) ends.push(rangeText(t('priceCheck:statRow.maxDamage'), row.min, row.max));
+            name = `${filterName(row)}: ${ends.join(', ')}`;
+          } else {
+            name = bounded(row) ? rangeText(filterName(row), row.min, row.max) : filterName(row);
+          }
           return row.not ? t('filters.applied.not', { name }) : name;
         }
       }

@@ -24,6 +24,7 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -137,6 +138,7 @@ pub fn run() {
             commands::get_diablo_rect,
             commands::press_key,
             commands::is_diablo_focused,
+            commands::input_idle_ms,
             commands::is_diablo_fullscreen,
             commands::focus_diablo,
             commands::focus_overlay,
@@ -147,11 +149,14 @@ pub fn run() {
             commands::stop_chat_watcher,
             commands::get_diablo2_directory,
             commands::auto_detect_diablo2_directory,
+            commands::check_diablo2_directory,
+            commands::pick_diablo2_directory,
             commands::open_url,
             commands::open_config_dir,
             commands::write_debug_logs,
             commands::open_sign_in_window,
             commands::close_sign_in_window,
+            commands::self_update_supported,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

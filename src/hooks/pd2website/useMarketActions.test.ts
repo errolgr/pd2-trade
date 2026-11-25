@@ -282,38 +282,6 @@ describe('listing mutations', () => {
 });
 
 describe('market browser API', () => {
-  it('getFavorites pages newest first with each listing and its seller resolved', async () => {
-    fetchMock.mockResolvedValueOnce(fakeResponse(200, { total: 0, data: [] }));
-    const { actions } = market();
-    await expect(actions.getFavorites({ limit: 20, skip: 40 })).resolves.toEqual({ total: 0, data: [] });
-    expect(lastCall().url).toBe(
-      'https://api.projectdiablo2.com/market/favorite?$limit=20&$skip=40&$sort[updated_at]=-1' +
-        '&$resolve[listing][user]=true',
-    );
-    expect(lastCall().init.method).toBe('GET');
-  });
-
-  it('getFavorites keeps a favorite whose listing came without an item, minus that listing', async () => {
-    const shown = { _id: 'F1', listing_id: 'L1', listing: { _id: 'L1', item: { name: 'Shako' } } };
-    const bare = { _id: 'F2', listing_id: 'L2', listing: { _id: 'L2' } };
-    fetchMock.mockResolvedValueOnce(fakeResponse(200, { total: 2, data: [shown, bare] }));
-    const { actions } = market();
-    const page = await actions.getFavorites();
-    expect(page.data).toEqual([shown, { _id: 'F2', listing_id: 'L2' }]);
-  });
-
-  it('addFavorite posts the listing and seller; removeFavorite deletes by favorite id', async () => {
-    const { actions } = market();
-    await actions.addFavorite('L1', 'S1');
-    expect(lastCall().url).toBe('https://api.projectdiablo2.com/market/favorite');
-    expect(lastCall().init.method).toBe('POST');
-    expect(JSON.parse(lastCall().init.body as string)).toEqual({ listing_id: 'L1', seller_id: 'S1' });
-
-    await actions.removeFavorite('F1');
-    expect(lastCall().url).toBe('https://api.projectdiablo2.com/market/favorite/F1');
-    expect(lastCall().init.method).toBe('DELETE');
-  });
-
   it('getListing reads one listing with its seller; 404 or no item is null, 401 is an error (not "gone")', async () => {
     const listing = { _id: 'L1', price: '2 hr', item: { name: 'Shako' } };
     fetchMock.mockResolvedValueOnce(fakeResponse(200, listing));

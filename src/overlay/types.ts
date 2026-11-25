@@ -1,9 +1,12 @@
 import type { ComponentType } from 'react';
 import type { NetWorthTab } from '@/hooks/useNetWorth';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import type { InboxFilter } from '@/pages/chat/lib/inbox';
 import type { SettingsSectionId } from '@/components/dialogs/optionsv2/settings-ui';
 import type { ListingPanelPayload, MarketPanelPayload } from '@/pages/market/lib/types';
+import type { WtbListPrice } from '@/pages/market/lib/wtb';
+import type { WtbContactItem } from '@/pages/market/alerts/wtb-api';
 import type { BuildsPanelPayload } from '@/pages/builds/lib/types';
 
 export type PanelId =
@@ -29,8 +32,21 @@ export type PanelId =
 export interface PanelPayloads {
   /** encodeItem(raw) output (what used to be ?text=). undefined only before the first search (the panel is keepMounted). */
   itemSearch: { text: string } | undefined;
-  /** item = encodeItemForQuickList(raw); undefined = manage mode. listingId: manage mode scrolled to that listing; edit: and its price editor open. */
-  quickList: { item?: string; error?: 'not_in_stash'; listingId?: string; edit?: boolean } | undefined;
+  /**
+   * item = encodeItemForQuickList(raw); undefined = manage mode. listingId: manage mode scrolled to that listing; edit: and
+   * its price editor open. stashItem: a stash item to list as is (a buy request it fits). prefill: the HR price or note
+   * to list the item at (a buyer's offer).
+   */
+  quickList:
+    | {
+        item?: string;
+        error?: 'not_in_stash';
+        listingId?: string;
+        edit?: boolean;
+        stashItem?: GameStashItem;
+        prefill?: WtbListPrice;
+      }
+    | undefined;
   currency: { tab?: NetWorthTab } | undefined;
   /**
    * conversationId/conversation: the conversation to open (conversation: a freshly created one); threadId: a
@@ -53,6 +69,12 @@ export interface PanelPayloads {
         draft?: string;
         /** Show the Trader sidebar on the opened thread (a market seller's name was clicked). */
         trader?: boolean;
+        /**
+         * A buy request's Message (the user is the seller): the contact recorded on the first message actually
+         * sent to `userId` from that thread (`message`; `copy` when sent as an in-game whisper); dropped when
+         * another thread is opened or the panel closes first.
+         */
+        wtbContact?: { requestId: string; item?: WtbContactItem };
       }
     | undefined;
   chatButton: undefined;
@@ -130,8 +152,10 @@ export interface PanelDef {
   keyboard: 'never' | 'onPointerDown';
   /** Closed => display:none but still mounted (state/listeners survive). Mounted (closed) from startup. */
   keepMounted: boolean;
-  /** Hidden (not unmounted) while gameFocused === false. */
+  /** Hidden (not unmounted) while gameFocused === false, unless OverlayBehavior.showOutsideGame (and not gameHud). */
   hideOnGameBlur: boolean;
+  /** In-game HUD (chat dock, ticker, zone timer): hidden outside the game even with OverlayBehavior.showOutsideGame. */
+  gameHud?: boolean;
   /**
    * Close (keepMounted: hide, state kept) when the user clicks outside every panel (Windows mouse hook), or
    * 150 ms after leaving the overlay or the game for another app unless they come back first. Tauri only.
@@ -146,3 +170,16 @@ export interface PanelDef {
 }
 
 export type PanelDefs = Record<PanelId, PanelDef>;
+
+/** Settings → Interface → Windows & focus: how every panel treats focus, clicks away and the game. */
+export interface OverlayBehavior {
+  /**
+   * When an 'onPointerDown' panel takes the keyboard from the game: 'typing' a click into a text field (any other
+   * click hands it back), 'click' any click in the panel, 'open' as soon as it opens (and on any click).
+   */
+  keyboardFocus: 'typing' | 'click' | 'open';
+  /** closeOnBlur panels close on a click outside every panel or on leaving the overlay. */
+  closeOnBlur: boolean;
+  /** hideOnGameBlur panels (except gameHud ones) stay on screen outside the game. */
+  showOutsideGame: boolean;
+}

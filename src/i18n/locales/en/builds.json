@@ -6,6 +6,8 @@
     "lookupLabel": "Look up a character",
     "mode": "Mode",
     "followingShortcut": "Following ({{n}})",
+    "myCharacter": "My character: {{name}}",
+    "myCharacterUnavailable": "Sign in and choose your character in Settings › Account to jump to it",
     "tabs": {
       "meta": "Meta",
       "characters": "Characters"
@@ -15,7 +17,8 @@
     "na": "n/a",
     "noReliablePrice": "No reliable market price",
     "hrTitle": "{{hr}} HR at current market prices",
-    "marketValue": "Market value <num>{{value}} HR</num>"
+    "marketValue": "Market value <num>{{value}} HR</num>",
+    "corruptionBasis": "Priced for its corruption"
   },
   "itemActions": {
     "searchMarket": "Search market",

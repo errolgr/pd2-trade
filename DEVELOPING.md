@@ -103,7 +103,7 @@ npm run tauri build
 
 ### Pointing at a local backend
 
-Search, deal badges, price history, saved-search alerts and the rest of the pd2trader.com API go to `BACKEND_URL` (`src/lib/pkce.ts`): `VITE_BACKEND_URL` when set at build/dev time, else `https://pd2trader.com`. To run against a local pd2-price-crawler (`npm run start:dev` there, port 3000 by default):
+Search, deal badges, price history, market Watch (live search) and the rest of the pd2trader.com API go to `BACKEND_URL` (`src/lib/pkce.ts`): `VITE_BACKEND_URL` when set at build/dev time, else `https://pd2trader.com`. To run against a local pd2-price-crawler (`npm run start:dev` there, port 3000 by default):
 
 ```bash
 VITE_BACKEND_URL=http://localhost:3000 npm run tauri dev
@@ -209,9 +209,10 @@ src/i18n/locales/<language>/<namespace>.json   # en, de, fr, ru, es, pt-BR, pl, 
 A broken updater can only be fixed by users re-downloading the installer, so it is guarded at every stage:
 
 - `src/hooks/useAppUpdates.test.tsx`, `src/lib/updater.test.ts`: check → download → relaunch flow, opt-out, notifications.
-- `npm run verify:updater -- config`: the six version files agree (`scripts/version-files.mjs`: package.json, package-lock.json, Cargo.toml, Cargo.lock, tauri.conf.json, docs appVersion); updater pubkey, endpoint, identifier and binary name match what installed builds expect; updater/process plugins registered and permitted. Changing the pinned values in `scripts/verify-updater.mjs` strands existing installs.
+- `npm run verify:updater -- config`: the six version files agree (`scripts/version-files.mjs`: package.json, package-lock.json, Cargo.toml, Cargo.lock, tauri.conf.json, docs appVersion); updater pubkey, endpoint, identifier and binary name match what installed builds expect; updater/process plugins registered and permitted; Windows updates use our NSIS template (below). Changing the pinned values in `scripts/verify-updater.mjs` strands existing installs.
+- Windows updates install the NSIS `setup.exe`, not the MSI (`updaterJsonPreferNsis: true` in the release workflow, #30). It is built from `src-tauri/windows/installer.nsi`: tauri-bundler's template plus changes marked `PD2 Trader:` that migrate MSI installs (remove the MSI, keep one desktop shortcut, skip orphaned MSI entries). **When bumping `@tauri-apps/cli`, re-sync that file**: take `crates/tauri-bundler/src/bundle/windows/nsis/installer.nsi` at the new `tauri-cli-vX.Y.Z` tag, re-apply every `PD2 Trader:` change, and update the tag in its header. `verify:updater -- config` fails while the header tag and the locked CLI version differ. Test the migration on Windows: an MSI install of the live release, then the new `setup.exe /P /R /UPDATE /ARGS`, the arguments the updater passes.
 - Bumping: `npm run release -- <x.y.z|patch|minor|major>` rewrites the version in all six files, after checking the new version is newer than the live release, has no release yet (stray drafts included) and has a `changeLog.ts` entry. Commit it as `chore(release): x.y.z` and merge before running the publish workflow. Needs `GITHUB_TOKEN` or `gh auth login` to see drafts.
-- Release workflow: its first step, `release.mjs check`, runs the same checks for the committed version and stops the run before a draft or any build. Before publishing, `verify-updater.mjs draft` checks the draft's `latest.json` (version, platforms, newer than live) and verifies every signature against its asset; after publishing, `verify-updater.mjs live` re-checks what installed apps download. Discord is only notified once that passes.
+- Release workflow: its first step, `release.mjs check`, runs the same checks for the committed version and stops the run before a draft or any build. Before publishing, `verify-updater.mjs draft` checks the draft's `latest.json` (version, platforms, newer than live, Windows pointing at the NSIS `setup.exe`) and verifies every signature against its asset; after publishing, `verify-updater.mjs live` re-checks what installed apps download. Discord is only notified once that passes.
 - `ci.yml` runs the live check daily.
 
 ## 🐛 Debugging

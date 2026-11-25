@@ -189,12 +189,12 @@ describe('SimulatorButton', () => {
   it('shows the try-on hotkey binding on the button and links to it from the popover', async () => {
     settings = { ...settings, hotkeyModifierSimTryOn: 'alt', hotkeyKeySimTryOn: 'j' };
     render(<SimulatorButton item={checked()} />);
-    expect(screen.getByRole('button', { name: /^Sim/ }).getAttribute('title')).toBe('Try-on hotkey: Alt+J');
+    fireEvent.focus(screen.getByRole('button', { name: /^Sim/ }));
+    expect((await screen.findByRole('tooltip')).textContent).toBe('Try-on hotkey: Alt+J');
     cleanup();
 
     settings = { ...settings, hotkeyKeySimTryOn: '' };
     await openPopover();
-    expect(screen.getByRole('button', { name: /^Sim/ }).getAttribute('title')).toBe('Try-on hotkey: not set');
     fireEvent.click(screen.getByRole('button', { name: 'Try-on hotkey: not set' }));
     expect(openPanel).toHaveBeenCalledWith('settings', { section: 'Hotkeys', field: 'hotkeyKeySimTryOn' });
   });

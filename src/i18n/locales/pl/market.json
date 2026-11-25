@@ -27,11 +27,12 @@
     "noFavoritesDescription": "Polub ogłoszenie serduszkiem, aby je tu zachować; ulubione synchronizują się z projectdiablo2.com.",
     "noLiveListingsFor": "Brak aktywnych ogłoszeń {{itemName}}",
     "noLiveListings": "Brak pasujących aktywnych ogłoszeń",
-    "searchArchivePrompt": "Przeszukać archiwum sprzedanych, aby zobaczyć ostatnie ceny sprzedaży?",
-    "searchArchive": "Szukaj w archiwum sprzedanych",
+    "searchArchivePrompt": "Przeszukać archiwum (ogłoszenia sprzedane, wycofane i wygasłe), aby zobaczyć ostatnie ceny?",
+    "searchArchive": "Szukaj w archiwum",
     "noListingsTitle": "Brak pasujących ogłoszeń",
     "noListingsDescription": "Poluzuj filtr, poszerz zakres wieku lub zmień tryb.",
     "refreshing": "Odświeżanie wyników",
+    "unsearched": "Filtry zmienione · wyniki z ostatniego wyszukiwania",
     "loadingMore": "Wczytywanie kolejnych…",
     "loadMoreFailed": "Nie można wczytać więcej",
     "rateLimitedUntil": "Limit zapytań do {{time}}",
@@ -81,12 +82,16 @@
     "tooManyDescription_other": "Można obserwować do {{count}} wyszukiwania naraz. Najpierw zatrzymaj jedno (karta Zapisane).",
     "startedDescription": "Otrzymasz powiadomienie o każdym nowym ogłoszeniu pasującym do tego wyszukiwania.",
     "labels": {
-      "signedOut": "Zaloguj się, aby obserwować to wyszukiwanie",
-      "refused": "Twoja sesja PD2 wygasła: zaloguj się ponownie, aby obserwować to wyszukiwanie",
-      "unsynced": "Nie można wczytać zapisanych wyszukiwań z pd2trader.com; ponawianie…",
-      "archive": "Sprzedanych ogłoszeń nie można obserwować",
+      "archive": "Wyszukiwań w archiwum nie można obserwować",
       "watching": "Obserwujesz: kliknij, aby wyłączyć powiadomienia o nowych ogłoszeniach pasujących do tego wyszukiwania",
       "watch": "Obserwuj: otrzymuj powiadomienie i dźwięk przy każdym nowym ogłoszeniu pasującym do tego wyszukiwania"
+    },
+    "wtbPrompt": {
+      "title": "Dodać też zlecenie kupna?",
+      "description": "Sprzedający, którzy to mają, mogą do ciebie napisać.",
+      "post": "Dodaj zlecenie kupna",
+      "notNow": "Nie teraz",
+      "never": "Nie pytaj więcej"
     }
   },
   "alerts": {
@@ -101,6 +106,8 @@
     "single": "{{search}}: {{listing}}"
   },
   "filters": {
+    "wouldTake": "Przyjęliby te przedmioty",
+    "wouldTakeTitle": "Zlecenia, które przedmiot z tego wyszukiwania mógłby spełnić, nie tylko te z dokładnie tymi filtrami",
     "label": "Filtry wyszukiwania",
     "any": "Dowolne",
     "selected_one": "{{count}} wybrana",
@@ -119,10 +126,35 @@
       "label": "Źródło ogłoszeń",
       "live": "Aktywne",
       "archive": "Archiwum",
-      "archiveTitle": "Sprzedane / wycofane ogłoszenia"
+      "archiveTitle": "Zakończone ogłoszenia: sprzedane, wycofane i wygasłe (archiwum projectdiablo2.com)",
+      "wanted": "Poszukiwane",
+      "wantedTitle": "Zlecenia kupna, które tego szukają",
+      "short": {
+        "live": "Aktywne",
+        "archive": "Archiwum",
+        "wanted": "Kupno"
+      }
+    },
+    "status": {
+      "label": "Status",
+      "all": "Wszystkie",
+      "sold": "Sprzedane",
+      "removed": "Wycofane",
+      "expired": "Wygasłe",
+      "soldTitle": "Sprzedający przyjął ofertę",
+      "removedTitle": "Usunięte przez sprzedającego lub moderatora",
+      "expiredTitle": "Nie podbite ani nie edytowane od 6 dni"
     },
     "clearAll": "Wyczyść wszystkie filtry",
     "clearStats": "Usuń wszystkie filtry statystyk",
+    "autoSearch": {
+      "label": "Automatyczne wyszukiwanie",
+      "on": "Automatyczne wyszukiwanie włączone: wyniki odświeżają się przy zmianie filtrów. Kliknij, aby szukać tylko po naciśnięciu Szukaj.",
+      "off": "Automatyczne wyszukiwanie wyłączone: naciśnij Szukaj (Ctrl+Enter), aby zastosować zmiany filtrów. Kliknij, aby szukać podczas pisania."
+    },
+    "searchNow": "Szukaj",
+    "outOfDate": "Wyniki są nieaktualne",
+    "upToDate": "Wyniki pasują do filtrów",
     "sections": {
       "stats": "Statystyki",
       "item": "Przedmiot",
@@ -130,11 +162,25 @@
       "listing": "Ogłoszenie",
       "price": "Cena",
       "seller": "Sprzedawca",
-      "requirements": "Wymagania"
+      "requirements": "Wymagania",
+      "offer": "Oferta",
+      "buyer": "Kupujący",
+      "requests": "Zlecenia",
+      "realm": "Realm"
     },
     "type": "Typ",
     "base": "Baza",
     "pickTypeFirst": "Najpierw wybierz typ",
+    "pickedBases_one": "{{count}} baza",
+    "pickedBases_few": "{{count}} bazy",
+    "pickedBases_many": "{{count}} baz",
+    "pickedBases_other": "{{count}} bazy",
+    "someBases_one": "{{type}} ({{count}} baza)",
+    "someBases_few": "{{type}} ({{count}} bazy)",
+    "someBases_many": "{{type}} ({{count}} baz)",
+    "someBases_other": "{{type}} ({{count}} bazy)",
+    "searchOptions": "Szukaj…",
+    "noOptions": "Brak wyników",
     "class": "Klasa",
     "corrupted": "Corrupted",
     "sockets": "Gniazda",
@@ -181,7 +227,12 @@
     "modeLabel": "Softcore lub hardcore",
     "applied": {
       "not": "Bez {{name}}"
-    }
+    },
+    "minOffer": "Min. oferta",
+    "buyer": "Kupujący",
+    "buyerPlaceholder": "Nazwa użytkownika lub konto",
+    "fitsStash": "Pasuje do skrzyni",
+    "mineOnly": "Tylko moje"
   },
   "controls": {
     "min": "min",
@@ -386,6 +437,7 @@
     "corruptionStats_few": "{{count}} statystyki korupcji",
     "corruptionStats_many": "{{count}} statystyk korupcji",
     "corruptionStats_other": "{{count}} statystyki korupcji",
+    "socketsStat": "wiersz gniazd",
     "desecrated": "desecrated",
     "priceNote": "notatka cenowa",
     "hrPrice": "cena w HR",
@@ -396,6 +448,7 @@
     "buyout": "kup teraz",
     "listingAge": "wiek ogłoszenia",
     "sort": "sortowanie",
+    "status": "status (archiwum strony pokazuje sprzedane, wycofane i wygasłe)",
     "extendedStat": "statystyka, której strona nie obsługuje"
   },
   "nameSearch": {
@@ -413,7 +466,7 @@
   },
   "detail": {
     "label": "Szczegóły ogłoszenia",
-    "sold": "Sprzedane / wycofane",
+    "ended": "Zakończone",
     "listed": "Wystawione",
     "favorite": "Dodaj do ulubionych",
     "unfavorite": "Usuń z ulubionych",
@@ -456,7 +509,8 @@
     "anyOf": "dowolne z ({{rows}})",
     "noneOf": "żadne z ({{rows}})",
     "seller": "sprzedawca {{name}}",
-    "sold": " · sprzedane"
+    "archive": " · archiwum",
+    "wanted": " · poszukiwane"
   },
   "saved": {
     "savedToast": "Zapisano wyszukiwanie",
@@ -468,18 +522,9 @@
     "tooManyDescription_other": "Alerty może mieć naraz do {{count}} zapisanego wyszukiwania. Najpierw wyłącz jedno.",
     "nameLabel": "Nazwa bieżącego wyszukiwania",
     "namePlaceholder": "Zapisz bieżące wyszukiwanie… ({{description}})",
-    "needsSync": "Zapisywanie wymaga najpierw wczytania zapisanych wyszukiwań z pd2trader.com",
     "alertingSummary": "{{alerting}}/{{max}} z alertami · powiadomienia o nowych dopasowaniach, gdy nakładka działa",
     "alerts": "Alerty",
     "enableAlerts": "Włącz alerty na żywo",
-    "signInTitle": "Zaloguj się, aby zapisywać wyszukiwania",
-    "signInDescription": "Zapisane wyszukiwania i obserwowane są przechowywane z twoim kontem PD2 na pd2trader.com.",
-    "reauthTitle": "Zaloguj się ponownie, aby wczytać zapisane wyszukiwania",
-    "reauthDescription": "pd2trader.com nie akceptuje już twojej sesji PD2. Zapisywanie i obserwowanie są wstrzymane do ponownego zalogowania.",
-    "loading": "Wczytywanie zapisanych wyszukiwań…",
-    "loadFailedTitle": "Nie można wczytać zapisanych wyszukiwań",
-    "loadFailedDescription": "pd2trader.com nie odpowiada. Ponawianie automatyczne; zapisywanie i obserwowanie są wstrzymane do wczytania.",
-    "retryNow": "Ponów teraz",
     "emptyTitle": "Brak zapisanych wyszukiwań",
     "emptyDescription": "Ustaw filtry na karcie Szukaj, a potem zapisz je tutaj (lub kliknij Obserwuj), aby uruchamiać je jednym kliknięciem lub dostawać powiadomienia o nowych ogłoszeniach.",
     "run": "Uruchom {{name}}",
@@ -491,34 +536,23 @@
     "toastNewMatches": "Powiadamiaj o nowych dopasowaniach",
     "alertsOff": "Alerty są wyłączone (przełącznik powyżej)",
     "alertsFor": "Alerty dla {{name}}",
-    "delete": "Usuń {{name}}"
+    "delete": "Usuń {{name}}",
+    "reorder": "Przeciągnij, aby zmienić kolejność: {{name}}",
+    "reorderInstructions": "Aby podnieść zapisane wyszukiwanie, naciśnij Spację lub Enter na jego uchwycie. Przesuwaj je strzałkami w górę i w dół, naciśnij Spację lub Enter, aby je upuścić, albo Escape, aby anulować.",
+    "reorderPickedUp": "Podniesiono {{name}}.",
+    "reorderMoved": "{{name}} przesunięto na pozycję {{position}} z {{count}}.",
+    "reorderDropped": "{{name}} upuszczono na pozycji {{position}} z {{count}}.",
+    "reorderCancelled": "Przenoszenie anulowane. {{name}} wraca na swoje miejsce."
   },
   "store": {
-    "title": "Zapisane wyszukiwania",
-    "refused": "Twoja sesja PD2 wygasła. Zaloguj się ponownie, aby zsynchronizować zapisane wyszukiwania.",
-    "unreachable": "Nie można połączyć się z pd2trader.com. Spróbuj ponownie za chwilę.",
-    "signIn": "Zaloguj się, aby zapisywać wyszukiwania i obserwować rynek.",
-    "migratedTitle": "Zapisane wyszukiwania przeniesiono na twoje konto",
-    "migratedPartial": "Przeniesiono {{uploaded}}; {{dropped}} nie udało się (nieprawidłowe lub ponad limit {{max}} wyszukiwań).",
-    "migrated_one": "{{count}} zapisane wyszukiwanie jest teraz dostępne na każdym urządzeniu.",
-    "migrated_few": "{{count}} zapisane wyszukiwania są teraz dostępne na każdym urządzeniu.",
-    "migrated_many": "{{count}} zapisanych wyszukiwań jest teraz dostępnych na każdym urządzeniu.",
-    "migrated_other": "{{count}} zapisanego wyszukiwania jest teraz dostępne na każdym urządzeniu.",
+    "anyItem": "Dowolny przedmiot",
     "capSearches_one": "Możesz mieć do {{count}} zapisanego wyszukiwania. Najpierw usuń jedno.",
     "capSearches_few": "Możesz mieć do {{count}} zapisanych wyszukiwań. Najpierw usuń jedno.",
     "capSearches_many": "Możesz mieć do {{count}} zapisanych wyszukiwań. Najpierw usuń jedno.",
     "capSearches_other": "Możesz mieć do {{count}} zapisanego wyszukiwania. Najpierw usuń jedno.",
-    "notLoaded": "Nie udało się jeszcze wczytać zapisanych wyszukiwań z pd2trader.com. Spróbuj ponownie za chwilę.",
-    "stillLoading": "Zapisane wyszukiwania wciąż się wczytują.",
     "tooManySearches": "Za dużo zapisanych wyszukiwań",
-    "saving": "Zapisywanie…",
-    "limitReached": "Osiągnięto limit",
-    "saveFailed": "Nie można zapisać wyszukiwania",
-    "updateFailed": "Nie można zaktualizować wyszukiwania",
-    "renameFailed": "Nie można zmienić nazwy wyszukiwania",
-    "alertOnFailed": "Nie można włączyć alertu",
-    "alertOffFailed": "Nie można wyłączyć alertu",
-    "deleteFailed": "Nie można usunąć wyszukiwania"
+    "capFavorites": "Możesz mieć do {{count}} ulubionych. Najpierw usuń jedno.",
+    "tooManyFavorites": "Za dużo ulubionych"
   },
   "deal": {
     "marketAverage": "Średnia rynkowa {{window}}",
@@ -558,10 +592,7 @@
     "newSeller": "nowy sprzedawca"
   },
   "favorites": {
-    "loadFailed": "Nie można wczytać ulubionych",
-    "notRemoved": "Nie usunięto z ulubionych",
-    "notSaved": "Nie zapisano w ulubionych",
-    "refused": "projectdiablo2.com odrzuciło zmianę. Spróbuj ponownie za chwilę."
+    "loadFailed": "Nie można wczytać ulubionych"
   },
   "palette": {
     "openInMarket": "Szukaj na rynku",
@@ -571,5 +602,351 @@
     "copyName": "Kopiuj nazwę",
     "nameCopied": "Skopiowano nazwę",
     "nameNotCopied": "Nie skopiowano nazwy"
+  },
+  "weaponGroups": {
+    "weapons": "Broń",
+    "1h": "Jednoręczna",
+    "2h": "Dwuręczna",
+    "melee": "Do walki wręcz",
+    "2h-melee": "Dwuręczna do walki wręcz",
+    "ranged": "Dystansowa",
+    "1h-ranged": "Jednoręczna dystansowa",
+    "2h-ranged": "Dwuręczna dystansowa"
+  },
+  "wtb": {
+    "callout": {
+      "badge": "NOWOŚĆ",
+      "title": "Zlecenia kupna",
+      "description": "Nie możesz znaleźć? Dodaj zlecenie kupna ze swoją ofertą: sprzedający, którzy wycenią pasujący przedmiot, ją zobaczą. Wszystkie zlecenia są w zakładce {{wanted}}.",
+      "dismiss": "Zamknij"
+    },
+    "chip": {
+      "label_one": "{{count}} kupujący · do {{offer}}",
+      "label_few": "{{count}} kupujących · do {{offer}}",
+      "label_many": "{{count}} kupujących · do {{offer}}",
+      "label_other": "{{count}} kupujących · do {{offer}}",
+      "tooltip_one": "{{count}} gracz wystawił prośbę o kupno, którą spełnia ten przedmiot. Kliknij, aby zobaczyć ofertę.",
+      "tooltip_few": "{{count}} graczy wystawiło prośby o kupno, które spełnia ten przedmiot. Kliknij, aby zobaczyć oferty.",
+      "tooltip_many": "{{count}} graczy wystawiło prośby o kupno, które spełnia ten przedmiot. Kliknij, aby zobaczyć oferty.",
+      "tooltip_other": "{{count}} graczy wystawiło prośby o kupno, które spełnia ten przedmiot. Kliknij, aby zobaczyć oferty.",
+      "hintNew": "Nowość",
+      "hint": "Prośby o kupno: gracze szukający takiego przedmiotu. Kliknij, aby zobaczyć kto i ile płaci.",
+      "hintOk": "Rozumiem",
+      "title": "Prośby o kupno tego przedmiotu",
+      "subtitle": "Gracze, którzy napisali, czego szukają. Napisz do nich, aby sprzedać.",
+      "almost_one": "Prawie ({{count}}) — brakuje 1 statystyki",
+      "almost_few": "Prawie ({{count}}) — brakuje 1 statystyki",
+      "almost_many": "Prawie ({{count}}) — brakuje 1 statystyki",
+      "almost_other": "Prawie ({{count}}) — brakuje 1 statystyki",
+      "needs": "chce {{stat}} ({{value}})",
+      "needsNone": "chce {{stat}} (nie masz)",
+      "allRequests": "Wszystkie prośby"
+    },
+    "whisperBuyer": "Napisz do {{name}}",
+    "message": "Wiadomość",
+    "copyWhisper": "Kopiuj szept",
+    "listAt": "Wystaw za {{offer}}",
+    "listItAt": "Wystaw za {{offer}}",
+    "nice": "Opcja",
+    "must": "Wymóg",
+    "flags": {
+      "corrupted": {
+        "yes": "Spaczony",
+        "no": "Niespaczony"
+      },
+      "ethereal": {
+        "yes": "Eteryczny",
+        "no": "Nieeteryczny"
+      },
+      "desecrated": {
+        "yes": "Zbezczeszczony",
+        "no": "Niezbezczeszczony"
+      },
+      "identified": {
+        "yes": "Zidentyfikowany",
+        "no": "Niezidentyfikowany"
+      }
+    },
+    "sockets": {
+      "exact_one": "{{count}} gniazdo",
+      "exact_few": "{{count}} gniazda",
+      "exact_many": "{{count}} gniazd",
+      "exact_other": "{{count}} gniazda",
+      "min_one": "{{count}}+ gniazd",
+      "min_few": "{{count}}+ gniazd",
+      "min_many": "{{count}}+ gniazd",
+      "min_other": "{{count}}+ gniazd",
+      "max_one": "≤{{count}} gniazdo",
+      "max_few": "≤{{count}} gniazda",
+      "max_many": "≤{{count}} gniazd",
+      "max_other": "≤{{count}} gniazda",
+      "range_one": "{{min}}–{{count}} gniazdo",
+      "range_few": "{{min}}–{{count}} gniazda",
+      "range_many": "{{min}}–{{count}} gniazd",
+      "range_other": "{{min}}–{{count}} gniazda"
+    },
+    "youHaveOne": "Masz taki",
+    "yours": "twoje",
+    "daysLeft_one": "Został {{count}} dzień",
+    "daysLeft_few": "Zostały {{count}} dni",
+    "daysLeft_many": "Zostało {{count}} dni",
+    "daysLeft_other": "Zostało {{count}} dnia",
+    "drawer": {
+      "title": "Zlecenie kupna",
+      "buyer": "Kupujący",
+      "personalStash": "Skrzynia osobista · {{name}}",
+      "sharedStash": "Skrzynia wspólna · strona {{page}}",
+      "openToOffersLeft_one": "Otwarte na oferty · został {{count}} dzień",
+      "openToOffersLeft_few": "Otwarte na oferty · zostały {{count}} dni",
+      "openToOffersLeft_many": "Otwarte na oferty · zostało {{count}} dni",
+      "openToOffersLeft_other": "Otwarte na oferty · zostało {{count}} dnia",
+      "wantsYourItem": "Szuka · twój przedmiot",
+      "wants": "Szuka",
+      "met": "Spełnione",
+      "fromStash": "Z twojej skrzyni",
+      "own": "To twoje zlecenie. Zarządzaj nim w zakładce Moje."
+    },
+    "post": {
+      "title": "Dodaj zlecenie kupna",
+      "editTitle": "Edytuj zlecenie kupna",
+      "filtersHint": "Używa filtrów po lewej. Edytuj je tam.",
+      "summary": "Czego szukasz",
+      "toggleNice": "Wymóg czy opcja: {{stat}}",
+      "excluded": "Nie",
+      "anyOf": "Jedno z",
+      "niceHint": "Kliknij Wymóg / Opcja, aby statystyka była opcjonalna.",
+      "yourOffer": "Twoja oferta",
+      "soldLately": "Ostatnio sprzedane · {{low}} – {{high}} HR",
+      "amount": "Ilość",
+      "currency": "Waluta",
+      "invalidAmount": "Oferta większa niż 0 i najwyżej 1000, maksymalnie 2 miejsca po przecinku.",
+      "openToOffers": "Otwarte na kontroferty",
+      "expires": "Wygasa",
+      "days_one": "{{count}} d",
+      "days_few": "{{count}} d",
+      "days_many": "{{count}} d",
+      "days_other": "{{count}} d",
+      "alsoWatch": "Obserwuj też: powiadom mnie, gdy ktoś go wystawi",
+      "alreadyWatching": "To wyszukiwanie jest już obserwowane",
+      "preview": "Sprzedający zobaczą",
+      "previewLine": "Gracz zapłaci za to {{offer}}",
+      "previewHint": "w sprawdzeniu ceny, gdy ich przedmiot pasuje",
+      "submit": "Dodaj zlecenie",
+      "save": "Zapisz zmiany",
+      "signIn": "Zaloguj się, aby dodać",
+      "postedToast": "Dodano zlecenie kupna",
+      "savedToast": "Zapisano zlecenie kupna",
+      "signInAgain": "Zaloguj się ponownie, aby dodać",
+      "capTitle": "Za dużo zleceń kupna",
+      "capDescription_one": "Możesz mieć najwyżej {{count}} otwarte lub wstrzymane zlecenie. Najpierw zamknij jedno (Poszukiwane → Moje).",
+      "capDescription_few": "Możesz mieć najwyżej {{count}} otwarte lub wstrzymane zlecenia. Najpierw zamknij jedno (Poszukiwane → Moje).",
+      "capDescription_many": "Możesz mieć najwyżej {{count}} otwartych lub wstrzymanych zleceń. Najpierw zamknij jedno (Poszukiwane → Moje).",
+      "capDescription_other": "Możesz mieć najwyżej {{count}} otwartego lub wstrzymanego zlecenia. Najpierw zamknij jedno (Poszukiwane → Moje).",
+      "postFailed": "Nie udało się dodać zlecenia",
+      "saveFailed": "Nie udało się zapisać zlecenia",
+      "blocked": {
+        "item": "Wybierz w filtrach nazwę przedmiotu, bazę lub typ.",
+        "detail": "Dodaj co najmniej jedną wymaganą statystykę, liczbę gniazd lub eteryczność."
+      },
+      "previewLineNoOffer": "Gracz chce to kupić",
+      "expiryNext": "Czas trwania · użyty przy następnym podbiciu"
+    },
+    "button": {
+      "text": "Chcę kupić",
+      "label": "Chcę kupić: dodaj zlecenie kupna dla tego wyszukiwania",
+      "archive": "Nie można szukać sprzedanych ofert"
+    },
+    "status": {
+      "live_one": "Aktywne · {{count}} d",
+      "live_few": "Aktywne · {{count}} d",
+      "live_many": "Aktywne · {{count}} d",
+      "live_other": "Aktywne · {{count}} d",
+      "paused": "Wstrzymane",
+      "expired": "Wygasłe",
+      "closed": "Zamknięte"
+    },
+    "mine": {
+      "noMatches": "Brak dopasowań",
+      "views_one": "Pokazane w {{count}} sprawdzeniu ceny",
+      "views_few": "Pokazane w {{count}} sprawdzeniach ceny",
+      "views_many": "Pokazane w {{count}} sprawdzeniach ceny",
+      "views_other": "Pokazane w {{count}} sprawdzenia ceny",
+      "contacts_one": "{{count}} sprzedający się odezwał",
+      "contacts_few": "{{count}} sprzedających się odezwało",
+      "contacts_many": "{{count}} sprzedających się odezwało",
+      "contacts_other": "{{count}} sprzedającego się odezwało",
+      "edit": "Edytuj",
+      "pause": "Wstrzymaj",
+      "resume": "Wznów",
+      "close": "Zamknij",
+      "updateFailed": "Nie udało się zaktualizować zlecenia"
+    },
+    "sort": {
+      "label": "Sortuj zlecenia",
+      "newest": "Najnowsze",
+      "offer": "Najwyższa oferta"
+    },
+    "signInStash": "Pasuje do skrzyni odczytuje twoją skrzynię z projectdiablo2.com.",
+    "signInMine": "Twoje zlecenia kupna używają konta projectdiablo2.com.",
+    "loadFailed": "Nie udało się wczytać zleceń kupna",
+    "stashFailed": "Nie udało się odczytać skrzyni",
+    "listLabel": "Zlecenia kupna",
+    "empty": {
+      "allTitle": "Brak zleceń kupna",
+      "allDescription": "Nikt jeszcze tego nie szuka. Dodaj zlecenie z wyszukiwania przyciskiem Chcę kupić.",
+      "stashTitle": "Nic w skrzyni nie pasuje",
+      "stashDescription": "Żadne otwarte zlecenie nie pasuje teraz do przedmiotu z twojej skrzyni.",
+      "mineTitle": "Nie masz jeszcze zleceń kupna",
+      "mineDescription": "Wyszukaj, czego chcesz, a potem dodaj zlecenie przyciskiem Chcę kupić."
+    },
+    "cta": {
+      "title": "Nikt nie wystawił takiego {{item}}",
+      "titleAny": "Nikt nie wystawił czegoś takiego",
+      "live": "Aktywne oferty",
+      "stats_one": "{{count}} statystyka",
+      "stats_few": "{{count}} statystyki",
+      "stats_many": "{{count}} statystyk",
+      "stats_other": "{{count}} statystyki",
+      "corrupted": "spaczony",
+      "post": "Dodaj zlecenie kupna",
+      "helper": "Sprzedający, którzy sprawdzą cenę pasującego przedmiotu, zobaczą twoją ofertę.",
+      "orLoosen": "Albo poluzuj"
+    },
+    "badge": {
+      "buyers_one": "{{count}} kupujący",
+      "buyers_few": "{{count}} kupujących",
+      "buyers_many": "{{count}} kupujących",
+      "buyers_other": "{{count}} kupującego",
+      "tooltip": "Poszukiwane: {{name}} zapłaci {{offer}}"
+    },
+    "card": {
+      "subtitle": "Zlecenie kupna · {{kind}}",
+      "subtitleAny": "Zlecenie kupna",
+      "pays": "Płaci",
+      "openToOffers": "otwarte na oferty",
+      "approxHr": "≈ {{hr}} HR",
+      "postedAge": "dodano {{age}}",
+      "bumpedAge": "podbito {{age}}",
+      "expiredAgo": "Wygasło {{age}} temu"
+    },
+    "others": {
+      "title": "Inni też tego chcą",
+      "sameStats": "te same statystyki",
+      "titleCount": "Inni też tego chcą · {{count}}",
+      "seeAll": "Zobacz wszystkie ({{count}})",
+      "open": "Otwórz prośbę {{name}} ({{offer}})",
+      "more_one": "+{{count}} więcej",
+      "more_few": "+{{count}} więcej",
+      "more_many": "+{{count}} więcej",
+      "more_other": "+{{count}} więcej"
+    },
+    "demand": {
+      "offersUpTo": "Oferty do {{offers}}",
+      "openOffers": "Otwarte oferty kupna {{low}}–{{high}} HR ({{count}})",
+      "openOffersNoHr": "Otwarte oferty kupna ({{count}})",
+      "viewRequests": "Pokaż zlecenia",
+      "buying_one": "{{count}} gracz to kupuje",
+      "buying_few": "{{count}} graczy to kupuje",
+      "buying_many": "{{count}} graczy to kupuje",
+      "buying_other": "{{count}} gracza to kupuje",
+      "buyingIncludingYours_one": "{{count}} gracz to kupuje, w tym ty",
+      "buyingIncludingYours_few": "{{count}} graczy to kupuje, w tym ty",
+      "buyingIncludingYours_many": "{{count}} graczy to kupuje, w tym ty",
+      "buyingIncludingYours_other": "{{count}} gracza to kupuje, w tym ty",
+      "soldLately_one": "Ostatnio sprzedane {{low}}–{{high}} HR ({{count}} sprzedaż)",
+      "soldLately_few": "Ostatnio sprzedane {{low}}–{{high}} HR ({{count}} sprzedaże)",
+      "soldLately_many": "Ostatnio sprzedane {{low}}–{{high}} HR ({{count}} sprzedaży)",
+      "soldLately_other": "Ostatnio sprzedane {{low}}–{{high}} HR ({{count}} sprzedaży)"
+    },
+    "results": {
+      "count_one": "{{count}} zlecenie",
+      "count_few": "{{count}} zlecenia",
+      "count_many": "{{count}} zleceń",
+      "count_other": "{{count}} zlecenia",
+      "fitting_one": "{{count}} pasuje do skrzyni",
+      "fitting_few": "{{count}} pasują do skrzyni",
+      "fitting_many": "{{count}} pasuje do skrzyni",
+      "fitting_other": "{{count}} pasuje do skrzyni"
+    },
+    "bump": {
+      "label": "Podbij",
+      "in": "Podbij za {{h}} godz. {{m}} min",
+      "revive": "Podbij, aby wznowić",
+      "done_one": "Podbito na górę · wygasa za {{count}} d",
+      "done_few": "Podbito na górę · wygasa za {{count}} d",
+      "done_many": "Podbito na górę · wygasa za {{count}} d",
+      "done_other": "Podbito na górę · wygasa za {{count}} d",
+      "tooSoon": "Jeszcze nie można podbić",
+      "tooSoonDescription": "Możesz podbić ponownie za {{h}} godz. {{m}} min."
+    },
+    "mineSections": {
+      "active": "Aktywne ({{count}})",
+      "expired": "Wygasłe ({{count}})"
+    },
+    "response": {
+      "title": "🛒 Sprzedający może spełnić twoją prośbę o kupno",
+      "body": "{{seller}} ma coś dla {{title}} · twoja oferta {{offer}}",
+      "bodyNoItem": "{{seller}} szepnął do ciebie w sprawie {{title}}",
+      "viewRequest": "Zobacz prośbę",
+      "whisperBack": "Odpisz",
+      "requestGone": "Ta prośba o kupno nie jest już otwarta"
+    },
+    "responses": {
+      "title_one": "Odpowiedzi · {{count}}",
+      "title_few": "Odpowiedzi · {{count}}",
+      "title_many": "Odpowiedzi · {{count}}",
+      "title_other": "Odpowiedzi · {{count}}",
+      "dismiss": "Odrzuć",
+      "markFilled": "Oznacz jako spełnioną",
+      "confirmClose": "Zamknąć tę prośbę?",
+      "confirmCloseDescription": "{{title}} · spełniona przez {{seller}}",
+      "close": "Zamknij prośbę",
+      "summary": {
+        "atYourPrice": "sprzeda po twojej cenie",
+        "asks": "chce {{price}}",
+        "messaged": "napisał do ciebie",
+        "whispered": "szepnął do ciebie"
+      }
+    },
+    "offers": {
+      "sell": "Sprzedaj za {{offer}}",
+      "pending": "Oferta wysłana · oczekuje",
+      "withdraw": "Wycofaj",
+      "accepted": "Przyjęta · napisz do {{buyer}}",
+      "declined": "Odrzucona",
+      "askDifferent": "Zaproponuj inną cenę",
+      "askTitle": "Twoja cena (oferuje {{offer}})",
+      "note": "Notatka",
+      "notePlaceholder": "Notatka dla kupującego (opcjonalnie)",
+      "send": "Wyślij ofertę",
+      "sentToast": "Wysłano ofertę do {{buyer}}",
+      "sentToastDescription": "{{item}} za {{price}}",
+      "fixedPrice": "Ten kupujący przyjmuje tylko swoją cenę",
+      "notOpen": "Ta prośba o kupno nie jest już otwarta",
+      "throttled": "Za dużo ofert – spróbuj później",
+      "failed": "Nie udało się wysłać oferty",
+      "signIn": "Zaloguj się, aby sprzedawać kupującym",
+      "withdrawnToast": "Oferta wycofana",
+      "decideFailed": "Nie udało się zaktualizować oferty",
+      "willSell": "{{seller}} sprzeda {{item}} · {{price}} (twoja cena)",
+      "asks": "{{seller}} chce {{price}} za {{item}} (oferowałeś {{offer}})",
+      "accept": "Przyjmij",
+      "acceptPrice": "Przyjmij {{price}}",
+      "decline": "Odrzuć",
+      "dealDraft": "Umowa – {{item}} za {{price}}. Kiedy możemy się wymienić?",
+      "noticeWillSell": "🏷 {{seller}} sprzeda ci {{item}} za {{price}}",
+      "noticeAsks": "🏷 {{seller}} chce {{price}} za {{item}}",
+      "forRequest": "Na twoją prośbę {{title}} (oferowałeś {{offer}})",
+      "acceptedBy": "{{buyer}} przyjął twoją ofertę na {{title}}",
+      "declinedBy": "{{buyer}} odrzucił twoją ofertę na {{title}}",
+      "withdrawnBy": "{{seller}} wycofał ofertę na {{title}}",
+      "messageBuyer": "Napisz do {{buyer}}",
+      "status": {
+        "pending": "Oczekuje",
+        "accepted": "Przyjęta",
+        "declined": "Odrzucona",
+        "withdrawn": "Wycofana"
+      }
+    }
   }
 }

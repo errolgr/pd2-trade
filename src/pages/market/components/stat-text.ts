@@ -1,6 +1,16 @@
 import { statTemplate } from '@/pages/price-check/lib/tooltip-lines';
 import { corruptionOption } from '../lib/catalog';
-import { isCorruption, isPseudo, parseStatKey, type StatChoice, statLabel } from '../lib/stats';
+import {
+  isCorruption,
+  isDamagePair,
+  isItemProperty,
+  isPseudo,
+  itemPropertyOption,
+  parseStatKey,
+  type StatChoice,
+  statLabel,
+} from '../lib/stats';
+import { PSEUDO_STATS } from '../lib/pseudo';
 import type { StatFilter } from '../lib/types';
 
 /*
@@ -9,7 +19,8 @@ import type { StatFilter } from '../lib/types';
  * these so no raw `{X}` reaches the screen.
  */
 
-const PLACEHOLDER = /[+-]?\{X\}%?/g;
+/** `{X}` (with its sign/percent), or a pair's `{X}-{Y}` ("Adds {X}-{Y} Damage"). */
+const PLACEHOLDER = /[+-]?\{X\}(?:-\{Y\})?%?/g;
 
 /** Number shown for a score/stat total: integers stay integers, else one decimal. */
 export const formatStat = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
@@ -32,9 +43,11 @@ export function statName(key: string): string {
   return templateName(statLabel(key));
 }
 
-/** A stat row's display name; corruption rows by their corruption ("Faster Cast Rate", "Sockets"). */
+/** A stat row's display name; corruption rows by their corruption, item rows by their property ("Faster Cast Rate", "Sockets"). */
 export function filterName(row: Pick<StatFilter, 'kind' | 'key'>): string {
-  return row.kind === 'corruption' ? templateName(corruptionOption(row.key).label) : statName(row.key);
+  if (row.kind === 'corruption') return templateName(corruptionOption(row.key).label);
+  if (row.kind === 'item') return templateName(itemPropertyOption(row.key)?.label ?? row.key);
+  return statName(row.key);
 }
 
 /** Skill tabs the game names without a trailing "Skills" ("+2 to Curses (Necromancer Only)"). */
@@ -48,7 +61,7 @@ const BARE_SKILL_TAB =
  */
 export function itemStatText(key: string): string {
   const { names, pins } = parseStatKey(key);
-  if (names.length === 1 && pins.length === 0) {
+  if (names.length === 1 && pins.length === 0 && !isDamagePair(names)) {
     const line = statTemplate(names[0]);
     if (line) return line;
   }
@@ -72,12 +85,12 @@ export function itemStatText(key: string): string {
       text = label.replace(/\s*\(Oskill\)$/, '');
       break;
   }
-  return text.replace(/\{X\}/g, '#').replace(/# %/g, '#%');
+  return text.replace(/\{[XY]\}/g, '#').replace(/# %/g, '#%');
 }
 
-/** A stat picker entry as the item shows it (see `itemStatText`); pseudo stats as their template. */
+/** A stat picker entry as the item shows it (see `itemStatText`); pseudo stats and item properties as their template. */
 export function choiceText(choice: StatChoice): string {
-  if (isPseudo(choice)) return choice.label.replace(/\{X\}/g, '#');
+  if (isPseudo(choice) || isItemProperty(choice)) return choice.label.replace(/\{[XY]\}/g, '#');
   if (isCorruption(choice)) {
     const text = choice.rolled ? itemStatText(choice.value) : choice.value;
     return text === choice.value ? templateName(choice.label) : text;
@@ -94,13 +107,18 @@ const shorten = (text: string) =>
 
 /**
  * The template with `value` filled in: "+29% Total Fire Resistance"; `short` for chips ("+29% Total Fire Res").
- * Labels without a placeholder get the value appended.
+ * A pair's value is its max ("Adds #-14 Damage"), or its min when the key rolls an elemental line's `values.0` (a
+ * price check bounding only the low end: "Adds 4-# Fire Damage"). Labels without a placeholder get the value
+ * appended.
  */
 export function statWithValue(key: string, value: number, { short = false }: { short?: boolean } = {}): string {
   const label = statLabel(key);
   const shown = formatStat(value);
   let text: string;
-  if (label.includes('{X}')) {
+  if (label.includes('{X}-{Y}')) {
+    const lowEnd = !PSEUDO_STATS.some((p) => p.id === key) && parseStatKey(key).valueIndex === 0;
+    text = label.replace('{X}-{Y}', lowEnd ? `${shown}-#` : `#-${shown}`);
+  } else if (label.includes('{X}')) {
     // A negative total in a "+{X}" template reads "-5", not "+-5"
     text = label.replace(/([+-]?)\{X\}/, (_, sign: string) => (value < 0 ? shown : `${sign}${shown}`));
     text = text.replace(PLACEHOLDER, '');

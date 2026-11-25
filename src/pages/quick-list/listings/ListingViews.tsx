@@ -5,8 +5,10 @@ import moment from 'moment';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { DealBadge } from '@/pages/market/enrich/DealBadge';
 import { OfferBadge } from '@/pages/market/components/OfferBadge';
-import { displayMods } from '@/pages/market/components/ItemTooltip';
+import { displayMods, isCorruptedLine } from '@/pages/market/lib/card-model';
 import type { Deal } from '@/pages/market/enrich/useDealIndicators';
+import type { WtbItemMatch } from '@/pages/market/lib/wtb';
+import { WtbBuyersBadge } from '@/pages/market/wtb/WtbBuyersBadge';
 import type { ListingOffers } from '@/pages/market/lib/listing-offers';
 import { cn } from '@/lib/utils';
 import { itemCorruptions } from '@/lib/item-utils';
@@ -34,6 +36,8 @@ export interface ListingViewProps {
   now: number;
   deal: Deal | undefined;
   offers: ListingOffers | undefined;
+  /** Open buy requests this listing's item matches ("{n} buyers"). */
+  buyers: WtbItemMatch[] | undefined;
   editing: boolean;
   bumping: boolean;
   deleting: boolean;
@@ -118,10 +122,7 @@ function CardStats({ listing }: { listing: MarketListingEntry }) {
             transition={transition}
             initial={i >= CARD_MODS ? { opacity: 0 } : false}
             animate={{ opacity: 1 }}
-            className={cn(
-              'shrink-0',
-              mod.corrupted === true || corruptions.includes(mod.name) ? 'text-q-corrupted' : 'text-q-magic',
-            )}
+            className={cn('shrink-0', isCorruptedLine(mod, corruptions) ? 'text-q-corrupted' : 'text-q-magic')}
           >
             {!open && i > 0 && <span className="px-1 text-muted-foreground">·</span>}
             {mod.label}
@@ -146,7 +147,7 @@ function CardStats({ listing }: { listing: MarketListingEntry }) {
 }
 
 export const ListingCard = React.memo(function ListingCard(props: ListingViewProps) {
-  const { listing, now, deal, offers, editing, bumping, deleting, handlers } = props;
+  const { listing, now, deal, offers, buyers, editing, bumping, deleting, handlers } = props;
   const { t } = useTranslation('quickList');
   const edge = statusEdge(listing, now, offers);
   const base = baseName(listing);
@@ -194,6 +195,8 @@ export const ListingCard = React.memo(function ListingCard(props: ListingViewPro
               <span className="flex shrink-0 items-center gap-1">
                 <DealBadge deal={deal} />
                 <OfferBadge offers={offers} />
+                <WtbBuyersBadge matches={buyers}
+                  item={listing.item} />
               </span>
               <span className="min-w-0 truncate text-[11px] text-muted-foreground">
                 {ready
@@ -221,7 +224,7 @@ export const ListingCard = React.memo(function ListingCard(props: ListingViewPro
 export const ROW_GRID = 'grid grid-cols-[28px_minmax(0,1fr)_72px_64px_162px] items-center gap-x-2';
 
 export const ListingRow = React.memo(function ListingRow(props: ListingViewProps) {
-  const { listing, now, deal, offers, editing, bumping, deleting, handlers } = props;
+  const { listing, now, deal, offers, buyers, editing, bumping, deleting, handlers } = props;
   const edge = statusEdge(listing, now, offers);
   const received = offers?.received.length ?? 0;
   const note = sideNote(listing);
@@ -258,6 +261,8 @@ export const ListingRow = React.memo(function ListingRow(props: ListingViewProps
             <ListingName listing={listing}
               className="text-xs" />
             <ItemFlags listing={listing} />
+            <WtbBuyersBadge matches={buyers}
+              item={listing.item} />
             {received > 0 && (
               <span className="shrink-0">
                 <OfferBadge offers={offers}

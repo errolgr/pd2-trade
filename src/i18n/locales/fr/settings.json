@@ -18,6 +18,30 @@
       "label": "Transparence des fenêtres : <num>{{value}} %</num>",
       "description": "Voir le jeu à travers l'arrière-plan des fenêtres. 0 % = totalement opaque."
     },
+    "windows": {
+      "group": "Fenêtres et focus",
+      "keyboardFocus": {
+        "label": "Focus clavier",
+        "description": "Quand une fenêtre prend le clavier au jeu. Tant qu'une fenêtre l'a, vos touches n'atteignent pas le jeu et le jeu peut devenir muet.",
+        "options": {
+          "typing": "En tapant dans un champ",
+          "click": "Au clic",
+          "open": "À l'ouverture"
+        }
+      },
+      "closeOnClickAway": {
+        "label": "Fermer les fenêtres en cliquant ailleurs",
+        "description": "Le prix, le chat, le marché, les builds et les fenêtres similaires se ferment quand vous cliquez en dehors ou passez à une autre application. Désactivé : elles restent ouvertes jusqu'à ce que vous les fermiez."
+      },
+      "outsideGame": {
+        "label": "Afficher les fenêtres hors du jeu",
+        "description": "Les fenêtres restent à l'écran quand Diablo II n'est pas au premier plan ou n'est pas lancé. Le bouton de chat, le ticker de patrimoine et le minuteur de zones restent affichés uniquement en jeu."
+      },
+      "hotkeysOutsideGame": {
+        "label": "Raccourcis hors du jeu",
+        "description": "Ouvrez les fenêtres avec leurs raccourcis depuis n'importe quelle application ; ces combinaisons de touches n'atteignent alors plus les autres applications. Les raccourcis qui copient l'objet sous le curseur (prix, mise en vente, retrait, essayage) ne fonctionnent qu'en jeu. Nécessite « Afficher les fenêtres hors du jeu »."
+      }
+    },
     "zoneTimer": {
       "enabled": {
         "label": "Minuteur des zones corrompues",
@@ -150,7 +174,7 @@
   "nav": {
     "general": "Général",
     "account": "Compte",
-    "chat": "Chat",
+    "chat": "Chat et notifications",
     "interface": "Interface",
     "priceCheck": "Estimation",
     "netWorth": "Valeur nette",
@@ -281,6 +305,15 @@
         "description": "Impossible de détecter automatiquement le dossier de Diablo II. Veuillez le saisir manuellement."
       },
       "autoDetect": "Détecter",
+      "browse": "Parcourir…",
+      "clear": "Effacer (détection automatique)",
+      "check": {
+        "valid": "Installation de Diablo II trouvée.",
+        "missing": "Ce dossier n'existe pas.",
+        "notInstall": "Aucune installation de Diablo II ici : choisissez le dossier qui contient le dossier ProjectD2.",
+        "winePrefix": "Ceci est un préfixe Wine. Diablo II est installé dans {{path}}",
+        "useInstall": "Utiliser ce dossier"
+      },
       "label": "Dossier de Diablo II"
     },
     "game": {
@@ -522,8 +555,8 @@
       "description": "Thème de couleurs de toutes les fenêtres de l'overlay. Appliqué immédiatement."
     },
     "chat": {
-      "title": "Chat",
-      "description": "Configurer les notifications de chat et de messages privés, ainsi que vos modèles de message."
+      "title": "Chat et notifications",
+      "description": "Configurer les notifications de chat et de messages privés, ainsi que vos modèles de message. MP Discord du bot PD2 Trader."
     },
     "general": {
       "title": "Général",
@@ -568,6 +601,24 @@
           "off": "Ne rien faire",
           "ask": "Me demander",
           "auto": "Retirer l'annonce"
+        },
+        "exceptions": {
+          "label": "Ne jamais retirer ceux-ci",
+          "description": "Les annonces de ces objets ne sont jamais retirées et aucune question n'est posée. « Ne plus demander pour… » dans l'invite en ajoute un.",
+          "add": "Ajouter",
+          "search": "Rechercher une base d'objet…",
+          "empty": "Aucun objet pour l'instant.",
+          "noMatch": "Aucune base d'objet ne correspond",
+          "remove": "Retirer {{name}}",
+          "stackableNote": "Monnaie empilable : tokens, pboxes, clés, essences."
+        },
+        "exceptionMode": {
+          "label": "Ne jamais retirer",
+          "options": {
+            "none": "Rien (par défaut)",
+            "stackable": "La monnaie empilable et les objets choisis",
+            "selected": "Seulement les objets choisis"
+          }
         }
       },
       "view": {
@@ -627,6 +678,10 @@
       "sellerCard": {
         "label": "Fiche vendeur",
         "description": "Affiche le statut du vendeur et ses autres annonces dans les détails d'une annonce."
+      },
+      "autoSearch": {
+        "label": "Recherche auto",
+        "description": "Recherche dès que vous changez les filtres du marché. Désactivée : les changements attendent que vous appuyiez sur Rechercher (Ctrl+Entrée). Aussi via l'éclair à côté d'Effacer dans les filtres."
       }
     },
     "alerts": {
@@ -646,6 +701,10 @@
         "label": "Volume des alertes du marché : <num>{{value}} %</num>",
         "description": "Volume du son des alertes du marché (0-100 %).",
         "ariaLabel": "Volume des alertes du marché"
+      },
+      "wtbPrompt": {
+        "label": "Proposer une demande d'achat après Surveiller",
+        "description": "Quand vous commencez à surveiller une recherche, proposer de publier aussi une demande d'achat pour elle."
       }
     }
   },

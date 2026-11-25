@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, ClipboardCheck, FlaskConical, Loader2, LogIn, PackageCheck, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tip } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SimCharacterPicker } from '@/components/custom/SimCharacterPicker';
 import { SIM_WAITLIST_POPOVER_CLASS, SimWaitlist } from '@/components/custom/SimWaitlist';
@@ -55,7 +56,7 @@ function calloutSeen(): boolean {
  * candidate. PD2's copy of the item (stash or a character) is sent when PD2 has one, else the item as copied (just
  * picked up, not saved yet). Everyone else gets the closed-beta waitlist on the website.
  */
-export function SimulatorButton({ item }: { item: PriceCheckItem }) {
+export function SimulatorButton({ item, className }: { item: PriceCheckItem; className?: string }) {
   const access = useSimAccess();
   const { settings, updateSettings } = useOptions();
   const [open, setOpen] = useState(false);
@@ -73,7 +74,7 @@ export function SimulatorButton({ item }: { item: PriceCheckItem }) {
   };
 
   return (
-    <div className="relative">
+    <div className={cn('relative', className)}>
       <Popover
         open={open}
         onOpenChange={(next) => {
@@ -81,27 +82,28 @@ export function SimulatorButton({ item }: { item: PriceCheckItem }) {
           if (next) dismissCallout();
         }}
       >
-        <PopoverTrigger asChild>
-          <Button
-            variant="ghost"
-            title={access.canUse ? simTryOnHotkeyText(settings) : undefined}
-            className="cursor-pointer border border-primary/70 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
-          >
-            <FlaskConical />
-            Sim
-            <span className="rounded-full bg-primary/20 px-1.5 py-px text-[10px] font-bold tracking-wider">BETA</span>
-          </Button>
-        </PopoverTrigger>
+        <Tip label={access.canUse ? simTryOnHotkeyText(settings) : undefined}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              className="cursor-pointer border border-primary/70 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
+            >
+              <FlaskConical />
+              Sim
+              <span className="rounded-full bg-primary/20 px-1.5 py-px text-[10px] font-bold tracking-wider">BETA</span>
+            </Button>
+          </PopoverTrigger>
+        </Tip>
         {!access.canUse ? (
           <PopoverContent side="top"
-            align="start"
+            align="end"
             className={SIM_WAITLIST_POPOVER_CLASS}>
             <SimWaitlist access={access}
               onOpen={() => setOpen(false)} />
           </PopoverContent>
         ) : (
           <PopoverContent side="top"
-            align="start"
+            align="end"
             className="w-[420px] space-y-3 p-3">
             <div className="flex items-center justify-between gap-2">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">

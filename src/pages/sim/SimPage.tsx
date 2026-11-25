@@ -23,6 +23,7 @@ import {
 } from '@/lib/sim-preferences';
 import { savedSimCharacter, simPlannerUrl } from '@/lib/sim-try-on';
 import { cn } from '@/lib/utils';
+import { Tip } from '@/components/ui/tooltip';
 import { useOverlay, usePanel } from '@/overlay';
 import { OpenLinkButton, SimResultCard } from './components/SimResultCard';
 
@@ -371,17 +372,21 @@ const SimPage: React.FC = () => {
           </div>
           <div className="space-y-1.5 border-t border-border/60 px-3 py-2.5">
             <div className="-mx-1.5 flex items-center gap-0.5">
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7 gap-1.5 px-1.5 text-xs font-normal text-muted-foreground hover:text-foreground"
-                disabled={!plannerUrl}
-                title={plannerUrl ? undefined : 'Pick a default character first'}
-                onClick={() => plannerUrl && void openUrl(plannerUrl)}
-              >
-                <FlaskConical className="size-3.5 shrink-0" />
-                Open planner
-              </Button>
+              <Tip label={plannerUrl ? undefined : 'Pick a default character first'}>
+                <span tabIndex={plannerUrl ? undefined : 0}
+                  className="inline-flex">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 gap-1.5 px-1.5 text-xs font-normal text-muted-foreground hover:text-foreground"
+                    disabled={!plannerUrl}
+                    onClick={() => plannerUrl && void openUrl(plannerUrl)}
+                  >
+                    <FlaskConical className="size-3.5 shrink-0" />
+                    Open planner
+                  </Button>
+                </span>
+              </Tip>
               <Button
                 size="sm"
                 variant="ghost"

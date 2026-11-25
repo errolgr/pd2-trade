@@ -1,30 +1,23 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import type { ItemDetail, Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import type { ItemDetail } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { itemCorruptions } from '@/lib/item-utils';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
+import { type DisplayMod, displayMods, isCorruptedLine } from '../lib/card-model';
 import { ModMenu } from './ModMenu';
 
 /** Name colour: rune colour for runes/runewords, else the quality colour. */
 export const itemNameColor = (item: Pick<ItemDetail, 'is_runeword' | 'name' | 'quality'>) =>
   item.is_runeword || / Rune$/.test(item.name) ? 'text-q-rune' : qualityColor(item.quality?.name ?? '');
 
-/** Mods in game order (highest priority first), without the bare "Corrupted" marker mod. */
-export function displayMods(item: Pick<ItemDetail, 'modifiers'>): Modifier[] {
-  return (item.modifiers ?? []).filter((m) => m.name !== 'corrupted').sort((a, b) => b.priority - a.priority);
-}
-
-const isCorruptedMod = (item: ItemDetail, mod: Modifier) =>
-  mod.corrupted === true || itemCorruptions(item).includes(mod.name);
-
 /** A mod line; on the market page it opens the filter/sort menu (ModMenu). */
-function ModLine({ item, mod }: { item: ItemDetail; mod: Modifier }) {
+function ModLine({ item, mod }: { item: ItemDetail; mod: DisplayMod }) {
   const range = mod.min != null && mod.max != null && mod.min !== mod.max;
   return (
     <ModMenu
       mod={mod}
       item={item}
-      className={cn('rounded-sm text-q-magic', isCorruptedMod(item, mod) && 'text-q-corrupted')}
+      className={cn('rounded-sm text-q-magic', isCorruptedLine(mod, itemCorruptions(item)) && 'text-q-corrupted')}
     >
       {mod.label}
       {range && (

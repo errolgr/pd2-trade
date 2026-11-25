@@ -44,6 +44,36 @@ const mount = (initial: StatFilter[]) => {
 
 afterEach(cleanup);
 
+describe('StatFilters: Adds X-Y rows', () => {
+  const input = (name: string) => screen.getByRole('spinbutton', { name }) as HTMLInputElement;
+  const type = (name: string, value: string) => fireEvent.change(input(name), { target: { value } });
+
+  it('bound both ends like the price check: the low end in the key, the high end as min / max', () => {
+    const { latest } = mount([row('a', { key: 'firedam|firemindam[1]' })]);
+    type('Adds Fire Damage min damage min', '4');
+    expect(latest()[0].key).toBe('firedam|firemindam{4..}');
+    // Min above max while typing: shown, the key keeps its last valid range
+    type('Adds Fire Damage min damage max', '1');
+    expect(latest()[0].key).toBe('firedam|firemindam{4..}');
+    expect(input('Adds Fire Damage min damage max').value).toBe('1');
+    type('Adds Fire Damage min damage max', '10');
+    expect(latest()[0].key).toBe('firedam|firemindam{4..10}');
+    type('Adds Fire Damage max damage min', '15');
+    expect(latest()[0]).toMatchObject({ key: 'firedam|firemindam{4..10}', min: 15 });
+    // An empty low end is the plain entry again
+    type('Adds Fire Damage min damage min', '');
+    type('Adds Fire Damage min damage max', '');
+    expect(latest()[0]).toMatchObject({ key: 'firedam|firemindam[1]', min: 15 });
+  });
+
+  it('shows a price-check pin, and physical damage the same way', () => {
+    mount([row('a', { key: 'damage{3..5}', min: 12 })]);
+    expect(input('Adds Damage min damage min').value).toBe('3');
+    expect(input('Adds Damage min damage max').value).toBe('5');
+    expect(input('Adds Damage max damage min').value).toBe('12');
+  });
+});
+
 describe('StatFilters', () => {
   it('removes a row with its always-present remove button', () => {
     const { latest } = mount([row('a'), row('b', { key: 'maxhp' })]);
@@ -133,6 +163,18 @@ describe('StatFilters', () => {
     fireEvent.keyDown(search, { key: 'Enter' });
     expect(latest()[1]).toMatchObject({ kind: 'corruption', key: 'item_fastercastrate' });
     expect(screen.getByRole('spinbutton', { name: 'Faster Cast Rate min' })).toBeTruthy();
+  });
+
+  it('adds a Sockets row (the socket count, min / max) ahead of the sockets corruption', () => {
+    const { latest } = mount([]);
+    const search = screen.getByRole('combobox', { name: 'Add a stat filter' });
+    fireEvent.focus(search);
+    fireEvent.change(search, { target: { value: 'sockets' } });
+    fireEvent.keyDown(search, { key: 'Enter' });
+    expect(latest()).toMatchObject([{ kind: 'item', key: 'sockets', enabled: true }]);
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Sockets min' }), { target: { value: '1' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Sockets max' }), { target: { value: '1' } });
+    expect(latest()[0]).toMatchObject({ kind: 'item', key: 'sockets', min: 1, max: 1 });
   });
 
   it('splits suggestions into Mods / Pseudo / Corruptions tabs; the best match picks the tab, Tab cycles', () => {

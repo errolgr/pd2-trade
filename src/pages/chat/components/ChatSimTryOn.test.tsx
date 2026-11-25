@@ -77,7 +77,7 @@ describe('chat Try on', () => {
   it('opens a live listing on the default character in the planner', async () => {
     renderMessage(`Hi, I'm interested in your ${URL}`, { status: 'listed', listing: LISTING });
     const button = tryOnButton()!;
-    expect(button.getAttribute('title')).toBe('Try on HammerPal in the Horadric Sim planner');
+    expect(button.getAttribute('aria-label')).toBe('Try on HammerPal in the Horadric Sim planner');
     await act(async () => fireEvent.click(button));
     expect(openUrl).toHaveBeenCalledWith(`https://pd2trader.test/sim/plan?listing=${ID}&import=HammerPal`);
   });

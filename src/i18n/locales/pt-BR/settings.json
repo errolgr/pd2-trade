@@ -18,6 +18,30 @@
       "label": "Transparência da janela: <num>{{value}}%</num>",
       "description": "Veja o jogo através do fundo das janelas. 0% é totalmente opaco."
     },
+    "windows": {
+      "group": "Janelas e foco",
+      "keyboardFocus": {
+        "label": "Foco do teclado",
+        "description": "Quando uma janela pega o teclado do jogo. Enquanto uma janela o tem, suas teclas não chegam ao jogo e o jogo pode ficar mudo.",
+        "options": {
+          "typing": "Ao digitar em um campo",
+          "click": "Ao clicar",
+          "open": "Ao abrir"
+        }
+      },
+      "closeOnClickAway": {
+        "label": "Fechar janelas ao clicar fora",
+        "description": "Consulta de preço, chat, mercado, builds e janelas parecidas fecham quando você clica fora delas ou muda para outro app. Desligado: ficam abertas até você fechá-las."
+      },
+      "outsideGame": {
+        "label": "Mostrar janelas fora do jogo",
+        "description": "As janelas continuam na tela quando o Diablo II não está em primeiro plano ou não está aberto. O botão de chat, o ticker de patrimônio e o timer de zonas continuam aparecendo só no jogo."
+      },
+      "hotkeysOutsideGame": {
+        "label": "Atalhos fora do jogo",
+        "description": "Abra janelas com seus atalhos de qualquer app; essas combinações de teclas deixam de chegar a outros apps. Atalhos que copiam o item sob o cursor (consulta de preço, anunciar, remover, experimentar) continuam funcionando só no jogo. Requer \"Mostrar janelas fora do jogo\"."
+      }
+    },
     "zoneTimer": {
       "enabled": {
         "label": "Timer de zonas Corrupted",
@@ -150,7 +174,7 @@
   "nav": {
     "general": "Geral",
     "account": "Conta",
-    "chat": "Chat",
+    "chat": "Chat e notificações",
     "interface": "Interface",
     "priceCheck": "Consulta de preço",
     "netWorth": "Patrimônio",
@@ -281,6 +305,15 @@
         "description": "Não foi possível detectar a pasta do Diablo II. Insira-a manualmente."
       },
       "autoDetect": "Detectar",
+      "browse": "Procurar…",
+      "clear": "Limpar (detectar automaticamente)",
+      "check": {
+        "valid": "Instalação do Diablo II encontrada.",
+        "missing": "Esta pasta não existe.",
+        "notInstall": "Não há instalação do Diablo II aqui: escolha a pasta que contém a pasta ProjectD2.",
+        "winePrefix": "Isto é um prefixo do Wine. O Diablo II está instalado em {{path}}",
+        "useInstall": "Usar esta pasta"
+      },
       "label": "Pasta do Diablo II"
     },
     "game": {
@@ -522,8 +555,8 @@
       "description": "Tema de cores para todas as janelas do overlay. Aplica na hora."
     },
     "chat": {
-      "title": "Chat",
-      "description": "Configure as notificações de chat e sussurro e seus modelos de mensagem."
+      "title": "Chat e notificações",
+      "description": "Configure as notificações de chat e sussurro e seus modelos de mensagem. DMs no Discord do bot PD2 Trader."
     },
     "general": {
       "title": "Geral",
@@ -568,6 +601,24 @@
           "off": "Não fazer nada",
           "ask": "Perguntar",
           "auto": "Remover o anúncio"
+        },
+        "exceptions": {
+          "label": "Nunca remover estes",
+          "description": "Anúncios destes itens nunca são removidos nem geram pergunta. \"Nunca perguntar sobre…\" no aviso adiciona um.",
+          "add": "Adicionar",
+          "search": "Buscar bases de item…",
+          "empty": "Nenhum item ainda.",
+          "noMatch": "Nenhuma base de item encontrada",
+          "remove": "Remover {{name}}",
+          "stackableNote": "Moeda empilhável: tokens, pboxes, chaves, essências."
+        },
+        "exceptionMode": {
+          "label": "Nunca remover",
+          "options": {
+            "none": "Nada (padrão)",
+            "stackable": "Moeda empilhável e itens que eu escolher",
+            "selected": "Só itens que eu escolher"
+          }
         }
       },
       "view": {
@@ -627,6 +678,10 @@
       "sellerCard": {
         "label": "Cartão do vendedor",
         "description": "Mostra o status do vendedor e seus outros anúncios nos detalhes de um anúncio."
+      },
+      "autoSearch": {
+        "label": "Busca automática",
+        "description": "Busca ao mudar os filtros do mercado. Desligada: as mudanças esperam até você clicar em Buscar (Ctrl+Enter). Também pelo raio ao lado de Limpar nos filtros."
       }
     },
     "alerts": {
@@ -646,6 +701,10 @@
         "label": "Volume do alerta do mercado: <num>{{value}}%</num>",
         "description": "Volume do som de alerta do mercado (0-100%).",
         "ariaLabel": "Volume do alerta do mercado"
+      },
+      "wtbPrompt": {
+        "label": "Sugerir pedido de compra ao criar alerta",
+        "description": "Ao ativar um alerta para uma busca, sugere publicar também um pedido de compra para ela."
       }
     }
   },

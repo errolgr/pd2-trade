@@ -5,6 +5,7 @@ import { SIM_WAITLIST_POPOVER_CLASS, SimWaitlist } from '@/components/custom/Sim
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tip } from '@/components/ui/tooltip';
 import { useOptions } from '@/hooks/useOptions';
 import { useSimLadderCharacters } from '@/hooks/useSimLadderCharacters';
 import { openUrl } from '@/lib/browser-opener';
@@ -61,24 +62,25 @@ export function MarketSimButton({ access, listingId }: { access: SimAccess; list
     }
   };
 
-  const button = (
-    <Button
-      variant="ghost"
-      size="sm"
-      className={SIM_BUTTON_CLASS}
-      aria-label="Try in the sim planner"
-      title="Try in the sim planner"
-    >
-      <FlaskConical className="size-3.5" />
-      Sim
-    </Button>
+  const trigger = (
+    <Tip label="Try in the sim planner">
+      <PopoverTrigger asChild>
+        <Button variant="ghost"
+          size="sm"
+          className={SIM_BUTTON_CLASS}
+          aria-label="Try in the sim planner">
+          <FlaskConical className="size-3.5" />
+          Sim
+        </Button>
+      </PopoverTrigger>
+    </Tip>
   );
 
   if (!access.canUse) {
     return (
       <Popover open={open}
         onOpenChange={setOpen}>
-        <PopoverTrigger asChild>{button}</PopoverTrigger>
+        {trigger}
         <PopoverContent side="top"
           align="end"
           className={SIM_WAITLIST_POPOVER_CLASS}>
@@ -92,7 +94,7 @@ export function MarketSimButton({ access, listingId }: { access: SimAccess; list
   return (
     <Popover open={open}
       onOpenChange={setOpen}>
-      <PopoverTrigger asChild>{button}</PopoverTrigger>
+      {trigger}
       <PopoverContent side="top"
         align="end"
         className="w-80 space-y-3 p-3">

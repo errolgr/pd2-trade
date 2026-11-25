@@ -1,23 +1,25 @@
 import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
-import { ChevronRight, X } from 'lucide-react';
+import { Command } from 'cmdk';
+import { Check, ChevronDown, ChevronRight, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT } from '@/lib/motion';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tip } from '@/components/ui/tooltip';
+import { SearchPopover, useSearchPopover } from '@/components/custom/SearchPopover';
 import { facetShare } from '../lib/facets';
 import type { Tri } from '../lib/types';
 import { useTranslation } from '@/i18n';
-import { FACET_DIM, FacetHairline, FacetRowTip, FacetTip, facetFill, useFacetText } from './FacetCounts';
+import { FACET_DIM, FacetCount, FacetHairline, FacetTip, useFacetText } from './FacetCounts';
 
 /*
  * Dense form controls for the market filter sidebar. Everything is h-7 / text-xs so the full site filter set
  * fits a ~300px column without scrolling past the stats section.
  */
 
-/** Radix Select rejects '' as an item value; "Any" uses this sentinel. */
-export const ANY = '__any';
+/** The "Any" option's value (a list option needs one): maps to undefined. */
+const ANY = '__any';
 
 export const fieldInputClass = 'h-7 rounded-md px-2 text-xs shadow-none';
 
@@ -144,7 +146,8 @@ export function Segmented<T extends string>({
   selectedClassName,
 }: {
   value: T;
-  options: { value: T; label: React.ReactNode; title?: string; facet?: SegmentFacet }[];
+  /** `ariaLabel`: the option's full name when `label` is a short one. */
+  options: { value: T; label: React.ReactNode; ariaLabel?: string; title?: string; facet?: SegmentFacet }[];
   onChange: (value: T) => void;
   label: string;
   className?: string;
@@ -160,12 +163,10 @@ export function Segmented<T extends string>({
       {options.map((o) => {
         const button = (
           <button
-            key={o.value}
             type="button"
             role="radio"
             aria-checked={value === o.value}
-            aria-label={o.facet?.text}
-            title={o.title}
+            aria-label={o.facet?.text ?? o.ariaLabel}
             onClick={() => onChange(o.value)}
             className={cn(
               'relative min-w-0 flex-1 truncate rounded-[5px] px-1.5 text-[11px] font-medium text-muted-foreground outline-none transition-[color,background-color,opacity] duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
@@ -180,12 +181,17 @@ export function Segmented<T extends string>({
         );
         // Options with a facet always get their tooltip, so they keep focus when counts come and go
         return o.facet ? (
-          <FacetTip key={o.value}
-            text={o.facet.text}>
+          <FacetTip
+            key={o.value}
+            text={o.title && o.facet.text ? `${o.title} · ${o.facet.text}` : (o.title ?? o.facet.text)}
+          >
             {button}
           </FacetTip>
         ) : (
-          button
+          <Tip key={o.value}
+            label={o.title}>
+            {button}
+          </Tip>
         );
       })}
     </div>
@@ -311,96 +317,229 @@ export function RangeField({
   );
 }
 
+export interface SelectOption {
+  value: string;
+  label: string;
+  count?: number;
+  depth?: 0 | 1;
+  /** Image URL shown before the label, in the list and in the trigger (rune art). */
+  icon?: string;
+}
+
 /**
- * Compact Select; `anyLabel` (default "Any") adds an entry mapped to undefined, `anyLabel: null` omits it. An
- * option's `count` (facets) shows in the list, not in the trigger; `depth: 1` indents it under the option above
- * (a type group's member types).
+ * The options a search `query` keeps: those whose label holds it (any case). A type group (a depth-0 option and the
+ * depth-1 members under it) stays when the group or a member matches: a matching group keeps all its members, else
+ * only the matching ones.
  */
-export function SelectField({
-  label,
-  value,
-  options,
-  onChange,
-  anyLabel: anyLabelProp,
-  disabled,
-}: {
+export function filterSelectOptions(options: SelectOption[], query: string): SelectOption[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return options;
+  const hit = (o: SelectOption) => o.label.toLowerCase().includes(q);
+  const kept: SelectOption[] = [];
+  for (let i = 0; i < options.length; ) {
+    let end = i + 1;
+    while (end < options.length && options[end].depth === 1) end++;
+    const members = options.slice(i + 1, end);
+    const memberHits = hit(options[i]) ? members : members.filter(hit);
+    if (hit(options[i]) || memberHits.length) kept.push(options[i], ...memberHits);
+    i = end;
+  }
+  return kept;
+}
+
+interface SelectMenuProps {
   label: string;
   value: string | undefined;
-  options: { value: string; label: string; count?: number; depth?: 0 | 1 }[];
+  options: SelectOption[];
   onChange: (v: string | undefined) => void;
+  onToggle?: (v: string) => void;
+  selected?: (v: string) => boolean;
+  valueLabel?: string;
   anyLabel?: string | null;
   disabled?: boolean;
-}) {
-  const { t } = useTranslation('market');
-  const anyLabel = anyLabelProp === undefined ? t('filters.any') : anyLabelProp;
-  const peak = Math.max(0, ...options.map((o) => o.count ?? 0));
+  /** The trigger's sizing (default full width). */
+  className?: string;
+}
+
+/**
+ * Compact select with a search box at the top of its list; `anyLabel` (default "Any") adds an entry mapped to
+ * undefined, `anyLabel: null` omits it. An option's `count` (facets) shows in the list, not in the trigger;
+ * `depth: 1` indents it under the option above (a type group's member types); `icon` shows its art in the list
+ * and the trigger. With `onToggle` it is a multi-select: clicking (or Enter on) an option adds or removes it and
+ * keeps the list open, while "Any" clears the picks and closes; `selected` then says which options show as picked
+ * and `valueLabel` what the trigger shows.
+ */
+export function SelectField(props: SelectMenuProps) {
   return (
-    <Field label={label}>
-      <Select value={value ?? ANY}
-        disabled={disabled}
-        onValueChange={(v) => onChange(v === ANY ? undefined : v)}>
-        <SelectTrigger aria-label={label}
-          className="!h-7 w-full px-2 text-xs shadow-none">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent className="max-h-72">
-          {anyLabel !== null && (
-            <SelectItem value={ANY}
-              className="text-xs">
-              {anyLabel}
-            </SelectItem>
-          )}
-          {options.map((o) => (
-            <FacetSelectItem
-              key={o.value}
-              value={o.value}
-              label={o.label}
-              count={o.count}
-              depth={o.depth}
-              peak={peak}
-              selected={o.value === value}
-            />
-          ))}
-        </SelectContent>
-      </Select>
+    <Field label={props.label}>
+      <SelectMenu {...props} />
     </Field>
   );
 }
 
-/** A select option with its facet count (if any): row fill as its share of the busiest option, dimmed at 0. */
+/** SelectField without the label above it (`label` stays the accessible name), for a row beside an input. */
+export function SelectMenu({
+  label,
+  value,
+  options,
+  onChange,
+  onToggle,
+  selected,
+  valueLabel,
+  anyLabel: anyLabelProp,
+  disabled,
+  className,
+}: SelectMenuProps) {
+  const { t } = useTranslation('market');
+  const search = useSearchPopover();
+  // `follow`: the highlight tracks the search (see below) until the arrow keys or the pointer move it. `resync`
+  // flips to hand the list back its highlight after it picked its own first row.
+  const [highlight, setHighlight] = useState({ value: '', follow: false, resync: false });
+  const anyLabel = anyLabelProp === undefined ? t('filters.any') : anyLabelProp;
+  const current = value ?? ANY;
+  const all: SelectOption[] = anyLabel === null ? options : [{ value: ANY, label: anyLabel }, ...options];
+  const currentOption = all.find((o) => o.value === current);
+  // Art lists keep an art column for every row, so labels line up
+  const hasIcons = options.some((o) => o.icon);
+  const shown = filterSelectOptions(all, search.query);
+  const q = search.query.trim().toLowerCase();
+  // Typing highlights the first option that matches itself, not a group kept for a matching member ("circ":
+  // Circlet, not Helms), so Enter picks what was typed
+  const highlighted = highlight.follow
+    ? ((q ? shown.find((o) => o.label.toLowerCase().includes(q)) : shown[0])?.value ?? '')
+    : highlight.value;
+  const open = (next: boolean) => {
+    // The list opens on the current option
+    if (next) setHighlight({ value: current, follow: false, resync: false });
+    search.setOpen(next);
+  };
+
+  return (
+    <SearchPopover
+      state={{
+        ...search,
+        setOpen: open,
+        setQuery: (query) => {
+          search.setQuery(query);
+          setHighlight((h) => ({ ...h, follow: true }));
+        },
+      }}
+      label={label}
+      placeholder={t('filters.searchOptions')}
+      // cmdk trims its value, so a trailing space re-sends the same highlight: a controlled value that does not
+      // change is not re-applied after the list's own pick
+      highlighted={highlight.resync ? `${highlighted} ` : highlighted}
+      // While following the search, the list's own pick of its first row is undone
+      onHighlight={(v) =>
+        setHighlight((h) => (h.follow ? { ...h, resync: !h.resync } : { value: v, follow: false, resync: false }))
+      }
+      onNavigate={
+        highlight.follow ? () => setHighlight({ value: highlighted, follow: false, resync: false }) : undefined
+      }
+      contentClassName="w-auto max-w-80 min-w-(--radix-popover-trigger-width)"
+      inputClassName="h-8 text-xs"
+      listClassName="max-h-72"
+      trigger={
+        <button
+          type="button"
+          role="combobox"
+          aria-label={label}
+          aria-expanded={search.open}
+          disabled={disabled}
+          // As a select's: the open list takes the overlay's keyboard, so typing goes to its search box
+          data-keep-keyboard
+          className={cn(
+            'flex h-7 w-full items-center justify-between gap-2 rounded-md border border-input bg-transparent px-2 text-xs whitespace-nowrap outline-none transition-[color,background-color,border-color,box-shadow] duration-(--dur-fast) ease-out hover:border-ring/40 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-50 data-[state=open]:border-ring',
+            className,
+          )}
+        >
+          <span className="flex min-w-0 items-center gap-1.5">
+            {currentOption?.icon && <OptionIcon src={currentOption.icon} />}
+            <span className="truncate">{valueLabel ?? currentOption?.label}</span>
+          </span>
+          <ChevronDown
+            aria-hidden
+            className="size-4 shrink-0 text-muted-foreground opacity-50 transition-transform duration-(--dur-fast) ease-out [[data-state=open]>&]:rotate-180"
+          />
+        </button>
+      }
+    >
+      {shown.map((o) => (
+        <FacetSelectItem
+          key={o.value}
+          value={o.value}
+          label={o.label}
+          count={o.count}
+          depth={o.depth}
+          icon={hasIcons ? (o.icon ?? null) : undefined}
+          selected={selected && o.value !== ANY ? selected(o.value) : o.value === current}
+          onSelect={() => {
+            if (onToggle && o.value !== ANY) return onToggle(o.value);
+            onChange(o.value === ANY ? undefined : o.value);
+            search.setOpen(false);
+          }}
+        />
+      ))}
+      {shown.length === 0 && (
+        <div className="px-2 py-3 text-center text-xs text-muted-foreground">{t('filters.noOptions')}</div>
+      )}
+    </SearchPopover>
+  );
+}
+
+/** An option's art, at text size. */
+function OptionIcon({ src }: { src: string }) {
+  return <img src={src}
+    alt=""
+    aria-hidden
+    className="size-4 shrink-0 object-contain" />;
+}
+
+/**
+ * A select option with its facet count (if any) on the right, dimmed at 0. `icon`: its art; null keeps an empty
+ * art column (other options have art), undefined has none.
+ */
 function FacetSelectItem({
   value,
   label,
   count,
   depth,
-  peak,
+  icon,
   selected,
+  onSelect,
 }: {
   value: string;
   label: string;
   count: number | undefined;
   depth: 0 | 1 | undefined;
-  peak: number;
+  icon?: string | null;
   selected: boolean;
+  onSelect: () => void;
 }) {
   const facetText = useFacetText();
-  const [focused, setFocused] = useState(false);
   const text = count === undefined ? undefined : facetText(label, count);
   return (
-    <SelectItem
+    <Command.Item
       value={value}
-      // With a count, it is part of the option's name (Radix names options by their text alone)
-      {...(text && { 'aria-label': text, 'aria-labelledby': undefined })}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
-      style={facetFill(facetShare(count, peak))}
-      // The picked option stays readable even when it finds nothing
-      className={cn('text-xs', depth === 1 && 'pl-5', count === 0 && !selected && FACET_DIM)}
-      aside={text && <FacetRowTip text={text}
-        open={focused} />}
+      onSelect={onSelect}
+      // With a count, it is part of the option's name
+      aria-label={text}
+      className={cn(
+        'relative flex w-full cursor-default select-none items-center gap-2 rounded-md py-1.5 pr-2 pl-2 text-xs whitespace-nowrap outline-hidden transition-colors duration-(--dur-fast) data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground',
+        depth === 1 && 'pl-5',
+        // The picked option stays readable even when it finds nothing
+        count === 0 && !selected && FACET_DIM,
+      )}
     >
-      {label}
-    </SelectItem>
+      {icon !== undefined && (icon ? <OptionIcon src={icon} /> : <span aria-hidden
+        className="size-4 shrink-0" />)}
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      <FacetCount count={count} />
+      <span className="flex size-3.5 shrink-0 items-center justify-center">
+        {selected && <Check aria-hidden
+          className="size-4" />}
+      </span>
+    </Command.Item>
   );
 }
 

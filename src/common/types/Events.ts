@@ -3,6 +3,7 @@ import type { ListingPanelPayload } from '@/pages/market/lib/types';
 export enum ToastActionType {
   OPEN_MARKET_LISTING = 'OPEN_MARKET_LISTING',
   UPDATE_AVAILABLE = 'UPDATE_AVAILABLE',
+  /** data: { conversationId } / { threadId } / { userId, userName }: that chat thread, composer focused. */
   OPEN_CHAT_CONVERSATION = 'OPEN_CHAT_CONVERSATION',
   /** data: { notificationId, accepted }: the chat at the thread of the offer a PD2 offer notification is about. */
   OPEN_CHAT_OFFER = 'OPEN_CHAT_OFFER',
@@ -14,6 +15,8 @@ export enum ToastActionType {
   OPEN_URL = 'OPEN_URL',
   /** data: PanelPayloads['sim'] (a report's { slug, url } to select) or none: opens the overlay's Horadric Sim panel. */
   OPEN_SIM_PANEL = 'OPEN_SIM_PANEL',
+  /** data: WtbResponse: copies the buyer's whisper back to the seller (handled by useMarketAlerts). */
+  WTB_WHISPER_BACK = 'WTB_WHISPER_BACK',
 }
 
 export interface CustomToastPayload {
@@ -30,6 +33,10 @@ export interface CustomToastPayload {
   listing?: ListingPanelPayload;
   /** 'error': error styling (a failed sim); 'muted': quiet styling (a cancelled sim). */
   tone?: 'error' | 'muted';
+  /** A second button before the action (in the toast and its log entry). Not with `listing` (its Details). */
+  secondaryAction?: CustomToastPayload['action'];
+  /** An item picture beside the text (a buy request response's item: its name and base). */
+  art?: { itemName?: string; baseCode?: string };
 }
 
 export interface GenericToastPayload {

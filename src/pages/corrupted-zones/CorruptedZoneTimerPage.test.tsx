@@ -28,6 +28,13 @@ let resize: () => void;
 
 /** The pill (the schedule's lock toggle is a button too). */
 const pill = () => document.querySelector<HTMLButtonElement>('button[aria-expanded]')!;
+/** The pill's tooltip text, shown when it gets keyboard focus. */
+function pillTip(): string {
+  act(() => {
+    fireEvent.focus(pill());
+  });
+  return screen.getByRole('tooltip').textContent ?? '';
+}
 /** Click the pill, then let the ResizeObserver report the new content box. */
 const clickPill = () => {
   fireEvent.click(pill());
@@ -85,8 +92,9 @@ describe('CorruptedZoneTimer', () => {
 
   it('names the next zone in the tooltip', () => {
     render(<CorruptedZoneTimerPage />);
-    expect(pill().title).toContain("Next: Canyon of the Magi and Tal Rasha's Tomb.");
-    expect(pill().title).toMatch(/Click for the schedule, drag to move\.$/);
+    const tip = pillTip();
+    expect(tip).toContain("Next: Canyon of the Magi and Tal Rasha's Tomb.");
+    expect(tip).toMatch(/Click for the schedule, drag to move\.$/);
   });
 
   it('click lists the next six zones; a second click hides them', () => {
@@ -228,7 +236,7 @@ describe('CorruptedZoneTimer', () => {
     it('counts down to the next followed zone, then to its end once it is corrupted', () => {
       render(<CorruptedZoneTimerPage />);
       expect(pill().textContent).toBe('Chaos Sanctuaryin 1:04:18');
-      expect(pill().title).toMatch(/^Next followed zone: /);
+      expect(pillTip()).toMatch(/^Next followed zone: /);
       act(() => vi.advanceTimersByTime(3_858_000)); // 21:00, Chaos Sanctuary's slot
       expect(pill().textContent).toBe('Chaos Sanctuary15:00');
     });
@@ -266,7 +274,7 @@ describe('CorruptedZoneTimer', () => {
     const { rerender } = render(<CorruptedZoneTimerPage />);
     rerender(<CorruptedZoneTimerPage />);
     setRect.mockClear();
-    expect(pill().title).toMatch(/Click for the schedule\.$/);
+    expect(pillTip()).toMatch(/Click for the schedule\.$/);
     fireEvent.pointerDown(pill(), { button: 0, pointerId: 1, clientX: 1200, clientY: 70 });
     fireEvent.pointerMove(pill(), { pointerId: 1, clientX: 1100, clientY: 170 });
     fireEvent.pointerUp(pill(), { pointerId: 1 });

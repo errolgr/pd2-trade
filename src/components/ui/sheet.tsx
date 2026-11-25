@@ -13,10 +13,14 @@ function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
     {...props} />;
 }
 
-function SheetTrigger({ ...props }: React.ComponentProps<typeof SheetPrimitive.Trigger>) {
-  return <SheetPrimitive.Trigger data-slot="sheet-trigger"
-    {...props} />;
-}
+// forwardRef: a wrapping Tip/TooltipTrigger asChild needs the trigger's DOM node (React 18 drops refs on plain functions)
+const SheetTrigger = React.forwardRef<
+  React.ElementRef<typeof SheetPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof SheetPrimitive.Trigger>
+>((props, ref) => <SheetPrimitive.Trigger ref={ref}
+  data-slot="sheet-trigger"
+  {...props} />);
+SheetTrigger.displayName = 'SheetTrigger';
 
 function SheetClose({ ...props }: React.ComponentProps<typeof SheetPrimitive.Close>) {
   return <SheetPrimitive.Close data-slot="sheet-close"
@@ -30,9 +34,13 @@ function SheetPortal({ ...props }: React.ComponentProps<typeof SheetPrimitive.Po
     {...props} />;
 }
 
-function SheetOverlay({ className, ...props }: React.ComponentProps<typeof SheetPrimitive.Overlay>) {
+const SheetOverlay = React.forwardRef<
+  React.ElementRef<typeof SheetPrimitive.Overlay>,
+  React.ComponentPropsWithoutRef<typeof SheetPrimitive.Overlay>
+>(({ className, ...props }, ref) => {
   return (
     <SheetPrimitive.Overlay
+      ref={ref}
       data-slot="sheet-overlay"
       className={cn(
         'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-scrim backdrop-blur-sm duration-(--dur-med) ease-out',
@@ -41,7 +49,8 @@ function SheetOverlay({ className, ...props }: React.ComponentProps<typeof Sheet
       {...props}
     />
   );
-}
+});
+SheetOverlay.displayName = 'SheetOverlay';
 
 function SheetContent({
   className,

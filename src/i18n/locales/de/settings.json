@@ -18,6 +18,30 @@
       "label": "Fenstertransparenz: <num>{{value}}%</num>",
       "description": "Das Spiel durch Fensterhintergründe sehen. 0 % ist vollständig deckend."
     },
+    "windows": {
+      "group": "Fenster & Fokus",
+      "keyboardFocus": {
+        "label": "Tastaturfokus",
+        "description": "Wann ein Fenster dem Spiel die Tastatur abnimmt. Solange ein Fenster sie hat, erreichen deine Tasten das Spiel nicht und das Spiel wird eventuell stumm.",
+        "options": {
+          "typing": "Beim Tippen in ein Feld",
+          "click": "Beim Anklicken",
+          "open": "Beim Öffnen"
+        }
+      },
+      "closeOnClickAway": {
+        "label": "Fenster beim Wegklicken schließen",
+        "description": "Preischeck, Chat, Markt, Builds und ähnliche Fenster schließen sich, wenn du außerhalb klickst oder zu einer anderen App wechselst. Aus: Sie bleiben offen, bis du sie schließt."
+      },
+      "outsideGame": {
+        "label": "Fenster außerhalb des Spiels anzeigen",
+        "description": "Fenster bleiben sichtbar, wenn Diablo II nicht im Vordergrund ist oder nicht läuft. Chat-Button, Vermögensticker und Zonen-Timer erscheinen weiterhin nur im Spiel."
+      },
+      "hotkeysOutsideGame": {
+        "label": "Hotkeys außerhalb des Spiels",
+        "description": "Öffne Fenster mit ihren Hotkeys aus jeder App; diese Tastenkombinationen erreichen andere Apps dann nicht mehr. Hotkeys, die den Gegenstand unter dem Cursor kopieren (Preischeck, Einstellen, Entfernen, Anprobieren), funktionieren weiterhin nur im Spiel. Benötigt „Fenster außerhalb des Spiels anzeigen“."
+      }
+    },
     "zoneTimer": {
       "enabled": {
         "label": "Corrupted-Zone-Timer",
@@ -149,7 +173,7 @@
   "nav": {
     "general": "Allgemein",
     "account": "Konto",
-    "chat": "Chat",
+    "chat": "Chat & Benachrichtigungen",
     "interface": "Oberfläche",
     "priceCheck": "Preischeck",
     "netWorth": "Vermögen",
@@ -278,6 +302,15 @@
         "description": "Der Diablo II-Ordner konnte nicht automatisch erkannt werden. Bitte gib ihn manuell ein."
       },
       "autoDetect": "Automatisch erkennen",
+      "browse": "Durchsuchen…",
+      "clear": "Leeren (automatisch erkennen)",
+      "check": {
+        "valid": "Diablo II-Installation gefunden.",
+        "missing": "Dieser Ordner existiert nicht.",
+        "notInstall": "Hier ist keine Diablo II-Installation: Wähle den Ordner, der den Ordner ProjectD2 enthält.",
+        "winePrefix": "Das ist ein Wine-Präfix. Diablo II ist installiert in {{path}}",
+        "useInstall": "Diesen Ordner verwenden"
+      },
       "label": "Diablo II-Ordner"
     },
     "game": {
@@ -517,8 +550,8 @@
       "description": "Farbschema für alle Overlay-Fenster. Wird sofort angewendet."
     },
     "chat": {
-      "title": "Chat",
-      "description": "Chat- und Flüster-Benachrichtigungen sowie deine Nachrichtenvorlagen einstellen."
+      "title": "Chat & Benachrichtigungen",
+      "description": "Chat- und Flüster-Benachrichtigungen sowie deine Nachrichtenvorlagen einstellen. Discord-DMs vom PD2-Trader-Bot."
     },
     "general": {
       "title": "Allgemein",
@@ -563,6 +596,24 @@
           "off": "Nichts tun",
           "ask": "Mich fragen",
           "auto": "Inserat entfernen"
+        },
+        "exceptions": {
+          "label": "Diese nie entfernen",
+          "description": "Inserate dieser Gegenstände werden nie entfernt, und du wirst nicht gefragt. „Nie wieder fragen bei …“ in der Abfrage fügt einen hinzu.",
+          "add": "Hinzufügen",
+          "search": "Gegenstandsbasis suchen…",
+          "empty": "Noch keine Gegenstände.",
+          "noMatch": "Keine passende Gegenstandsbasis",
+          "remove": "{{name}} entfernen",
+          "stackableNote": "Stapelbare Währung: Tokens, Puzzleboxen, Schlüssel, Essenzen."
+        },
+        "exceptionMode": {
+          "label": "Nie entfernen",
+          "options": {
+            "none": "Nichts (Standard)",
+            "stackable": "Stapelbare Währung und ausgewählte Gegenstände",
+            "selected": "Nur ausgewählte Gegenstände"
+          }
         }
       },
       "view": {
@@ -622,6 +673,10 @@
       "sellerCard": {
         "label": "Verkäuferkarte",
         "description": "Zeigt Status und weitere Inserate des Verkäufers in den Inseratsdetails."
+      },
+      "autoSearch": {
+        "label": "Automatische Suche",
+        "description": "Sucht, sobald du die Marktfilter änderst. Aus: Filteränderungen warten, bis du Suchen (Strg+Enter) drückst. Auch über den Blitz neben Leeren in den Filtern."
       }
     },
     "alerts": {
@@ -640,6 +695,10 @@
         "label": "Lautstärke Marktalarm: <num>{{value}}%</num>",
         "description": "Lautstärke des Marktalarm-Tons (0–100 %).",
         "ariaLabel": "Lautstärke Marktalarm"
+      },
+      "wtbPrompt": {
+        "label": "Nach Beobachten ein Kaufgesuch anbieten",
+        "description": "Wenn du eine Suche beobachtest, anbieten, auch ein Kaufgesuch dafür zu erstellen."
       }
     }
   },

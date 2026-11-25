@@ -1,14 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
 import { motion } from 'framer-motion';
 import { DUR, EASE_OUT } from '@/lib/motion';
-import { Bell, Clock, ExternalLink, Gamepad2, Heart, MessageSquare, Shield, Sigma, Swords, X } from 'lucide-react';
+import { Bell, ExternalLink, Gamepad2, Heart, MessageSquare, Shield, Sigma, Swords, X } from 'lucide-react';
 import { useSimAccess } from '@/hooks/useSimAccess';
-import { isUserOnlineIngame } from '@/lib/user-online-status';
 import { cn } from '@/lib/utils';
+import { glyphCodeForName } from '@/lib/glyph-code';
+import { TombGlyph } from '@/components/glyph/TombGlyph';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tip, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ListingThumb } from '@/pages/chat/components/ListingCard';
 import { useListingMarketPrices } from '@/pages/chat/hooks/useListingMarketPrices';
 import { DealBadge } from '@/pages/market/enrich/DealBadge';
@@ -17,27 +16,34 @@ import type { ItemDetail, MarketListingEntry } from '@/common/types/pd2-website/
 import type { JewelElement } from '@/pages/chat/lib/listing-art';
 import { useListingActions } from '../hooks/useListingActions';
 import { buildCardModel, modMatchesStatKey, type CardMod, type SocketGroup } from '../lib/card-model';
-import { listingAge, sellerAccount } from '../lib/listing';
+import { listingAge, sellerAccount, sellerGlyphName } from '../lib/listing';
 import { isAnniversaryItem } from '../lib/anniversary';
 import type { MarketApi, ScoredListing } from '../lib/types';
 import { itemNameColor } from './ItemTooltip';
 import { OfferButton, WhisperButton, iconActionClass } from './ListingActions';
-import { LoadMoreFooter, type LoadMoreState, OnlineDots, formatHrPrice, itemArtGlow } from './ResultsList';
+import { OnlineDots, formatHrPrice, itemArtGlow, useRowOnline } from './ResultsList';
 import { formatStat, statWithValue } from './stat-text';
 import { AddAllModsButton, ModMenu } from './ModMenu';
-import { EnterOnce, type EnterTracker } from './EnterOnce';
+import type { EnterTracker } from './EnterOnce';
 import { SellerName } from './SellerName';
+import { EndedTag } from './EndedTag';
 import { MarketSimButton } from './MarketSimButton';
 import { OfferBadge } from './OfferBadge';
 import type { ListingOffers } from '../lib/listing-offers';
 import type { AlertGlow } from '../hooks/useLiveAlertGlow';
 import { useTranslation } from '@/i18n';
-
-const ESTIMATED_CARD_HEIGHT = 340;
-const GAP = 8;
-const PADDING = 8;
-/** Cards from the end at which the next server page is requested. */
-const LOAD_MORE_AHEAD = 3;
+import {
+  AgeChip,
+  CARD_PILL,
+  CardFooter,
+  CardHeader,
+  CardShell,
+  ItemPills,
+  type LoadMoreState,
+  PersonPill,
+  RealmChip,
+  VirtualCardList,
+} from './card-parts';
 
 /** A hotkey for the selected card (O offer, W whisper, F favorite); `nonce` makes repeats distinct. */
 export interface CardCommand {
@@ -66,7 +72,7 @@ export interface ResultCardsProps {
   statKeys: string[];
   favoriteIds: Set<string>;
   onToggleFavorite: (listing: MarketListingEntry) => void;
-  /** Sold archive: no offer/whisper. */
+  /** Archive (ended listings): no offer/whisper. */
   archived: boolean;
   api: MarketApi | null;
   command: CardCommand | null;
@@ -109,100 +115,55 @@ export function ResultCards({
   loadMore,
 }: ResultCardsProps) {
   const { t } = useTranslation('market');
-  const containerRef = useRef<HTMLDivElement>(null);
   /** Glows already played (`nonce:id`): a card scrolled back into view doesn't glow again. */
   const playedGlows = useRef(new Set<string>());
-  // eslint-disable-next-line react-hooks/incompatible-library -- no React Compiler; the virtualizer re-renders us
-  const virtualizer = useVirtualizer({
-    count: rows.length,
-    getScrollElement: () =>
-      containerRef.current?.querySelector<HTMLDivElement>('[data-slot="scroll-area-viewport"]') ?? null,
-    estimateSize: () => ESTIMATED_CARD_HEIGHT,
-    getItemKey: (index) => rows[index].listing._id,
-    overscan: 3,
-    paddingStart: PADDING,
-    paddingEnd: PADDING,
-    gap: GAP,
-  });
-
-  // A fresh result set (new search, filter change) starts at the top; appended pages keep the position.
-  // Before the selection effect, so a kept selection still scrolls into view.
-  useEffect(() => {
-    virtualizer.scrollToOffset(0);
-  }, [enter.generation, virtualizer]);
-
-  // Keep the keyboard selection in view
-  const selectedIndex = selectedId ? rows.findIndex((r) => r.listing._id === selectedId) : -1;
-  useEffect(() => {
-    if (selectedIndex >= 0) virtualizer.scrollToIndex(selectedIndex, { align: 'auto' });
-  }, [selectedIndex, virtualizer]);
-
-  // Infinite load: the last rendered card is near the end
-  const lastVisible = virtualizer.getVirtualItems().at(-1)?.index ?? -1;
-  useEffect(() => {
-    if (hasMore && !loadingMore && rows.length > 0 && lastVisible >= rows.length - LOAD_MORE_AHEAD) onLoadMore();
-  }, [hasMore, loadingMore, lastVisible, rows.length, onLoadMore]);
-
   return (
-    <ScrollArea
-      ref={containerRef}
-      className="min-h-0 flex-1 overflow-hidden [&_[data-radix-scroll-area-viewport]>div]:!block"
-    >
-      <div
-        role="listbox"
-        aria-label={t('results.listings')}
-        className="relative w-full"
-        style={{ height: virtualizer.getTotalSize() }}
-      >
-        {virtualizer.getVirtualItems().map((item) => {
-          const row = rows[item.index];
-          const id = row.listing._id;
-          return (
-            <div
-              key={`${enter.generation}:${item.key}`}
-              ref={virtualizer.measureElement}
-              data-index={item.index}
-              className="absolute left-0 top-0 w-full"
-              style={{ transform: `translateY(${item.start}px)`, paddingInline: PADDING }}
-            >
-              <EnterOnce tracker={enter}
-                id={id}
-                index={item.index}
-                className="relative">
-                <ResultCard
-                  row={row}
-                  selected={id === selectedId}
-                  onSelect={onSelect}
-                  deal={deals.get(id)}
-                  offers={offers.get(id)}
-                  pseudoKeys={pseudoKeys}
-                  statKeys={statKeys}
-                  favorite={favoriteIds.has(id)}
-                  onToggleFavorite={onToggleFavorite}
-                  archived={archived}
-                  api={api}
-                  // Only the selected card gets hotkeys (the others keep their memoized props)
-                  command={command && command.id === id ? command : null}
-                  takeCommand={takeCommand}
-                  pin={pinned && pinned.id === id ? pinned : null}
-                />
-                {glowIds.ids.has(id) && (
-                  <GlowOnce
-                    key={`${glowIds.nonce}:${id}`}
-                    glowKey={`${glowIds.nonce}:${id}`}
-                    played={playedGlows.current}
-                  />
-                )}
-              </EnterOnce>
-            </div>
-          );
-        })}
-      </div>
-      <LoadMoreFooter loading={loadingMore}
-        {...loadMore} />
-    </ScrollArea>
+    <VirtualCardList
+      items={rows}
+      getKey={listingKey}
+      selectedKey={selectedId}
+      enter={enter}
+      hasMore={hasMore}
+      loadingMore={loadingMore}
+      onLoadMore={onLoadMore}
+      loadMore={loadMore}
+      ariaLabel={t('results.listings')}
+      renderCard={(row) => {
+        const id = row.listing._id;
+        return (
+          <>
+            <ResultCard
+              row={row}
+              selected={id === selectedId}
+              onSelect={onSelect}
+              deal={deals.get(id)}
+              offers={offers.get(id)}
+              pseudoKeys={pseudoKeys}
+              statKeys={statKeys}
+              favorite={favoriteIds.has(id)}
+              onToggleFavorite={onToggleFavorite}
+              archived={archived}
+              api={api}
+              // Only the selected card gets hotkeys (the others keep their memoized props)
+              command={command && command.id === id ? command : null}
+              takeCommand={takeCommand}
+              pin={pinned && pinned.id === id ? pinned : null}
+            />
+            {glowIds.ids.has(id) && (
+              <GlowOnce
+                key={`${glowIds.nonce}:${id}`}
+                glowKey={`${glowIds.nonce}:${id}`}
+                played={playedGlows.current}
+              />
+            )}
+          </>
+        );
+      }}
+    />
   );
 }
+
+const listingKey = (row: ScoredListing) => row.listing._id;
 
 /** A soft accent glow over a card that just matched a live alert; plays once per alert (not on remount). */
 function GlowOnce({ glowKey, played }: { glowKey: string; played: Set<string> }) {
@@ -248,7 +209,7 @@ function SocketIcon({ listing, className }: { listing: MarketListingEntry; class
   );
 }
 
-const pill = 'inline-flex h-5 items-center rounded-full border px-2 text-[10px] font-medium leading-none';
+const pill = CARD_PILL;
 
 const ResultCard = React.memo(function ResultCard({
   row,
@@ -320,18 +281,15 @@ const ResultCard = React.memo(function ResultCard({
     .join(' · ');
   const req = item.requirements;
   const account = sellerAccount(listing) || listing.user?.username;
+  const glyphName = sellerGlyphName(listing);
+  const inGame = useRowOnline(listing.user_last_ingame);
 
   return (
-    <article
-      role="option"
-      aria-selected={selected}
-      data-listing-id={listing._id}
-      onClick={() => onSelect(listing._id)}
-      className={cn(
-        'cursor-default overflow-hidden rounded-lg border bg-foreground/[0.015] transition-colors duration-(--dur-fast)',
-        selected ? 'border-primary' : 'border-border/60 hover:border-border',
-        pin && 'ring-2 ring-primary/30',
-      )}
+    <CardShell
+      id={listing._id}
+      selected={selected}
+      onSelect={() => onSelect(listing._id)}
+      className={cn(pin && 'ring-2 ring-primary/30')}
     >
       {pin && (
         <div className="flex items-center gap-1.5 border-b border-primary/30 bg-primary/10 px-3 py-1 text-[11px] text-primary">
@@ -340,46 +298,41 @@ const ResultCard = React.memo(function ResultCard({
             {pin.searchName ? t('cards.fromAlertNamed', { name: pin.searchName }) : t('cards.fromAlert')}
             <span className="text-muted-foreground">{t('cards.notInResults')}</span>
           </span>
-          <button
-            type="button"
-            aria-label={t('cards.dismissAlert')}
-            title={t('cards.dismiss')}
-            onClick={(e) => {
-              e.stopPropagation();
-              pin.onDismiss();
-            }}
-            className="inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-primary/15 hover:text-foreground"
-          >
-            <X className="size-3" />
-          </button>
+          <Tip label={t('cards.dismiss')}>
+            <button
+              type="button"
+              aria-label={t('cards.dismissAlert')}
+              onClick={(e) => {
+                e.stopPropagation();
+                pin.onDismiss();
+              }}
+              className="inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-primary/15 hover:text-foreground"
+            >
+              <X className="size-3" />
+            </button>
+          </Tip>
         </div>
       )}
       {/* 1. Header */}
-      <header className="flex gap-3 p-3 pb-2">
-        <div className="flex h-[76px] w-16 shrink-0 items-center justify-center rounded-md border border-border/50">
+      <CardHeader
+        art={
           <ListingThumb
             listing={listing}
             className="size-full border-0 bg-none shadow-none"
             artClassName={cn('max-h-[68px] max-w-14', itemArtGlow(item))}
           />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h3
-            className={cn('truncate text-sm font-bold uppercase tracking-[0.08em]', itemNameColor(item))}
-            title={item.name}
+        }
+        title={item.name}
+        titleClassName={itemNameColor(item)}
+        subtitle={subtitle}
+        pills={
+          <ItemPills
+            quality={quality || null}
+            qualityClassName={itemNameColor(item)}
+            sockets={item.socket_count > 0 ? `${item.socket_count}os` : null}
+            corrupted={!!item.corrupted}
+            ethereal={!!item.is_ethereal}
           >
-            {item.name}
-          </h3>
-          {subtitle && <div className="truncate text-xs text-muted-foreground">{subtitle}</div>}
-          <div className="mt-1.5 flex flex-wrap gap-1">
-            {quality && <span className={cn(pill, 'border-border/70', itemNameColor(item))}>{quality}</span>}
-            {item.socket_count > 0 && (
-              <span className={cn(pill, 'border-border/70 text-muted-foreground')}>{`${item.socket_count}os`}</span>
-            )}
-            {item.corrupted && <span className={cn(pill, 'border-border/70 text-q-corrupted')}>Corrupted</span>}
-            {item.is_ethereal && (
-              <span className={cn(pill, 'border-q-normal bg-q-normal text-background')}>Ethereal</span>
-            )}
             {isAnniversaryItem(item) && (
               <span className={cn(pill, 'border-q-unique/50 text-q-unique')}>Anniversary</span>
             )}
@@ -394,28 +347,32 @@ const ResultCard = React.memo(function ResultCard({
                 'cursor-pointer gap-1 border-dashed border-border/70 text-muted-foreground hover:border-border hover:text-foreground',
               )}
             />
-          </div>
-        </div>
-        <div className="flex max-w-[40%] shrink-0 flex-col items-end gap-1 text-right">
-          <span
-            className={cn(
-              'max-w-full truncate font-bold tabular-nums',
-              price ? 'text-xl text-foreground' : 'text-sm text-foreground',
+          </ItemPills>
+        }
+        aside={
+          <>
+            <Tip label={listing.price || undefined}>
+              <span
+                className={cn(
+                  'max-w-full truncate font-bold tabular-nums',
+                  price ? 'text-xl text-foreground' : 'text-sm text-foreground',
+                )}
+              >
+                {price ?? (listing.price || t('cards.noPrice'))}
+              </span>
+            </Tip>
+            {price && listing.price && (
+              <Tip label={listing.price}>
+                <span className="max-w-full truncate text-[11px] text-muted-foreground">
+                  {t('cards.note', { note: listing.price })}
+                </span>
+              </Tip>
             )}
-            title={listing.price || undefined}
-          >
-            {price ?? (listing.price || t('cards.noPrice'))}
-          </span>
-          {price && listing.price && (
-            <span className="max-w-full truncate text-[11px] text-muted-foreground"
-              title={listing.price}>
-              {t('cards.note', { note: listing.price })}
-            </span>
-          )}
-          <DealBadge deal={deal} />
-          <OfferBadge offers={offers} />
-        </div>
-      </header>
+            <DealBadge deal={deal} />
+            <OfferBadge offers={offers} />
+          </>
+        }
+      />
 
       {/* 2. Stats strip */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border/50 px-3 py-1.5 text-xs">
@@ -464,14 +421,13 @@ const ResultCard = React.memo(function ResultCard({
           {pseudoKeys.length > 0 && (
             <div className="flex flex-wrap gap-1 px-1.5 pt-1">
               {pseudoKeys.map((key) => (
-                <span
-                  key={key}
-                  title={statWithValue(key, row.pseudo[key] ?? 0)}
-                  className="inline-flex h-5 items-center gap-0.5 rounded-sm bg-muted/60 px-1.5 text-[11px] tabular-nums text-muted-foreground"
-                >
-                  <Sigma className="size-3" />
-                  {statWithValue(key, row.pseudo[key] ?? 0, { short: true })}
-                </span>
+                <Tip key={key}
+                  label={statWithValue(key, row.pseudo[key] ?? 0)}>
+                  <span className="inline-flex h-5 items-center gap-0.5 rounded-sm bg-muted/60 px-1.5 text-[11px] tabular-nums text-muted-foreground">
+                    <Sigma className="size-3" />
+                    {statWithValue(key, row.pseudo[key] ?? 0, { short: true })}
+                  </span>
+                </Tip>
               ))}
             </div>
           )}
@@ -493,94 +449,98 @@ const ResultCard = React.memo(function ResultCard({
       )}
 
       {/* 5. Footer: a quiet strip like the chat trader card's action bar */}
-      <footer className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border/60 bg-foreground/[0.045] px-3 py-1.5 text-xs">
-        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2.5 gap-y-1">
-          {/* Who: presence + account, with the character they're on */}
-          <span className="inline-flex h-6 min-w-0 items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 pl-2 pr-2.5">
-            <OnlineDots listing={listing} />
-            {account && (
-              <SellerName onOpen={actions.openTrader}
-                className="font-semibold text-foreground">
-                {account}
-              </SellerName>
-            )}
-            {item.character_id && (
-              <>
-                <span aria-hidden
-                  className="h-3 w-px bg-border" />
-                <span
-                  className="inline-flex min-w-0 items-center gap-1 text-muted-foreground"
-                  title={t('cards.inGameAs', { character: item.character_id })}
-                >
-                  <Gamepad2
-                    className={cn('size-3 shrink-0', isUserOnlineIngame(listing.user_last_ingame) && 'text-success')}
-                  />
-                  <span className="truncate">{item.character_id}</span>
-                </span>
-              </>
-            )}
-          </span>
-          {/* When / where */}
-          <span className="inline-flex items-center gap-2 text-[11px] text-muted-foreground">
-            <span className="inline-flex items-center gap-1 tabular-nums"
-              title={t('filters.sort.bumpedTitle')}>
-              <Clock className="size-3" />
-              {listingAge(listing)}
+      <CardFooter
+        info={
+          <>
+            {/* Who: presence + account glyph and name, with the character they're on */}
+            <PersonPill>
+              <OnlineDots listing={listing} />
+              {account && (
+                <>
+                  {glyphName && <TombGlyph code={glyphCodeForName(glyphName)}
+                    size={18} />}
+                  <SellerName onOpen={actions.openTrader}
+                    className="font-semibold text-foreground">
+                    {account}
+                  </SellerName>
+                </>
+              )}
+              {item.character_id && (
+                <>
+                  <span aria-hidden
+                    className="h-3 w-px bg-border" />
+                  <Tip label={t('cards.inGameAs', { character: item.character_id })}>
+                    <span className="inline-flex min-w-0 items-center gap-1 text-muted-foreground">
+                      <Gamepad2 className={cn('size-3 shrink-0', inGame && 'text-success')} />
+                      <span className="truncate">{item.character_id}</span>
+                    </span>
+                  </Tip>
+                </>
+              )}
+            </PersonPill>
+            {/* When / where */}
+            <span className="inline-flex items-center gap-2 text-[11px] text-muted-foreground">
+              <EndedTag row={row} />
+              <AgeChip label={t('filters.sort.bumpedTitle')}>{listingAge(listing)}</AgeChip>
+              <RealmChip hardcore={listing.is_hardcore}
+                ladder={listing.is_ladder} />
             </span>
-            <span className="rounded border border-border/60 px-1.5 py-px text-[10px] font-medium uppercase tracking-wide">
-              {`${listing.is_hardcore ? 'HC' : 'SC'} · ${listing.is_ladder ? 'Ladder' : 'Non-ladder'}`}
-            </span>
-          </span>
-        </span>
-        <span className="flex shrink-0 items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(iconActionClass, favorite && 'text-destructive hover:text-destructive')}
-            aria-pressed={favorite}
-            aria-label={favorite ? t('cards.unfavoriteHotkey') : t('cards.favoriteHotkey')}
-            title={favorite ? t('cards.unfavoriteHotkey') : t('cards.favoriteHotkey')}
-            onClick={() => onToggleFavorite(listing)}
-          >
-            <HeartPop favorite={favorite} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={iconActionClass}
-            aria-label={t('actions.messageSeller')}
-            title={t('actions.messageSeller')}
-            onClick={actions.openDm}
-          >
-            <MessageSquare className="size-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={iconActionClass}
-            aria-label={t('drawer.openOnSite')}
-            title={t('drawer.openOnSite')}
-            onClick={actions.openWebsite}
-          >
-            <ExternalLink className="size-3.5" />
-          </Button>
-          {simAccess && !archived && <MarketSimButton access={simAccess}
-            listingId={listing._id} />}
-          {!archived && <WhisperButton actions={actions}
-            dense />}
-          {!archived && (
-            <OfferButton
-              api={api}
-              listing={listing}
-              onWebsite={actions.openWebsite}
-              dense
-              openNonce={command?.action === 'offer' ? command.nonce : undefined}
-              ensureFresh={actions.ensureFresh}
-            />
-          )}
-        </span>
-      </footer>
-    </article>
+          </>
+        }
+        actions={
+          <>
+            <Tip label={favorite ? t('cards.unfavoriteHotkey') : t('cards.favoriteHotkey')}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(iconActionClass, favorite && 'text-destructive hover:text-destructive')}
+                aria-pressed={favorite}
+                aria-label={favorite ? t('cards.unfavoriteHotkey') : t('cards.favoriteHotkey')}
+                onClick={() => onToggleFavorite(listing)}
+              >
+                <HeartPop favorite={favorite} />
+              </Button>
+            </Tip>
+            <Tip label={t('actions.messageSeller')}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={iconActionClass}
+                aria-label={t('actions.messageSeller')}
+                onClick={actions.openDm}
+              >
+                <MessageSquare className="size-3.5" />
+              </Button>
+            </Tip>
+            <Tip label={t('drawer.openOnSite')}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={iconActionClass}
+                aria-label={t('drawer.openOnSite')}
+                onClick={actions.openWebsite}
+              >
+                <ExternalLink className="size-3.5" />
+              </Button>
+            </Tip>
+            {simAccess && !archived && <MarketSimButton access={simAccess}
+              listingId={listing._id} />}
+            {!archived && <WhisperButton actions={actions}
+              dense />}
+            {!archived && (
+              <OfferButton
+                api={api}
+                listing={listing}
+                onWebsite={actions.openWebsite}
+                dense
+                openNonce={command?.action === 'offer' ? command.nonce : undefined}
+                ensureFresh={actions.ensureFresh}
+              />
+            )}
+          </>
+        }
+      />
+    </CardShell>
   );
 });
 
@@ -774,21 +734,22 @@ function SocketSection({
         </span>
         <span className="flex items-center gap-1">
           {socketGroups.map((g, socket) => (
-            <span
-              key={socket}
-              onMouseEnter={() => onHover(g)}
-              className={cn(
-                'flex size-6 items-center justify-center rounded-full border bg-muted/30 transition-[border-color,transform] duration-(--dur-fast) ease-out motion-safe:hover:scale-110',
-                hovered === g ? 'border-foreground/50' : 'border-border',
-              )}
-              title={groups[g].name}
-            >
-              <ListingThumb
-                listing={groupListings[g]}
-                className="size-full rounded-full border-0 bg-none shadow-none"
-                artClassName="max-h-[18px] max-w-[18px]"
-              />
-            </span>
+            <Tip key={socket}
+              label={groups[g].name}>
+              <span
+                onMouseEnter={() => onHover(g)}
+                className={cn(
+                  'flex size-6 items-center justify-center rounded-full border bg-muted/30 transition-[border-color,transform] duration-(--dur-fast) ease-out motion-safe:hover:scale-110',
+                  hovered === g ? 'border-foreground/50' : 'border-border',
+                )}
+              >
+                <ListingThumb
+                  listing={groupListings[g]}
+                  className="size-full rounded-full border-0 bg-none shadow-none"
+                  artClassName="max-h-[18px] max-w-[18px]"
+                />
+              </span>
+            </Tip>
           ))}
           {Array.from({ length: emptySockets }, (_, i) => (
             <span key={`empty-${i}`}

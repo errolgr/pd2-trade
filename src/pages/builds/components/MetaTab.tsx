@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ArrowDown,
   ArrowUp,
@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Slider } from '@/components/ui/slider';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tip, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   BUILD_CLASSES,
   type BuildsFilters,
@@ -27,9 +27,11 @@ import {
   getBuildCharacters,
   getBuildShoppingList,
   getBuildUsage,
+  getBuildUsageList,
   type ItemUsage,
   type ShoppingListResponse,
   type UsageCount,
+  type UsageListName,
   type UsageResponse,
 } from '@/lib/builds-api';
 import { useBuildsActions } from '../lib/context';
@@ -58,6 +60,10 @@ const LEVEL_PRESETS = [
   { value: '99', label: '99', min: 99 },
 ] as const;
 const PAGE_SIZE = 25;
+/** A usage search asks the server once typing pauses this long (the top-50 matches show at once). */
+const SEARCH_DEBOUNCE_MS = 200;
+/** Most rows a usage search shows. */
+const SEARCH_LIMIT = 100;
 
 type ListKey = 'classes' | 'skills' | 'items' | 'mercTypes' | 'mercItems';
 
@@ -95,13 +101,18 @@ export function MetaTab({
   const usage = useBuildsQuery(`usage|${filterKey}`, (signal) => getBuildUsage(filters, signal));
   const shopping = useBuildsQuery(`shopping|${filterKey}`, (signal) => getBuildShoppingList(filters, signal));
 
+  /** Names of items picked from a usage search (they may be missing from the top-50 usage lists). */
+  const [picked, setPicked] = useState<ReadonlyMap<string, string>>(new Map());
   const itemNames = useMemo(() => {
-    const names = new Map(labels);
+    const names = new Map([...labels, ...picked]);
     for (const item of [...(usage.data?.items ?? []), ...(usage.data?.mercItems ?? [])]) names.set(item.key, item.name);
     return names;
-  }, [labels, usage.data]);
+  }, [labels, picked, usage.data]);
 
-  const toggle = (key: ListKey, value: string) => onChange(toggleListFilter(filters, key, value));
+  const toggle = (key: ListKey, value: string, name?: string) => {
+    if (name) setPicked((prev) => new Map(prev).set(value, name));
+    onChange(toggleListFilter(filters, key, value));
+  };
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -167,46 +178,49 @@ function ClassBar({
         const pct = total ? (count / total) * 100 : 0;
         const tint = (percent: number) => `color-mix(in srgb, ${meta.color} ${percent}%, transparent)`;
         return (
-          <button
+          <Tip
             key={name}
-            type="button"
-            aria-pressed={active}
-            title={
+            label={
               active
                 ? t('meta.classTitleActive', { name, count, formatted: count.toLocaleString(currentLocale()) })
                 : t('meta.classTitle', { name, count, formatted: count.toLocaleString(currentLocale()) })
             }
-            onClick={() => onToggle(name)}
-            // A tile as wide as the class's share of the characters; the floor width keeps its text whole
-            style={{
-              flex: `${breakdown ? pct : 1} 1 0%`,
-              background: tint(active ? 30 : 14),
-              boxShadow: active ? `inset 0 0 0 1px ${meta.color}` : undefined,
-            }}
-            className={cn(
-              'flex min-w-[128px] items-center gap-2 px-2.5 py-2 text-left outline-none transition-[opacity,background-color,box-shadow,flex-grow] duration-(--dur-fast) hover:brightness-125 focus-visible:brightness-125',
-              dim && 'opacity-45 hover:opacity-90',
-            )}
           >
-            <ClassEmblem className={name}
-              size={28} />
-            <span className="min-w-0 flex-1 whitespace-nowrap">
-              <span className="block text-xs font-semibold"
-                style={{ color: meta.color }}>
-                {meta.name}
+            <button
+              type="button"
+              aria-pressed={active}
+              onClick={() => onToggle(name)}
+              // A tile as wide as the class's share of the characters; the floor width keeps its text whole
+              style={{
+                flex: `${breakdown ? pct : 1} 1 0%`,
+                background: tint(active ? 30 : 14),
+                boxShadow: active ? `inset 0 0 0 1px ${meta.color}` : undefined,
+              }}
+              className={cn(
+                'flex min-w-[128px] items-center gap-2 px-2.5 py-2 text-left outline-none transition-[opacity,background-color,box-shadow,flex-grow] duration-(--dur-fast) hover:brightness-125 focus-visible:brightness-125',
+                dim && 'opacity-45 hover:opacity-90',
+              )}
+            >
+              <ClassEmblem className={name}
+                size={28} />
+              <span className="min-w-0 flex-1 whitespace-nowrap">
+                <span className="block text-xs font-semibold"
+                  style={{ color: meta.color }}>
+                  {meta.name}
+                </span>
+                <span className="block text-xs tabular-nums">
+                  {breakdown ? (
+                    <>
+                      <span className="font-bold text-foreground">{fmtPct(pct)}</span>{' '}
+                      <span className="text-muted-foreground">{count.toLocaleString(currentLocale())}</span>
+                    </>
+                  ) : (
+                    <Skeleton className="mt-0.5 h-2.5 w-12" />
+                  )}
+                </span>
               </span>
-              <span className="block text-xs tabular-nums">
-                {breakdown ? (
-                  <>
-                    <span className="font-bold text-foreground">{fmtPct(pct)}</span>{' '}
-                    <span className="text-muted-foreground">{count.toLocaleString(currentLocale())}</span>
-                  </>
-                ) : (
-                  <Skeleton className="mt-0.5 h-2.5 w-12" />
-                )}
-              </span>
-            </span>
-          </button>
+            </button>
+          </Tip>
         );
       })}
     </div>
@@ -330,26 +344,27 @@ function BudgetControl({ value, onChange }: { value: number | null; onChange: (v
   const index = drag ?? indexOf(value);
   const any = index >= BUDGET_STEPS.length;
   return (
-    <div className="flex items-center gap-2"
-      title={t('meta.maxGearValue')}>
-      <span className="text-[11px] text-muted-foreground">{t('meta.gear')}</span>
-      <Slider
-        aria-label={t('meta.maxGearValue')}
-        className="w-28 [&_[role=slider]]:size-3.5"
-        min={0}
-        max={BUDGET_STEPS.length}
-        step={1}
-        value={[index]}
-        onValueChange={([i]) => setDrag(i)}
-        onValueCommit={([i]) => {
-          setDrag(null);
-          onChange(i >= BUDGET_STEPS.length ? null : BUDGET_STEPS[i]);
-        }}
-      />
-      <span className={cn('w-16 text-[11px] tabular-nums', any ? 'text-muted-foreground' : 'text-q-gold')}>
-        {any ? t('meta.any') : t('meta.atMostHr', { value: fmtHr(BUDGET_STEPS[index]) })}
-      </span>
-    </div>
+    <Tip label={t('meta.maxGearValue')}>
+      <div className="flex items-center gap-2">
+        <span className="text-[11px] text-muted-foreground">{t('meta.gear')}</span>
+        <Slider
+          aria-label={t('meta.maxGearValue')}
+          className="w-28 [&_[role=slider]]:size-3.5"
+          min={0}
+          max={BUDGET_STEPS.length}
+          step={1}
+          value={[index]}
+          onValueChange={([i]) => setDrag(i)}
+          onValueCommit={([i]) => {
+            setDrag(null);
+            onChange(i >= BUDGET_STEPS.length ? null : BUDGET_STEPS[i]);
+          }}
+        />
+        <span className={cn('w-16 text-[11px] tabular-nums', any ? 'text-muted-foreground' : 'text-q-gold')}>
+          {any ? t('meta.any') : t('meta.atMostHr', { value: fmtHr(BUDGET_STEPS[index]) })}
+        </span>
+      </div>
+    </Tip>
   );
 }
 
@@ -364,19 +379,33 @@ function UsagePanel({
 }: {
   usage: BuildsQuery<UsageResponse>;
   filters: BuildsFilters;
-  onToggle: (list: ListKey, value: string) => void;
+  onToggle: (list: ListKey, value: string, name?: string) => void;
 }) {
   const { t } = useTranslation('builds');
   const [view, setView] = useState<UsageView>('skills');
   const [search, setSearch] = useState('');
   const data = usage.data;
   const needle = search.trim().toLowerCase();
+  const [debounced, setDebounced] = useState(needle);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(needle), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(id);
+  }, [needle]);
+  // `usage` holds only the 50 most used skills / items / merc items: a search asks the server for the whole list
+  const searchList: UsageListName = view === 'merc' ? 'mercItems' : view;
+  const filterKey = JSON.stringify(filterParams(filters));
+  const found = useBuildsQuery(debounced ? `usage-list|${searchList}|${filterKey}|${debounced}` : null, (signal) =>
+    getBuildUsageList(searchList, filters, { q: debounced, pageSize: SEARCH_LIMIT, signal }),
+  );
+  const foundRows = needle && debounced === needle && !found.loading && !found.error ? found.data?.rows : undefined;
+  // Until the server answers (or when it can't), the top-50 lists' matches
+  const searching = !!needle && !foundRows && !found.error;
   const matches = <T extends { name: string }>(rows: T[], limit: number) =>
     needle ? rows.filter((r) => r.name.toLowerCase().includes(needle)) : rows.slice(0, limit);
-  const skills = data ? matches(data.skills, 30) : [];
-  const items = data ? matches(data.items, 40) : [];
+  const skills = view === 'skills' && foundRows ? foundRows : data ? matches(data.skills, 30) : [];
+  const items = view === 'items' && foundRows ? (foundRows as ItemUsage[]) : data ? matches(data.items, 40) : [];
   const mercTypes = data ? matches(data.mercTypes, Infinity) : [];
-  const mercItems = data ? matches(data.mercItems, 25) : [];
+  const mercItems = view === 'merc' && foundRows ? (foundRows as ItemUsage[]) : data ? matches(data.mercItems, 25) : [];
   const empty =
     view === 'skills'
       ? skills.length === 0
@@ -434,12 +463,13 @@ function UsagePanel({
       ) : data.total === 0 ? (
         <p className="p-3 text-center text-xs text-muted-foreground">{t('meta.noMatchFilters')}</p>
       ) : (
-        <div className={cn('transition-opacity duration-(--dur-med)', usage.stale && 'opacity-60')}>
-          {needle && empty && (
+        <div className={cn('transition-opacity duration-(--dur-med)', (usage.stale || searching) && 'opacity-60')}>
+          {needle && empty && !searching && (
             <p className="p-3 text-center text-xs text-muted-foreground">
               {t('meta.nothingMatches', { search: search.trim() })}
             </p>
           )}
+          {needle && empty && searching && <ListSkeleton rows={3} />}
           {view === 'skills' && (
             <>
               {skills.length > 0 && (
@@ -466,7 +496,7 @@ function UsagePanel({
                 key={item.key}
                 item={item}
                 active={filters.items.includes(item.key)}
-                onClick={() => onToggle('items', item.key)}
+                onClick={() => onToggle('items', item.key, item.name)}
               />
             ))}
           {view === 'merc' && (
@@ -497,7 +527,7 @@ function UsagePanel({
                   item={item}
                   merc
                   active={filters.mercItems.includes(item.key)}
-                  onClick={() => onToggle('mercItems', item.key)}
+                  onClick={() => onToggle('mercItems', item.key, item.name)}
                 />
               ))}
             </>
@@ -533,31 +563,32 @@ function UsageRow({
         active && 'bg-primary/10 before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-primary',
       )}
     >
-      <button
-        type="button"
-        aria-pressed={active}
-        title={active ? t('meta.removeFilterName', { name }) : t('meta.filterBy', { name })}
-        onClick={onClick}
-        className="flex min-w-0 flex-1 items-center gap-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+      <Tip
+        label={`${active ? t('meta.removeFilterName', { name }) : t('meta.filterBy', { name })}\n${t(
+          'meta.usageCount',
+          {
+            count: usage.count,
+            formatted: usage.count.toLocaleString(currentLocale()),
+          },
+        )}`}
       >
-        {icon}
-        <span className="min-w-0 flex-1">
-          <span className="flex items-baseline gap-1.5">
-            <span className={cn('min-w-0 flex-1 truncate text-xs', nameClassName)}>{name}</span>
-            <span
-              className="shrink-0 text-[11px] text-muted-foreground tabular-nums"
-              title={t('meta.usageCount', {
-                count: usage.count,
-                formatted: usage.count.toLocaleString(currentLocale()),
-              })}
-            >
-              {fmtPct(usage.pct)}
+        <button
+          type="button"
+          aria-pressed={active}
+          onClick={onClick}
+          className="flex min-w-0 flex-1 items-center gap-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        >
+          {icon}
+          <span className="min-w-0 flex-1">
+            <span className="flex items-baseline gap-1.5">
+              <span className={cn('min-w-0 flex-1 truncate text-xs', nameClassName)}>{name}</span>
+              <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">{fmtPct(usage.pct)}</span>
             </span>
+            <ShareBar pct={usage.pct}
+              className="mt-1" />
           </span>
-          <ShareBar pct={usage.pct}
-            className="mt-1" />
-        </span>
-      </button>
+        </button>
+      </Tip>
       {trailing}
     </div>
   );
@@ -655,10 +686,9 @@ function CoreKit({
           <p className="mt-1 flex items-center justify-between border-t border-border/50 px-3 pt-1.5 pb-0.5 text-xs">
             {data.items.some((i) => i.pct >= CORE_SHARE) ? (
               <>
-                <span className="text-muted-foreground"
-                  title={t('meta.coreKitTitle', { share: CORE_SHARE })}>
-                  {t('meta.coreKitShare', { share: CORE_SHARE })}
-                </span>
+                <Tip label={t('meta.coreKitTitle', { share: CORE_SHARE })}>
+                  <span className="text-muted-foreground">{t('meta.coreKitShare', { share: CORE_SHARE })}</span>
+                </Tip>
                 <span className="font-semibold text-q-gold tabular-nums">
                   {total > 0 ? t('gearUp.approxHr', { value: fmtHr(total) }) : t('gearUp.unpriced')}
                 </span>
@@ -835,21 +865,22 @@ function SortHeader({
   const active = sort === by;
   const Arrow = dir === 'desc' ? ArrowDown : ArrowUp;
   return (
-    <button
-      type="button"
-      role="columnheader"
-      aria-sort={active ? (dir === 'desc' ? 'descending' : 'ascending') : 'none'}
-      title={active ? (dir === 'desc' ? t('meta.sortHighest') : t('meta.sortLowest')) : t('meta.sortBy', { label })}
-      onClick={() => onSort(by, active && dir === 'desc' ? 'asc' : 'desc')}
-      className={cn(
-        'flex shrink-0 items-center gap-0.5 rounded-sm uppercase outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50',
-        active && 'text-foreground',
-        className,
-      )}
-    >
-      {label}
-      {active && <Arrow className="size-3" />}
-    </button>
+    <Tip label={active ? (dir === 'desc' ? t('meta.sortHighest') : t('meta.sortLowest')) : t('meta.sortBy', { label })}>
+      <button
+        type="button"
+        role="columnheader"
+        aria-sort={active ? (dir === 'desc' ? 'descending' : 'ascending') : 'none'}
+        onClick={() => onSort(by, active && dir === 'desc' ? 'asc' : 'desc')}
+        className={cn(
+          'flex shrink-0 items-center gap-0.5 rounded-sm uppercase outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50',
+          active && 'text-foreground',
+          className,
+        )}
+      >
+        {label}
+        {active && <Arrow className="size-3" />}
+      </button>
+    </Tip>
   );
 }
 

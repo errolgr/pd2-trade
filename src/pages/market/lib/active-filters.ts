@@ -1,5 +1,5 @@
 import { defaultAgeDays, type SearchDefaults } from './defaults';
-import type { CharClass, MarketFilters, OnlineFilter, Rarity, StatFilter, Tri } from './types';
+import type { CharClass, MarketFilters, MarketListingStatus, OnlineFilter, Rarity, StatFilter, Tri } from './types';
 
 /*
  * The filters a search narrows by, one entry per thing the user could take back: an empty search offers to drop
@@ -13,13 +13,15 @@ export type RangeField = 'sockets' | 'hr' | 'level' | 'strength' | 'dexterity';
 /** What an applied filter is, for its label; `clear` takes it back. */
 export type ActiveFilterSpec =
   | { kind: 'itemName'; value: string }
-  | { kind: 'type'; code: string }
+  // `baseCode`: the Base value, which says the types of picked bases (1H, 2H)
+  | { kind: 'type'; code: string; baseCode: string | undefined }
   | { kind: 'base'; typeCode: string | undefined; code: string }
   | { kind: 'rarity'; value: Rarity[] }
   | { kind: 'class'; value: CharClass }
   | { kind: 'tri'; field: TriField; value: Tri }
   | { kind: 'range'; field: RangeField; min?: number; max?: number }
-  | { kind: 'age'; days: number }
+  | { kind: 'age'; days: number | undefined }
+  | { kind: 'status'; value: MarketListingStatus[] }
   | { kind: 'priceText'; value: string }
   | { kind: 'seller'; name?: string }
   | { kind: 'online'; field: 'site' | 'game'; value: OnlineFilter }
@@ -53,7 +55,11 @@ export function activeFilters(f: MarketFilters, defaults: SearchDefaults): Activ
 
   // The base belongs to its type: dropping the type drops the base too
   if (f.typeCode)
-    add('type', { kind: 'type', code: f.typeCode }, (g) => ({ ...g, typeCode: undefined, baseCode: undefined }));
+    add('type', { kind: 'type', code: f.typeCode, baseCode: f.baseCode }, (g) => ({
+      ...g,
+      typeCode: undefined,
+      baseCode: undefined,
+    }));
   if (f.baseCode)
     add('base', { kind: 'base', typeCode: f.typeCode, code: f.baseCode }, (g) => ({ ...g, baseCode: undefined }));
   if (f.rarity.length) add('rarity', { kind: 'rarity', value: f.rarity }, (g) => ({ ...g, rarity: [] }));
@@ -82,6 +88,8 @@ export function activeFilters(f: MarketFilters, defaults: SearchDefaults): Activ
   const age = defaultAgeDays(f.source, defaults);
   if (f.maxAgeDays !== age)
     add('age', { kind: 'age', days: f.maxAgeDays }, (g) => ({ ...g, maxAgeDays: defaultAgeDays(g.source, defaults) }));
+  if (f.source === 'archive' && f.status?.length)
+    add('status', { kind: 'status', value: f.status }, (g) => ({ ...g, status: undefined }));
 
   if (f.priceText) add('priceText', { kind: 'priceText', value: f.priceText }, (g) => ({ ...g, priceText: undefined }));
   if (f.hrMin !== undefined || f.hrMax !== undefined)

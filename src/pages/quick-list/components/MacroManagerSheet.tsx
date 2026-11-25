@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useOptions } from '@/hooks/useOptions';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Tip } from '@/components/ui/tooltip';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus, X, ChevronUp, ChevronDown, Pencil, Check, NotebookPen } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -202,58 +203,63 @@ const MacroManagerSheet: React.FC<MacroManagerSheetProps> = ({ onApply }) => {
                     </div>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    className="min-w-0 flex-1 cursor-pointer rounded-l-lg px-3 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-                    onClick={() => onApply?.(macro)}
-                    title={t('macros.use')}
-                  >
-                    <span className="font-semibold">{macro.label}</span>
-                    <span className="mx-1.5 text-muted-foreground">&rarr;</span>
-                    <MacroTemplate text={macro.text}
-                      className="text-xs text-muted-foreground" />
-                  </button>
+                  <Tip label={t('macros.use')}>
+                    <button
+                      type="button"
+                      className="min-w-0 flex-1 cursor-pointer rounded-l-lg px-3 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                      onClick={() => onApply?.(macro)}
+                    >
+                      <span className="font-semibold">{macro.label}</span>
+                      <span className="mx-1.5 text-muted-foreground">&rarr;</span>
+                      <MacroTemplate text={macro.text}
+                        className="text-xs text-muted-foreground" />
+                    </button>
+                  </Tip>
                 )}
                 {editingIndex !== index && (
                   <div className="flex shrink-0 items-center gap-0.5 pr-1.5 opacity-70 transition-opacity duration-(--dur-fast) group-hover/macro:opacity-100 group-focus-within/macro:opacity-100">
-                    <button
-                      type="button"
-                      onClick={() => moveUp(index)}
-                      className={macroAction}
-                      disabled={index === 0}
-                      aria-label={t('macros.moveUpLabel', { label: macro.label })}
-                      title={t('macros.moveUp')}
-                    >
-                      <ChevronUp />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => moveDown(index)}
-                      className={macroAction}
-                      disabled={index === macros.length - 1}
-                      aria-label={t('macros.moveDownLabel', { label: macro.label })}
-                      title={t('macros.moveDown')}
-                    >
-                      <ChevronDown />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => startEdit(index)}
-                      className={macroAction}
-                      aria-label={t('macros.editLabel', { label: macro.label })}
-                      title={t('common:actions.edit')}
-                    >
-                      <Pencil />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => removeMacro(index)}
-                      className={cn(macroAction, 'hover:bg-destructive/15 hover:text-destructive')}
-                      aria-label={t('macros.deleteLabel', { label: macro.label })}
-                      title={t('common:actions.delete')}
-                    >
-                      <X />
-                    </button>
+                    <Tip label={t('macros.moveUp')}>
+                      <button
+                        type="button"
+                        onClick={() => moveUp(index)}
+                        className={macroAction}
+                        disabled={index === 0}
+                        aria-label={t('macros.moveUpLabel', { label: macro.label })}
+                      >
+                        <ChevronUp />
+                      </button>
+                    </Tip>
+                    <Tip label={t('macros.moveDown')}>
+                      <button
+                        type="button"
+                        onClick={() => moveDown(index)}
+                        className={macroAction}
+                        disabled={index === macros.length - 1}
+                        aria-label={t('macros.moveDownLabel', { label: macro.label })}
+                      >
+                        <ChevronDown />
+                      </button>
+                    </Tip>
+                    <Tip label={t('common:actions.edit')}>
+                      <button
+                        type="button"
+                        onClick={() => startEdit(index)}
+                        className={macroAction}
+                        aria-label={t('macros.editLabel', { label: macro.label })}
+                      >
+                        <Pencil />
+                      </button>
+                    </Tip>
+                    <Tip label={t('common:actions.delete')}>
+                      <button
+                        type="button"
+                        onClick={() => removeMacro(index)}
+                        className={cn(macroAction, 'hover:bg-destructive/15 hover:text-destructive')}
+                        aria-label={t('macros.deleteLabel', { label: macro.label })}
+                      >
+                        <X />
+                      </button>
+                    </Tip>
                   </div>
                 )}
               </motion.li>

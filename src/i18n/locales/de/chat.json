@@ -36,7 +36,11 @@
     "offer": "Angebot: {{price}}",
     "offerFor": "Angebot: {{price}} für {{item}}",
     "yourOffer": "Dein Angebot: {{price}}",
-    "yourOfferFor": "Dein Angebot: {{price}} für {{item}}"
+    "yourOfferFor": "Dein Angebot: {{price}} für {{item}}",
+    "wtbReceivedItem": "Hat {{item}} für dein Gesuch {{title}}",
+    "wtbReceived": "Hat wegen deines Gesuchs {{title}} geflüstert",
+    "wtbMadeItem": "Du hast {{item}} für ihr Gesuch {{title}} angeboten",
+    "wtbMade": "Du hast wegen ihres Gesuchs {{title}} geflüstert"
   },
   "links": {
     "marketListing": "Marktinserat {{id}}..."
@@ -183,7 +187,21 @@
     "marketPrice": "Markt {{hr}} HR",
     "showLess": "Weniger anzeigen",
     "more_one": "{{count}} weiteres",
-    "more_other": "{{count}} weitere"
+    "more_other": "{{count}} weitere",
+    "buyRequestReceived": "Kaufgesuch",
+    "buyRequestMade": "Ihr Kaufgesuch",
+    "forRequest": "für {{title}}",
+    "whisperBack": "Antworten",
+    "whisperBackTitle": "Dem Verkäufer im Website-Chat schreiben",
+    "whisper": "Nachricht",
+    "whisperBuyerTitle": "Dem Käufer im Website-Chat schreiben",
+    "viewRequest": "Gesuch ansehen",
+    "viewRequestTitle": "Das Kaufgesuch im Markt öffnen",
+    "markFilled": "Als erfüllt markieren",
+    "markFilledTitle": "Dein Gesuch schließen: dieser Verkäufer hat es erfüllt",
+    "markFilledFailed": "Gesuch konnte nicht geschlossen werden",
+    "wtbOfferReceived": "Angebot auf dein Kaufgesuch",
+    "wtbOfferMade": "Dein Angebot auf ihr Gesuch"
   },
   "thread": {
     "muted": "Stummgeschaltet",
@@ -221,9 +239,9 @@
     "empty": {
       "allTitle": "Keine Unterhaltungen",
       "sellingTitle": "Du verkaufst gerade nichts",
-      "sellingDescription": "Angebote auf deine Inserate und Handels-Flüstern von Käufern erscheinen hier.",
+      "sellingDescription": "Angebote auf deine Inserate, Handelsflüsterer von Käufern und Kaufgesuche, auf die du geantwortet hast, erscheinen hier.",
       "buyingTitle": "Du kaufst gerade nichts",
-      "buyingDescription": "Deine Angebote und deine gesendeten Handels-Flüstern erscheinen hier.",
+      "buyingDescription": "Deine Angebote, deine Handelsflüsterer und Verkäufer, die auf deine Kaufgesuche antworten, erscheinen hier.",
       "archivedTitle": "Keine archivierten Chats",
       "archivedDescription": "Archiviere einen Chat über sein ⋯-Menü; eine neue Nachricht holt ihn zurück."
     },

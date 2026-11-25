@@ -159,4 +159,15 @@ describe('modsAsFilters', () => {
     expect(modsAsFilters([str], { amount: 3, unit: 'flat' })).toEqual([{ kind: 'mod', key: 'strength', min: 17 }]);
     expect(modsAsFilters([str], { ...fill, leaveMinEmpty: true })).toEqual([{ kind: 'mod', key: 'strength' }]);
   });
+
+  it('the physical min/max damage lines make one damage row (roll: the max)', () => {
+    const rows = modsAsFilters(
+      [
+        line('min_damage', [9], '+9 to Minimum Damage'),
+        line('max_damage', [15], '+15 to Maximum Damage', { min: 10, max: 20 }),
+      ],
+      { amount: 3, unit: 'flat' },
+    );
+    expect(rows).toEqual([{ kind: 'mod', key: 'damage', min: 12 }]);
+  });
 });

@@ -4,6 +4,7 @@ import { ExternalLink, Heart, MessageSquare, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tip } from '@/components/ui/tooltip';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { DealBadge } from '@/pages/market/enrich/DealBadge';
 import { PriceHistoryMini } from '@/pages/market/enrich/PriceHistoryMini';
@@ -18,13 +19,14 @@ import { ItemTooltip } from './ItemTooltip';
 import { OfferButton, WhisperButton } from './ListingActions';
 import { formatHrPrice } from './ResultsList';
 import { AddAllModsButton } from './ModMenu';
+import { EndedTag } from './EndedTag';
 import { useTranslation } from '@/i18n';
 
 export interface ListingDetailProps {
   row: ScoredListing;
   deal: Deal | undefined;
   api: MarketApi | null;
-  /** Sold archive rows: no offer/whisper (the item is gone). */
+  /** Archive rows (ended listings): no offer/whisper (the item is gone). */
   archived: boolean;
   favorite: boolean;
   onToggleFavorite: (listing: MarketListingEntry) => void;
@@ -64,24 +66,31 @@ export function ListingDetail({
       className="flex h-full min-h-0 flex-col border-l border-border bg-card/40">
       <div className="flex items-center gap-1.5 border-b border-border px-2.5 py-1.5">
         <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-          {archived ? t('detail.sold') : t('detail.listed')}
+          {!archived ? (
+            t('detail.listed')
+          ) : row.status && row.status !== 'active' ? (
+            <EndedTag row={row} />
+          ) : (
+            t('detail.ended')
+          )}
           {` · ${listing.is_ladder ? 'Ladder' : 'Non-ladder'} ${listing.is_hardcore ? 'HC' : 'SC'} · ${listingAge(listing)}`}
         </span>
         <AddAllModsButton
           item={listing.item}
           className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
         />
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn('size-7 p-0', favorite && 'text-destructive')}
-          aria-pressed={favorite}
-          aria-label={favorite ? t('detail.unfavorite') : t('detail.favorite')}
-          title={favorite ? t('detail.unfavorite') : t('detail.favorite')}
-          onClick={() => onToggleFavorite(listing)}
-        >
-          <Heart className={cn('size-4', favorite && 'fill-current')} />
-        </Button>
+        <Tip label={favorite ? t('detail.unfavorite') : t('detail.favorite')}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn('size-7 p-0', favorite && 'text-destructive')}
+            aria-pressed={favorite}
+            aria-label={favorite ? t('detail.unfavorite') : t('detail.favorite')}
+            onClick={() => onToggleFavorite(listing)}
+          >
+            <Heart className={cn('size-4', favorite && 'fill-current')} />
+          </Button>
+        </Tip>
         <Button variant="ghost"
           size="sm"
           className="size-7 p-0"
@@ -98,13 +107,12 @@ export function ListingDetail({
           {pseudoKeys.length > 0 && (
             <div className="grid grid-cols-2 gap-1">
               {pseudoKeys.map((key) => (
-                <div
-                  key={key}
-                  title={statWithValue(key, row.pseudo[key] ?? 0)}
-                  className="truncate rounded-md bg-info/10 px-2 py-0.5 text-[11px] tabular-nums text-info"
-                >
-                  {statWithValue(key, row.pseudo[key] ?? 0, { short: true })}
-                </div>
+                <Tip key={key}
+                  label={statWithValue(key, row.pseudo[key] ?? 0)}>
+                  <div className="truncate rounded-md bg-info/10 px-2 py-0.5 text-[11px] tabular-nums text-info">
+                    {statWithValue(key, row.pseudo[key] ?? 0, { short: true })}
+                  </div>
+                </Tip>
               ))}
             </div>
           )}
@@ -119,13 +127,14 @@ export function ListingDetail({
             {listing.price && (
               <p className="mt-1 whitespace-pre-wrap break-words text-xs text-foreground/90">{listing.price}</p>
             )}
-            <div className="mt-1 text-[11px] text-muted-foreground"
-              title={moment(listing.bumped_at).format('LLL')}>
-              {t('detail.bumpedListed', {
-                bumped: moment(listing.bumped_at).fromNow(),
-                listed: moment(listing.created_at).fromNow(),
-              })}
-            </div>
+            <Tip label={moment(listing.bumped_at).format('LLL')}>
+              <div className="mt-1 text-[11px] text-muted-foreground">
+                {t('detail.bumpedListed', {
+                  bumped: moment(listing.bumped_at).fromNow(),
+                  listed: moment(listing.created_at).fromNow(),
+                })}
+              </div>
+            </Tip>
             {showPriceHistory && <PriceHistoryMini listing={listing} />}
           </div>
 

@@ -26,11 +26,12 @@
     "noFavoritesDescription": "Marca un anuncio con el corazón para guardarlo aquí; los favoritos se sincronizan con projectdiablo2.com.",
     "noLiveListingsFor": "No hay anuncios activos de {{itemName}}",
     "noLiveListings": "Ningún anuncio activo coincide",
-    "searchArchivePrompt": "¿Buscar en el archivo de vendidos para ver a cuánto se vendió recientemente?",
-    "searchArchive": "Buscar en vendidos",
+    "searchArchivePrompt": "¿Buscar en el archivo (anuncios vendidos, retirados y caducados) para ver a cuánto se vendió recientemente?",
+    "searchArchive": "Buscar en el archivo",
     "noListingsTitle": "Ningún anuncio coincide",
     "noListingsDescription": "Relaja un filtro, amplía el rango de antigüedad o cambia el modo.",
     "refreshing": "Actualizando resultados",
+    "unsearched": "Filtros cambiados · resultados de tu última búsqueda",
     "loadingMore": "Cargando más…",
     "loadMoreFailed": "No se pudo cargar más",
     "rateLimitedUntil": "Límite de solicitudes hasta las {{time}}",
@@ -76,12 +77,16 @@
     "tooManyDescription_other": "Se pueden vigilar hasta {{count}} búsquedas a la vez. Detén una primero (pestaña Guardadas).",
     "startedDescription": "Recibirás una notificación por cada nuevo anuncio que coincida con esta búsqueda.",
     "labels": {
-      "signedOut": "Inicia sesión para vigilar esta búsqueda",
-      "refused": "Tu sesión de PD2 ha caducado: vuelve a iniciar sesión para vigilar esta búsqueda",
-      "unsynced": "No se pudieron cargar tus búsquedas guardadas desde pd2trader.com; reintentando…",
-      "archive": "Los anuncios vendidos no se pueden vigilar",
+      "archive": "Las búsquedas en el archivo no se pueden vigilar",
       "watching": "Vigilando: haz clic para dejar de recibir notificaciones de nuevos anuncios de esta búsqueda",
       "watch": "Vigilar: recibe una notificación y un sonido por cada nuevo anuncio que coincida con esta búsqueda"
+    },
+    "wtbPrompt": {
+      "title": "¿Publicar también una solicitud de compra?",
+      "description": "Los vendedores que lo tengan podrán escribirte.",
+      "post": "Publicar solicitud de compra",
+      "notNow": "Ahora no",
+      "never": "No volver a preguntar"
     }
   },
   "alerts": {
@@ -95,6 +100,8 @@
     "single": "{{search}}: {{listing}}"
   },
   "filters": {
+    "wouldTake": "Aceptarían estos objetos",
+    "wouldTakeTitle": "Solicitudes que un objeto de esta búsqueda podría cumplir, no solo las que piden estos filtros",
     "label": "Filtros de búsqueda",
     "any": "Cualquiera",
     "selected_one": "{{count}} seleccionado",
@@ -111,10 +118,35 @@
       "label": "Origen de los anuncios",
       "live": "Activos",
       "archive": "Archivo",
-      "archiveTitle": "Anuncios vendidos / retirados"
+      "archiveTitle": "Anuncios finalizados: vendidos, retirados y caducados (archivo de projectdiablo2.com)",
+      "wanted": "Buscados",
+      "wantedTitle": "Solicitudes de compra que buscan esto",
+      "short": {
+        "live": "Activos",
+        "archive": "Archivo",
+        "wanted": "Pedidos"
+      }
+    },
+    "status": {
+      "label": "Estado",
+      "all": "Todos",
+      "sold": "Vendido",
+      "removed": "Retirado",
+      "expired": "Caducado",
+      "soldTitle": "El vendedor aceptó una oferta",
+      "removedTitle": "Eliminado por el vendedor o un moderador",
+      "expiredTitle": "Sin subir ni editar durante 6 días"
     },
     "clearAll": "Limpiar todos los filtros",
     "clearStats": "Quitar todos los filtros de estadísticas",
+    "autoSearch": {
+      "label": "Búsqueda automática",
+      "on": "Búsqueda automática activada: los resultados se actualizan al cambiar los filtros. Haz clic para buscar solo al pulsar Buscar.",
+      "off": "Búsqueda automática desactivada: pulsa Buscar (Ctrl+Intro) para aplicar los cambios de filtros. Haz clic para buscar mientras escribes."
+    },
+    "searchNow": "Buscar",
+    "outOfDate": "Los resultados están desactualizados",
+    "upToDate": "Los resultados coinciden con tus filtros",
     "sections": {
       "stats": "Estadísticas",
       "item": "Objeto",
@@ -122,11 +154,23 @@
       "listing": "Anuncio",
       "price": "Precio",
       "seller": "Vendedor",
-      "requirements": "Requisitos"
+      "requirements": "Requisitos",
+      "offer": "Oferta",
+      "buyer": "Comprador",
+      "requests": "Solicitudes",
+      "realm": "Reino"
     },
     "type": "Tipo",
     "base": "Base",
     "pickTypeFirst": "Elige primero un tipo",
+    "pickedBases_one": "{{count}} base",
+    "pickedBases_many": "{{count}} de bases",
+    "pickedBases_other": "{{count}} bases",
+    "someBases_one": "{{type}} ({{count}} base)",
+    "someBases_many": "{{type}} ({{count}} de bases)",
+    "someBases_other": "{{type}} ({{count}} bases)",
+    "searchOptions": "Buscar…",
+    "noOptions": "Sin coincidencias",
     "class": "Clase",
     "corrupted": "Corrupted",
     "sockets": "Engarces",
@@ -173,7 +217,12 @@
     "modeLabel": "Softcore o hardcore",
     "applied": {
       "not": "Sin {{name}}"
-    }
+    },
+    "minOffer": "Oferta mín.",
+    "buyer": "Comprador",
+    "buyerPlaceholder": "Usuario o cuenta",
+    "fitsStash": "En mi alijo",
+    "mineOnly": "Solo mías"
   },
   "controls": {
     "min": "mín.",
@@ -371,6 +420,7 @@
     "corruptionStats_one": "{{count}} estadística de corrupción",
     "corruptionStats_many": "{{count}} de estadísticas de corrupción",
     "corruptionStats_other": "{{count}} estadísticas de corrupción",
+    "socketsStat": "fila de engarces",
     "desecrated": "desecrated",
     "priceNote": "nota de precio",
     "hrPrice": "precio en HR",
@@ -381,6 +431,7 @@
     "buyout": "precio de compra",
     "listingAge": "antigüedad del anuncio",
     "sort": "orden",
+    "status": "estado (el archivo del sitio muestra vendidos, retirados y caducados)",
     "extendedStat": "estadística que el sitio no puede expresar"
   },
   "nameSearch": {
@@ -397,7 +448,7 @@
   },
   "detail": {
     "label": "Detalle del anuncio",
-    "sold": "Vendido / retirado",
+    "ended": "Finalizado",
     "listed": "Anunciado",
     "favorite": "Añadir a favoritos",
     "unfavorite": "Quitar de favoritos",
@@ -438,7 +489,8 @@
     "anyOf": "cualquiera de ({{rows}})",
     "noneOf": "ninguno de ({{rows}})",
     "seller": "vendedor {{name}}",
-    "sold": " · vendido"
+    "archive": " · archivo",
+    "wanted": " · buscados"
   },
   "saved": {
     "savedToast": "Búsqueda guardada",
@@ -449,18 +501,9 @@
     "tooManyDescription_other": "Hasta {{count}} búsquedas guardadas pueden tener alertas a la vez. Desactiva una primero.",
     "nameLabel": "Nombre para la búsqueda actual",
     "namePlaceholder": "Guardar búsqueda actual… ({{description}})",
-    "needsSync": "Para guardar, primero deben cargarse tus búsquedas guardadas desde pd2trader.com",
     "alertingSummary": "{{alerting}}/{{max}} con alertas · notificaciones de nuevas coincidencias mientras el overlay está activo",
     "alerts": "Alertas",
     "enableAlerts": "Activar alertas en vivo",
-    "signInTitle": "Inicia sesión para guardar búsquedas",
-    "signInDescription": "Las búsquedas guardadas y las alertas se guardan con tu cuenta de PD2 en pd2trader.com.",
-    "reauthTitle": "Vuelve a iniciar sesión para cargar tus búsquedas guardadas",
-    "reauthDescription": "pd2trader.com ya no acepta tu sesión de PD2. Guardar y Vigilar están en pausa hasta que vuelvas a iniciar sesión.",
-    "loading": "Cargando búsquedas guardadas…",
-    "loadFailedTitle": "No se pudieron cargar las búsquedas guardadas",
-    "loadFailedDescription": "pd2trader.com no respondió. Reintentando automáticamente; Guardar y Vigilar están en pausa hasta que se carguen.",
-    "retryNow": "Reintentar ahora",
     "emptyTitle": "No hay búsquedas guardadas",
     "emptyDescription": "Configura filtros en la pestaña Buscar y guárdalos aquí (o pulsa Vigilar) para repetirlos con un clic o recibir notificaciones de nuevos anuncios.",
     "run": "Ejecutar {{name}}",
@@ -472,32 +515,22 @@
     "toastNewMatches": "Notificar nuevas coincidencias",
     "alertsOff": "Las alertas están desactivadas (interruptor de arriba)",
     "alertsFor": "Alertas de {{name}}",
-    "delete": "Eliminar {{name}}"
+    "delete": "Eliminar {{name}}",
+    "reorder": "Arrastra para reordenar {{name}}",
+    "reorderInstructions": "Para tomar una búsqueda guardada, pulsa Espacio o Intro sobre su asa. Muévela con las flechas arriba y abajo, pulsa Espacio o Intro para soltarla o Escape para cancelar.",
+    "reorderPickedUp": "{{name}} tomada.",
+    "reorderMoved": "{{name}} movida a la posición {{position}} de {{count}}.",
+    "reorderDropped": "{{name}} soltada en la posición {{position}} de {{count}}.",
+    "reorderCancelled": "Movimiento cancelado. {{name}} vuelve a su sitio."
   },
   "store": {
-    "title": "Búsquedas guardadas",
-    "refused": "Tu sesión de PD2 ha caducado. Vuelve a iniciar sesión para sincronizar tus búsquedas guardadas.",
-    "unreachable": "No se pudo conectar con pd2trader.com. Inténtalo de nuevo en un momento.",
-    "signIn": "Inicia sesión para guardar búsquedas y vigilar el mercado.",
-    "migratedTitle": "Búsquedas guardadas movidas a tu cuenta",
-    "migratedPartial": "{{uploaded}} movidas; {{dropped}} no se pudieron mover (no válidas o por encima del límite de {{max}} búsquedas).",
-    "migrated_one": "{{count}} búsqueda guardada ahora te acompaña en todos tus dispositivos.",
-    "migrated_many": "{{count}} de búsquedas guardadas ahora te acompañan en todos tus dispositivos.",
-    "migrated_other": "{{count}} búsquedas guardadas ahora te acompañan en todos tus dispositivos.",
+    "anyItem": "Cualquier objeto",
     "capSearches_one": "Puedes tener hasta {{count}} búsqueda guardada. Elimina una primero.",
     "capSearches_many": "Puedes tener hasta {{count}} de búsquedas guardadas. Elimina una primero.",
     "capSearches_other": "Puedes tener hasta {{count}} búsquedas guardadas. Elimina una primero.",
-    "notLoaded": "Aún no se pudieron cargar tus búsquedas guardadas desde pd2trader.com. Inténtalo de nuevo en un momento.",
-    "stillLoading": "Tus búsquedas guardadas aún se están cargando.",
     "tooManySearches": "Demasiadas búsquedas guardadas",
-    "saving": "Guardando…",
-    "limitReached": "Límite alcanzado",
-    "saveFailed": "No se pudo guardar la búsqueda",
-    "updateFailed": "No se pudo actualizar la búsqueda",
-    "renameFailed": "No se pudo renombrar la búsqueda",
-    "alertOnFailed": "No se pudo activar la alerta",
-    "alertOffFailed": "No se pudo desactivar la alerta",
-    "deleteFailed": "No se pudo eliminar la búsqueda"
+    "capFavorites": "Puedes tener hasta {{count}} favoritos. Quita uno primero.",
+    "tooManyFavorites": "Demasiados favoritos"
   },
   "deal": {
     "marketAverage": "Media de mercado de {{window}}",
@@ -535,10 +568,7 @@
     "newSeller": "vendedor nuevo"
   },
   "favorites": {
-    "loadFailed": "No se pudieron cargar los favoritos",
-    "notRemoved": "Favorito no quitado",
-    "notSaved": "Favorito no guardado",
-    "refused": "projectdiablo2.com rechazó el cambio. Inténtalo de nuevo en un momento."
+    "loadFailed": "No se pudieron cargar los favoritos"
   },
   "palette": {
     "openInMarket": "Buscar en el mercado",
@@ -548,5 +578,327 @@
     "copyName": "Copiar nombre",
     "nameCopied": "Nombre copiado",
     "nameNotCopied": "Nombre no copiado"
+  },
+  "weaponGroups": {
+    "weapons": "Armas",
+    "1h": "Una mano",
+    "2h": "Dos manos",
+    "melee": "Cuerpo a cuerpo",
+    "2h-melee": "Cuerpo a cuerpo a dos manos",
+    "ranged": "A distancia",
+    "1h-ranged": "A distancia a una mano",
+    "2h-ranged": "A distancia a dos manos"
+  },
+  "wtb": {
+    "callout": {
+      "badge": "NUEVO",
+      "title": "Solicitudes de compra",
+      "description": "¿No lo encuentras? Publica lo que quieres con tu oferta: los vendedores que tasen un objeto que coincida la verán. Todas las solicitudes están en {{wanted}}.",
+      "dismiss": "Cerrar"
+    },
+    "chip": {
+      "label_one": "{{count}} comprador · hasta {{offer}}",
+      "label_many": "{{count}} compradores · hasta {{offer}}",
+      "label_other": "{{count}} compradores · hasta {{offer}}",
+      "tooltip_one": "{{count}} jugador publicó una solicitud de compra que este objeto cumple. Haz clic para ver su oferta.",
+      "tooltip_many": "{{count}} jugadores publicaron solicitudes de compra que este objeto cumple. Haz clic para ver sus ofertas.",
+      "tooltip_other": "{{count}} jugadores publicaron solicitudes de compra que este objeto cumple. Haz clic para ver sus ofertas.",
+      "hintNew": "Nuevo",
+      "hint": "Solicitudes de compra: jugadores que buscan un objeto como este. Haz clic para ver quién y cuánto paga.",
+      "hintOk": "Entendido",
+      "title": "Solicitudes de compra de este objeto",
+      "subtitle": "Jugadores que publicaron lo que buscan. Escríbeles para vender.",
+      "almost_one": "Casi ({{count}}) — compradores a 1 estadística",
+      "almost_many": "Casi ({{count}}) — compradores a 1 estadística",
+      "almost_other": "Casi ({{count}}) — compradores a 1 estadística",
+      "needs": "necesita {{stat}} ({{value}})",
+      "needsNone": "necesita {{stat}} (no lo tienes)",
+      "allRequests": "Todas las solicitudes"
+    },
+    "whisperBuyer": "Escribir a {{name}}",
+    "message": "Mensaje",
+    "copyWhisper": "Copiar susurro",
+    "listAt": "Publicar a {{offer}}",
+    "listItAt": "Publicarlo a {{offer}}",
+    "nice": "Opcional",
+    "must": "Obligatorio",
+    "flags": {
+      "corrupted": {
+        "yes": "Corrupto",
+        "no": "No corrupto"
+      },
+      "ethereal": {
+        "yes": "Etéreo",
+        "no": "No etéreo"
+      },
+      "desecrated": {
+        "yes": "Profanado",
+        "no": "No profanado"
+      },
+      "identified": {
+        "yes": "Identificado",
+        "no": "Sin identificar"
+      }
+    },
+    "sockets": {
+      "exact_one": "{{count}} engarce",
+      "exact_many": "{{count}} engarces",
+      "exact_other": "{{count}} engarces",
+      "min_one": "{{count}}+ engarces",
+      "min_many": "{{count}}+ engarces",
+      "min_other": "{{count}}+ engarces",
+      "max_one": "≤{{count}} engarce",
+      "max_many": "≤{{count}} engarces",
+      "max_other": "≤{{count}} engarces",
+      "range_one": "{{min}}–{{count}} engarces",
+      "range_many": "{{min}}–{{count}} engarces",
+      "range_other": "{{min}}–{{count}} engarces"
+    },
+    "youHaveOne": "Tienes uno",
+    "yours": "tuya",
+    "daysLeft_one": "Queda {{count}} día",
+    "daysLeft_many": "Quedan {{count}} de días",
+    "daysLeft_other": "Quedan {{count}} días",
+    "drawer": {
+      "title": "Solicitud de compra",
+      "buyer": "Comprador",
+      "personalStash": "Alijo personal · {{name}}",
+      "sharedStash": "Alijo compartido · página {{page}}",
+      "openToOffersLeft_one": "Abierto a ofertas · queda {{count}} día",
+      "openToOffersLeft_many": "Abierto a ofertas · quedan {{count}} de días",
+      "openToOffersLeft_other": "Abierto a ofertas · quedan {{count}} días",
+      "wantsYourItem": "Busca · tu objeto",
+      "wants": "Busca",
+      "met": "Cumplido",
+      "fromStash": "De tu alijo",
+      "own": "Es tu solicitud. Gestiónala en Mías."
+    },
+    "post": {
+      "title": "Publicar solicitud de compra",
+      "editTitle": "Editar solicitud de compra",
+      "filtersHint": "Usa los filtros de la izquierda. Edítalos allí.",
+      "summary": "Lo que buscas",
+      "toggleNice": "Obligatorio u opcional: {{stat}}",
+      "excluded": "No",
+      "anyOf": "Uno de",
+      "niceHint": "Haz clic en Obligatorio / Opcional para hacer una estadística opcional.",
+      "yourOffer": "Tu oferta",
+      "soldLately": "Vendido últimamente · {{low}} – {{high}} HR",
+      "amount": "Cantidad",
+      "currency": "Moneda",
+      "invalidAmount": "Oferta mayor que 0 y como máximo 1000, con hasta 2 decimales.",
+      "openToOffers": "Abierto a contraofertas",
+      "expires": "Caduca",
+      "days_one": "{{count}} d",
+      "days_many": "{{count}} d",
+      "days_other": "{{count}} d",
+      "alsoWatch": "Vigilar también: avísame si se publica uno",
+      "alreadyWatching": "Ya vigilas esta búsqueda",
+      "preview": "Los vendedores verán",
+      "previewLine": "Un jugador pagará {{offer}} por esto",
+      "previewHint": "en su comprobación de precio, si su objeto coincide",
+      "submit": "Publicar solicitud",
+      "save": "Guardar cambios",
+      "signIn": "Inicia sesión para publicar",
+      "postedToast": "Solicitud de compra publicada",
+      "savedToast": "Solicitud de compra guardada",
+      "signInAgain": "Vuelve a iniciar sesión para publicar",
+      "capTitle": "Demasiadas solicitudes de compra",
+      "capDescription_one": "Puedes tener hasta {{count}} solicitud abierta o en pausa. Cierra una primero (Buscados → Mías).",
+      "capDescription_many": "Puedes tener hasta {{count}} de solicitudes abiertas o en pausa. Cierra una primero (Buscados → Mías).",
+      "capDescription_other": "Puedes tener hasta {{count}} solicitudes abiertas o en pausa. Cierra una primero (Buscados → Mías).",
+      "postFailed": "No se pudo publicar la solicitud",
+      "saveFailed": "No se pudo guardar la solicitud",
+      "blocked": {
+        "item": "Elige en los filtros un nombre de objeto, una base o un tipo.",
+        "detail": "Añade al menos una estadística obligatoria, un número de engarces o etéreo."
+      },
+      "previewLineNoOffer": "Un jugador quiere comprar esto",
+      "expiryNext": "Duración · se usa en la próxima subida"
+    },
+    "button": {
+      "text": "Quiero comprar",
+      "label": "Quiero comprar: publica una solicitud de compra para esta búsqueda",
+      "archive": "No se pueden pedir anuncios vendidos"
+    },
+    "status": {
+      "live_one": "Activa · queda {{count}} d",
+      "live_many": "Activa · quedan {{count}} d",
+      "live_other": "Activa · quedan {{count}} d",
+      "paused": "En pausa",
+      "expired": "Caducada",
+      "closed": "Cerrada"
+    },
+    "mine": {
+      "noMatches": "Aún sin coincidencias",
+      "views_one": "Mostrada en {{count}} comprobación de precio",
+      "views_many": "Mostrada en {{count}} de comprobaciones de precio",
+      "views_other": "Mostrada en {{count}} comprobaciones de precio",
+      "contacts_one": "{{count}} vendedor te contactó",
+      "contacts_many": "{{count}} de vendedores te contactaron",
+      "contacts_other": "{{count}} vendedores te contactaron",
+      "edit": "Editar",
+      "pause": "Pausar",
+      "resume": "Reanudar",
+      "close": "Cerrar",
+      "updateFailed": "No se pudo actualizar la solicitud"
+    },
+    "sort": {
+      "label": "Ordenar solicitudes",
+      "newest": "Más recientes",
+      "offer": "Mejor oferta"
+    },
+    "signInStash": "En mi alijo lee tu alijo en projectdiablo2.com.",
+    "signInMine": "Tus solicitudes de compra usan tu cuenta de projectdiablo2.com.",
+    "loadFailed": "No se pudieron cargar las solicitudes de compra",
+    "stashFailed": "No se pudo leer tu alijo",
+    "listLabel": "Solicitudes de compra",
+    "empty": {
+      "allTitle": "No hay solicitudes de compra",
+      "allDescription": "Nadie lo busca todavía. Publica una desde una búsqueda con Quiero comprar.",
+      "stashTitle": "Nada de tu alijo encaja",
+      "stashDescription": "Ahora mismo ninguna solicitud abierta coincide con un objeto de tu alijo.",
+      "mineTitle": "Aún no tienes solicitudes de compra",
+      "mineDescription": "Busca lo que quieres y publica una solicitud con Quiero comprar."
+    },
+    "cta": {
+      "title": "No hay ningún {{item}} así a la venta",
+      "titleAny": "No hay nada así a la venta",
+      "live": "Anuncios activos",
+      "stats_one": "{{count}} estadística",
+      "stats_many": "{{count}} de estadísticas",
+      "stats_other": "{{count}} estadísticas",
+      "corrupted": "corrupto",
+      "post": "Publicar solicitud de compra",
+      "helper": "Los vendedores que comprueben el precio de un objeto que coincida verán tu oferta.",
+      "orLoosen": "O relaja"
+    },
+    "badge": {
+      "buyers_one": "{{count}} comprador",
+      "buyers_many": "{{count}} de compradores",
+      "buyers_other": "{{count}} compradores",
+      "tooltip": "Buscado: {{name}} pagará {{offer}}"
+    },
+    "card": {
+      "subtitle": "Solicitud de compra · {{kind}}",
+      "subtitleAny": "Solicitud de compra",
+      "pays": "Paga",
+      "openToOffers": "abierto a ofertas",
+      "approxHr": "≈ {{hr}} HR",
+      "postedAge": "publicada {{age}}",
+      "bumpedAge": "subida {{age}}",
+      "expiredAgo": "Caducó hace {{age}}"
+    },
+    "others": {
+      "title": "Otros también lo quieren",
+      "sameStats": "mismas estadísticas",
+      "titleCount": "Otros también lo quieren · {{count}}",
+      "seeAll": "Ver las {{count}}",
+      "open": "Abrir la solicitud de {{name}} ({{offer}})",
+      "more_one": "+{{count}} más",
+      "more_many": "+{{count}} más",
+      "more_other": "+{{count}} más"
+    },
+    "demand": {
+      "offersUpTo": "Ofertas hasta {{offers}}",
+      "openOffers": "Ofertas de compra abiertas {{low}}–{{high}} HR ({{count}})",
+      "openOffersNoHr": "Ofertas de compra abiertas ({{count}})",
+      "viewRequests": "Ver solicitudes",
+      "buying_one": "{{count}} jugador compra esto",
+      "buying_many": "{{count}} de jugadores compran esto",
+      "buying_other": "{{count}} jugadores compran esto",
+      "buyingIncludingYours_one": "{{count}} jugador compra esto, incluido tú",
+      "buyingIncludingYours_many": "{{count}} de jugadores compran esto, incluido tú",
+      "buyingIncludingYours_other": "{{count}} jugadores compran esto, incluido tú",
+      "soldLately_one": "Vendido últimamente {{low}}–{{high}} HR ({{count}} venta)",
+      "soldLately_many": "Vendido últimamente {{low}}–{{high}} HR ({{count}} de ventas)",
+      "soldLately_other": "Vendido últimamente {{low}}–{{high}} HR ({{count}} ventas)"
+    },
+    "results": {
+      "count_one": "{{count}} solicitud",
+      "count_many": "{{count}} de solicitudes",
+      "count_other": "{{count}} solicitudes",
+      "fitting_one": "{{count}} encaja con tu alijo",
+      "fitting_many": "{{count}} de ellas encajan con tu alijo",
+      "fitting_other": "{{count}} encajan con tu alijo"
+    },
+    "bump": {
+      "label": "Subir",
+      "in": "Subir en {{h}} h {{m}} min",
+      "revive": "Subir para reactivar",
+      "done_one": "Subida al principio · caduca en {{count}} d",
+      "done_many": "Subida al principio · caduca en {{count}} d",
+      "done_other": "Subida al principio · caduca en {{count}} d",
+      "tooSoon": "Aún no se puede subir",
+      "tooSoonDescription": "Podrás volver a subirla en {{h}} h {{m}} min."
+    },
+    "mineSections": {
+      "active": "Activas ({{count}})",
+      "expired": "Caducadas ({{count}})"
+    },
+    "response": {
+      "title": "🛒 Un vendedor puede cumplir tu solicitud de compra",
+      "body": "{{seller}} tiene algo para {{title}} · tu oferta {{offer}}",
+      "bodyNoItem": "{{seller}} te susurró por {{title}}",
+      "viewRequest": "Ver solicitud",
+      "whisperBack": "Responder",
+      "requestGone": "Esa solicitud de compra ya no está abierta"
+    },
+    "responses": {
+      "title_one": "Respuestas · {{count}}",
+      "title_many": "Respuestas · {{count}}",
+      "title_other": "Respuestas · {{count}}",
+      "dismiss": "Descartar",
+      "markFilled": "Marcar cumplida",
+      "confirmClose": "¿Cerrar esta solicitud?",
+      "confirmCloseDescription": "{{title}} · cumplida por {{seller}}",
+      "close": "Cerrar solicitud",
+      "summary": {
+        "atYourPrice": "vende a tu precio",
+        "asks": "pide {{price}}",
+        "messaged": "te escribió",
+        "whispered": "te susurró"
+      }
+    },
+    "offers": {
+      "sell": "Vender por {{offer}}",
+      "pending": "Oferta enviada · pendiente",
+      "withdraw": "Retirar",
+      "accepted": "Aceptada · escribir a {{buyer}}",
+      "declined": "Rechazada",
+      "askDifferent": "Pedir otro precio",
+      "askTitle": "Tu precio (ofrece {{offer}})",
+      "note": "Nota",
+      "notePlaceholder": "Nota para el comprador (opcional)",
+      "send": "Enviar oferta",
+      "sentToast": "Oferta enviada a {{buyer}}",
+      "sentToastDescription": "{{item}} por {{price}}",
+      "fixedPrice": "Este comprador solo acepta su propio precio",
+      "notOpen": "Esta solicitud de compra ya no está abierta",
+      "throttled": "Demasiadas ofertas ahora; inténtalo más tarde",
+      "failed": "No se pudo enviar la oferta",
+      "signIn": "Inicia sesión para vender a compradores",
+      "withdrawnToast": "Oferta retirada",
+      "decideFailed": "No se pudo actualizar la oferta",
+      "willSell": "{{seller}} vende {{item}} · {{price}} (tu precio)",
+      "asks": "{{seller}} pide {{price}} por {{item}} (ofreciste {{offer}})",
+      "accept": "Aceptar",
+      "acceptPrice": "Aceptar {{price}}",
+      "decline": "Rechazar",
+      "dealDraft": "Trato: {{item}} por {{price}}. ¿Cuándo podemos comerciar?",
+      "noticeWillSell": "🏷 {{seller}} te vende {{item}} por {{price}}",
+      "noticeAsks": "🏷 {{seller}} pide {{price}} por {{item}}",
+      "forRequest": "Para tu solicitud {{title}} (ofreciste {{offer}})",
+      "acceptedBy": "{{buyer}} aceptó tu oferta por {{title}}",
+      "declinedBy": "{{buyer}} rechazó tu oferta por {{title}}",
+      "withdrawnBy": "{{seller}} retiró su oferta por {{title}}",
+      "messageBuyer": "Escribir a {{buyer}}",
+      "status": {
+        "pending": "Pendiente",
+        "accepted": "Aceptada",
+        "declined": "Rechazada",
+        "withdrawn": "Retirada"
+      }
+    }
   }
 }

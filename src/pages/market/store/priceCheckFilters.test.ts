@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import type { ItemType as PD2Item } from '@/assets/itemFuzzySearch';
 import type { Item } from '@/pages/price-check/lib/interfaces';
 import type { MarketFilters } from '@/pages/market/lib/types';
+import { optionCodes } from '@/pages/market/lib/catalog';
 import {
   marketQueryToFilters,
   priceCheckMarketSearch,
+  priceCheckServiceSearch,
   priceCheckToMarketFilters,
   type PriceCheckSearch,
 } from './priceCheckFilters';
@@ -42,7 +44,6 @@ describe('marketQueryToFilters', () => {
     );
     expect(filters).toMatchObject({
       source: 'live',
-      maxAgeDays: 3,
       hardcore: true,
       ladder: false,
       rarity: ['Rare'],
@@ -76,7 +77,8 @@ describe('marketQueryToFilters', () => {
       },
       true,
     );
-    expect(filters).toMatchObject({ source: 'archive', maxAgeDays: 14 });
+    expect(filters).toMatchObject({ source: 'archive' });
+    expect(filters).not.toHaveProperty('maxAgeDays');
     expect(stripIds(filters)).toEqual([
       { kind: 'mod', key: 'all_resist', min: 15, enabled: true },
       { kind: 'mod', key: 'all_attributes', min: 5, enabled: true },
@@ -105,6 +107,8 @@ describe('marketQueryToFilters', () => {
               },
             },
             { $elemMatch: { name: { $in: ['colddam', 'coldmindam'] }, 'values.1': { $gte: 10 } } },
+            // Only the low end bounded: still a pin, the row unbounded
+            { $elemMatch: { name: { $in: ['lightdam', 'lightmindam'] }, 'values.0': { $gte: 2, $lte: 6 } } },
           ],
         },
       },
@@ -118,6 +122,40 @@ describe('marketQueryToFilters', () => {
       { kind: 'mod', key: 'item_splashonhit[2]', min: 50, enabled: true },
       { kind: 'mod', key: 'firedam|firemindam{4..}', min: 14, max: 20, enabled: true },
       { kind: 'mod', key: 'colddam|coldmindam[1]', min: 10, enabled: true },
+      { kind: 'mod', key: 'lightdam|lightmindam{2..6}', enabled: true },
+    ]);
+  });
+
+  it('reads the physical min + max damage pair as one damage row, like an elemental pair', () => {
+    const min = ['min_damage', 'mindamage', 'secondary_mindamage'];
+    const max = ['max_damage', 'maxdamage', 'secondary_maxdamage'];
+    const rows = (...matches: Record<string, unknown>[]) =>
+      stripIds(read({ 'item.modifiers': { $all: matches.map(($elemMatch) => ({ $elemMatch })) } }));
+    expect(
+      rows(
+        { name: 'item_fastercastrate', 'values.0': { $gte: 20 } },
+        { name: { $in: min }, 'values.0': { $gte: 4 } },
+        { name: { $in: max }, 'values.0': { $gte: 14, $lte: 20 } },
+      ),
+    ).toEqual([
+      { kind: 'mod', key: 'item_fastercastrate', min: 20, enabled: true },
+      { kind: 'mod', key: 'damage{4..}', min: 14, max: 20, enabled: true },
+    ]);
+    expect(rows({ name: { $in: min }, 'values.0': { $gte: 4, $lte: 9 } }, { name: { $in: max } })).toEqual([
+      { kind: 'mod', key: 'damage{4..9}', enabled: true },
+    ]);
+    expect(rows({ name: { $in: min }, 'values.0': { $gte: 4, $lte: 4 } }, { name: { $in: max } })).toEqual([
+      { kind: 'mod', key: 'damage{4}', enabled: true },
+    ]);
+    expect(rows({ name: { $in: min } }, { name: { $in: max }, 'values.0': { $gte: 10 } })).toEqual([
+      { kind: 'mod', key: 'damage', min: 10, enabled: true },
+    ]);
+    // A lone line keeps its own row
+    expect(rows({ name: { $in: max }, 'values.0': { $gte: 10 } })).toEqual([
+      { kind: 'mod', key: 'max_damage|maxdamage|secondary_maxdamage|item_throw_maxdamage', min: 10, enabled: true },
+    ]);
+    expect(rows({ name: { $in: min }, 'values.0': { $gte: 3 } })).toEqual([
+      { kind: 'mod', key: 'min_damage|mindamage|secondary_mindamage|item_throw_mindamage', min: 3, enabled: true },
     ]);
   });
 
@@ -147,11 +185,18 @@ describe('marketQueryToFilters', () => {
     expect(read({ 'item.base_code': { $in: ['glw', 'glws'] } }).baseCode).toBe('{"$in": ["glw", "glws"]}');
   });
 
+  it("reads a set of bases no option stands for as its `$in`, not its first base's option", () => {
+    expect(read({ 'item.base_code': { $in: ['7gd', '7pa'] } }).baseCode).toBe('{"$in":["7gd","7pa"]}');
+  });
+
   it("reads a type group's members ($in, any order) as the group code, not its first member's type", () => {
     expect(read({ 'item.base.type_code': { $in: ['bow', 'abow'] } }).typeCode).toBe('group:bows');
     expect(read({ 'item.base.type_code': { $in: ['circ', 'helm', 'pelt', 'phlm'] } }).typeCode).toBe('group:helms');
-    // A subset of a group isn't the group
-    expect(read({ 'item.base.type_code': { $in: ['shie', 'ashd'] } }).typeCode).toBe('shie');
+    // Some of a group's types aren't the group: those types, all of them searched
+    expect(read({ 'item.base.type_code': { $in: ['shie', 'ashd'] } }).typeCode).toBe('{"$in": ["ashd", "shie"]}');
+    expect(read({ 'item.base.type_code': { $in: ['pole', 'spea', 'aspe'] } }).typeCode).toBe(
+      '{"$in": ["pole", "spea", "aspe"]}',
+    );
   });
 
   it('reads several qualities ($in, the price check\'s "Any") as a multi-rarity filter', () => {
@@ -229,8 +274,10 @@ describe('priceCheckToMarketFilters', () => {
     expect(stripIds(filters)).toEqual([{ kind: 'mod', key: 'item_fastercastrate', min: 20, enabled: true }]);
   });
 
-  it('switches to the sold archive window', () => {
-    expect(priceCheckToMarketFilters(search({ archive: true }))).toMatchObject({ source: 'archive', maxAgeDays: 14 });
+  it('switches to the archive, with no age window', () => {
+    const filters = priceCheckToMarketFilters(search({ archive: true }));
+    expect(filters).toMatchObject({ source: 'archive' });
+    expect(filters).not.toHaveProperty('maxAgeDays');
   });
 
   it('searches a runeword as a Runeword, whatever its base quality', () => {
@@ -246,6 +293,32 @@ describe('priceCheckToMarketFilters', () => {
     const { filters, gaps } = priceCheckMarketSearch(search({ item: spirit, selected: new Set(), filters: {} }));
     expect(filters).toMatchObject({ itemName: 'Spirit', rarity: ['Runeword'] });
     expect(gaps).toEqual([]);
+  });
+
+  // #297: Epiphany on Monarch showed paladin shields once switched from Live to Expired
+  it('keeps a runeword on its searched base, live and expired', () => {
+    const epiphany: Item = {
+      name: 'Epiphany',
+      quality: 'Superior',
+      type: 'Monarch',
+      isRuneword: true,
+      runeword: 'Epiphany',
+      iLevel: 80,
+      stats: [],
+    };
+    const sort = { by: 'bumped', dir: 'desc' } as const;
+    const at = (archive: boolean) =>
+      priceCheckServiceSearch(search({ item: epiphany, selected: new Set(), filters: {}, archive }), sort).filters;
+    const live = at(false);
+    const expired = at(true);
+    expect(live).toMatchObject({ itemName: 'Epiphany', rarity: ['Runeword'], typeCode: 'shie', baseCode: 'uit' });
+    expect(expired).toMatchObject({
+      itemName: 'Epiphany',
+      rarity: ['Runeword'],
+      typeCode: 'shie',
+      baseCode: 'uit',
+      source: 'archive',
+    });
   });
 
   it('sends selected pseudo rows as pseudo filters, not PD2 modifiers', () => {
@@ -267,6 +340,28 @@ describe('priceCheckToMarketFilters', () => {
     ]);
   });
 
+  it("opens a price check's physical damage row as one damage row", () => {
+    const axe: Item = {
+      name: 'Grim Edge',
+      quality: 'Rare',
+      type: 'Axe',
+      iLevel: 80,
+      stats: [
+        { stat_id: 21, name: 'to Minimum Damage', value: 10 },
+        { stat_id: 22, name: 'to Maximum Damage', value: 30 },
+      ],
+    };
+    const filters = priceCheckToMarketFilters(
+      search({
+        item: axe,
+        pd2Item: { name: 'Grim Edge' } as unknown as PD2Item,
+        selected: new Set(['id:1008']),
+        filters: { 'id:1008': { min: '8', max: '', maxMin: '25', maxMax: '' } },
+      }),
+    );
+    expect(stripIds(filters)).toEqual([{ kind: 'mod', key: 'damage{8..}', min: 25, enabled: true }]);
+  });
+
   it('searches the type group of a rare in search mode 2', () => {
     const bow: Item = { name: 'Grim Fletch', quality: 'Rare', type: 'Ceremonial Bow', iLevel: 80, stats: [] };
     const matchedItemType = { typeLabel: 'Amazon Bow', typeValue: 'abow', bases: [] };
@@ -276,5 +371,25 @@ describe('priceCheckToMarketFilters', () => {
     expect(at(1).baseCode).toBeUndefined();
     expect(at(2)).toMatchObject({ typeCode: 'group:bows' });
     expect(at(2).baseCode).toBeUndefined();
+  });
+
+  it('searches the weapon groups of a rare in search modes 3-5: types, and bases where they split a type', () => {
+    const blade: Item = { name: 'Beast Edge', quality: 'Rare', type: 'Colossus Blade', iLevel: 85, stats: [] };
+    const matchedItemType = { typeLabel: 'Sword', typeValue: 'swor', bases: [] };
+    const at = (searchMode: number) =>
+      priceCheckToMarketFilters(search({ item: blade, selected: new Set(), filters: {}, searchMode, matchedItemType }));
+    // 2H Melee: its types, and its 94 bases as one `$in` the service takes (at most 200 codes)
+    const hands = at(3);
+    expect(new Set(optionCodes(hands.typeCode!))).toEqual(
+      new Set(['2hcs', 'aspe', 'axe', 'hamm', 'pole', 'sc9', 'spea', 'staf', 'swor']),
+    );
+    expect(optionCodes(hands.baseCode!)).toHaveLength(94);
+    expect(optionCodes(hands.baseCode!)).toContain('7gd');
+    expect(optionCodes(hands.baseCode!)).not.toContain('7cr');
+    // Melee and Weapons: whole types
+    expect(optionCodes(at(4).typeCode!)).toHaveLength(21);
+    expect(at(4).baseCode).toBeUndefined();
+    expect(optionCodes(at(5).typeCode!)).toHaveLength(24);
+    expect(at(5).baseCode).toBeUndefined();
   });
 });

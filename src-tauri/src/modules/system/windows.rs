@@ -2,6 +2,25 @@ use std::path::PathBuf;
 use winreg::enums::*;
 use winreg::RegKey;
 
+/// Milliseconds since the last keyboard or mouse input in this session (any app), None when Windows can't say.
+pub fn input_idle_ms() -> Option<u64> {
+    use std::mem::size_of;
+    use windows_sys::Win32::System::SystemInformation::GetTickCount;
+    use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetLastInputInfo, LASTINPUTINFO};
+
+    let mut info = LASTINPUTINFO {
+        cbSize: size_of::<LASTINPUTINFO>() as u32,
+        dwTime: 0,
+    };
+    unsafe {
+        if GetLastInputInfo(&mut info) == 0 {
+            return None;
+        }
+        // Both tick counts wrap every ~49.7 days
+        Some(GetTickCount().wrapping_sub(info.dwTime) as u64)
+    }
+}
+
 pub fn is_elevated() -> bool {
     use std::mem::size_of;
     use windows_sys::Win32::{

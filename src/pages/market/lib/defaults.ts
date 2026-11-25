@@ -1,8 +1,11 @@
 import { hasLegacyOr, upgradeRowGroup } from './stat-groups';
-import type { MarketFilters, OnlineFilter, StatFilter, Tri } from './types';
+import type { MarketFilters, MarketListingStatus, OnlineFilter, StatFilter, Tri } from './types';
 
-/** The site's `updated_at` windows: Trade shows the last 3 days, Archive the last 14. */
+/** The site's own `updated_at` windows (Trade: the last 3 days, Archive: the last 14), which its links always apply. */
 export const DEFAULT_MAX_AGE_DAYS = { live: 3, archive: 14 } as const;
+
+/** The archive's statuses (the site's Archive shows them all); a search with none set searches every one. */
+export const ARCHIVE_STATUSES: readonly MarketListingStatus[] = ['sold', 'removed', 'expired'];
 
 /** Longest free-text filter (item name, price note) the market service accepts (its dto `MAX_TEXT`). */
 export const MAX_FILTER_TEXT = 100;
@@ -17,17 +20,16 @@ export interface SearchDefaults {
   userOnlineSite: OnlineFilter;
   userOnlineGame: OnlineFilter;
   hasBuyout: Tri;
-  /** Live listings' age window; the archive keeps the site's 14 days. */
-  maxAgeDays: number;
+  /** Live listings' age window; absent = every listing. The archive always starts without one. */
+  maxAgeDays?: number;
 }
 
-/** The site's empty Trade search. */
+/** The empty search: every listing, newest bump first. */
 export const SITE_SEARCH_DEFAULTS: SearchDefaults = {
   sort: { by: 'bumped', dir: 'desc' },
   userOnlineSite: 'all',
   userOnlineGame: 'all',
   hasBuyout: 'any',
-  maxAgeDays: DEFAULT_MAX_AGE_DAYS.live,
 };
 
 /** The Settings → Market fields behind SearchDefaults (as stored: any may be missing or stale). */
@@ -35,7 +37,8 @@ export interface SearchDefaultSettings {
   marketDefaultSort?: 'newest' | 'cheapest' | 'priciest';
   marketDefaultSeller?: 'all' | 'online' | 'in-game';
   marketDefaultHasBuyout?: Tri;
-  marketDefaultMaxAgeDays?: number;
+  /** 0 (or anything out of range) = no window. */
+  marketDefaultListedWithinDays?: number;
 }
 
 /** Price sorts a fresh search can start with ('newest' is the site's sort). */
@@ -50,23 +53,26 @@ export function searchDefaults(s: SearchDefaultSettings): SearchDefaults {
     s.marketDefaultSort === 'cheapest' || s.marketDefaultSort === 'priciest'
       ? PRICE_SORTS[s.marketDefaultSort]
       : SITE_SEARCH_DEFAULTS.sort;
-  const age = s.marketDefaultMaxAgeDays;
+  const age = s.marketDefaultListedWithinDays;
   const buyout = s.marketDefaultHasBuyout;
   return {
     sort: { ...sort },
     userOnlineSite: s.marketDefaultSeller === 'online' ? 'online' : 'all',
     userOnlineGame: s.marketDefaultSeller === 'in-game' ? 'online' : 'all',
     hasBuyout: buyout === 'yes' || buyout === 'no' ? buyout : 'any',
-    maxAgeDays:
-      typeof age === 'number' && Number.isInteger(age) && age >= 1 && age <= MAX_AGE_DAYS_LIMIT
-        ? age
-        : SITE_SEARCH_DEFAULTS.maxAgeDays,
+    ...(typeof age === 'number' &&
+      Number.isInteger(age) &&
+      age >= 1 &&
+      age <= MAX_AGE_DAYS_LIMIT && { maxAgeDays: age }),
   };
 }
 
-/** A source's default age window: the user's for live listings, the site's 14 days for the archive. */
-export function defaultAgeDays(source: MarketFilters['source'], defaults: SearchDefaults): number {
-  return source === 'live' ? defaults.maxAgeDays : DEFAULT_MAX_AGE_DAYS.archive;
+/**
+ * A source's default age window: the user's for live listings (none = any age), none for the archive. Wanted has
+ * no age window: it keeps the live one, so switching back to listings finds it as it was.
+ */
+export function defaultAgeDays(source: MarketFilters['source'], defaults: SearchDefaults): number | undefined {
+  return source === 'archive' ? undefined : defaults.maxAgeDays;
 }
 
 /** Fresh filters for the user's realm: the site's empty Trade search, or the user's `defaults`. */
@@ -88,7 +94,7 @@ export function defaultFilters(
     hasBuyout: defaults.hasBuyout,
     requirements: {},
     stats: [],
-    maxAgeDays: defaults.maxAgeDays,
+    ...(defaults.maxAgeDays !== undefined && { maxAgeDays: defaults.maxAgeDays }),
     sort: { ...defaults.sort },
   };
 }
@@ -134,7 +140,10 @@ export function upgradeFilters(stored: MarketFilters & { corruptions?: unknown }
   };
 }
 
-/** Switch between live listings and the sold archive, moving the age window along when it is at its default. */
+/**
+ * Switch between live listings and the archive, moving the age window along when it is at its default. The archive's
+ * status pick doesn't apply to live listings and is dropped.
+ */
 export function withSource(
   f: MarketFilters,
   source: MarketFilters['source'],
@@ -142,7 +151,12 @@ export function withSource(
 ): MarketFilters {
   if (f.source === source) return f;
   const atDefault = f.maxAgeDays === defaultAgeDays(f.source, defaults);
-  return { ...f, source, maxAgeDays: atDefault ? defaultAgeDays(source, defaults) : f.maxAgeDays };
+  return {
+    ...f,
+    source,
+    status: undefined,
+    maxAgeDays: atDefault ? defaultAgeDays(source, defaults) : f.maxAgeDays,
+  };
 }
 
 /** A stat row with a fresh id, enabled unless told otherwise. */

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, animate, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tip } from '@/components/ui/tooltip';
 import type { Item, Stat, StatFilterInput } from '@/pages/price-check/lib/interfaces';
 import { DAMAGE_PAIRS, damagePairText, statIdToProperty, StatId } from '@/pages/price-check/lib/stat-mappings';
 import { statText } from '@/pages/price-check/lib/tooltip-lines';
@@ -168,10 +169,9 @@ export const StatRow: React.FC<StatRowProps> = ({
   const line = isUnknown ? null : itemLine(stat, item);
 
   const rangeBracket = !isSocket && rangeText && stat.value !== undefined && (
-    <span className="ml-1 text-xs tabular-nums text-muted-foreground"
-      title={t('statRow.rangeTitle')}>
-      {rangeText}
-    </span>
+    <Tip label={t('statRow.rangeTitle')}>
+      <span className="ml-1 text-xs tabular-nums text-muted-foreground">{rangeText}</span>
+    </Tip>
   );
 
   const valueParts = (showCorruptedValue: boolean) => (
@@ -302,20 +302,18 @@ export const StatRow: React.FC<StatRowProps> = ({
                   {line ? rangeBracket : valueParts(!isCorrupted)}
                   {/* Rare appraisal: inline after the text so it follows wrapped lines */}
                   {rare?.stars && (
-                    <span
-                      className="ml-1.5 cursor-help whitespace-nowrap text-xs tracking-tighter text-glow"
-                      title={starTitle(rare)}
-                    >
-                      {starsText(rare.stars)}
-                    </span>
+                    <Tip label={starTitle(rare)}>
+                      <span className="ml-1.5 cursor-help whitespace-nowrap text-xs tracking-tighter text-glow">
+                        {starsText(rare.stars)}
+                      </span>
+                    </Tip>
                   )}
                   {rare && rare.stars === null && rare.keyFrom !== null && (
-                    <span
-                      className="ml-1.5 whitespace-nowrap text-[11px] text-muted-foreground/70"
-                      title={t('statRow.keyFromTitle', { value: rare.keyFrom })}
-                    >
-                      {t('statRow.valuableFrom', { value: rare.keyFrom })}
-                    </span>
+                    <Tip label={t('statRow.keyFromTitle', { value: rare.keyFrom })}>
+                      <span className="ml-1.5 whitespace-nowrap text-[11px] text-muted-foreground/70">
+                        {t('statRow.valuableFrom', { value: rare.keyFrom })}
+                      </span>
+                    </Tip>
                   )}
                 </span>
                 <AnimatePresence initial={false}>
@@ -349,10 +347,9 @@ export const StatRow: React.FC<StatRowProps> = ({
                   </HoverPopover>
                 )}
                 {stat.corrupted && (
-                  <span className="text-q-corrupted"
-                    title={t('statRow.corruptedStat')}>
-                    *
-                  </span>
+                  <Tip label={t('statRow.corruptedStat')}>
+                    <span className="text-q-corrupted">*</span>
+                  </Tip>
                 )}
                 {pseudoOptions && pseudoOptions.length > 0 && onPseudo && (
                   <PseudoChip options={pseudoOptions}
@@ -415,30 +412,31 @@ export const StatRow: React.FC<StatRowProps> = ({
                         >
                           –
                         </span>
-                        <button
-                          type="button"
-                          aria-label={t('statRow.clearRangeAria', { label: aria })}
-                          title={t('statRow.clearRangeTitle')}
-                          tabIndex={hasRange ? 0 : -1}
-                          aria-hidden={!hasRange}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            updateFilter(statKey, lo, '');
-                            updateFilter(statKey, hi, '');
-                            setClearNonce((n) => ({ ...n, [lo]: (n[lo] ?? 0) + 1 }));
-                            // Ready to type the new min
-                            e.currentTarget
-                              .closest('[data-range-line]')
-                              ?.querySelector('input')
-                              ?.focus({ preventScroll: true });
-                          }}
-                          className={cn(
-                            'absolute inset-0 inline-flex items-center justify-center rounded text-muted-foreground opacity-0 outline-none transition-[opacity,color] duration-(--dur-fast) hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/60',
-                            hasRange ? 'group-hover/row:opacity-70 hover:opacity-100!' : 'pointer-events-none',
-                          )}
-                        >
-                          <Eraser className="size-3" />
-                        </button>
+                        <Tip label={hasRange ? t('statRow.clearRangeTitle') : undefined}>
+                          <button
+                            type="button"
+                            aria-label={t('statRow.clearRangeAria', { label: aria })}
+                            tabIndex={hasRange ? 0 : -1}
+                            aria-hidden={!hasRange}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              updateFilter(statKey, lo, '');
+                              updateFilter(statKey, hi, '');
+                              setClearNonce((n) => ({ ...n, [lo]: (n[lo] ?? 0) + 1 }));
+                              // Ready to type the new min
+                              e.currentTarget
+                                .closest('[data-range-line]')
+                                ?.querySelector('input')
+                                ?.focus({ preventScroll: true });
+                            }}
+                            className={cn(
+                              'absolute inset-0 inline-flex items-center justify-center rounded text-muted-foreground opacity-0 outline-none transition-[opacity,color] duration-(--dur-fast) hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/60',
+                              hasRange ? 'group-hover/row:opacity-70 hover:opacity-100!' : 'pointer-events-none',
+                            )}
+                          >
+                            <Eraser className="size-3" />
+                          </button>
+                        </Tip>
                       </span>
                       <input
                         type="number"

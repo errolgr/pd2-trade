@@ -182,7 +182,8 @@
     "pick": "Objetos como {{name}} salieron de tu alijo. Elige qué anuncios retirar.",
     "delist": "Retirar",
     "keep": "Mantener",
-    "choose": "Elegir"
+    "choose": "Elegir",
+    "neverAsk": "No volver a preguntar por {{name}}"
   },
   "myListings": {
     "searchPlaceholder": "Buscar entre {{count}} anuncios…",

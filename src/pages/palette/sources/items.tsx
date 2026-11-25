@@ -113,7 +113,7 @@ function toItem(option: ItemNameSuggestion, { query, settings, searchDefaults, s
       id: 'watch',
       label: watch.watching ? t('market:palette.stopWatching') : t('market:palette.watchPrice'),
       icon: watch.watching ? <EyeOff className={ICON} /> : <Eye className={ICON} />,
-      run: () => toggleWatch(store, watchFilters),
+      run: () => void toggleWatch(store, watchFilters),
     });
   }
 

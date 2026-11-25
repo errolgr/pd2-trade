@@ -1,8 +1,11 @@
 import React from 'react';
 import { ChevronRight, Clock, LogIn, Skull, Star, StarOff, Trash2, UserRound, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { glyphCodeForName } from '@/lib/glyph-code';
+import { TombGlyph } from '@/components/glyph/TombGlyph';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tip } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
 import { useOptions, type BuildCharacterRef } from '@/hooks/useOptions';
@@ -184,7 +187,8 @@ function AccountSection({ account }: { account: string }) {
   return (
     <section aria-label={t('characters.accountLabel', { account })}>
       <h3 className="flex h-8 items-center gap-2 border-b border-border/50 bg-muted/20 px-3 text-xs font-semibold text-foreground">
-        <UserRound className="size-3.5 text-muted-foreground" />
+        <TombGlyph code={glyphCodeForName(account)}
+          size={20} />
         {account}
         {query.data && (
           <span className="font-normal text-muted-foreground">
@@ -391,15 +395,16 @@ function TrackedCard({
           className={onRemove ? 'mr-6' : undefined} />}
       </button>
       {onRemove && (
-        <button
-          type="button"
-          aria-label={t('characters.removeLabel', { action: removeLabel, name: charRef.name })}
-          title={removeLabel}
-          onClick={onRemove}
-          className="absolute top-1/2 right-2 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground opacity-60 outline-none hover:bg-accent hover:text-foreground hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/50"
-        >
-          {unfollow ? <StarOff className="size-3.5" /> : <X className="size-3.5" />}
-        </button>
+        <Tip label={removeLabel}>
+          <button
+            type="button"
+            aria-label={t('characters.removeLabel', { action: removeLabel, name: charRef.name })}
+            onClick={onRemove}
+            className="absolute top-1/2 right-2 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground opacity-60 outline-none hover:bg-accent hover:text-foreground hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/50"
+          >
+            {unfollow ? <StarOff className="size-3.5" /> : <X className="size-3.5" />}
+          </button>
+        </Tip>
       )}
     </div>
   );

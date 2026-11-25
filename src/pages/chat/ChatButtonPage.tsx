@@ -64,7 +64,7 @@ const ChatButtonPage: React.FC = () => {
         }
         onStashValueClick={() => openPanel('currency')}
         // Already open (e.g. mid-listing): just bring it forward instead of switching it to manage mode
-        onManageListingsClick={() => openPanel('quickList', undefined, { placement: 'gameCenter', keepPayload: true })}
+        onManageListingsClick={() => openPanel('quickList', undefined, { keepPayload: true })}
         onSettingsClick={() => openPanel('settings')}
         onDisableClick={handleDisableClick}
         order={order}

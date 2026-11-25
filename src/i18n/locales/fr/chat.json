@@ -37,7 +37,11 @@
     "offer": "Offre : {{price}}",
     "offerFor": "Offre : {{price}} pour {{item}}",
     "yourOffer": "Votre offre : {{price}}",
-    "yourOfferFor": "Votre offre : {{price}} pour {{item}}"
+    "yourOfferFor": "Votre offre : {{price}} pour {{item}}",
+    "wtbReceivedItem": "A {{item}} pour votre demande {{title}}",
+    "wtbReceived": "Vous a chuchoté pour votre demande {{title}}",
+    "wtbMadeItem": "Vous avez proposé {{item}} pour sa demande {{title}}",
+    "wtbMade": "Vous avez chuchoté pour sa demande {{title}}"
   },
   "links": {
     "marketListing": "Annonce {{id}}..."
@@ -186,7 +190,21 @@
     "showLess": "Afficher moins",
     "more_one": "{{count}} de plus",
     "more_many": "{{count}} de plus",
-    "more_other": "{{count}} de plus"
+    "more_other": "{{count}} de plus",
+    "buyRequestReceived": "Demande d'achat",
+    "buyRequestMade": "Sa demande d'achat",
+    "forRequest": "pour {{title}}",
+    "whisperBack": "Répondre",
+    "whisperBackTitle": "Écrire au vendeur dans le chat du site",
+    "whisper": "Message",
+    "whisperBuyerTitle": "Écrire à l'acheteur dans le chat du site",
+    "viewRequest": "Voir la demande",
+    "viewRequestTitle": "Ouvrir la demande d'achat dans le marché",
+    "markFilled": "Marquer remplie",
+    "markFilledTitle": "Fermer votre demande : ce vendeur l'a remplie",
+    "markFilledFailed": "Impossible de fermer la demande",
+    "wtbOfferReceived": "Offre sur votre demande",
+    "wtbOfferMade": "Votre offre sur sa demande"
   },
   "thread": {
     "muted": "En sourdine",
@@ -224,9 +242,9 @@
     "empty": {
       "allTitle": "Aucune conversation",
       "sellingTitle": "Aucune vente en cours",
-      "sellingDescription": "Les offres sur vos annonces et les messages privés d'échange des acheteurs apparaissent ici.",
+      "sellingDescription": "Les offres sur vos annonces, les chuchotements d'acheteurs et les demandes d'achat auxquelles vous avez répondu apparaissent ici.",
       "buyingTitle": "Aucun achat en cours",
-      "buyingDescription": "Vos offres et les messages privés d'échange que vous envoyez apparaissent ici.",
+      "buyingDescription": "Vos offres, les chuchotements que vous envoyez et les vendeurs qui répondent à vos demandes d'achat apparaissent ici.",
       "archivedTitle": "Aucun chat archivé",
       "archivedDescription": "Archivez un chat depuis son menu ⋯ ; un nouveau message le fait revenir."
     },

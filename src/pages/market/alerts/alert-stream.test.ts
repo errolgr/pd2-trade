@@ -4,40 +4,46 @@ import {
   createSseParser,
   MAX_RECONNECT_MS,
   reconnectDelay,
-  runAlertStream,
+  runWatchStream,
   SEEN_ALERTS_CAP,
   type SseEvent,
   takeUnseen,
+  type WatchStreamOptions,
+  type WatchTarget,
 } from './alert-stream';
-import type { MarketAlert } from './saved-search-api';
+import type { MarketAlert, MarketListingSummary } from './market-api';
 
-const alert = (id: string, matchedAt: string, over: Partial<MarketAlert> = {}): MarketAlert => ({
+const listing = (id: string, bumpedAt: string | null): MarketListingSummary => ({
+  id,
+  isLadder: true,
+  isHardcore: false,
+  name: 'Harlequin Crest',
+  baseName: 'Shako',
+  baseCode: 'uap',
+  typeCode: 'helm',
+  quality: 'Unique',
+  price: '2 ist',
+  hrPrice: 0.5,
+  bumpedAt,
+  seller: 'Gheed',
+  status: 'active',
+  soldHr: null,
+});
+
+const alert = (id: string, matchedAt: string): MarketAlert => ({
   id,
   savedSearchId: 's1',
   savedSearchName: 'Cheap Shako',
   listingId: `l-${id}`,
   matchedAt,
-  listing: {
-    id: `l-${id}`,
-    isLadder: true,
-    isHardcore: false,
-    name: 'Harlequin Crest',
-    baseName: 'Shako',
-    baseCode: 'uap',
-    typeCode: 'helm',
-    quality: 'Unique',
-    price: '2 ist',
-    hrPrice: 0.5,
-    bumpedAt: matchedAt,
-    seller: 'Gheed',
-    status: 'active',
-    soldHr: null,
-  },
-  ...over,
+  listing: listing(`l-${id}`, matchedAt),
 });
 
 const frame = (event: string, data: unknown) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-const hello = (serverTime: string) => frame('hello', { serverTime, events: ['market.alert'], heartbeatSeconds: 25 });
+const hello = (serverTime: string) =>
+  frame('hello', { serverTime, events: ['market.match'], heartbeatSeconds: 25, searches: [] });
+const match = (q: string, id: string, bumpedAt: string | null) =>
+  frame('market.match', { ...listing(id, bumpedAt), matchedAt: bumpedAt ?? '2026-10-21T08:00:00Z', q });
 
 /** A stream response that sends `chunks`, then stays open until `end()` (or ends right away with `close`). */
 function streamResponse(chunks: string[], close = false) {
@@ -138,104 +144,210 @@ describe('takeUnseen / reconnectDelay', () => {
   });
 });
 
-describe('runAlertStream', () => {
-  it('delivers live alerts once, reconnects after the stream ends and catches up since the newest seen', async () => {
-    const first = streamResponse(
-      [
-        'retry: 2000\n',
-        hello('2026-10-21T08:00:00Z'),
-        frame('market.alert', alert('a1', '2026-10-21T08:01:00Z')),
-        frame('market.alert', alert('a1', '2026-10-21T08:01:00Z')),
-      ],
-      true,
-    );
-    const second = streamResponse([hello('2026-10-21T08:10:00Z')]);
-    const open = vi.fn().mockResolvedValueOnce(first.response).mockResolvedValueOnce(second.response);
-    const catchUp = vi
-      .fn()
-      .mockResolvedValue([
-        alert('a3', '2026-10-21T08:05:00Z'),
-        alert('a1', '2026-10-21T08:01:00Z'),
-        alert('a2', '2026-10-21T08:04:00Z'),
-      ]);
-    const delivered: [string[], string][] = [];
-    const sleeps: number[] = [];
-    const controller = new AbortController();
+/** Watched searches by id, with the `lastSeenBumpedAt` the store keeps (onSeen moves it forward). */
+function watches(initial: Record<string, WatchTarget[]>) {
+  const byQuery = initial;
+  const onSeen = vi.fn((id: string, bumpedAt: string) => {
+    for (const targets of Object.values(byQuery))
+      for (const target of targets)
+        if (target.id === id && !(Date.parse(target.lastSeenBumpedAt ?? '') >= Date.parse(bumpedAt)))
+          target.lastSeenBumpedAt = bumpedAt;
+  });
+  return { targets: (q: string) => byQuery[q] ?? [], onSeen, byQuery };
+}
 
-    const done = runAlertStream({
-      token: 'tok',
+const run = (options: Partial<WatchStreamOptions> & Pick<WatchStreamOptions, 'open'>) =>
+  runWatchStream({
+    queries: ['q1'],
+    fetchNewest: vi.fn().mockResolvedValue([]),
+    targets: () => [],
+    onAlerts: vi.fn(),
+    onSeen: vi.fn(),
+    signal: new AbortController().signal,
+    sleep: async () => {},
+    ...options,
+  });
+
+describe('runWatchStream', () => {
+  it('opens one stream for all searches and alerts each live match for every search its q stands for, once', async () => {
+    const stream = streamResponse([
+      hello('2026-10-21T08:00:00Z'),
+      match('q1', 'l1', '2026-10-21T08:01:00Z'),
+      match('q1', 'l1', '2026-10-21T08:01:00Z'),
+      match('q2', 'l2', '2026-10-21T08:02:00Z'),
+      match('q-unknown', 'l3', '2026-10-21T08:03:00Z'),
+    ]);
+    const open = vi.fn().mockResolvedValue(stream.response);
+    const w = watches({
+      q1: [{ id: 's1', name: 'Cheap Shako' }],
+      q2: [
+        { id: 's2', name: 'Spirit' },
+        { id: 's3', name: 'Spirit again' },
+      ],
+    });
+    const delivered: [string[], string][] = [];
+    const controller = new AbortController();
+    const done = run({
+      queries: ['q1', 'q2'],
       open,
-      catchUp,
+      targets: w.targets,
+      onSeen: w.onSeen,
       onAlerts: (alerts, source) => delivered.push([alerts.map((a) => a.id), source]),
-      onUnauthorized: vi.fn(),
       signal: controller.signal,
-      sleep: async (ms) => {
-        sleeps.push(ms);
-      },
-      random: () => 0.5,
+    });
+    await flush();
+
+    expect(open).toHaveBeenCalledExactlyOnceWith(['q1', 'q2'], expect.any(AbortSignal));
+    expect(delivered).toEqual([
+      [['s1:l1'], 'live'],
+      [['s2:l2', 's3:l2'], 'live'],
+    ]);
+    expect(w.byQuery.q2[1].lastSeenBumpedAt).toBe('2026-10-21T08:02:00Z');
+
+    controller.abort();
+    stream.end();
+    await done;
+  });
+
+  it("first hello only records each search's newest listing; a reconnect alerts only what was bumped after it", async () => {
+    const first = streamResponse([hello('2026-10-21T08:00:00Z')], true);
+    const second = streamResponse([hello('2026-10-21T08:30:00Z')]);
+    const open = vi.fn().mockResolvedValueOnce(first.response).mockResolvedValueOnce(second.response);
+    const fetchNewest = vi
+      .fn()
+      .mockResolvedValueOnce([listing('old2', '2026-10-21T07:50:00Z'), listing('old1', '2026-10-21T07:40:00Z')])
+      .mockResolvedValueOnce([
+        listing('new2', '2026-10-21T08:20:00Z'),
+        listing('new1', '2026-10-21T08:10:00Z'),
+        listing('old2', '2026-10-21T07:50:00Z'),
+        listing('old1', '2026-10-21T07:40:00Z'),
+      ]);
+    const w = watches({ q1: [{ id: 's1', name: 'Cheap Shako' }] });
+    const delivered: [string[], string][] = [];
+    const controller = new AbortController();
+    const done = run({
+      open,
+      fetchNewest,
+      targets: w.targets,
+      onSeen: w.onSeen,
+      onAlerts: (alerts, source) => delivered.push([alerts.map((a) => a.id), source]),
+      signal: controller.signal,
     });
     await flush();
     await flush();
 
-    expect(open).toHaveBeenCalledTimes(2);
-    expect(sleeps).toEqual([2000]);
-    expect(catchUp).toHaveBeenCalledWith('tok', '2026-10-21T08:01:00Z');
-    expect(delivered).toEqual([
-      [['a1'], 'live'],
-      [['a2', 'a3'], 'catch-up'],
-    ]);
+    expect(fetchNewest).toHaveBeenCalledTimes(2);
+    expect(fetchNewest).toHaveBeenCalledWith('q1');
+    expect(delivered).toEqual([[['s1:new1', 's1:new2'], 'catch-up']]);
+    expect(w.byQuery.q1[0].lastSeenBumpedAt).toBe('2026-10-21T08:20:00Z');
 
     controller.abort();
     second.end();
     await done;
   });
 
-  it('does not catch up on the first connect (only from its hello on)', async () => {
-    const stream = streamResponse([hello('2026-10-21T08:00:00Z')]);
-    const catchUp = vi.fn();
+  it('a catch-up after restart alerts listings bumped after the persisted last seen, deduped with live', async () => {
+    const stream = streamResponse([hello('2026-10-21T09:00:00Z'), match('q1', 'new1', '2026-10-21T08:10:00Z')]);
+    let resolveNewest!: (listings: ReturnType<typeof listing>[]) => void;
+    const fetchNewest = vi.fn(() => new Promise<ReturnType<typeof listing>[]>((r) => (resolveNewest = r)));
+    const w = watches({ q1: [{ id: 's1', name: 'Cheap Shako', lastSeenBumpedAt: '2026-10-21T08:00:00Z' }] });
+    const delivered: string[][] = [];
     const controller = new AbortController();
-    const done = runAlertStream({
-      token: 'tok',
+    const done = run({
       open: vi.fn().mockResolvedValue(stream.response),
-      catchUp,
-      onAlerts: vi.fn(),
-      onUnauthorized: vi.fn(),
+      fetchNewest,
+      targets: w.targets,
+      onSeen: w.onSeen,
+      onAlerts: (alerts) => delivered.push(alerts.map((a) => a.id)),
       signal: controller.signal,
     });
     await flush();
-    expect(catchUp).not.toHaveBeenCalled();
+    resolveNewest([
+      listing('new2', '2026-10-21T08:20:00Z'),
+      listing('new1', '2026-10-21T08:10:00Z'),
+      listing('seen', '2026-10-21T08:00:00Z'),
+    ]);
+    await flush();
+    expect(delivered).toEqual([['s1:new1'], ['s1:new2']]);
     controller.abort();
     stream.end();
     await done;
   });
 
-  it('stops on a 401 and waits Retry-After on a 429', async () => {
-    const onUnauthorized = vi.fn();
+  it('skips a live update of a listing older than the newest the search saw', async () => {
+    const stream = streamResponse([
+      match('q1', 'older', '2026-10-21T07:00:00Z'),
+      match('q1', 'unknown-bump', null),
+      match('q1', 'newer', '2026-10-21T08:05:00Z'),
+    ]);
+    const w = watches({ q1: [{ id: 's1', name: 'Cheap Shako', lastSeenBumpedAt: '2026-10-21T08:00:00Z' }] });
+    const onAlerts = vi.fn();
+    const controller = new AbortController();
+    const done = run({
+      open: vi.fn().mockResolvedValue(stream.response),
+      targets: w.targets,
+      onSeen: w.onSeen,
+      onAlerts,
+      signal: controller.signal,
+    });
+    await flush();
+    expect(onAlerts.mock.calls.map(([alerts]) => alerts.map((a: MarketAlert) => a.id))).toEqual([
+      ['s1:unknown-bump'],
+      ['s1:newer'],
+    ]);
+    controller.abort();
+    stream.end();
+    await done;
+  });
+
+  it('a failed catch-up of one search does not stop the others', async () => {
+    const stream = streamResponse([hello('2026-10-21T09:00:00Z')]);
+    const fetchNewest = vi.fn(async (q: string) => {
+      if (q === 'q1') throw new Error('rate limited');
+      return [listing('n', '2026-10-21T08:30:00Z')];
+    });
+    const w = watches({
+      q1: [{ id: 's1', name: 'a', lastSeenBumpedAt: '2026-10-21T08:00:00Z' }],
+      q2: [{ id: 's2', name: 'b', lastSeenBumpedAt: '2026-10-21T08:00:00Z' }],
+    });
+    const onAlerts = vi.fn();
+    const controller = new AbortController();
+    const done = run({
+      queries: ['q1', 'q2'],
+      open: vi.fn().mockResolvedValue(stream.response),
+      fetchNewest,
+      targets: w.targets,
+      onSeen: w.onSeen,
+      onAlerts,
+      signal: controller.signal,
+    });
+    await flush();
+    expect(onAlerts).toHaveBeenCalledExactlyOnceWith([expect.objectContaining({ id: 's2:n' })], 'catch-up');
+    expect(w.byQuery.q1[0].lastSeenBumpedAt).toBe('2026-10-21T08:00:00Z');
+    controller.abort();
+    stream.end();
+    await done;
+  });
+
+  it('stops when the server refuses the searches (400) and waits Retry-After on a 429', async () => {
     const sleeps: number[] = [];
     const open = vi
       .fn()
       .mockRejectedValueOnce(Object.assign(new Error('busy'), { status: 429, retryAfterMs: 30_000 }))
-      .mockRejectedValueOnce(Object.assign(new Error('nope'), { status: 401 }));
-    await runAlertStream({
-      token: 'tok',
+      .mockRejectedValueOnce(Object.assign(new Error('q[1] is not valid'), { status: 400 }));
+    await run({
       open,
-      catchUp: vi.fn(),
-      onAlerts: vi.fn(),
-      onUnauthorized,
-      signal: new AbortController().signal,
       sleep: async (ms) => {
         sleeps.push(ms);
       },
     });
     expect(sleeps).toEqual([30_000]);
     expect(open).toHaveBeenCalledTimes(2);
-    expect(onUnauthorized).toHaveBeenCalledTimes(1);
   });
 
   it('backs off and retries on network errors and 5xx', async () => {
     const sleeps: number[] = [];
     const controller = new AbortController();
-    const onUnauthorized = vi.fn();
     const open = vi
       .fn()
       .mockRejectedValueOnce(new TypeError('Failed to fetch'))
@@ -244,12 +356,8 @@ describe('runAlertStream', () => {
         controller.abort();
         throw new TypeError('Failed to fetch');
       });
-    await runAlertStream({
-      token: 'tok',
+    await run({
       open,
-      catchUp: vi.fn(),
-      onAlerts: vi.fn(),
-      onUnauthorized,
       signal: controller.signal,
       sleep: async (ms) => {
         sleeps.push(ms);
@@ -258,26 +366,6 @@ describe('runAlertStream', () => {
     });
     expect(open).toHaveBeenCalledTimes(3);
     expect(sleeps).toEqual([1000, 2000]);
-    expect(onUnauthorized).not.toHaveBeenCalled();
-  });
-
-  it('a catch-up refused with a 401 closes the open stream right away and stops', async () => {
-    const first = streamResponse([hello('2026-10-21T08:00:00Z')], true);
-    const second = streamResponse([hello('2026-10-21T08:05:00Z')]);
-    const open = vi.fn().mockResolvedValueOnce(first.response).mockResolvedValueOnce(second.response);
-    const onUnauthorized = vi.fn();
-    await runAlertStream({
-      token: 'tok',
-      open,
-      catchUp: vi.fn().mockRejectedValue(Object.assign(new Error('nope'), { status: 401 })),
-      onAlerts: vi.fn(),
-      onUnauthorized,
-      signal: new AbortController().signal,
-      sleep: async () => {},
-    });
-    // Resolved without the second stream ever ending on its own
-    expect(open).toHaveBeenCalledTimes(2);
-    expect(onUnauthorized).toHaveBeenCalledTimes(1);
   });
 
   it('reconnects when the connection goes silent (no heartbeat)', async () => {
@@ -286,16 +374,7 @@ describe('runAlertStream', () => {
     const next = streamResponse([]);
     const open = vi.fn().mockResolvedValueOnce(silent.response).mockResolvedValueOnce(next.response);
     const controller = new AbortController();
-    const done = runAlertStream({
-      token: 'tok',
-      open,
-      catchUp: vi.fn().mockResolvedValue([]),
-      onAlerts: vi.fn(),
-      onUnauthorized: vi.fn(),
-      signal: controller.signal,
-      idleTimeoutMs: 1000,
-      sleep: async () => {},
-    });
+    const done = run({ open, signal: controller.signal, idleTimeoutMs: 1000 });
     await vi.advanceTimersByTimeAsync(1500);
     expect(open).toHaveBeenCalledTimes(2);
     controller.abort();
@@ -305,7 +384,7 @@ describe('runAlertStream', () => {
   });
 });
 
-describe('runAlertStream backoff', () => {
+describe('runWatchStream backoff', () => {
   /** Streams that accept, say hello, and drop. */
   const dropping = () => streamResponse([hello('2026-10-21T08:00:00Z')], true).response;
 
@@ -316,12 +395,8 @@ describe('runAlertStream backoff', () => {
       if (open.mock.calls.length >= 4) controller.abort();
       return dropping();
     });
-    await runAlertStream({
-      token: 'tok',
+    await run({
       open,
-      catchUp: vi.fn().mockResolvedValue([]),
-      onAlerts: vi.fn(),
-      onUnauthorized: vi.fn(),
       signal: controller.signal,
       sleep: async (ms) => {
         sleeps.push(ms);
@@ -348,12 +423,8 @@ describe('runAlertStream backoff', () => {
       .mockReturnValueOnce(0)
       .mockReturnValueOnce(0)
       .mockReturnValueOnce(30_000);
-    await runAlertStream({
-      token: 'tok',
+    await run({
       open,
-      catchUp: vi.fn().mockResolvedValue([]),
-      onAlerts: vi.fn(),
-      onUnauthorized: vi.fn(),
       signal: controller.signal,
       sleep: async (ms) => {
         sleeps.push(ms);

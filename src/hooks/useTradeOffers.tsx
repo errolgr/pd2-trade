@@ -82,8 +82,6 @@ interface IncomingListing {
   };
   price?: string;
   hr_price?: number;
-  offers?: WebsiteOffer[];
-  user?: Participant;
 }
 
 interface UseTradeOffersProps {
@@ -120,23 +118,44 @@ function axiosStyleSerializer(obj) {
   });
 }
 
-// Get incoming offers (listings with offers)
+/** PD2 pages market/offer at most this many. */
+const OFFER_PAGE_SIZE = 250;
+
+/** Every offer on these listings, with each offerer's profile. */
+const getOffersOnListings = async (
+  token: string,
+  listingIds: string[],
+  onAuthError?: () => void | Promise<void>,
+): Promise<WebsiteOffer[]> => {
+  const offers: WebsiteOffer[] = [];
+  for (;;) {
+    const query = {
+      listing_id: { $in: listingIds },
+      $resolve: { user: { in_game_account: true } },
+      // A stable order, so the pages neither skip nor repeat an offer
+      $sort: { _id: 1 },
+      $limit: OFFER_PAGE_SIZE,
+      $skip: offers.length,
+    };
+    const response = await tauriFetch(buildUrlWithQuery('https://api.projectdiablo2.com/market/offer', query), {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const result = await handleApiResponse(response, onAuthError);
+    const page: WebsiteOffer[] = result?.data || [];
+    offers.push(...page);
+    if (page.length === 0 || offers.length >= (result?.total ?? 0)) return offers;
+  }
+};
+
+// Get incoming offers: your listings, then the offers on them. PD2's REST find of market/listing does not resolve
+// `offers` (only its socket does), so they come from market/offer by listing.
 const getIncomingOffers = async (
   token: string,
   userId: string,
   onAuthError?: () => void | Promise<void>,
 ): Promise<TradeOffer[]> => {
   const query = {
-    $resolve: {
-      user: {
-        in_game_account: true,
-      },
-      offers: {
-        user: {
-          in_game_account: true,
-        },
-      },
-    },
     user_id: userId,
     $limit: 250,
     $sort: {
@@ -154,32 +173,37 @@ const getIncomingOffers = async (
 
   const result = await handleApiResponse(response, onAuthError);
   const listings: IncomingListing[] = result?.data || [];
+  if (listings.length === 0) return [];
 
-  const offers: TradeOffer[] = [];
-  listings.forEach((listing) => {
-    if (listing.offers && listing.offers.length > 0) {
-      listing.offers.forEach((offer) => {
-        if (!offer.rejected) {
-          offers.push({
-            id: offer._id,
-            isIncoming: true,
-            playerName: offer.user?.username || 'Unknown',
-            accountName: offer.user?.game?.accounts?.[0],
-            itemName: listing.item?.name,
-            price: offer.offer || (offer.hr_offer ? `${offer.hr_offer} HR` : undefined),
-            hrOffer: offer.hr_offer || undefined,
-            timestamp: new Date(offer.created_at),
-            listingId: listing._id,
-            userId: offer.user?._id,
-            user: offer.user,
-            acceptedOfferId: listing.accepted_offer_id || undefined,
-          });
-        }
-      });
-    }
-  });
+  const offersByListing = new Map<string, WebsiteOffer[]>();
+  for (const offer of await getOffersOnListings(
+    token,
+    listings.map((listing) => listing._id),
+    onAuthError,
+  )) {
+    if (offer.rejected || !offer.listing_id) continue;
+    const onListing = offersByListing.get(offer.listing_id);
+    if (onListing) onListing.push(offer);
+    else offersByListing.set(offer.listing_id, [offer]);
+  }
 
-  return offers;
+  // Newest-bumped listing first, its offers oldest first
+  return listings.flatMap((listing) =>
+    (offersByListing.get(listing._id) ?? []).map((offer) => ({
+      id: offer._id,
+      isIncoming: true,
+      playerName: offer.user?.username || 'Unknown',
+      accountName: offer.user?.game?.accounts?.[0],
+      itemName: listing.item?.name,
+      price: offer.offer || (offer.hr_offer ? `${offer.hr_offer} HR` : undefined),
+      hrOffer: offer.hr_offer || undefined,
+      timestamp: new Date(offer.created_at),
+      listingId: listing._id,
+      userId: offer.user?._id,
+      user: offer.user,
+      acceptedOfferId: listing.accepted_offer_id || undefined,
+    })),
+  );
 };
 
 // Get outgoing offers (offers made by user)
@@ -263,13 +287,13 @@ const revokeOffer = async (
   await handleApiResponse(response, onAuthError);
 };
 
-// Accept an offer (PUT market/listing/:listingId)
-const acceptOffer = async (
-  settings: ISettings,
+/** Accepts an offer (PATCH market/listing/:listingId); false when the session expired (401). Throws on a refusal. */
+export const acceptOffer = async (
+  settings: Pick<ISettings, 'pd2Token'>,
   listingId: string,
   offerId: string,
   onAuthError?: () => void | Promise<void>,
-): Promise<void> => {
+): Promise<boolean> => {
   const response = await tauriFetch(`https://api.projectdiablo2.com/market/listing/${listingId}`, {
     method: 'PATCH',
     headers: {
@@ -278,15 +302,15 @@ const acceptOffer = async (
     },
     body: JSON.stringify({ accepted_offer_id: offerId }),
   });
-  await handleApiResponse(response, onAuthError);
+  return (await handleApiResponse(response, onAuthError)) !== null;
 };
 
-// Reject an offer (PUT market/offer/:offerId)
-const rejectOffer = async (
-  settings: ISettings,
+/** Rejects an offer (PATCH market/offer/:offerId); false when the session expired (401). Throws on a refusal. */
+export const rejectOffer = async (
+  settings: Pick<ISettings, 'pd2Token'>,
   offerId: string,
   onAuthError?: () => void | Promise<void>,
-): Promise<void> => {
+): Promise<boolean> => {
   const response = await tauriFetch(`https://api.projectdiablo2.com/market/offer/${offerId}`, {
     method: 'PATCH',
     headers: {
@@ -295,7 +319,7 @@ const rejectOffer = async (
     },
     body: JSON.stringify({ rejected: true }),
   });
-  await handleApiResponse(response, onAuthError);
+  return (await handleApiResponse(response, onAuthError)) !== null;
 };
 
 // Unaccept an offer (PATCH market/listing/:listingId)

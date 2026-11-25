@@ -3,6 +3,7 @@ import { UseFormReturn } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Tip } from '@/components/ui/tooltip';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Loader2, NotebookPen } from 'lucide-react';
 import { DUR, EASE_OUT, fadeIn, slideInRight } from '@/lib/motion';
@@ -88,23 +89,24 @@ const ListingFormFields: React.FC<ListingFormFieldsProps> = ({
           if (!open) setPendingMacro(null);
         }}
       >
-        <SheetTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="relative h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
-            title={t('form.noteMacros')}
-            aria-label={t('form.noteMacros')}
-          >
-            <NotebookPen className="h-4 w-4" />
-            {macros.length > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-bold leading-none tabular-nums text-primary-foreground ring-2 ring-card">
-                {macros.length}
-              </span>
-            )}
-          </Button>
-        </SheetTrigger>
+        <Tip label={t('form.noteMacros')}>
+          <SheetTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="relative h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+              aria-label={t('form.noteMacros')}
+            >
+              <NotebookPen className="h-4 w-4" />
+              {macros.length > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-bold leading-none tabular-nums text-primary-foreground ring-2 ring-card">
+                  {macros.length}
+                </span>
+              )}
+            </Button>
+          </SheetTrigger>
+        </Tip>
         <SheetContent side="left"
           className="gap-0">
           <SheetHeader>

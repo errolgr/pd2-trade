@@ -182,7 +182,8 @@
     "pick": "Des objets comme {{name}} ont quitté votre coffre. Choisissez les annonces à retirer.",
     "delist": "Retirer",
     "keep": "Garder",
-    "choose": "Choisir"
+    "choose": "Choisir",
+    "neverAsk": "Ne plus demander pour {{name}}"
   },
   "myListings": {
     "searchPlaceholder": "Rechercher parmi {{count}} annonces…",

@@ -1,6 +1,8 @@
-use crate::modules::opener;
+use crate::modules::{d2_directory, opener, system};
 use crate::{chat_watcher, debug_logger, keyboard, window};
+use std::path::Path;
 use tauri::Manager;
+use tauri_plugin_dialog::DialogExt;
 
 #[tauri::command]
 pub fn get_diablo_rect(app_handle: tauri::AppHandle) -> Option<window::WindowRect> {
@@ -22,6 +24,12 @@ pub fn press_key(sequence: String) -> Result<(), String> {
 #[tauri::command]
 pub fn is_diablo_focused() -> bool {
     window::is_game_context()
+}
+
+/// Milliseconds since the user last touched the keyboard or mouse (any app); None when unknown.
+#[tauri::command]
+pub fn input_idle_ms() -> Option<u64> {
+    system::input_idle_ms()
 }
 
 /// Diablo II fills its monitor (D2GL fullscreen): while it holds the foreground the graphics driver draws nothing
@@ -133,6 +141,33 @@ pub fn auto_detect_diablo2_directory() -> Option<String> {
     chat_watcher::auto_detect_diablo2_directory().and_then(|p| p.to_str().map(|s| s.to_string()))
 }
 
+/// Whether a typed or picked folder is a Diablo II install (or a Wine prefix holding one).
+#[tauri::command]
+pub fn check_diablo2_directory(path: String) -> d2_directory::DirectoryCheck {
+    d2_directory::check(&path)
+}
+
+/// Native folder picker for the Diablo II directory, so it can be changed without typing (the overlay may not
+/// get the keyboard, e.g. under KWin). A picked Wine prefix comes back as the install inside it. None = cancelled.
+/// Async so the blocking wait runs off the main thread, which shows the dialog.
+#[tauri::command]
+pub async fn pick_diablo2_directory(
+    app_handle: tauri::AppHandle,
+    overlay: tauri::WebviewWindow,
+    current: Option<String>,
+) -> Option<String> {
+    let mut dialog = app_handle.dialog().file().set_parent(&overlay);
+    if let Some(dir) = current.as_deref().map(Path::new).filter(|dir| dir.is_dir()) {
+        dialog = dialog.set_directory(dir);
+    }
+    let picked = dialog.blocking_pick_folder()?.into_path().ok()?;
+    Some(
+        d2_directory::resolve(&picked)
+            .to_string_lossy()
+            .into_owned(),
+    )
+}
+
 #[tauri::command]
 pub fn write_debug_logs(entries: String) -> Result<(), String> {
     debug_logger::write_logs(&entries)
@@ -206,5 +241,89 @@ fn focus_window(window: &tauri::WebviewWindow) {
 pub fn close_sign_in_window(app_handle: tauri::AppHandle) {
     if let Some(window) = app_handle.get_webview_window(SIGN_IN_LABEL) {
         let _ = window.destroy();
+    }
+}
+
+/// Whether the updater can replace this install in place. Linux deb/rpm installs get the AppImage from latest.json
+/// (rejected or EACCES in /usr/bin), and an AppImage in a folder the user can't write to can't be swapped either;
+/// the frontend checks this before downloading ~100 MiB that could never install.
+#[tauri::command]
+pub fn self_update_supported() -> bool {
+    #[cfg(target_os = "linux")]
+    {
+        use tauri::utils::{config::BundleType, platform::bundle_type};
+        let package_managed = matches!(bundle_type(), Some(BundleType::Deb | BundleType::Rpm));
+        let target = std::env::var_os("APPIMAGE")
+            .map(std::path::PathBuf::from)
+            .or_else(|| std::env::current_exe().ok());
+        can_replace_install(package_managed, target.as_deref())
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        true
+    }
+}
+
+/// Linux decision: package-managed installs never self-update; otherwise the folder holding the binary must be writable.
+#[cfg(any(target_os = "linux", test))]
+fn can_replace_install(package_managed: bool, target: Option<&std::path::Path>) -> bool {
+    if package_managed {
+        return false;
+    }
+    match target.and_then(std::path::Path::parent) {
+        Some(dir) => dir_writable(dir),
+        None => true,
+    }
+}
+
+/// Probes by creating (and removing) a file: permission bits alone miss ACLs, read-only mounts and root.
+#[cfg(any(target_os = "linux", test))]
+fn dir_writable(dir: &std::path::Path) -> bool {
+    let probe = dir.join(format!(".pd2-trader-update-probe-{}", std::process::id()));
+    match std::fs::OpenOptions::new().write(true).create_new(true).open(&probe) {
+        Ok(_) => {
+            let _ = std::fs::remove_file(&probe);
+            true
+        }
+        Err(_) => false,
+    }
+}
+
+#[cfg(test)]
+mod self_update_tests {
+    use super::*;
+
+    #[test]
+    fn package_managed_install_never_self_updates() {
+        let dir = std::env::temp_dir();
+        assert!(!can_replace_install(true, Some(&dir.join("pd2-trader"))));
+        assert!(!can_replace_install(true, None));
+    }
+
+    #[test]
+    fn writable_folder_allows_update_and_leaves_no_probe() {
+        let dir = std::env::temp_dir().join(format!("pd2-upd-ok-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        assert!(can_replace_install(false, Some(&dir.join("pd2-trader.AppImage"))));
+        assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 0);
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn missing_or_unwritable_folder_blocks_update() {
+        let gone = std::env::temp_dir().join(format!("pd2-upd-missing-{}", std::process::id()));
+        assert!(!can_replace_install(false, Some(&gone.join("pd2-trader.AppImage"))));
+    }
+
+    #[test]
+    fn unknown_location_falls_back_to_updating() {
+        assert!(can_replace_install(false, None));
+    }
+
+    #[test]
+    fn command_is_true_off_linux() {
+        if !cfg!(target_os = "linux") {
+            assert!(self_update_supported());
+        }
     }
 }

@@ -81,8 +81,9 @@ describe('activeFilters', () => {
     ]);
     const cleared = active.reduce((g, a) => a.clear(g), f);
     expect(cleared).toMatchObject({ hasBuyout: 'yes', userOnlineSite: 'online', userOnlineGame: 'all', maxAgeDays: 7 });
-    // The archive's own window is its default
-    expect(ids(withSource(mergeFilters(base(mine), { maxAgeDays: 14 }), 'archive'), mine)).toEqual([]);
+    // The archive starts without a window: the live default leaves, a 14-day window there is a filter
+    expect(ids(withSource(base(mine), 'archive', mine), mine)).toEqual([]);
+    expect(ids(withSource(mergeFilters(base(mine), { maxAgeDays: 14 }), 'archive', mine), mine)).toEqual(['age']);
   });
 
   it('lists the seller, requirements and class, keeping the other requirements on clear', () => {

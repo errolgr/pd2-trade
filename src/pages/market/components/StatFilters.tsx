@@ -18,10 +18,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Tip } from '@/components/ui/tooltip';
 import { CORRUPTION_OPTIONS, corruptionOption } from '../lib/catalog';
 import { newStatFilter } from '../lib/defaults';
 import { MAX_OR_BLOCKS, compactBlocks, groupOf, moveToGroup, orBlockNumbers, type StatGroup } from '../lib/stat-groups';
-import { isCorruption, isPseudo, searchStats, type StatChoice } from '../lib/stats';
+import {
+  isCorruption,
+  isDamageRangeKey,
+  isItemProperty,
+  isPseudo,
+  lowDamageRange,
+  searchStats,
+  withLowDamageRange,
+  type StatChoice,
+} from '../lib/stats';
 import type { StatFilter, StatPreset } from '../lib/types';
 import { Autocomplete, FILTER_HIGHLIGHT_CLASS, FilterHighlightContext, NumberInput, fieldInputClass } from './controls';
 import { choiceText, filterName } from './stat-text';
@@ -30,7 +40,13 @@ import { Trans, useTranslation } from '@/i18n';
 const MAX_SUGGESTIONS = 40;
 
 const choiceKey = (choice: StatChoice) =>
-  isPseudo(choice) ? choice.id : isCorruption(choice) ? `corruption:${choice.value}` : choice.key;
+  isPseudo(choice)
+    ? choice.id
+    : isCorruption(choice)
+      ? `corruption:${choice.value}`
+      : isItemProperty(choice)
+        ? `item:${choice.property}`
+        : choice.key;
 
 /** "Min [  ]" — a stat bound input with its caption inside the row's second line. */
 function StatNumber({
@@ -60,16 +76,95 @@ function StatNumber({
   );
 }
 
+/** "Min dmg [ ] – [ ]": one end of an "Adds X-Y" row, bounded as in the price check. */
+function DamageEnd({
+  label,
+  ariaName,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  ariaName: string;
+  min?: number;
+  max?: number;
+  onChange: (range: { min?: number; max?: number }) => void;
+}) {
+  const { t } = useTranslation('market');
+  return (
+    <div className="flex min-w-0 items-center gap-1">
+      <span className="w-14 shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>
+      <NumberInput
+        ariaLabel={t('controls.minLabel', { label: ariaName })}
+        value={min}
+        onChange={(v) => onChange({ min: v, max })}
+        className="h-6 px-1 text-center"
+      />
+      <span aria-hidden
+        className="text-xs text-muted-foreground">
+        –
+      </span>
+      <NumberInput
+        ariaLabel={t('controls.maxLabel', { label: ariaName })}
+        value={max}
+        onChange={(v) => onChange({ min, max: v })}
+        className="h-6 px-1 text-center"
+      />
+    </div>
+  );
+}
+
+/**
+ * Both ends of an "Adds X-Y" row, as the price check bounds a damage pair: the low end is the key's slot-0 pin
+ * (`firedam|firemindam{4..10}`, `damage{4..}`), the high end the row's min / max. A low range the key grammar can't
+ * hold (min above max while typing, a decimal) stays on screen as typed; the key keeps its last valid pin.
+ */
+function DamageRange({
+  row,
+  name,
+  onChange,
+}: {
+  row: StatFilter;
+  name: string;
+  onChange: (changes: Partial<StatFilter>) => void;
+}) {
+  const { t } = useTranslation('priceCheck');
+  const [draft, setDraft] = useState(() => ({ key: row.key, range: lowDamageRange(row.key) }));
+  // A key changed elsewhere (Open in market, a mod menu) shows its own range
+  const low = draft.key === row.key ? draft.range : lowDamageRange(row.key);
+  return (
+    <div className="space-y-1 pr-7 pl-9">
+      <DamageEnd
+        label={t('statRow.minDamage')}
+        ariaName={t('statRow.minDamageAria', { name })}
+        min={low.min}
+        max={low.max}
+        onChange={(range) => {
+          const key = withLowDamageRange(row.key, range) ?? row.key;
+          setDraft({ key, range });
+          if (key !== row.key) onChange({ key });
+        }}
+      />
+      <DamageEnd
+        label={t('statRow.maxDamage')}
+        ariaName={t('statRow.maxDamageAria', { name })}
+        min={row.min}
+        max={row.max}
+        onChange={onChange}
+      />
+    </div>
+  );
+}
+
 /** Marks a corruption row / picker entry. */
 function CorruptionBadge() {
   const { t } = useTranslation('market');
   return (
-    <span
-      title={t('stats.cubeCorruption')}
-      className="shrink-0 rounded-sm border border-q-corrupted/40 bg-q-corrupted/10 px-1 text-[9px] leading-4 font-semibold tracking-wide text-q-corrupted uppercase"
-    >
-      {t('stats.corrBadge')}
-    </span>
+    <Tip label={t('stats.cubeCorruption')}>
+      <span className="shrink-0 rounded-sm border border-q-corrupted/40 bg-q-corrupted/10 px-1 text-[9px] leading-4 font-semibold tracking-wide text-q-corrupted uppercase">
+        {t('stats.corrBadge')}
+      </span>
+    </Tip>
   );
 }
 
@@ -89,7 +184,7 @@ export interface StatFiltersProps {
   highlight?: { id: string; nonce: number } | null;
 }
 
-/** Picker tabs: what kind of filter a suggestion adds. */
+/** Picker tabs: what kind of filter a suggestion adds (item properties sit with the mods). */
 type StatTab = 'mod' | 'pseudo' | 'corruption';
 const TABS: { id: StatTab; labelKey: string }[] = [
   { id: 'mod', labelKey: 'stats.tabs.mods' },
@@ -208,7 +303,9 @@ export function StatFilters({
       ? { kind: 'pseudo' as const, key: choice.id }
       : isCorruption(choice)
         ? { kind: 'corruption' as const, key: choice.value }
-        : { kind: 'mod' as const, key: choice.key };
+        : isItemProperty(choice)
+          ? { kind: 'item' as const, key: choice.property }
+          : { kind: 'mod' as const, key: choice.key };
     onChange([...stats, newStatFilter(row)]);
   };
   const update = (id: string, changes: Partial<StatFilter>) =>
@@ -287,15 +384,16 @@ export function StatFilters({
           className="absolute inset-y-0 left-0 w-0.5 bg-q-corrupted" />}
         <div className="relative space-y-1 py-1 pr-0.5 pl-1">
           <div className="flex min-w-0 items-center gap-1">
-            <span
-              aria-hidden
-              title={tr('stats.dragHint')}
-              data-stat-grip={s.id}
-              className="inline-flex h-5 w-3 shrink-0 cursor-grab touch-none items-center justify-center text-muted-foreground/60 transition-colors duration-(--dur-fast) hover:text-foreground active:cursor-grabbing"
-              {...gripHandlers(s, name)}
-            >
-              <GripVertical className="size-3" />
-            </span>
+            <Tip label={tr('stats.dragHint')}>
+              <span
+                aria-hidden
+                data-stat-grip={s.id}
+                className="inline-flex h-5 w-3 shrink-0 cursor-grab touch-none items-center justify-center text-muted-foreground/60 transition-colors duration-(--dur-fast) hover:text-foreground active:cursor-grabbing"
+                {...gripHandlers(s, name)}
+              >
+                <GripVertical className="size-3" />
+              </span>
+            </Tip>
             <Checkbox
               checked={s.enabled}
               aria-label={s.enabled ? tr('stats.disable', { name }) : tr('stats.enable', { name })}
@@ -305,10 +403,9 @@ export function StatFilters({
             {s.kind === 'pseudo' && <Sigma className="size-3 shrink-0 text-info"
               aria-label={tr('stats.pseudoStat')} />}
             {corruption && <CorruptionBadge />}
-            <span className="min-w-0 flex-1 truncate text-xs"
-              title={name}>
-              {name}
-            </span>
+            <Tip label={name}>
+              <span className="min-w-0 flex-1 truncate text-xs">{name}</span>
+            </Tip>
             <GroupMenu
               name={name}
               group={groupOf(s)}
@@ -316,17 +413,22 @@ export function StatFilters({
               canOpenBlock={canOpenBlock(s)}
               onMove={(target) => move(s.id, target)}
             />
-            <button
-              type="button"
-              aria-label={tr('stats.removeName', { name })}
-              title={tr('common:actions.remove')}
-              onClick={() => onChange(compactBlocks(stats.filter((x) => x.id !== s.id)))}
-              className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-destructive/15 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/60"
-            >
-              <X className="size-3.5" />
-            </button>
+            <Tip label={tr('common:actions.remove')}>
+              <button
+                type="button"
+                aria-label={tr('stats.removeName', { name })}
+                onClick={() => onChange(compactBlocks(stats.filter((x) => x.id !== s.id)))}
+                className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-(--dur-fast) hover:bg-destructive/15 hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring/60"
+              >
+                <X className="size-3.5" />
+              </button>
+            </Tip>
           </div>
-          {bounded ? (
+          {s.kind !== 'corruption' && s.kind !== 'item' && isDamageRangeKey(s.key) ? (
+            <DamageRange row={s}
+              name={name}
+              onChange={(changes) => update(s.id, changes)} />
+          ) : bounded ? (
             <div className="grid grid-cols-2 gap-1 pr-7 pl-9">
               <StatNumber label="Min"
                 name={name}
@@ -426,12 +528,11 @@ export function StatFilters({
               ) : (
                 <span className="size-3 shrink-0" />
               )}
-              <span
-                className={cn('min-w-0 flex-1 truncate', isCorruption(choice) && 'text-q-corrupted')}
-                title={choiceText(choice)}
-              >
-                {choiceText(choice)}
-              </span>
+              <Tip label={choiceText(choice)}>
+                <span className={cn('min-w-0 flex-1 truncate', isCorruption(choice) && 'text-q-corrupted')}>
+                  {choiceText(choice)}
+                </span>
+              </Tip>
               {/* The tab already says pseudo / corruption; mods keep their group */}
               {!isPseudo(choice) && !isCorruption(choice) && (
                 <span className="shrink-0 text-[10px] text-muted-foreground">{choice.group}</span>
@@ -605,19 +706,20 @@ function GroupMenu({
   ];
   return (
     <DropdownMenu modal={false}>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label={t('stats.groups.rowLabel', { name, description })}
-          title={t('stats.groups.badgeHint')}
-          className="shrink-0 rounded outline-none transition-[filter] duration-(--dur-fast) hover:brightness-125 focus-visible:ring-2 focus-visible:ring-ring/60"
-        >
-          <GroupBadge
-            group={group}
-            text={group === 'and' ? 'AND' : group === 'not' ? 'NOT' : blocks.length > 1 ? `OR ${group}` : 'OR'}
-          />
-        </button>
-      </DropdownMenuTrigger>
+      <Tip label={t('stats.groups.badgeHint')}>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            aria-label={t('stats.groups.rowLabel', { name, description })}
+            className="shrink-0 rounded outline-none transition-[filter] duration-(--dur-fast) hover:brightness-125 focus-visible:ring-2 focus-visible:ring-ring/60"
+          >
+            <GroupBadge
+              group={group}
+              text={group === 'and' ? 'AND' : group === 'not' ? 'NOT' : blocks.length > 1 ? `OR ${group}` : 'OR'}
+            />
+          </button>
+        </DropdownMenuTrigger>
+      </Tip>
       <DropdownMenuContent align="end"
         className="min-w-44">
         <DropdownMenuLabel className="text-xs">{t('stats.groups.moveTo')}</DropdownMenuLabel>
@@ -683,21 +785,22 @@ function PresetMenu({
     >
       <span className="min-w-0 flex-1 truncate">{presetName(p)}</span>
       <span className="text-[10px] text-muted-foreground">{p.stats.length}</span>
-      <button
-        type="button"
-        tabIndex={-1}
-        aria-label={t('presets.deleteLabel', { name: presetName(p) })}
-        title={t('presets.deleteTitle')}
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onRemove(p);
-        }}
-        className="inline-flex size-6 items-center justify-center rounded-sm text-muted-foreground/70 transition-colors hover:bg-destructive/15 hover:text-destructive group-data-[highlighted]:text-muted-foreground"
-      >
-        <Trash2 className="size-3" />
-      </button>
+      <Tip label={t('presets.deleteTitle')}>
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-label={t('presets.deleteLabel', { name: presetName(p) })}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onRemove(p);
+          }}
+          className="inline-flex size-6 items-center justify-center rounded-sm text-muted-foreground/70 transition-colors hover:bg-destructive/15 hover:text-destructive group-data-[highlighted]:text-muted-foreground"
+        >
+          <Trash2 className="size-3" />
+        </button>
+      </Tip>
     </DropdownMenuItem>
   );
   const sectionLabel = 'text-[10px] uppercase tracking-wider text-muted-foreground';
@@ -760,18 +863,17 @@ function SavePresetButton({ disabled, onSave }: { disabled: boolean; onSave: (na
   return (
     <Popover open={open}
       onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={disabled}
-          className="size-7 p-0"
-          aria-label={t('presets.save')}
-          title={t('presets.save')}
-        >
-          <BookmarkPlus className="size-3.5" />
-        </Button>
-      </PopoverTrigger>
+      <Tip label={t('presets.save')}>
+        <PopoverTrigger asChild>
+          <Button variant="outline"
+            size="sm"
+            disabled={disabled}
+            className="size-7 p-0"
+            aria-label={t('presets.save')}>
+            <BookmarkPlus className="size-3.5" />
+          </Button>
+        </PopoverTrigger>
+      </Tip>
       <PopoverContent align="end"
         className="w-60 p-2">
         <form

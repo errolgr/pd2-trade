@@ -301,7 +301,10 @@ describe('RaresSummaryCard', () => {
     expect(card.textContent).toBe('Rares: 2 Keep · 2 worth a look · 1 likely vendor (frees 1 slot)');
     const band = screen.getByText(/in Keep rares/);
     expect(band.textContent).toBe('+ ~1.3–12 HR in Keep rares (estimated, not in total)');
-    expect(band.getAttribute('title')).toBe(
+    act(() => {
+      fireEvent.focus(band);
+    });
+    expect(screen.getByRole('tooltip').textContent).toBe(
       'Estimated from S14 asking prices of similar rares — not part of the total',
     );
   });
@@ -310,9 +313,10 @@ describe('RaresSummaryCard', () => {
     render(<RaresSummaryCard summary={{ ...SUMMARY, keep: 3, keepUnpriced: 1, vendor: 2 }}
       season="S14" />);
     expect(screen.getByText(/frees 2 slots/)).not.toBeNull();
-    expect(screen.getByText(/in Keep rares/).getAttribute('title')).toMatch(
-      /; 1 Keep rare without a market band not included$/,
-    );
+    act(() => {
+      fireEvent.focus(screen.getByText(/in Keep rares/));
+    });
+    expect(screen.getByRole('tooltip').textContent).toMatch(/; 1 Keep rare without a market band not included$/);
   });
 
   it('hides the Keep band when no Keep rare has a market band', () => {

@@ -178,7 +178,8 @@
     "pick": "Items like {{name}} left your stash. Choose which listings to remove.",
     "delist": "Delist",
     "keep": "Keep",
-    "choose": "Choose"
+    "choose": "Choose",
+    "neverAsk": "Never ask for {{name}}"
   },
   "myListings": {
     "searchPlaceholder": "Search {{count}} listings…",

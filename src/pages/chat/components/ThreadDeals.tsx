@@ -3,12 +3,16 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Check,
+  CheckCheck,
   CheckSquare,
   ChevronDown,
+  ExternalLink,
   Eye,
   EyeOff,
   Gamepad2,
+  HandCoins,
   Loader2,
+  MessageSquare,
   MoreHorizontal,
   Reply,
   Trash2,
@@ -33,12 +37,16 @@ import { fillTemplate } from '@/lib/message-templates';
 import type { TradeOutcome, WhisperPerson, WhisperTrade } from '@/lib/whisper-history';
 import { confirmToast, showToast } from '@/overlay';
 import { cn } from '@/lib/utils';
+import { Tip } from '@/components/ui/tooltip';
 import { useChatListings } from '../hooks/useChatListings';
 import { type ListingMarketPrice, useListingMarketPrices } from '../hooks/useListingMarketPrices';
 import { shortAgo } from '../hooks/useTraderProfile';
 import { useDelist } from '@/pages/delist/DelistHandler';
+import { formatOffer, isWtbOffer, type WtbResponse } from '@/pages/market/lib/wtb';
+import { acceptLabel } from '@/pages/market/wtb/wtb-offers';
+import { responseMetLine } from '@/pages/market/wtb/wtb-responses';
+import { confirmMarkFilled, WtbResponseArt } from '@/pages/market/wtb/WtbResponses';
 import { ListingDetails, ListingThumb } from './ListingCard';
-import { Tip } from './chat-parts';
 import type { ReplyChannel } from './Composer';
 
 /** A trade whisper's outcome is the status chip of its event row in the conversation. */
@@ -68,10 +76,11 @@ export function dealStatusLabel(status: DealStatus): string {
   }
 }
 
-/** A pinned row: a website offer (hidden: an outgoing offer the user hid) or a trade whisper. */
+/** A pinned row: a website offer (hidden: an outgoing offer the user hid), a trade whisper or a buy request response. */
 type Deal =
   | { kind: 'offer'; id: string; offer: TradeOffer; hidden: boolean }
-  | { kind: 'whisper'; id: string; trade: WhisperTrade; person: WhisperPerson };
+  | { kind: 'whisper'; id: string; trade: WhisperTrade; person: WhisperPerson }
+  | { kind: 'wtb'; id: string; response: WtbResponse; received: boolean };
 
 /**
  * Website offers, same rule both directions: accepted when the listing took this offer, declined when it
@@ -83,11 +92,42 @@ export function offerStatus(offer: TradeOffer): 'open' | 'accepted' | 'declined'
   return offer.listingClosed ? 'closed' : 'open';
 }
 
-/** Hidden outgoing offers and trade whispers have their own chips. */
+/** Hidden outgoing offers and trade whispers have their own chips; a response is open while its request is. */
 function dealStatus(deal: Deal): DealStatus {
   if (deal.kind === 'whisper') return 'in-game';
+  if (deal.kind === 'wtb') return deal.response.request.status === 'closed' ? 'closed' : 'open';
   if (deal.hidden) return 'hidden';
   return offerStatus(deal.offer);
+}
+
+/**
+ * A row's direction, item, price and time whatever its kind. A response you received (on your request) reads as
+ * buying; yours to their request as selling.
+ */
+function dealView(deal: Deal): { isIncoming: boolean; itemName?: string; price?: string; at: number } {
+  switch (deal.kind) {
+    case 'offer':
+      return {
+        isIncoming: deal.offer.isIncoming,
+        itemName: deal.offer.itemName,
+        price: deal.offer.price,
+        at: deal.offer.timestamp.getTime(),
+      };
+    case 'whisper':
+      return {
+        isIncoming: deal.trade.isIncoming,
+        itemName: deal.trade.itemName,
+        price: deal.trade.price,
+        at: deal.trade.timestamp,
+      };
+    case 'wtb':
+      return {
+        isIncoming: !deal.received,
+        itemName: deal.response.item?.name ?? deal.response.request.title,
+        price: formatOffer(isWtbOffer(deal.response) ? deal.response.price : deal.response.request.offer),
+        at: Date.parse(deal.response.createdAt) || 0,
+      };
+  }
 }
 
 /** Status chip colours (the trader sidebar's offers). */
@@ -381,6 +421,12 @@ export function ThreadDeals({
   onReply,
   onDismissTrade,
   onSettleTrade,
+  wtbResponses = [],
+  onWtbWhisper,
+  onWtbViewRequest,
+  onWtbMarkFilled,
+  onWtbAccept,
+  onWtbDecline,
 }: {
   /** Website offers with this person, both directions. */
   offers: readonly TradeOffer[];
@@ -401,6 +447,17 @@ export function ThreadDeals({
   onDismissTrade: (person: WhisperPerson, tradeId: string) => void;
   /** Closes a trade whisper: it leaves the pinned deals for an event row in the conversation. */
   onSettleTrade: (person: WhisperPerson, tradeId: string, outcome: TradeOutcome) => void;
+  /** Buy request responses with this person: on your requests (`received`) and yours to theirs. */
+  wtbResponses?: readonly { response: WtbResponse; received: boolean }[];
+  /** Whisper back (a response to your request) / whisper the buyer again (yours to theirs). */
+  onWtbWhisper?: (response: WtbResponse, received: boolean) => void;
+  /** View request: the request on the market's Wanted source. */
+  onWtbViewRequest?: (requestId: string) => void;
+  /** Mark filled (confirmed first): closes your request with this response; rejects (toasted) when it failed. */
+  onWtbMarkFilled?: (response: WtbResponse) => Promise<void>;
+  /** A pending offer to sell on your request: Accept (the seller is told; the chat drafts the deal) / Decline. */
+  onWtbAccept?: (response: WtbResponse) => Promise<void>;
+  onWtbDecline?: (response: WtbResponse) => Promise<void>;
 }): React.JSX.Element | null {
   const { t } = useTranslation(['chat', 'common']);
   const {
@@ -436,6 +493,7 @@ export function ThreadDeals({
     ...offers.map((offer): Deal => ({ kind: 'offer', id: offer.id, offer, hidden: false })),
     ...hiddenOffers.map((offer): Deal => ({ kind: 'offer', id: offer.id, offer, hidden: true })),
     ...whisperTrades.map(({ person, trade }): Deal => ({ kind: 'whisper', id: trade.id, trade, person })),
+    ...wtbResponses.map(({ response, received }): Deal => ({ kind: 'wtb', id: response.id, response, received })),
   ]
     // Settled offers (accepted, declined, closed): yours (buying) show in the conversation instead
     // (buildTimeline); offers to you stay here only on listings the thread links
@@ -444,7 +502,7 @@ export function ThreadDeals({
       return deal.kind === 'offer' && deal.offer.isIncoming && linked(deal);
     })
     .sort((a, b) => {
-      const time = (deal: Deal) => (deal.kind === 'offer' ? deal.offer.timestamp.getTime() : deal.trade.timestamp);
+      const time = (deal: Deal) => dealView(deal).at;
       return (
         Number(linked(b)) - Number(linked(a)) ||
         Number(dealStatus(a) === 'hidden') - Number(dealStatus(b) === 'hidden') ||
@@ -640,6 +698,74 @@ export function ThreadDeals({
     );
   };
 
+  /**
+   * A buy request response. A pending offer to sell on your request: Accept · Decline · Message; a decided one: its
+   * status and Message. Otherwise on your request (received) Message back, View request and Mark filled; yours to
+   * their request (made) Message them again and View request.
+   */
+  const wtbActions = (response: WtbResponse, received: boolean, disabled: boolean) => {
+    const message = (
+      <ActionButton
+        title={received ? t('deals.whisperBackTitle') : t('deals.whisperBuyerTitle')}
+        label={received ? t('deals.whisperBack') : t('deals.whisper')}
+        tone={received && isWtbOffer(response) && response.status === 'pending' ? 'outline' : 'filled'}
+        disabled={disabled}
+        onClick={() => onWtbWhisper?.(response, received)}
+      >
+        <MessageSquare className="size-3.5" />
+      </ActionButton>
+    );
+    if (received && isWtbOffer(response) && response.status === 'pending' && onWtbAccept && onWtbDecline)
+      return (
+        <>
+          <ActionButton
+            title={acceptLabel(response)}
+            label={acceptLabel(response)}
+            tone="filled"
+            disabled={disabled}
+            onClick={() => void run(response.id, () => onWtbAccept(response))}
+          >
+            <Check className="size-3.5" />
+          </ActionButton>
+          <ActionButton
+            title={tGlobal('market:wtb.offers.decline')}
+            label={tGlobal('market:wtb.offers.decline')}
+            tone="muted"
+            disabled={disabled}
+            onClick={() => void run(response.id, () => onWtbDecline(response))}
+          >
+            <X className="size-3.5" />
+          </ActionButton>
+          {message}
+        </>
+      );
+    return (
+      <>
+        {message}
+        <ActionButton
+          title={t('deals.viewRequestTitle')}
+          label={t('deals.viewRequest')}
+          tone="outline"
+          disabled={disabled}
+          onClick={() => onWtbViewRequest?.(response.requestId)}
+        >
+          <ExternalLink className="size-3.5" />
+        </ActionButton>
+        {received && onWtbMarkFilled && response.request.status !== 'closed' && (
+          <ActionButton
+            title={t('deals.markFilledTitle')}
+            label={t('deals.markFilled')}
+            tone="muted"
+            disabled={disabled}
+            onClick={() => confirmMarkFilled(response, () => run(response.id, () => onWtbMarkFilled(response)))}
+          >
+            <CheckCheck className="size-3.5" />
+          </ActionButton>
+        )}
+      </>
+    );
+  };
+
   const whisperActions = (person: WhisperPerson, trade: WhisperTrade, disabled: boolean) => {
     const vars = {
       accountName: person.accountName,
@@ -738,10 +864,8 @@ export function ThreadDeals({
         {shown.map((deal) => {
           const status = dealStatus(deal);
           const disabled = busyId !== null;
-          const isIncoming = deal.kind === 'offer' ? deal.offer.isIncoming : deal.trade.isIncoming;
-          const itemName = deal.kind === 'offer' ? deal.offer.itemName : deal.trade.itemName;
-          const price = deal.kind === 'offer' ? deal.offer.price : deal.trade.price;
-          const at = deal.kind === 'offer' ? deal.offer.timestamp.getTime() : deal.trade.timestamp;
+          const view = dealView(deal);
+          const { isIncoming, itemName, price, at } = view;
           const live = status === 'open' || status === 'in-game';
           const tone: Tone = live
             ? isIncoming
@@ -752,7 +876,16 @@ export function ThreadDeals({
               : 'settled';
           const colors = TONE[tone];
           let label = dealStatusLabel(status);
-          if (status === 'open') label = isIncoming ? t('deals.newOffer') : t('deals.yourOffer');
+          if (deal.kind === 'wtb' && isWtbOffer(deal.response))
+            label =
+              deal.response.status === 'pending' || !deal.response.status
+                ? deal.received
+                  ? t('deals.wtbOfferReceived')
+                  : t('deals.wtbOfferMade')
+                : tGlobal(`market:wtb.offers.status.${deal.response.status}`);
+          else if (deal.kind === 'wtb' && status === 'open')
+            label = deal.received ? t('deals.buyRequestReceived') : t('deals.buyRequestMade');
+          else if (status === 'open') label = isIncoming ? t('deals.newOffer') : t('deals.yourOffer');
           else if (status === 'in-game') label = isIncoming ? t('deals.inGameOffer') : t('deals.yourInGameOffer');
           const listing = listingOf(deal);
           const listingState =
@@ -760,11 +893,25 @@ export function ThreadDeals({
           const listed = listingState?.status === 'listed';
           const marketPrice = listing ? market.get(listing._id) : undefined;
           const asking = listing && (listing.hr_price > 0 ? `${listing.hr_price} HR` : listing.price);
-          const context = [
-            asking && t('deals.asking', { price: asking }),
-            marketPrice && t('deals.marketPrice', { hr: Number(marketPrice.hr.toFixed(2)) }),
-          ].filter(Boolean);
-          const Fallback = deal.kind === 'whisper' ? Gamepad2 : isIncoming ? ArrowUpRight : ArrowDownLeft;
+          const context =
+            deal.kind === 'wtb'
+              ? [
+                  deal.response.item && t('deals.forRequest', { title: deal.response.request.title }),
+                  responseMetLine(deal.response),
+                  deal.response.note && `“${deal.response.note}”`,
+                ].filter(Boolean)
+              : [
+                  asking && t('deals.asking', { price: asking }),
+                  marketPrice && t('deals.marketPrice', { hr: Number(marketPrice.hr.toFixed(2)) }),
+                ].filter(Boolean);
+          const Fallback =
+            deal.kind === 'whisper'
+              ? Gamepad2
+              : deal.kind === 'wtb'
+                ? HandCoins
+                : isIncoming
+                  ? ArrowUpRight
+                  : ArrowDownLeft;
           return (
             <li
               key={`${deal.kind}:${deal.id}`}
@@ -782,6 +929,9 @@ export function ThreadDeals({
                       <ListingThumb listing={listing}
                         className="size-9 rounded-lg"
                         artClassName="max-h-8 max-w-8" />
+                    ) : deal.kind === 'wtb' && deal.response.item ? (
+                      <WtbResponseArt response={deal.response}
+                        className="size-9 rounded-lg" />
                     ) : (
                       <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-linear-to-b from-muted/80 to-muted/40">
                         <Fallback className={cn('size-4', colors.text)} />
@@ -825,18 +975,20 @@ export function ThreadDeals({
                 </span>
               )}
               {price && (
-                <span
-                  className={cn(
-                    'shrink-0 whitespace-nowrap text-lg font-extrabold tabular-nums leading-none text-foreground',
-                  )}
-                >
-                  {price}
-                </span>
+                // Free-text prices ("Swap 1:1 Eth Tal Ral…") can be any length: cap them so the actions stay on
+                // the row, full text on hover
+                <Tip label={price}>
+                  <span className="max-w-[40%] shrink-0 truncate text-lg font-extrabold tabular-nums leading-tight text-foreground">
+                    {price}
+                  </span>
+                </Tip>
               )}
               <div className="flex shrink-0 items-center gap-1">
                 {deal.kind === 'offer'
                   ? offerActions(deal.offer, status, disabled)
-                  : whisperActions(deal.person, deal.trade, disabled)}
+                  : deal.kind === 'wtb'
+                    ? wtbActions(deal.response, deal.received, disabled)
+                    : whisperActions(deal.person, deal.trade, disabled)}
               </div>
             </li>
           );

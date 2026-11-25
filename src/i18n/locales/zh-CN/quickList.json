@@ -174,7 +174,8 @@
     "pick": "与 {{name}} 相同的物品离开了储物箱。请选择要下架的挂单。",
     "delist": "下架",
     "keep": "保留",
-    "choose": "选择"
+    "choose": "选择",
+    "neverAsk": "不再询问 {{name}}"
   },
   "myListings": {
     "searchPlaceholder": "在 {{count}} 个挂单中搜索…",

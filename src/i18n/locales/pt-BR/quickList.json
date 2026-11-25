@@ -182,7 +182,8 @@
     "pick": "Itens como {{name}} saíram do seu baú. Escolha quais anúncios remover.",
     "delist": "Remover",
     "keep": "Manter",
-    "choose": "Escolher"
+    "choose": "Escolher",
+    "neverAsk": "Nunca perguntar sobre {{name}}"
   },
   "myListings": {
     "searchPlaceholder": "Buscar entre {{count}} anúncios…",

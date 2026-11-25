@@ -23,6 +23,7 @@ import {
   stashSize,
   type StashSnapshot,
 } from './stash-removal';
+import { exceptionOf, exemptionsOf, rememberException, withoutExempt } from './delist-exemptions';
 
 /** How often the stash is compared with the last look, while Diablo is focused. */
 export const STASH_POLL_MS = 60_000;
@@ -35,10 +36,12 @@ const PROMPT_MS = 20_000;
  * Delists a listing once its item leaves the stash (renders nothing). Settings → Account → Marketplace: off, ask
  * first (a toast to confirm), or delist right away (a toast says so). Each minute while the game is focused it
  * reads the stash and compares it with the last read: a move between tabs is no removal, and when look-alike
- * items make it unclear which one left, the user picks the listing in any mode.
+ * items make it unclear which one left, the user picks the listing in any mode. Exempt listings are left alone
+ * (delist-exemptions.ts): ones an older version's Quick List form exempted, and, as Settings → "Never delist"
+ * says, the picked items ("Never ask for …" on the prompt adds one) and stackable currency.
  */
 const StashAutoDelistController: React.FC = () => {
-  const { settings } = useOptions();
+  const { settings, updateSettings } = useOptions();
   const { authData, fetchStash, getMarketListings, deleteMarketListing } = usePd2Website();
   const { openPanel } = useOverlay();
   const mode = settings.stashAutoDelist ?? 'ask';
@@ -48,9 +51,17 @@ const StashAutoDelistController: React.FC = () => {
   const hardcore = settings.mode === 'hardcore';
   const ladder = settings.ladder === 'ladder';
 
-  // Read when a tick runs: switching ask ↔ auto, or a refreshed token, keeps the last stash read
-  const latest = useRef({ mode, fetchStash, getMarketListings, deleteMarketListing, openPanel });
-  latest.current = { mode, fetchStash, getMarketListings, deleteMarketListing, openPanel };
+  // Read when a tick runs: switching ask ↔ auto, a new exception, or a refreshed token, keeps the last stash read
+  const latest = useRef({
+    mode,
+    settings,
+    updateSettings,
+    fetchStash,
+    getMarketListings,
+    deleteMarketListing,
+    openPanel,
+  });
+  latest.current = { mode, settings, updateSettings, fetchStash, getMarketListings, deleteMarketListing, openPanel };
 
   useEffect(() => {
     if (!enabled || !userId || !account) return;
@@ -87,6 +98,19 @@ const StashAutoDelistController: React.FC = () => {
       }
     };
 
+    /** "Never ask for {{name}}": the listing's base joins the picked items (and they take effect). */
+    const neverAsk = (listing: MarketListingEntry) => {
+      const exception = exceptionOf(listing.item);
+      if (!exception) return undefined;
+      return {
+        label: t('quickList:autoDelist.neverAsk', { name: exception.name }),
+        onClick: () => {
+          const { settings: current, updateSettings: save } = latest.current;
+          void save(rememberException(current, exception));
+        },
+      };
+    };
+
     const ask = (listing: MarketListingEntry, description: string, name: string) =>
       confirmToast({
         title: t('quickList:autoDelist.title'),
@@ -95,6 +119,7 @@ const StashAutoDelistController: React.FC = () => {
         cancelLabel: t('quickList:autoDelist.keep'),
         duration: PROMPT_MS,
         onConfirm: () => remove(listing, name),
+        link: neverAsk(listing),
       });
 
     const tick = async () => {
@@ -115,7 +140,11 @@ const StashAutoDelistController: React.FC = () => {
         // Fresh: a listing sold or removed since the last look is left alone
         const current = await ownListings();
         if (stopped) return;
-        const { removed, ambiguous } = detectStashRemovals(prev, snapshot, current);
+        // Exempt listings (older Quick List marks, picked items, stackable currency) are never asked about
+        const { removed, ambiguous } = withoutExempt(
+          detectStashRemovals(prev, snapshot, current),
+          exemptionsOf(latest.current.settings),
+        );
         const { mode: action, openPanel: open } = latest.current;
         for (const listing of removed) {
           const name = itemDisplayName(listing.item);
@@ -135,6 +164,7 @@ const StashAutoDelistController: React.FC = () => {
             cancelLabel: t('quickList:autoDelist.keep'),
             duration: PROMPT_MS,
             onConfirm: () => open('delist', { listings: group.listings }),
+            link: neverAsk(group.listings[0]),
           });
         }
       } catch (err) {

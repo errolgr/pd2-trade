@@ -4,22 +4,23 @@ import { z } from 'zod';
 import { Form, FormControl, FormField, FormMessage } from '@/components/ui/form';
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { BellOff, Check, Plus, UserX, Volume1, Volume2, VolumeX, X } from 'lucide-react';
+import { BellOff, Check, Plus, UserX, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useOptions } from '@/hooks/useOptions';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
 import { DUR, EASE_OUT, fadeIn, popIn } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { templatePlaceholders } from '@/lib/message-templates';
 import { DEFAULT_TOAST_POPUP_TYPES, isToastTypeOn, toggleToastType } from '@/lib/toast-types';
 import { SettingsGroup, SettingsRow, SettingsSkeleton } from '../settings-ui';
+import { VolumeControl } from '../volume-control';
 import { CHAT_TIMING_OPTIONS, optionLabel } from '../setting-options';
 import { ChatTemplatesEditor } from './chat-templates-editor';
 import { Trans, useTranslation } from '@/i18n';
+import { Tip } from '@/components/ui/tooltip';
 
 const TOAST_TYPES = [
   { id: 'whispers', labelKey: 'chat.toastTypes.whispers' },
@@ -430,7 +431,6 @@ export function ChatForm() {
             name="whisperNotificationVolume"
             render={({ field }) => {
               const volume = field.value ?? 70;
-              const VolumeIcon = volume === 0 ? VolumeX : volume < 50 ? Volume1 : Volume2;
               return (
                 <SettingsRow
                   disabled={isDisabled}
@@ -444,23 +444,9 @@ export function ChatForm() {
                     />
                   }
                   description={t('chat.sound.notificationVolume.description')}
-                  control={
-                    <div className="flex w-[240px] items-center gap-3">
-                      <VolumeIcon aria-hidden
-                        className="size-4 shrink-0 text-muted-foreground" />
-                      <FormControl>
-                        <Slider
-                          min={0}
-                          max={100}
-                          step={1}
-                          value={[volume]}
-                          onValueChange={(value) => field.onChange(value[0])}
-                          disabled={isDisabled}
-                          className="flex-1"
-                        />
-                      </FormControl>
-                    </div>
-                  }
+                  control={<VolumeControl value={volume}
+                    onChange={field.onChange}
+                    disabled={isDisabled} />}
                 >
                   <FormMessage />
                 </SettingsRow>
@@ -585,15 +571,16 @@ function PlaceholderHint({
       <span>{intro}</span>
       <span className="flex flex-wrap gap-1.5">
         {tokens.map((token) => (
-          <button
-            key={token}
-            type="button"
-            title={t('chat.templates.insertToken', { token })}
-            onClick={() => onInsert(token)}
-            className="rounded-sm border border-border/70 bg-muted/60 px-1.5 py-0.5 font-mono text-[11px] text-foreground/80 outline-none transition-[color,background-color,border-color,transform] duration-(--dur-fast) ease-out hover:border-primary/60 hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-95"
-          >
-            {token}
-          </button>
+          <Tip key={token}
+            label={t('chat.templates.insertToken', { token })}>
+            <button
+              type="button"
+              onClick={() => onInsert(token)}
+              className="rounded-sm border border-border/70 bg-muted/60 px-1.5 py-0.5 font-mono text-[11px] text-foreground/80 outline-none transition-[color,background-color,border-color,transform] duration-(--dur-fast) ease-out hover:border-primary/60 hover:bg-primary/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-95"
+            >
+              {token}
+            </button>
+          </Tip>
         ))}
       </span>
       {asks.length > 0 && (

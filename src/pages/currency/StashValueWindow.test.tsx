@@ -30,6 +30,8 @@ vi.mock('@/hooks/useSignIn', () => ({ useSignIn: vi.fn() }));
 vi.mock('@/lib/networth-api', async (importOriginal) => ({
   ...(await importOriginal<typeof NetWorthApi>()),
   getPoints: vi.fn(),
+  // PublicProfileToggle loads this on mount; the toggle stays hidden as when signed out of the leaderboard
+  getProfileSettings: vi.fn(async () => null),
 }));
 vi.mock('../price-check/hooks/useEconomyData', () => ({
   useEconomyData: () => ({

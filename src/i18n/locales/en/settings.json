@@ -18,6 +18,30 @@
       "label": "Window transparency: <num>{{value}}%</num>",
       "description": "See the game through window backgrounds. 0% is fully opaque."
     },
+    "windows": {
+      "group": "Windows & focus",
+      "keyboardFocus": {
+        "label": "Keyboard focus",
+        "description": "When a window takes the keyboard from the game. While a window has it, your keys don't reach the game and the game may go quiet.",
+        "options": {
+          "typing": "When typing in a field",
+          "click": "When clicked",
+          "open": "When it opens"
+        }
+      },
+      "closeOnClickAway": {
+        "label": "Close windows when clicking away",
+        "description": "Price check, chat, market, builds and similar windows close when you click outside them or switch to another app. Off: they stay open until you close them."
+      },
+      "outsideGame": {
+        "label": "Show windows outside the game",
+        "description": "Windows stay on screen while Diablo II isn't in front or isn't running. The chat button, net worth ticker and zone timer still show only in the game."
+      },
+      "hotkeysOutsideGame": {
+        "label": "Hotkeys work outside the game",
+        "description": "Open windows with their hotkeys from any app; those key combinations then no longer reach other apps. Hotkeys that copy the item under the cursor (price check, list, delist, try on) still work only in the game. Needs Show windows outside the game."
+      }
+    },
     "zoneTimer": {
       "enabled": {
         "label": "Corrupted zone timer",
@@ -149,7 +173,7 @@
   "nav": {
     "general": "General",
     "account": "Account",
-    "chat": "Chat",
+    "chat": "Chat & notifications",
     "interface": "Interface",
     "priceCheck": "Price Check",
     "netWorth": "Net Worth",
@@ -278,6 +302,15 @@
         "description": "Could not auto-detect Diablo II directory. Please enter it manually."
       },
       "autoDetect": "Auto-Detect",
+      "browse": "Browse…",
+      "clear": "Clear (auto-detect)",
+      "check": {
+        "valid": "Diablo II installation found.",
+        "missing": "This folder does not exist.",
+        "notInstall": "No Diablo II installation here: pick the folder that contains the ProjectD2 folder.",
+        "winePrefix": "This is a Wine prefix. Diablo II is installed in {{path}}",
+        "useInstall": "Use this folder"
+      },
       "label": "Diablo II Directory"
     },
     "game": {
@@ -517,8 +550,8 @@
       "description": "Color theme for every overlay window. Applies instantly."
     },
     "chat": {
-      "title": "Chat",
-      "description": "Configure chat and whisper notifications, and your message templates."
+      "title": "Chat & notifications",
+      "description": "Configure chat and whisper notifications, and your message templates. Discord DMs from the PD2 Trader bot."
     },
     "general": {
       "title": "General",
@@ -563,6 +596,24 @@
           "off": "Do nothing",
           "ask": "Ask me",
           "auto": "Delist it"
+        },
+        "exceptions": {
+          "label": "Never delist these",
+          "description": "Listings of these items are never delisted or asked about. \"Never ask for…\" on the prompt adds one.",
+          "add": "Add",
+          "search": "Search item bases…",
+          "empty": "No items yet.",
+          "noMatch": "No item base matches",
+          "remove": "Remove {{name}}",
+          "stackableNote": "Stackable currency: tokens, pboxes, keys, essences."
+        },
+        "exceptionMode": {
+          "label": "Never delist",
+          "options": {
+            "none": "Nothing (default)",
+            "stackable": "Stackable currency and items I pick",
+            "selected": "Only items I pick"
+          }
         }
       },
       "view": {
@@ -622,6 +673,10 @@
       "sellerCard": {
         "label": "Seller card",
         "description": "Show the seller's status and other listings in a listing's details."
+      },
+      "autoSearch": {
+        "label": "Auto search",
+        "description": "Search as you change the market filters. Off: filter changes wait until you press Search (Ctrl+Enter). Also the lightning bolt beside Clear in the filters."
       }
     },
     "alerts": {
@@ -640,6 +695,10 @@
         "label": "Market Alert Volume: <num>{{value}}%</num>",
         "description": "Volume of the market alert sound (0-100%).",
         "ariaLabel": "Market alert volume"
+      },
+      "wtbPrompt": {
+        "label": "Offer a Buy Request After Watch",
+        "description": "When you start watching a search, offer to also post a buy request for it."
       }
     }
   },

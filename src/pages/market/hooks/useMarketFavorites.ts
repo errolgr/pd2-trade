@@ -1,115 +1,111 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { showToast } from '@/overlay';
+import { useCallback, useEffect, useState } from 'react';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import type { MarketApi, MarketFavorite } from '../lib/types';
+import { lookupListing } from '../alerts/listing-lookup';
+import { getMarketPrefs, loadMarketPrefs, marketStoreActions, useMarketStore } from '../store/useMarketStore';
+import type { MarketApi, SavedFavorite } from '../lib/types';
 import { t } from '@/i18n';
 
-/** The site pages favorites; the overlay reads up to this many (plenty for a personal watch list). */
-const FAVORITES_PAGE = 50;
-const FAVORITES_MAX = 500;
+/** Listings asked of PD2 per `_id[$in]` read. */
+const REFRESH_CHUNK = 50;
 
 export type FavoritesStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 export interface MarketFavorites {
-  favorites: MarketFavorite[];
+  /** Newest first, as kept in market-prefs.json. */
+  favorites: SavedFavorite[];
+  /** The last refresh's state; 'idle' without an api. */
   status: FavoritesStatus;
   error: string | null;
-  reload: () => Promise<void>;
-  /** Optimistic add/remove of a site favorite. */
-  toggle: (listing: MarketListingEntry) => Promise<void>;
+  /** Refreshes again (the tab's Refresh). */
+  reload: () => void;
+  /** Favorites or unfavorites a listing (saved on this PC right away). */
+  toggle: (listing: MarketListingEntry) => void;
+}
+
+type FavoriteUpdates = Map<string, Pick<SavedFavorite, 'listing'> | Pick<SavedFavorite, 'ended'>>;
+
+/**
+ * PD2's current copy of each live favorite and, for the ones PD2 no longer lists, how they ended (pd2trader.com's
+ * archive; not known there yet: asked again next time). An error when PD2 refused the read (401: the auth flow takes
+ * over) or failed.
+ */
+async function refreshFavorites(api: MarketApi): Promise<{ updates: FavoriteUpdates } | { error: string }> {
+  try {
+    await loadMarketPrefs();
+    const live = getMarketPrefs()
+      .favorites.filter((f) => !f.ended)
+      .map((f) => f.listingId);
+    const updates: FavoriteUpdates = new Map();
+    const notLive: string[] = [];
+    for (let from = 0; from < live.length; from += REFRESH_CHUNK) {
+      const chunk = live.slice(from, from + REFRESH_CHUNK);
+      const page = await api.getMarketListings({
+        _id: { $in: chunk },
+        $limit: chunk.length,
+        $resolve: { user: { in_game_account: true } },
+      });
+      if (!page) return { error: t('market:favorites.loadFailed') };
+      const found = new Map(page.data.map((listing) => [listing._id, listing]));
+      for (const listingId of chunk) {
+        const listing = found.get(listingId);
+        if (listing) updates.set(listingId, { listing });
+        else notLive.push(listingId);
+      }
+    }
+    const ended = await Promise.all(
+      notLive.map((listingId) =>
+        lookupListing(listingId).then(
+          (detail) => [listingId, detail?.status] as const,
+          () => [listingId, undefined] as const,
+        ),
+      ),
+    );
+    for (const [listingId, endedAs] of ended) {
+      if (endedAs && endedAs !== 'active') updates.set(listingId, { ended: endedAs });
+    }
+    return { updates };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message.split('\n')[0] : t('market:favorites.loadFailed') };
+  }
 }
 
 /**
- * The signed-in user's site favorites (synced with projectdiablo2.com) and an optimistic toggle: the heart
- * flips at once and flips back with a toast when the API refuses.
+ * The favorites kept on this PC (market-prefs.json; PD2's favorites API refuses PD2 Trader's token), refreshed on
+ * mount, on a new `api` and on `reload`. A failed refresh keeps the saved copies. `api` null: no refresh (signed
+ * out).
  */
-export function useMarketFavorites(api: MarketApi | null, signedIn: boolean): MarketFavorites {
-  const [favorites, setFavorites] = useState<MarketFavorite[]>([]);
-  const [status, setStatus] = useState<FavoritesStatus>('idle');
-  const [error, setError] = useState<string | null>(null);
-  /** Listing ids with a toggle in flight (a second click waits). */
-  const pending = useRef(new Set<string>());
-  /** Bumped per load (and on sign-out / account switch): an older load's results are dropped. */
-  const loadId = useRef(0);
+export function useMarketFavorites(api: MarketApi | null): MarketFavorites {
+  const { favorites } = useMarketStore();
+  /** Bumped by `reload`: a new refresh. */
+  const [generation, setGeneration] = useState(0);
+  /** The last refresh that finished, for the api and generation it ran with. */
+  const [settled, setSettled] = useState<{
+    api: MarketApi;
+    generation: number;
+    error: string | null;
+  } | null>(null);
 
-  const load = useCallback(async () => {
-    const id = ++loadId.current;
-    if (!api || !signedIn) {
-      setFavorites([]);
-      setStatus('idle');
-      return;
-    }
-    setStatus('loading');
-    setError(null);
-    try {
-      const all: MarketFavorite[] = [];
-      for (let skip = 0; skip < FAVORITES_MAX; skip += FAVORITES_PAGE) {
-        const page = await api.getFavorites({ limit: FAVORITES_PAGE, skip });
-        if (id !== loadId.current) return;
-        if (!page) break; // 401: the auth flow takes over
-        all.push(...page.data);
-        if (page.data.length < FAVORITES_PAGE || all.length >= page.total) break;
-      }
-      setFavorites(all);
-      setStatus('ready');
-    } catch (e) {
-      if (id !== loadId.current) return;
-      setError(e instanceof Error ? e.message.split('\n')[0] : t('market:favorites.loadFailed'));
-      setStatus('error');
-    }
-  }, [api, signedIn]);
-
-  // A new api (account) or sign-in state re-runs load, which supersedes any load still in flight
+  // A new api (account, sign-in) or reload refreshes; a refresh still in flight is dropped
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (!api) return;
+    let cancelled = false;
+    void refreshFavorites(api).then((result) => {
+      if (cancelled) return;
+      if ('updates' in result) marketStoreActions.updateFavorites(result.updates);
+      setSettled({ api, generation, error: 'error' in result ? result.error : null });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [api, generation]);
 
-  const toggle = useCallback(
-    async (listing: MarketListingEntry) => {
-      if (!api || !signedIn || pending.current.has(listing._id)) return;
-      pending.current.add(listing._id);
-      const existing = favorites.find((f) => f.listing_id === listing._id);
-      try {
-        if (existing) {
-          setFavorites((list) => list.filter((f) => f._id !== existing._id));
-          try {
-            await api.removeFavorite(existing._id);
-          } catch (e) {
-            setFavorites((list) => [existing, ...list]);
-            throw e;
-          }
-        } else {
-          const optimistic: MarketFavorite = {
-            _id: `pending:${listing._id}`,
-            listing_id: listing._id,
-            seller_id: listing.user_id,
-            user_id: '',
-            created_at: new Date().toISOString(),
-            listing,
-          };
-          setFavorites((list) => [optimistic, ...list]);
-          try {
-            const created = await api.addFavorite(listing._id, listing.user_id);
-            setFavorites((list) =>
-              list.map((f) => (f._id === optimistic._id ? { ...optimistic, ...(created ?? {}), listing } : f)),
-            );
-          } catch (e) {
-            setFavorites((list) => list.filter((f) => f._id !== optimistic._id));
-            throw e;
-          }
-        }
-      } catch {
-        showToast({
-          title: existing ? t('market:favorites.notRemoved') : t('market:favorites.notSaved'),
-          description: t('market:favorites.refused'),
-          variant: 'error',
-        });
-      } finally {
-        pending.current.delete(listing._id);
-      }
-    },
-    [api, signedIn, favorites],
-  );
-
-  return { favorites, status, error, reload: load, toggle };
+  const reload = useCallback(() => setGeneration((g) => g + 1), []);
+  const current = !!api && settled?.api === api && settled.generation === generation ? settled : null;
+  return {
+    favorites,
+    status: !api ? 'idle' : !current ? 'loading' : current.error ? 'error' : 'ready',
+    error: current?.error ?? null,
+    reload,
+    toggle: marketStoreActions.toggleFavorite,
+  };
 }

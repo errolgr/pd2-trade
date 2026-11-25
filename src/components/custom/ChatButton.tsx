@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { popIn, scaleIn } from '@/lib/motion';
 import { useTranslation } from '@/i18n';
 import { CARET_HEIGHT, type ChatDockItem } from '@/pages/chat/chat-dock';
+import { Tip } from '@/components/ui/tooltip';
 
 interface ChatButtonProps {
   /** Tab size (CSS px); everything inside scales with its width. */
@@ -140,23 +141,24 @@ const MenuRow: React.FC<MenuRowProps> = ({ entry, favorite, onPick, onToggleFavo
       className="group/row relative flex items-center rounded-md bg-surface hover:bg-accent hover:text-accent-foreground has-[:focus-visible]:bg-accent"
     >
       {reorder && (
-        <button
-          type="button"
-          aria-label={t('chatButton.move', { label })}
-          title={t('chatButton.moveHint')}
-          onPointerDown={(e) => {
-            e.preventDefault();
-            controls.start(e);
-          }}
-          onKeyDown={(e) => {
-            if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
-            e.preventDefault();
-            reorder.onMove(e.key === 'ArrowUp' ? -1 : 1);
-          }}
-          className="ml-0.5 inline-flex h-6 w-4 shrink-0 cursor-grab touch-none items-center justify-center rounded text-muted-foreground/40 outline-none group-hover/row:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/60 active:cursor-grabbing"
-        >
-          <GripVertical className="size-3.5" />
-        </button>
+        <Tip label={t('chatButton.moveHint')}>
+          <button
+            type="button"
+            aria-label={t('chatButton.move', { label })}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              controls.start(e);
+            }}
+            onKeyDown={(e) => {
+              if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+              e.preventDefault();
+              reorder.onMove(e.key === 'ArrowUp' ? -1 : 1);
+            }}
+            className="ml-0.5 inline-flex h-6 w-4 shrink-0 cursor-grab touch-none items-center justify-center rounded text-muted-foreground/40 outline-none group-hover/row:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/60 active:cursor-grabbing"
+          >
+            <GripVertical className="size-3.5" />
+          </button>
+        </Tip>
       )}
       <button
         type="button"
@@ -182,20 +184,21 @@ const MenuRow: React.FC<MenuRowProps> = ({ entry, favorite, onPick, onToggleFavo
       </button>
       {onToggleFavorite && (
         // Stays open: several windows can be starred in one go
-        <button
-          type="button"
-          role="menuitemcheckbox"
-          aria-checked={favorite}
-          aria-label={t('chatButton.favorite', { label })}
-          title={favorite ? t('chatButton.removeFavorite') : t('chatButton.addFavorite')}
-          onClick={onToggleFavorite}
-          className={cn(
-            'mr-1 inline-flex size-6 shrink-0 items-center justify-center rounded outline-none transition-colors duration-(--dur-fast) hover:bg-background/60 focus-visible:ring-2 focus-visible:ring-ring/60',
-            favorite ? 'text-warning' : 'text-muted-foreground/40 group-hover/row:text-muted-foreground',
-          )}
-        >
-          <Star className={cn('size-3.5', favorite && 'fill-current')} />
-        </button>
+        <Tip label={favorite ? t('chatButton.removeFavorite') : t('chatButton.addFavorite')}>
+          <button
+            type="button"
+            role="menuitemcheckbox"
+            aria-checked={favorite}
+            aria-label={t('chatButton.favorite', { label })}
+            onClick={onToggleFavorite}
+            className={cn(
+              'mr-1 inline-flex size-6 shrink-0 items-center justify-center rounded outline-none transition-colors duration-(--dur-fast) hover:bg-background/60 focus-visible:ring-2 focus-visible:ring-ring/60',
+              favorite ? 'text-warning' : 'text-muted-foreground/40 group-hover/row:text-muted-foreground',
+            )}
+          >
+            <Star className={cn('size-3.5', favorite && 'fill-current')} />
+          </button>
+        </Tip>
       )}
     </Reorder.Item>
   );
@@ -449,73 +452,76 @@ export const ChatButton: React.FC<ChatButtonProps> = ({
         </AnimatePresence>
 
         <div
-          title={onDrag ? t('chatButton.dragToMove') : undefined}
           className="flex h-full w-full touch-none flex-col overflow-hidden rounded-l-xl border border-r-0 border-border bg-surface shadow-panel backdrop-blur-md"
           onPointerDown={onTabPointerDown}
           onClickCapture={onTabClickCapture}
         >
           {onTab.map(({ id, label, tabLabel, icon: Icon, onClick, badge: count }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={onClick}
-              className={segment}
-              aria-label={tabLabel ?? label}
-              title={label}
-            >
-              <Icon style={icon} />
-              <AnimatePresence>
-                {count && count.count > 0 && (
-                  <CountBadge
-                    key={id}
-                    count={count.count}
-                    label={count.label}
-                    className={count.className}
-                    style={badge}
-                  />
-                )}
-              </AnimatePresence>
-            </button>
+            <Tip key={id}
+              label={onDrag ? `${label}\n${t('chatButton.dragToMove')}` : label}
+              side="left">
+              <button type="button"
+                onClick={onClick}
+                className={segment}
+                aria-label={tabLabel ?? label}>
+                <Icon style={icon} />
+                <AnimatePresence>
+                  {count && count.count > 0 && (
+                    <CountBadge
+                      key={id}
+                      count={count.count}
+                      label={count.label}
+                      className={count.className}
+                      style={badge}
+                    />
+                  )}
+                </AnimatePresence>
+              </button>
+            </Tip>
           ))}
           {missedCount > 0 && (
-            <button
-              type="button"
-              onClick={onNotificationsClick}
-              className={cn(segment, missed?.urgent ? 'text-warning' : 'text-primary')}
-              aria-label={t('chatButton.missedNotifications', { count: missedCount })}
-              title={missed?.latest ?? t('chatButton.menu.notifications')}
-            >
-              <History style={icon} />
-              <AnimatePresence>
-                <CountBadge
-                  key="missed"
-                  count={missedCount}
-                  label={t('chatButton.missedNotifications', { count: missedCount })}
-                  className={missedBadge}
-                  style={badge}
-                />
-              </AnimatePresence>
-            </button>
+            <Tip label={missed?.latest ?? t('chatButton.menu.notifications')}
+              side="left">
+              <button
+                type="button"
+                onClick={onNotificationsClick}
+                className={cn(segment, missed?.urgent ? 'text-warning' : 'text-primary')}
+                aria-label={t('chatButton.missedNotifications', { count: missedCount })}
+              >
+                <History style={icon} />
+                <AnimatePresence>
+                  <CountBadge
+                    key="missed"
+                    count={missedCount}
+                    label={t('chatButton.missedNotifications', { count: missedCount })}
+                    className={missedBadge}
+                    style={badge}
+                  />
+                </AnimatePresence>
+              </button>
+            </Tip>
           )}
           {onTab.length + (missedCount > 0 ? 1 : 0) > 0 && (
             <div aria-hidden
               className="mx-auto h-px w-1/2 shrink-0 bg-border" />
           )}
-          <button
-            type="button"
-            onClick={() => setMenuOpen((open) => !open)}
-            style={{ flexGrow: CARET_HEIGHT }}
-            className={cn(segment, 'text-muted-foreground', menuOpen && 'bg-accent text-accent-foreground')}
-            aria-label={t('chatButton.more')}
-            aria-haspopup="menu"
-            aria-expanded={menuOpen}
-            title={t('chatButton.more')}
-          >
-            <ChevronUp
-              style={{ width: icon.width * 0.85, height: icon.height * 0.85 }}
-              className={cn('transition-transform duration-(--dur-med)', menuOpen !== menuBelow && 'rotate-180')}
-            />
-          </button>
+          <Tip label={t('chatButton.more')}
+            side="left">
+            <button
+              type="button"
+              onClick={() => setMenuOpen((open) => !open)}
+              style={{ flexGrow: CARET_HEIGHT }}
+              className={cn(segment, 'text-muted-foreground', menuOpen && 'bg-accent text-accent-foreground')}
+              aria-label={t('chatButton.more')}
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+            >
+              <ChevronUp
+                style={{ width: icon.width * 0.85, height: icon.height * 0.85 }}
+                className={cn('transition-transform duration-(--dur-med)', menuOpen !== menuBelow && 'rotate-180')}
+              />
+            </button>
+          </Tip>
         </div>
 
         <AnimatePresence>

@@ -26,7 +26,9 @@
     "apply": "应用",
     "signIn": "登录",
     "signOut": "退出登录",
-    "tryAgain": "重试"
+    "tryAgain": "重试",
+    "test": "试听",
+    "testSoundTitle": "以此音量播放提示音"
   },
   "status": {
     "loading": "加载中…",

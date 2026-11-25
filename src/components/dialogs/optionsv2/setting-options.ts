@@ -76,6 +76,12 @@ export const TIMER_LAYOUT_OPTIONS: SettingOption[] = [
   { value: 'vertical', labelKey: 'settings:interface.timerLayoutOptions.vertical' },
 ];
 
+export const WINDOW_KEYBOARD_FOCUS_VALUES = ['typing', 'click', 'open'] as const;
+export const WINDOW_KEYBOARD_FOCUS_OPTIONS: SettingOption[] = keyed(
+  WINDOW_KEYBOARD_FOCUS_VALUES,
+  'settings:interface.windows.keyboardFocus.options',
+);
+
 // Chat
 export const CHAT_TIMING_OPTIONS: SettingOption[] = [
   { value: 'in-game', labelKey: 'settings:chat.timing.options.inGame' },
@@ -120,6 +126,7 @@ export const AUTO_SNAPSHOT_OPTIONS: SettingOption[] = [
 
 // Market
 export const AUTO_DELIST_VALUES = ['off', 'ask', 'auto'] as const;
+export const DELIST_EXCEPTION_VALUES = ['none', 'stackable', 'selected'] as const;
 export const LISTINGS_VIEW_VALUES = ['cards', 'rows'] as const;
 export const SORT_VALUES = ['newest', 'cheapest', 'priciest'] as const;
 export const SELLER_VALUES = ['all', 'online', 'in-game'] as const;
@@ -133,6 +140,10 @@ export const AUTO_DELIST_OPTIONS: SettingOption[] = keyed(
   AUTO_DELIST_VALUES,
   'settings:market.listings.autoDelist.options',
 );
+export const DELIST_EXCEPTION_OPTIONS: SettingOption[] = keyed(
+  DELIST_EXCEPTION_VALUES,
+  'settings:market.listings.autoDelist.exceptionMode.options',
+);
 export const LISTINGS_VIEW_OPTIONS: SettingOption[] = keyed(
   LISTINGS_VIEW_VALUES,
   'settings:market.listings.view.options',
@@ -142,8 +153,15 @@ export const SELLER_OPTIONS: SettingOption[] = keyed(SELLER_VALUES, 'settings:ma
 export const BUYOUT_OPTIONS: SettingOption[] = keyed(BUYOUT_VALUES, 'settings:market.browser.buyout.options');
 export const PAGE_SIZE_OPTIONS: SettingOption[] = PAGE_SIZES.map((n) => ({ value: String(n), label: String(n) }));
 
-export const ageDayOptions = (current: number): SettingOption[] =>
-  withCurrent(AGE_DAYS, current).map((n) => ({ value: String(n), labelKey: 'market:filters.days', count: n }));
+/** Default listing age choices: Any (0, no window), then days. */
+export const ageDayOptions = (current: number): SettingOption[] => [
+  { value: '0', labelKey: 'market:filters.any' },
+  ...(current > 0 ? withCurrent(AGE_DAYS, current) : AGE_DAYS).map((n) => ({
+    value: String(n),
+    labelKey: 'market:filters.days',
+    count: n,
+  })),
+];
 
 export const alertSecondsOptions = (current: number): SettingOption[] =>
   withCurrent(ALERT_SECONDS, current).map((n) => ({

@@ -4,9 +4,21 @@ import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 import { cn } from '@/lib/utils';
 import { usePanelPortalContainer } from '@/overlay/portal';
 
-const TooltipProvider = TooltipPrimitive.Provider;
+/** Set by TooltipProvider so a Tooltip outside any provider (isolated renders, tests) can supply its own. */
+const ProviderPresent = React.createContext(false);
 
-const Tooltip = TooltipPrimitive.Root;
+function TooltipProvider(props: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
+  return (
+    <ProviderPresent.Provider value>
+      <TooltipPrimitive.Provider {...props} />
+    </ProviderPresent.Provider>
+  );
+}
+
+function Tooltip(props: React.ComponentProps<typeof TooltipPrimitive.Root>) {
+  const root = <TooltipPrimitive.Root {...props} />;
+  return React.useContext(ProviderPresent) ? root : <TooltipPrimitive.Provider>{root}</TooltipPrimitive.Provider>;
+}
 
 const TooltipTrigger = TooltipPrimitive.Trigger;
 
@@ -28,4 +40,38 @@ const TooltipContent = React.forwardRef<
 ));
 TooltipContent.displayName = TooltipPrimitive.Content.displayName;
 
-export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider };
+/**
+ * The overlay's hover hint for one trigger element; use it instead of the native `title` attribute (the WebView
+ * draws that as a system tooltip that can land behind or outside the overlay). The child must take a ref and spread
+ * props onto a DOM element (a DOM element or a forwardRef component). No `label` keeps the child and shows nothing.
+ * A disabled `<button>` gets no pointer events: use aria-disabled, or wrap it in a `<span tabIndex={0}>`.
+ */
+function Tip({
+  label,
+  side = 'top',
+  align,
+  className,
+  children,
+}: {
+  label: React.ReactNode;
+  side?: 'top' | 'bottom' | 'left' | 'right';
+  align?: 'start' | 'center' | 'end';
+  className?: string;
+  children: React.ReactElement;
+}) {
+  const hasLabel = label != null && label !== false && label !== '';
+  return (
+    <Tooltip open={hasLabel ? undefined : false}>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      {hasLabel && (
+        <TooltipContent side={side}
+          align={align}
+          className={cn('max-w-64 whitespace-pre-line', className)}>
+          {label}
+        </TooltipContent>
+      )}
+    </Tooltip>
+  );
+}
+
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider, Tip };

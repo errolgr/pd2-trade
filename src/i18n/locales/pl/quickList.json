@@ -186,7 +186,8 @@
     "pick": "Przedmioty takie jak {{name}} opuściły skrzynię. Wybierz ogłoszenia do usunięcia.",
     "delist": "Usuń",
     "keep": "Zostaw",
-    "choose": "Wybierz"
+    "choose": "Wybierz",
+    "neverAsk": "Nigdy nie pytaj o {{name}}"
   },
   "myListings": {
     "searchPlaceholder": "Szukaj wśród {{count}} ogłoszeń…",

@@ -12,7 +12,7 @@ import { applyUiScale, UI_SCALE_DEFAULT } from '@/lib/ui-scale';
 import { DEFAULT_PRICE_WINDOW_HOURS, type PriceWindowHours } from '@/lib/price-window';
 import { DEFAULT_CHAT_TEMPLATES, type ChatTemplate } from '@/lib/message-templates';
 import { DEFAULT_TOAST_POPUP_TYPES } from '@/lib/toast-types';
-import { showToast } from '@/overlay';
+import { showToast, type OverlayBehavior } from '@/overlay';
 import * as Sentry from '@sentry/react';
 import type { BuildsMode } from '@/lib/builds-api';
 import { applyLanguage, type LanguageSetting, t } from '@/i18n';
@@ -20,6 +20,7 @@ import { DEFAULT_LISTINGS_SORT, type ListingsSort } from '@/pages/quick-list/lis
 import type { ChatDockItem } from '@/pages/chat/chat-dock';
 import type { PaletteRef } from '@/pages/palette/lib/types';
 import type { SimGoal, SimLastExport } from '@/lib/sim-preferences';
+import type { DelistException } from '@/pages/delist/delist-exemptions';
 
 /** A tracked character the builds panel remembers (followed / recently viewed). */
 export interface BuildCharacterRef {
@@ -38,6 +39,12 @@ export type NetWorthTickerAnchor =
 
 /** Settings → Market: what happens when a listed item leaves the stash. */
 export type StashAutoDelistMode = 'off' | 'ask' | 'auto';
+
+/**
+ * Settings → Market: which item bases the auto-delist leaves alone: none, stackable currency plus the picked items,
+ * or only the picked items (`delistExceptions`).
+ */
+export type DelistExceptionMode = 'none' | 'stackable' | 'selected';
 
 /** Settings → Market: a fresh market search's order (newest bump, cheapest first, priciest first). */
 export type MarketDefaultSort = 'newest' | 'cheapest' | 'priciest';
@@ -121,16 +128,22 @@ export interface ISettings {
   corruptedZoneFollowed?: string[]; // CORRUPTED_ZONES names for the 'followed' timer and toasts
   // Settings → Market (src/components/dialogs/optionsv2/market)
   stashAutoDelist?: StashAutoDelistMode; // a listed item leaves the stash: leave it, ask to delist, or delist it
+  delistExceptionMode?: DelistExceptionMode; // which item bases the auto-delist leaves alone
+  delistExceptions?: DelistException[]; // the picked items: bases the auto-delist leaves alone (Settings → Market chips)
+  delistExemptListings?: string[]; // listing ids the auto-delist leaves alone (older versions' Quick List checkbox), newest last
   marketDefaultSort?: MarketDefaultSort; // a fresh / reset market search's order
   marketDefaultSeller?: 'all' | 'online' | 'in-game'; // a fresh search's seller filter: anyone, online on the site, in game
   marketDefaultHasBuyout?: 'any' | 'yes' | 'no'; // a fresh search's buyout filter
-  marketDefaultMaxAgeDays?: number; // a fresh live search's listing age window (archive keeps 14 days)
+  marketDefaultListedWithinDays?: number; // a fresh live search's listing age window in days; 0 = every listing (the archive never has one)
   marketPageSize?: 25 | 50 | 100; // market results per page
   marketWhisperTemplate?: string; // "Copy whisper" body; placeholders {item} {price} {seller} {account}; '' = default
   marketShowDealBadges?: boolean; // deal badge (price vs market) on listings
   marketShowPriceHistory?: boolean; // price history chart in the listing detail
   marketShowSellerCard?: boolean; // seller card (presence, other listings) in the listing detail
   marketAlertToastSeconds?: number; // how long a Watch / saved-search alert popup stays up
+  marketWtbPromptEnabled?: boolean; // after Watch starts, offer to post a buy request for the same search ("Don't ask again" = false)
+  wtbBuyersHintSeen?: boolean; // the buyers chip's one-time "what's this" hint was dismissed (or the chip opened)
+  wtbResponsesSeenAt?: string; // ISO time of the newest buy request response told about (later ones were missed)
   myListingsView?: 'cards' | 'rows'; // My Listings: big cards or compact rows
   myListingsSort?: ListingsSort; // My Listings order (both views)
   hotkeyModifierSnapshot?: 'ctrl' | 'alt';
@@ -146,6 +159,11 @@ export interface ISettings {
   windowTransparency?: number; // 0-WINDOW_TRANSPARENCY_MAX (%) from src/lib/themes.ts; 0 = opaque
   uiScale?: number; // overlay zoom (%), see src/lib/ui-scale.ts; 100 = unscaled
   language?: LanguageSetting; // UI language (src/i18n); 'system' follows the OS language
+  // Settings → Interface → Windows & focus (src/lib/window-behavior.ts)
+  windowKeyboardFocus?: OverlayBehavior['keyboardFocus']; // when a window takes the keyboard from the game
+  windowsCloseOnClickAway?: boolean; // windows close on a click outside them or on switching apps
+  windowsOutsideGame?: boolean; // windows stay on screen while Diablo II isn't in front (or running)
+  hotkeysOutsideGame?: boolean; // hotkeys that don't copy an item also work outside the game (with windowsOutsideGame)
   hotkeyModifierPalette?: 'ctrl' | 'alt';
   hotkeyKeyPalette?: string; // command palette; '' = unbound
   palettePins?: PaletteRef[]; // command palette: pinned results shown on the empty state, in order
@@ -221,16 +239,20 @@ const DEFAULT_SETTINGS: ISettings = {
   corruptedZoneAlertLeadMinutes: 0,
   corruptedZoneFollowed: [],
   stashAutoDelist: 'ask',
+  delistExceptionMode: 'none',
+  delistExceptions: [],
+  delistExemptListings: [],
   marketDefaultSort: 'newest',
   marketDefaultSeller: 'all',
   marketDefaultHasBuyout: 'any',
-  marketDefaultMaxAgeDays: 3,
+  marketDefaultListedWithinDays: 0,
   marketPageSize: 25,
   marketWhisperTemplate: '',
   marketShowDealBadges: true,
   marketShowPriceHistory: true,
   marketShowSellerCard: true,
   marketAlertToastSeconds: 8,
+  marketWtbPromptEnabled: true,
   myListingsView: 'cards',
   myListingsSort: DEFAULT_LISTINGS_SORT,
   hotkeyModifierSnapshot: 'ctrl',
@@ -246,6 +268,10 @@ const DEFAULT_SETTINGS: ISettings = {
   windowTransparency: 0,
   uiScale: UI_SCALE_DEFAULT,
   language: 'system',
+  windowKeyboardFocus: 'typing',
+  windowsCloseOnClickAway: true,
+  windowsOutsideGame: false,
+  hotkeysOutsideGame: false,
   hotkeyModifierPalette: 'ctrl',
   hotkeyKeyPalette: 'space',
   palettePins: [

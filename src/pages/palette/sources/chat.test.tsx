@@ -15,6 +15,7 @@ function thread(id: string, name: string, over: Partial<InboxThread> = {}): Inbo
     name,
     people: [],
     offers: [],
+    wtb: [],
     accounts: [],
     unread: 0,
     selling: false,
@@ -30,7 +31,16 @@ const THREADS = [
   thread('c1', 'Kebob'),
   thread('c2', 'Bob', { unread: 2, latest: { text: 'still selling?', at: 0, own: false, source: 'website' } }),
   thread('whisper:lumberjack', 'lumberjack', {
-    people: [{ key: 'lumberjack', playerName: 'lumberjack', characterName: 'BobTheHammerdin', messages: [], trades: [], readAt: 0 }],
+    people: [
+      {
+        key: 'lumberjack',
+        playerName: 'lumberjack',
+        characterName: 'BobTheHammerdin',
+        messages: [],
+        trades: [],
+        readAt: 0,
+      },
+    ],
   }),
   thread('c3', 'Sir Bobbington', { participant: { _id: 'u3', username: 'sirb', created_at: '' } }),
 ];
@@ -73,11 +83,19 @@ describe('resolveThreadRefs', () => {
       { ...chatRef(entries[1]) },
       { id: 'chat:gone', group: 'chat' as const, title: 'Gone', data: { threadId: 'gone' } },
       // A whisper thread that has since merged into a website conversation keeps its old id as an alias
-      { id: 'chat:whisper:lumberjack', group: 'chat' as const, title: 'lumberjack', data: { threadId: 'whisper:lumberjack' } },
+      {
+        id: 'chat:whisper:lumberjack',
+        group: 'chat' as const,
+        title: 'lumberjack',
+        data: { threadId: 'whisper:lumberjack' },
+      },
     ];
     const merged = chatThreadEntries([
       THREADS[1],
-      thread('c9', 'Lumber', { people: THREADS[2].people, participant: { _id: 'u9', username: 'Lumber', created_at: '' } }),
+      thread('c9', 'Lumber', {
+        people: THREADS[2].people,
+        participant: { _id: 'u9', username: 'Lumber', created_at: '' },
+      }),
     ]);
     expect(resolveThreadRefs(merged, refs).map((t) => t.id)).toEqual(['c2', 'c9']);
   });
@@ -107,7 +125,10 @@ describe('useChatSource', () => {
 
   it('resolves recents on the empty query, dropping those whose thread is gone', () => {
     act(() => publishChatThreads(THREADS));
-    const refs = [chatRef(entries[3]), { id: 'chat:gone', group: 'chat' as const, title: 'x', data: { threadId: 'gone' } }];
+    const refs = [
+      chatRef(entries[3]),
+      { id: 'chat:gone', group: 'chat' as const, title: 'x', data: { threadId: 'gone' } },
+    ];
     const { result } = renderHook(() => useChatSource(input({ refs })));
     expect(result.current.items.map((i) => i.ref.id)).toEqual(['chat:c3']);
   });

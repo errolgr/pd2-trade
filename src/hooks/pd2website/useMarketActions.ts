@@ -5,7 +5,7 @@ import { ISettings } from '../useOptions';
 import { AuthData } from '@/common/types/pd2-website/AuthResponse';
 import { MarketListingFindQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import { MarketListingEntry, MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import type { ListingPresence, MarketApi, MarketFavorite } from '@/pages/market/lib/types';
+import type { ListingPresence, MarketApi } from '@/pages/market/lib/types';
 import { fetch as tauriFetch } from '@/lib/browser-http';
 import { searchMarketListings } from '@/lib/market-search-api';
 import qs from 'qs';
@@ -25,9 +25,6 @@ interface UseMarketActionsReturn {
   updateMarketListing: (hash: string, update: Record<string, any>) => Promise<MarketListingEntry>;
   deleteMarketListing: (hash: string) => Promise<void>;
   bumpAllMarketListings: (userId: string) => Promise<void>;
-  getFavorites: MarketApi['getFavorites'];
-  addFavorite: MarketApi['addFavorite'];
-  removeFavorite: MarketApi['removeFavorite'];
   getListing: MarketApi['getListing'];
   createOffer: NonNullable<MarketApi['createOffer']>;
   /** The market browser's API surface, stable while the token is. */
@@ -232,70 +229,6 @@ export function useMarketActions({
     [settings, onAuthError],
   );
 
-  // The user's site favorites, newest first, each with its listing and seller (GET /market/favorite)
-  const getFavorites = useCallback(
-    async ({ limit = 50, skip = 0 }: { limit?: number; skip?: number } = {}): Promise<{
-      total: number;
-      data: MarketFavorite[];
-    }> => {
-      const query = { $limit: limit, $skip: skip, $sort: { updated_at: -1 }, $resolve: { listing: { user: true } } };
-      const url = buildUrlWithQuery('https://api.projectdiablo2.com/market/favorite', query);
-      const response = await tauriFetch(url, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${settings.pd2Token}`,
-        },
-      });
-      const page: { total: number; data: MarketFavorite[] } | null = await handleApiResponse(
-        response,
-        onAuthError,
-        query,
-      );
-      // A favorite whose listing came without an item stays (the star still toggles); its listing has no card
-      return (
-        page && {
-          ...page,
-          data: page.data.map((f) => (f.listing && !f.listing.item ? { ...f, listing: undefined } : f)),
-        }
-      );
-    },
-    [settings.pd2Token, onAuthError],
-  );
-
-  // Favorite a listing (POST /market/favorite)
-  const addFavorite = useCallback(
-    async (listingId: string, sellerId: string): Promise<MarketFavorite> => {
-      const body = { listing_id: listingId, seller_id: sellerId };
-      const response = await tauriFetch('https://api.projectdiablo2.com/market/favorite', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${settings.pd2Token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-      });
-      return await handleApiResponse(response, onAuthError, body);
-    },
-    [settings.pd2Token, onAuthError],
-  );
-
-  // Unfavorite (DELETE /market/favorite/:favoriteId)
-  const removeFavorite = useCallback(
-    async (favoriteId: string): Promise<void> => {
-      const response = await tauriFetch(
-        `https://api.projectdiablo2.com/market/favorite/${encodeURIComponent(favoriteId)}`,
-        {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${settings.pd2Token}`,
-          },
-        },
-      );
-      await handleApiResponse(response, onAuthError, { favoriteId });
-    },
-    [settings.pd2Token, onAuthError],
-  );
-
   // Make an offer, as the site's Offer form does (POST /market/offer)
   const createOffer = useCallback(
     async (listingId: string, offer: { price: string; hrPrice?: number }): Promise<unknown> => {
@@ -375,21 +308,9 @@ export function useMarketActions({
       getListingPresence,
       getMarketListings,
       getMarketListingsArchive,
-      getFavorites,
-      addFavorite,
-      removeFavorite,
       createOffer,
     }),
-    [
-      getListing,
-      getListingPresence,
-      getMarketListings,
-      getMarketListingsArchive,
-      getFavorites,
-      addFavorite,
-      removeFavorite,
-      createOffer,
-    ],
+    [getListing, getListingPresence, getMarketListings, getMarketListingsArchive, createOffer],
   );
 
   return {
@@ -400,9 +321,6 @@ export function useMarketActions({
     updateMarketListing,
     deleteMarketListing,
     bumpAllMarketListings,
-    getFavorites,
-    addFavorite,
-    removeFavorite,
     getListing,
     createOffer,
     marketApi,

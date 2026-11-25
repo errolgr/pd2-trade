@@ -5,6 +5,7 @@ import { getProfileSettings, ProfileSettings, updateProfileSettings } from '@/li
 import { BACKEND_URL } from '@/lib/pkce';
 import { openUrl } from '@/lib/browser-opener';
 import { cn } from '@/lib/utils';
+import { Tip } from '@/components/ui/tooltip';
 import { useTranslation } from '@/i18n';
 
 /**
@@ -57,27 +58,27 @@ export const PublicProfileToggle: React.FC<{ token: string }> = ({ token }) => {
 
   return (
     <div className="flex items-center gap-2 text-xs">
-      <label
-        className="flex min-w-0 cursor-pointer items-center gap-2"
-        title={profile.optedIn ? t('profile.publicTooltip') : t('profile.privateTooltip')}
-      >
-        <Switch
-          checked={profile.optedIn}
-          disabled={saving}
-          onCheckedChange={toggle}
-          aria-label={t('profile.publicProfile')}
-        />
-        <Icon className={cn('size-3.5 shrink-0', profile.optedIn ? 'text-primary' : 'text-muted-foreground')} />
-        <span className={profile.optedIn ? 'text-foreground' : 'text-muted-foreground'}>
-          {profile.optedIn ? t('profile.publicProfile') : t('profile.private')}
-        </span>
-      </label>
+      <Tip label={profile.optedIn ? t('profile.publicTooltip') : t('profile.privateTooltip')}>
+        <label className="flex min-w-0 cursor-pointer items-center gap-2">
+          <Switch
+            checked={profile.optedIn}
+            disabled={saving}
+            onCheckedChange={toggle}
+            aria-label={t('profile.publicProfile')}
+          />
+          <Icon className={cn('size-3.5 shrink-0', profile.optedIn ? 'text-primary' : 'text-muted-foreground')} />
+          <span className={profile.optedIn ? 'text-foreground' : 'text-muted-foreground'}>
+            {profile.optedIn ? t('profile.publicProfile') : t('profile.private')}
+          </span>
+        </label>
+      </Tip>
       {error && (
-        <span role="alert"
-          className="truncate text-destructive"
-          title={error}>
-          {t('profile.couldNotSave')}
-        </span>
+        <Tip label={error}>
+          <span role="alert"
+            className="truncate text-destructive">
+            {t('profile.couldNotSave')}
+          </span>
+        </Tip>
       )}
       {slug && (
         <button

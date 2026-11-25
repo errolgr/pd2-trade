@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { ListingPresence } from '@/pages/market/lib/types';
@@ -27,6 +27,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  cleanup();
   vi.useRealTimers();
 });
 

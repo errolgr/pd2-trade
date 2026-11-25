@@ -3,9 +3,11 @@
  * watch alerts, Horadric Sim results, net worth moves, updates, errors), whether or not a toast showed it. Feedback
  * on the user's own actions ("Whisper copied") is never logged.
  *
- * An entry is *missed* when nobody saw it: its toast was suppressed (Diablo focused, popups or that type off) or
- * timed out without the pointer ever on it. Missed entries put the log's icon on the chat dock (none = no icon);
- * opening the log marks everything seen. Joins are logged but never missed (too frequent to call for attention).
+ * An entry is *missed* when nobody saw it. Seen: it reached the player in the game (Diablo in front, keyboard or
+ * mouse used within the last minute) by a toast or the game's own chat (whispers), or its toast had the pointer on
+ * it. Otherwise missed: no toast (that type off, or a whisper while tabbed out) or a toast that timed out unhovered.
+ * Missed entries put the log's icon on the chat dock (none = no icon); opening the log marks everything seen. Joins
+ * are logged but never missed (too frequent to call for attention).
  *
  * Kept in AppConfig/notification-log.json (newest LOG_MAX entries), saved shortly after each change.
  */
@@ -63,6 +65,8 @@ export interface NotificationEntry {
   at: number;
   /** The toast's action, still runnable from the log. */
   action?: LoggedAction;
+  /** The toast's second action (a buy request response's Whisper back), a button of its own in the log. */
+  secondaryAction?: LoggedAction;
   /** A market listing: Details opens it in the listing drawer. */
   listing?: ListingPanelPayload;
   tone?: 'success' | 'warning' | 'error' | 'muted';
@@ -124,13 +128,15 @@ export function missedSummary(log: readonly NotificationEntry[]): MissedSummary 
   };
 }
 
+const loggedActionSchema = z.object({ label: z.string(), type: z.nativeEnum(ToastActionType), data: z.unknown() });
 const savedEntrySchema = z.object({
   id: z.string(),
   kind: z.enum(NOTIFICATION_KINDS),
   title: z.string(),
   description: z.string().optional(),
   at: z.number(),
-  action: z.object({ label: z.string(), type: z.nativeEnum(ToastActionType), data: z.unknown() }).optional(),
+  action: loggedActionSchema.optional(),
+  secondaryAction: loggedActionSchema.optional(),
   listing: z.object({ listingId: z.string(), savedSearchId: z.string().optional() }).passthrough().optional(),
   tone: z.enum(['success', 'warning', 'error', 'muted']).optional(),
   count: z.number().int().positive().catch(1),

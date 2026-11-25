@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react';
+import { isTauri } from '@tauri-apps/api/core';
 import { claimKeyboard } from './keyboard';
 import { useRegionSync } from './region';
 import { useOverlayInternals } from './OverlayProvider';
 import { Panel } from './Panel';
 import { ToastLayer } from './toast';
+import { DevPriceCheckPicker } from './DevPriceCheckPicker';
 import type { PanelId } from './types';
 
 const isTextInput = (target: EventTarget | null) =>
@@ -36,6 +38,8 @@ export const OverlayRoot: React.FC = () => {
         })}
       </div>
       <ToastLayer />
+      {/* Browser test harness only: dev builds outside Tauri (tree-shaken from production) */}
+      {import.meta.env.DEV && !isTauri() && <DevPriceCheckPicker />}
     </>
   );
 };

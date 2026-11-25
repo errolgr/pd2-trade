@@ -9,20 +9,30 @@ export function listingUrl(listing: Pick<MarketListingEntry, '_id'>): string {
   return `https://projectdiablo2.com/market/listing/${encodeURIComponent(listing._id)}`;
 }
 
-/** Compact age of the last bump (else update): `now`, `5m`, `3h`, `2d`, `5w`; empty when unknown. */
-export function listingAge(
-  listing: Pick<MarketListingEntry, 'bumped_at' | 'updated_at'>,
-  now: Date = new Date(),
-): string {
-  const at = Date.parse(listing.bumped_at || listing.updated_at || '');
-  if (Number.isNaN(at)) return '';
-  const minutes = Math.max(0, Math.floor((now.getTime() - at) / 60_000));
-  if (minutes < 1) return t('market:age.now');
+/** A duration as `5m`, `3h`, `2d`, `5w` (weeks from 14 days); under a minute `<1m`. */
+export function compactDuration(ms: number): string {
+  const minutes = Math.max(0, Math.floor(ms / 60_000));
+  if (minutes < 1) return t('market:age.minutes', { n: '<1' });
   if (minutes < 60) return t('market:age.minutes', { n: minutes });
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return t('market:age.hours', { n: hours });
   const days = Math.floor(hours / 24);
   return days < 14 ? t('market:age.days', { n: days }) : t('market:age.weeks', { n: Math.floor(days / 7) });
+}
+
+/** Compact age of the last bump (else update): `now`, `5m`, `3h`, `2d`, `5w`; empty when unknown. */
+export function listingAge(
+  listing: Pick<MarketListingEntry, 'bumped_at' | 'updated_at'>,
+  now: Date = new Date(),
+): string {
+  return ageText(Date.parse(listing.bumped_at || listing.updated_at || ''), now.getTime());
+}
+
+/** Compact age of a moment (epoch ms) as listings show it: `now`, `5m`, `3h`, `2d`, `5w`; empty when unknown. */
+export function ageText(at: number, now: number): string {
+  if (Number.isNaN(at)) return '';
+  const ms = now - at;
+  return ms < 60_000 ? t('market:age.now') : compactDuration(ms);
 }
 
 /**
@@ -31,6 +41,23 @@ export function listingAge(
  */
 export function sellerAccount(listing: Pick<MarketListingEntry, 'user' | 'item'>): string | null {
   return listing.user?.in_game_account || listing.item?.account_id || listing.user?.game?.accounts?.[0] || null;
+}
+
+/**
+ * The name a seller's tomb glyph is drawn from, by chat's traderGlyphName rule (in-game account, preferred account,
+ * first account, username), so a trader has one glyph everywhere. The item's own account (sellerAccount) is only the
+ * fallback: a user with several accounts lists from any of them.
+ */
+export function sellerGlyphName(listing: Pick<MarketListingEntry, 'user' | 'item'>): string | null {
+  const user = listing.user;
+  return (
+    user?.in_game_account ||
+    user?.game?.preferences?.account ||
+    user?.game?.accounts?.[0] ||
+    user?.username ||
+    listing.item?.account_id ||
+    null
+  );
 }
 
 /** Name as the site's listing card titles it: rares/magic/crafted by quality + base, everything else by name. */

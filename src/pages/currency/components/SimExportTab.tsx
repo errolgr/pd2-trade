@@ -36,6 +36,7 @@ import { fitCharacter, type FitCharacter, pickFitting, unfitReason } from '@/lib
 import { loadCharacterItems } from '@/lib/sim-item-sources';
 import { trackMeasurement } from '@/lib/telemetry';
 import { cn } from '@/lib/utils';
+import { Tip } from '@/components/ui/tooltip';
 import { useOverlay } from '@/overlay';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import { Banner, EmptyState } from './StatePanel';
@@ -271,16 +272,17 @@ export function SimExportTab({ token, account }: { token: string; account: strin
             </span>
           </span>
           <div className="flex items-center gap-1">
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={!character || items.length === 0 || fit.status === 'loading'}
-              onClick={() => void pickFits()}
-              title="Check the stash items this character can wear now (class, level, Strength and Dexterity)"
-            >
-              <ListChecks className={cn('size-3.5', fit.status === 'loading' && 'animate-pulse')} />
-              Pick what fits
-            </Button>
+            <Tip label="Check the stash items this character can wear now (class, level, Strength and Dexterity)">
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={!character || items.length === 0 || fit.status === 'loading'}
+                onClick={() => void pickFits()}
+              >
+                <ListChecks className={cn('size-3.5', fit.status === 'loading' && 'animate-pulse')} />
+                Pick what fits
+              </Button>
+            </Tip>
             <Button
               size="sm"
               variant="ghost"

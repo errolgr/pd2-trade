@@ -146,6 +146,10 @@ jobs:
           owner: errolgr
           repo: pd2-trade
           args: ${{ matrix.args }}
+          # Point latest.json at the NSIS setup.exe, not the MSI (#30). Every MSI update is a per-machine major
+          # upgrade that re-creates its all-users desktop shortcut; NSIS runs with /UPDATE and leaves shortcuts alone.
+          # The first NSIS update removes the MSI install (src-tauri/windows/installer.nsi).
+          updaterJsonPreferNsis: true
 
       - name: Upload build artifacts (test mode)
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.test_mode == true }}
@@ -156,6 +160,57 @@ jobs:
             src-tauri/target/release/bundle/**
           retention-days: 7
           if-no-files-found: warn
+
+      # Issue #23: a bundled libwayland-client (Ubuntu 22.04's 1.20) is loaded ahead of the host's, and Mesa 24.1+
+      # libEGL needs newer symbols, so the AppImage dies with "Could not create default EGL display". Runs before
+      # publish-release, so a bad AppImage leaves the release a draft. linuxdeploy's excludelist only drops
+      # libwayland-client, so other bundled libwayland-* are reported but not fatal.
+      - name: Check AppImage does not bundle libwayland-client
+        if: matrix.platform == 'ubuntu-22.04'
+        shell: bash
+        working-directory: src-tauri/target/release/bundle/appimage
+        run: |
+          shopt -s nullglob
+          images=(*.AppImage)
+          if [ ${#images[@]} -ne 1 ]; then
+            echo "::error::Expected one AppImage, found ${#images[@]}"
+            exit 1
+          fi
+          rm -rf squashfs-root
+          chmod +x "${images[0]}"
+          "./${images[0]}" --appimage-extract > /dev/null
+          wayland=(squashfs-root/usr/lib/libwayland-*)
+          client=(squashfs-root/usr/lib/libwayland-client.so*)
+          rm -rf squashfs-root
+          if [ ${#wayland[@]} -gt 0 ]; then
+            echo "Bundled wayland libraries:"
+            printf '  %s\n' "${wayland[@]}"
+          fi
+          if [ ${#client[@]} -gt 0 ]; then
+            echo "::error::AppImage bundles libwayland-client; it fails to start on hosts with Mesa 24.1+ (#23)"
+            exit 1
+          fi
+          echo "No libwayland-client in ${images[0]}"
+
+      # 0.11.3-0.11.5 shipped a pd2-trader-installer.exe that imports VCRUNTIME140.dll and fails to start without the
+      # VC++ x64 redistributable (CLI 2.12 stopped asking tauri-build 2.5 to link it statically; src-tauri/.cargo/config.toml).
+      # Runs before publish-release, so such a build leaves the release a draft.
+      - name: Check Windows binary links the VC runtime statically
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $dumpbin = & $vswhere -latest -products * -find 'VC\Tools\MSVC\**\bin\Hostx64\x64\dumpbin.exe' | Select-Object -First 1
+          if (-not $dumpbin) { Write-Output '::error::dumpbin.exe not found'; exit 1 }
+          $exe = 'src-tauri\target\release\pd2-trader-installer.exe'
+          $dependents = & $dumpbin /nologo /dependents $exe
+          if ($LASTEXITCODE -ne 0) { Write-Output "::error::dumpbin failed on $exe"; exit 1 }
+          $vcruntime = $dependents | Where-Object { $_ -match '^\s+(vcruntime|msvcp)\d+\S*\.dll\s*$' } | ForEach-Object { $_.Trim() }
+          if ($vcruntime) {
+            Write-Output "::error::$exe needs $($vcruntime -join ', '); it fails to start without the VC++ redistributable"
+            exit 1
+          }
+          Write-Output "$exe links the VC runtime statically"
 
   ########################################################################
   # 3. Publish Release in pd2-trade

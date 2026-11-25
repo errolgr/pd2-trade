@@ -99,7 +99,7 @@ export function resolveListingsRefs(
 
 /** The quick list's Manage tab on this listing (`edit`: with its price editor open). */
 const showListing = (ctx: PaletteRunContext, listingId: string, edit?: boolean) =>
-  ctx.openPanel('quickList', edit ? { listingId, edit } : { listingId }, { placement: 'gameCenter' });
+  ctx.openPanel('quickList', edit ? { listingId, edit } : { listingId });
 
 function toItem(
   entry: ListingsEntry,

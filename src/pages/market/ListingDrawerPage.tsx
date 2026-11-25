@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { MotionConfig } from 'framer-motion';
 import { ExternalLink, Loader2, SearchX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,11 +13,11 @@ import { useDealIndicators } from '@/pages/market/enrich/useDealIndicators';
 import { useMarketStore } from '@/pages/market/store/useMarketStore';
 import { useListingLookup } from './alerts/listing-lookup';
 import { ListingDetail } from './components/ListingDetail';
-import { useMarketFavorites } from './hooks/useMarketFavorites';
 import { useSearchDefaults } from './hooks/useSearchDefaults';
 import { defaultFilters, upgradeFilters } from './lib/defaults';
 import { listingUrl } from './lib/listing';
 import { scoreListings } from './lib/search';
+import { pseudoIdOf } from './lib/stats';
 import { useTranslation } from '@/i18n';
 
 /**
@@ -30,8 +30,7 @@ export const ListingDrawerPage: React.FC = () => {
   const { openPanel } = useOverlay();
   const { settings } = useOptions();
   const { marketApi } = usePd2Website();
-  const { savedSearches } = useMarketStore();
-  const signedIn = !!settings?.pd2Token;
+  const { savedSearches, favorites, toggleFavorite } = useMarketStore();
   const lookup = useListingLookup(payload?.listingId);
 
   /** A listing picked from the seller card (shown in place of the looked-up one until the next open). */
@@ -40,6 +39,7 @@ export const ListingDrawerPage: React.FC = () => {
   const listing = pickedListing ?? (lookup.state === 'ready' ? lookup.detail.listing : null);
   /** Sold or removed: no offer/whisper (seller card picks are live listings). */
   const archived = !pickedListing && lookup.state === 'ready' && lookup.detail.status !== 'active';
+  const endedStatus = archived && lookup.state === 'ready' ? lookup.detail.status : undefined;
 
   const mode = useMemo(
     () => ({ hardcore: settings?.mode === 'hardcore', ladder: settings?.ladder !== 'non-ladder' }),
@@ -52,17 +52,17 @@ export const ListingDrawerPage: React.FC = () => {
     [watch?.filters, mode, searchDefaults],
   );
   const pseudoKeys = useMemo(
-    () => filters.stats.filter((s) => s.enabled && !s.not && s.kind === 'pseudo').map((s) => s.key),
+    () => filters.stats.filter((s) => s.enabled && !s.not && s.kind === 'pseudo').map((s) => pseudoIdOf(s.key)),
     [filters.stats],
   );
-  const row = useMemo(() => (listing ? scoreListings([listing], filters)[0] : null), [listing, filters]);
+  const row = useMemo(
+    () => (listing ? { ...scoreListings([listing], filters)[0], status: endedStatus } : null),
+    [listing, filters, endedStatus],
+  );
   const listings = useMemo(() => (listing ? [listing] : []), [listing]);
   const deals = useDealIndicators(listings);
 
-  const favorites = useMarketFavorites(marketApi ?? null, signedIn);
-  const favorite = !!listing && favorites.favorites.some((f) => f.listing_id === listing._id);
-  const { toggle } = favorites;
-  const toggleFavorite = useCallback((l: MarketListingEntry) => void toggle(l), [toggle]);
+  const favorite = !!listing && favorites.some((f) => f.listingId === listing._id);
 
   const browseSeller = (l: MarketListingEntry) => {
     openPanel('market', { filters: { sellerUserId: l.user_id, sellerName: l.user?.username }, tab: 'search' });

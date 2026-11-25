@@ -1,9 +1,10 @@
 //! Opening links in the browser and folders in the file manager.
 //!
 //! Linux runs the desktop's launcher itself rather than through tauri-plugin-opener, which spawns `xdg-open` detached
-//! and reports success as soon as it started. Inside the AppImage that finds the bundled `xdg-open` first on PATH: the
-//! build machine's (Ubuntu 22.04, xdg-utils 1.1.3), which exits 0 without opening anything on KDE Plasma 6. And any
-//! launcher would inherit AppRun's environment, which points library and module paths (LD_LIBRARY_PATH,
+//! and reports success as soon as it started. AppImages built with tauri-cli < 2.12 put the bundled `xdg-open` first
+//! on PATH: the build machine's (Ubuntu 22.04, xdg-utils 1.1.3), which exits 0 without opening anything on KDE
+//! Plasma 6. tauri-cli 2.12+ no longer bundles it, but the plugin would still report success before the launcher ran.
+//! And any launcher would inherit AppRun's environment, which points library and module paths (LD_LIBRARY_PATH,
 //! GIO_EXTRA_MODULES, GTK_PATH, ...) into the image, so the host's launchers and browser load the image's libraries.
 //! Here: the host's launcher, in the host's environment, and its exit status.
 

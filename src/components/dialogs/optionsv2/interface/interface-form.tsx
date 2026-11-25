@@ -19,6 +19,8 @@ import {
   TIMER_LAYOUT_OPTIONS,
   TIMER_ZONES_OPTIONS,
   uiScaleOptions,
+  WINDOW_KEYBOARD_FOCUS_OPTIONS,
+  WINDOW_KEYBOARD_FOCUS_VALUES,
   ZONE_ALERT_OPTIONS,
 } from '../setting-options';
 import { MAX_ALERT_LEAD_MINUTES } from '@/lib/corrupted-zones';
@@ -29,6 +31,10 @@ const interfaceFormSchema = z.object({
   chatButtonOverlayEnabled: z.boolean().optional(),
   windowTransparency: z.number().min(0).max(WINDOW_TRANSPARENCY_MAX),
   uiScale: z.number(),
+  windowKeyboardFocus: z.enum(WINDOW_KEYBOARD_FOCUS_VALUES),
+  windowsCloseOnClickAway: z.boolean(),
+  windowsOutsideGame: z.boolean(),
+  hotkeysOutsideGame: z.boolean(),
   corruptedZoneTimerEnabled: z.boolean(),
   corruptedZoneTimerAnchor: tickerAnchorSchema,
   corruptedZoneTimerLocked: z.boolean(),
@@ -48,6 +54,10 @@ function toFormValues(settings: ISettings | undefined): InterfaceFormValues {
     chatButtonOverlayEnabled: settings?.chatButtonOverlayEnabled ?? true,
     windowTransparency: clampWindowTransparency(settings?.windowTransparency),
     uiScale: clampUiScale(settings?.uiScale),
+    windowKeyboardFocus: settings?.windowKeyboardFocus ?? 'typing',
+    windowsCloseOnClickAway: settings?.windowsCloseOnClickAway ?? true,
+    windowsOutsideGame: settings?.windowsOutsideGame ?? false,
+    hotkeysOutsideGame: settings?.hotkeysOutsideGame ?? false,
     corruptedZoneTimerEnabled: settings?.corruptedZoneTimerEnabled ?? false,
     corruptedZoneTimerAnchor: settings?.corruptedZoneTimerAnchor ?? 'top-right',
     corruptedZoneTimerLocked: settings?.corruptedZoneTimerLocked ?? false,
@@ -231,6 +241,98 @@ export function InterfaceForm({ part }: { part: 'general' | 'zoneTimer' }) {
                     <FormMessage />
                   </SettingsRow>
                 )}
+              />
+            </SettingsGroup>
+
+            <SettingsGroup title={t('interface.windows.group')}>
+              <FormField
+                control={form.control}
+                name="windowKeyboardFocus"
+                render={({ field }) => (
+                  <SettingsRow
+                    settingKey="windowKeyboardFocus"
+                    label={t('interface.windows.keyboardFocus.label')}
+                    description={t('interface.windows.keyboardFocus.description')}
+                    control={
+                      <Select value={field.value}
+                        onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger className="w-[220px]">
+                            <SelectValue placeholder={t('interface.windows.keyboardFocus.label')} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {WINDOW_KEYBOARD_FOCUS_OPTIONS.map((option) => (
+                            <SelectItem key={option.value}
+                              value={option.value}>
+                              {optionLabel(t, option)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    }
+                  >
+                    <FormMessage />
+                  </SettingsRow>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="windowsCloseOnClickAway"
+                render={({ field }) => (
+                  <SettingsRow
+                    settingKey="windowsCloseOnClickAway"
+                    label={t('interface.windows.closeOnClickAway.label')}
+                    description={t('interface.windows.closeOnClickAway.description')}
+                    control={
+                      <FormControl>
+                        <Switch checked={field.value}
+                          onCheckedChange={field.onChange} />
+                      </FormControl>
+                    }
+                  />
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="windowsOutsideGame"
+                render={({ field }) => (
+                  <SettingsRow
+                    settingKey="windowsOutsideGame"
+                    label={t('interface.windows.outsideGame.label')}
+                    description={t('interface.windows.outsideGame.description')}
+                    control={
+                      <FormControl>
+                        <Switch checked={field.value}
+                          onCheckedChange={field.onChange} />
+                      </FormControl>
+                    }
+                  />
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="hotkeysOutsideGame"
+                render={({ field }) => {
+                  const disabled = !form.watch('windowsOutsideGame');
+                  return (
+                    <SettingsRow
+                      settingKey="hotkeysOutsideGame"
+                      disabled={disabled}
+                      label={t('interface.windows.hotkeysOutsideGame.label')}
+                      description={t('interface.windows.hotkeysOutsideGame.description')}
+                      control={
+                        <FormControl>
+                          <Switch
+                            checked={field.value && !disabled}
+                            disabled={disabled}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      }
+                    />
+                  );
+                }}
               />
             </SettingsGroup>
           </>

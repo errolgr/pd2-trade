@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT } from '@/lib/motion';
 import type { RaresSummary } from '@/lib/networth-api';
 import { fetchRareHistory, type RareAppraisal, type RareHistory, type VerdictRule } from '@/lib/rare-appraisal-api';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tip, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { PopoverSectionTitle } from '@/components/custom/popover-parts';
 import { CraftedBadges, VerdictBadge } from '@/components/rares/RareParts';
 import { RareAppraisalDetail } from '@/components/rares/RareAppraisalDetail';
@@ -204,22 +204,21 @@ export function RaresSummaryCard({
         )}
       </p>
       {priced > 0 && (
-        <p
-          className="text-xs text-muted-foreground"
-          title={`${t('rares.estTitle', { season })}${keepUnpriced ? `; ${unpriced}` : ''}`}
-        >
-          {crafted ? (
-            <Trans t={t}
-              i18nKey="rares.summary.bandCrafted"
-              values={bandValues}
-              components={bandComponents} />
-          ) : (
-            <Trans t={t}
-              i18nKey="rares.summary.bandRares"
-              values={bandValues}
-              components={bandComponents} />
-          )}
-        </p>
+        <Tip label={`${t('rares.estTitle', { season })}${keepUnpriced ? `; ${unpriced}` : ''}`}>
+          <p className="text-xs text-muted-foreground">
+            {crafted ? (
+              <Trans t={t}
+                i18nKey="rares.summary.bandCrafted"
+                values={bandValues}
+                components={bandComponents} />
+            ) : (
+              <Trans t={t}
+                i18nKey="rares.summary.bandRares"
+                values={bandValues}
+                components={bandComponents} />
+            )}
+          </p>
+        </Tip>
       )}
     </div>
   );
@@ -381,12 +380,11 @@ function RareRow({
             <RowChips rare={rare} />
           </span>
         </span>
-        <span
-          className="shrink-0 text-sm font-semibold tabular-nums"
-          title={t('rares.estTitle', { season: modelSeason(rare) })}
-        >
-          {band ?? <span className="text-muted-foreground/70">—</span>}
-        </span>
+        <Tip label={t('rares.estTitle', { season: modelSeason(rare) })}>
+          <span className="shrink-0 text-sm font-semibold tabular-nums">
+            {band ?? <span className="text-muted-foreground/70">—</span>}
+          </span>
+        </Tip>
         <ChevronDown
           className={cn(
             'size-4 shrink-0 text-muted-foreground transition-transform duration-(--dur-med)',

@@ -6,6 +6,8 @@
     "lookupLabel": "Найти персонажа",
     "mode": "Режим",
     "followingShortcut": "Отслеживаемые ({{n}})",
+    "myCharacter": "Мой персонаж: {{name}}",
+    "myCharacterUnavailable": "Войдите и выберите персонажа в Настройки › Аккаунт, чтобы сразу перейти к нему",
     "tabs": {
       "meta": "Мета",
       "characters": "Персонажи"
@@ -15,7 +17,8 @@
     "na": "н/д",
     "noReliablePrice": "Нет надёжной рыночной цены",
     "hrTitle": "{{hr}} HR по текущим рыночным ценам",
-    "marketValue": "Рыночная стоимость <num>{{value}} HR</num>"
+    "marketValue": "Рыночная стоимость <num>{{value}} HR</num>",
+    "corruptionBasis": "Оценено по его corruption"
   },
   "itemActions": {
     "searchMarket": "Искать на рынке",

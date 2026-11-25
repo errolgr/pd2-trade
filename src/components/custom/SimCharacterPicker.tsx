@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Command } from 'cmdk';
-import { Check, ChevronDown, Search } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Check, ChevronDown } from 'lucide-react';
+import { SearchPopover, useSearchPopover } from '@/components/custom/SearchPopover';
 import type { SimCharacter } from '@/lib/sim-characters';
 import { cn } from '@/lib/utils';
 import { ClassEmblem } from '@/pages/builds/components/parts';
@@ -28,28 +28,27 @@ export function SimCharacterPicker({
   onChange: (name: string) => void;
   className?: string;
 }) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const q = query.trim().toLowerCase();
+  const search = useSearchPopover();
+  const q = search.query.trim().toLowerCase();
   const options = q
     ? characters.filter((c) => [c.name, c.className, c.account].some((s) => s?.toLowerCase().includes(q)))
     : characters;
   const manyAccounts = new Set(characters.map((c) => c.account.toLowerCase())).size > 1;
   const chosen = characters.find((c) => c.name === value);
 
-  const toggle = (next: boolean) => {
-    setOpen(next);
-    if (!next) setQuery('');
-  };
-
   return (
-    <Popover open={open}
-      onOpenChange={toggle}>
-      <PopoverTrigger asChild>
+    <SearchPopover
+      state={search}
+      label="Characters"
+      placeholder="Search characters…"
+      contentClassName="w-(--radix-popover-trigger-width) min-w-64"
+      inputClassName="h-9 text-sm"
+      listClassName="max-h-64"
+      trigger={
         <button
           type="button"
           role="combobox"
-          aria-expanded={open}
+          aria-expanded={search.open}
           aria-label="Character"
           // As a select's: the open list takes the overlay's keyboard
           data-keep-keyboard
@@ -68,60 +67,42 @@ export function SimCharacterPicker({
           )}
           <ChevronDown className="ml-auto size-4 shrink-0 opacity-50 transition-transform duration-(--dur-fast) ease-out [[data-state=open]>&]:rotate-180" />
         </button>
-      </PopoverTrigger>
-      <PopoverContent align="start"
-        data-keep-keyboard
-        className="w-(--radix-popover-trigger-width) min-w-64 p-0">
-        <Command label="Characters"
-          shouldFilter={false}
-          loop>
-          <div className="flex items-center gap-2 border-b border-border px-2.5">
-            <Search aria-hidden
-              className="size-3.5 shrink-0 text-muted-foreground" />
-            <Command.Input
-              autoFocus
-              value={query}
-              onValueChange={setQuery}
-              placeholder="Search characters…"
-              className="h-9 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-            />
-          </div>
-          <Command.List className="max-h-64 overflow-y-auto p-1">
-            {options.map((c) => (
-              <Command.Item
-                key={`${c.account}/${c.name}`}
-                value={`${c.account}/${c.name}`}
-                onSelect={() => {
-                  onChange(c.name);
-                  toggle(false);
-                }}
-                className="flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1 outline-none data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground"
-              >
-                {c.className ? (
-                  <ClassEmblem className={c.className}
-                    size={20} />
-                ) : (
-                  <span aria-hidden
-                    className="w-[22px] shrink-0" />
-                )}
-                {/* PD2 names are at most 15 characters: the name stays whole, the details give way */}
-                <span className={cn('shrink-0 text-[13px]', c.name === value && 'font-semibold')}>{c.name}</span>
-                <span className="min-w-0 flex-1 truncate text-right text-[11px] text-muted-foreground tabular-nums">
-                  {details(c, manyAccounts)}
-                </span>
-                <Check aria-hidden
-                  className={cn('size-3.5 shrink-0', c.name === value ? 'opacity-100' : 'opacity-0')} />
-              </Command.Item>
-            ))}
-            {options.length === 0 && (
-              <div className="px-2 py-3 text-center text-xs text-muted-foreground">No ladder character matches</div>
-            )}
-          </Command.List>
-          <div className="border-t border-border px-2.5 py-1.5 text-[11px] text-muted-foreground">
-            Ladder characters only
-          </div>
-        </Command>
-      </PopoverContent>
-    </Popover>
+      }
+      footer={
+        <div className="border-t border-border px-2.5 py-1.5 text-[11px] text-muted-foreground">
+          Ladder characters only
+        </div>
+      }
+    >
+      {options.map((c) => (
+        <Command.Item
+          key={`${c.account}/${c.name}`}
+          value={`${c.account}/${c.name}`}
+          onSelect={() => {
+            onChange(c.name);
+            search.setOpen(false);
+          }}
+          className="flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1 outline-none data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground"
+        >
+          {c.className ? (
+            <ClassEmblem className={c.className}
+              size={20} />
+          ) : (
+            <span aria-hidden
+              className="w-[22px] shrink-0" />
+          )}
+          {/* PD2 names are at most 15 characters: the name stays whole, the details give way */}
+          <span className={cn('shrink-0 text-[13px]', c.name === value && 'font-semibold')}>{c.name}</span>
+          <span className="min-w-0 flex-1 truncate text-right text-[11px] text-muted-foreground tabular-nums">
+            {details(c, manyAccounts)}
+          </span>
+          <Check aria-hidden
+            className={cn('size-3.5 shrink-0', c.name === value ? 'opacity-100' : 'opacity-0')} />
+        </Command.Item>
+      ))}
+      {options.length === 0 && (
+        <div className="px-2 py-3 text-center text-xs text-muted-foreground">No ladder character matches</div>
+      )}
+    </SearchPopover>
   );
 }

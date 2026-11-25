@@ -12,11 +12,13 @@ import type { ItemType as PD2Item } from '@/assets/itemFuzzySearch';
 import { buildGetMarketListingQuery, type QualitySearch } from '@/pages/price-check/lib/tradeUrlBuilder';
 import type { Item, Stat, StatFilterInput } from '@/pages/price-check/lib/interfaces';
 import { StatId } from '@/pages/price-check/lib/stat-mappings';
-import { PSEUDO_KEY_PREFIX } from '@/pages/price-check/lib/utils';
-import { findBaseOption, findTypeOption } from '@/pages/market/lib/catalog';
-import { typeGroupForMembers } from '@/pages/market/lib/type-groups';
+import { PSEUDO_KEY_PREFIX, getStatKey } from '@/pages/price-check/lib/utils';
+import { findBaseOption, optionCodes } from '@/pages/market/lib/catalog';
+import { typeCodeForCodes } from '@/pages/market/lib/type-selection';
 import { defaultFilters, mergeFilters } from '@/pages/market/lib/defaults';
-import type { MarketFilters, MarketListingStatus, Rarity, StatFilter } from '@/pages/market/lib/types';
+import { DAMAGE_KEY, isDamageRangeKey, withLowDamageRange } from '@/pages/market/lib/stats';
+import { MAX_DAMAGE_NAMES, MIN_DAMAGE_NAMES, PSEUDO_LOW_ENDS } from '@/pages/market/lib/pseudo';
+import type { MarketFilters, Rarity, StatFilter } from '@/pages/market/lib/types';
 
 export interface PriceCheckSearch {
   item: Item;
@@ -45,12 +47,6 @@ export interface PriceCheckSearch {
  */
 export type MarketFilterGap = 'label' | 'slot-value';
 
-/**
- * Show Expired: PD2's listingArchive holds every ended listing (sold through an offer, removed by the seller,
- * expired), and players mostly trade in game and then remove the listing, so all three are the archive.
- */
-export const ARCHIVE_STATUSES: MarketListingStatus[] = ['sold', 'removed', 'expired'];
-
 const RARITIES: readonly Rarity[] = ['Normal', 'Superior', 'Magic', 'Rare', 'Crafted', 'Set', 'Unique', 'Runeword'];
 
 /** Charm base codes → item type codes (the price check queries charms by `$in` of all four charm types). */
@@ -58,11 +54,14 @@ const CHARM_TYPE_BY_BASE: Record<string, string> = { cm1: 'scha', cm2: 'mcha', c
 
 type ElemMatch = Record<string, unknown> & { name: string | { $in: string[] } };
 
-/** Market browser keys of the physical min/max damage modifiers (stat-options `a|b` alternatives). */
-const PHYSICAL_DAMAGE_KEYS = [
-  'min_damage|mindamage|secondary_mindamage|item_throw_mindamage',
-  'max_damage|maxdamage|secondary_maxdamage|item_throw_maxdamage',
-];
+/** Which physical damage line an `$elemMatch` selects (its names all min-damage or all max-damage names). */
+function physicalSide(match: ElemMatch): 'min' | 'max' | null {
+  if (typeof match.name === 'string') return null;
+  const names = match.name.$in;
+  if (names.every((n) => MIN_DAMAGE_NAMES.includes(n))) return 'min';
+  if (names.every((n) => MAX_DAMAGE_NAMES.includes(n))) return 'max';
+  return null;
+}
 
 /** `value[key]` when value is an object (query fragments are loosely typed). */
 function prop(value: unknown, key: string): unknown {
@@ -81,6 +80,14 @@ function readRange(value: unknown): { min?: number; max?: number } {
 /** A value the key grammar can pin: a non-negative integer of at most 6 digits. */
 const isSlotNumber = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v) && v >= 0 && v < 1e6;
 
+/** A bounded value as a `{…}` slot (`4..`, `4..9`, `..9`, `4`); null when unbounded or not slot numbers. */
+function rangeSlot(value: unknown): string | null {
+  const { min, max } = readRange(value);
+  const ends = [min, max].filter((end) => end !== undefined);
+  if (ends.length === 0 || !ends.every(isSlotNumber)) return null;
+  return min === max ? String(min) : `${min ?? ''}..${max ?? ''}`;
+}
+
 /** How many leading `values` a price-check `$elemMatch` constrains (skill, level, chance / charges). */
 const QUERY_SLOTS = 3;
 
@@ -93,16 +100,26 @@ const QUERY_SLOTS = 3;
  * row keeps the rest, which is broader than the PD2 query.
  */
 function statRows(match: ElemMatch, gaps: Set<MarketFilterGap>): Omit<StatFilter, 'id'>[] {
-  if (typeof match.name !== 'string') {
-    const alternatives = match.name.$in;
-    const physical = PHYSICAL_DAMAGE_KEYS.find((k) => alternatives.every((n) => k.split('|').includes(n)));
-    if (physical) return [{ kind: 'mod', key: physical, ...readRange(match['values.0']), enabled: true }];
+  const side = physicalSide(match);
+  if (side) {
+    const key = (side === 'min' ? MIN_DAMAGE_NAMES : MAX_DAMAGE_NAMES).join('|');
+    return [{ kind: 'mod', key, ...readRange(match['values.0']), enabled: true }];
   }
   if ('label' in match) gaps.add('label');
   // The PD2 query's own modifier names: the service indexes the same ones. Enhanced Damage is `maxdamage_percent`
   // (`item_maxdamage_percent` is Enhanced Maximum Damage alone), All Resistances `all_resist` and All Attributes
   // `all_attributes` (one line on the listing, not four)
   const names = typeof match.name === 'string' ? [match.name] : match.name.$in;
+
+  // An elemental "Adds X-Y" line: the min's bounds pin slot 0, the max's are the row's (as `damageRow`), also when
+  // only the min is bounded
+  const pairKey = `${names.join('|')}[1]`;
+  if (isDamageRangeKey(pairKey)) {
+    const low = readRange(match['values.0']);
+    const key = withLowDamageRange(pairKey, low);
+    if (key === null) gaps.add('slot-value');
+    return [{ kind: 'mod', key: key ?? pairKey, ...readRange(match['values.1']), enabled: true }];
+  }
 
   const values = Array.from({ length: QUERY_SLOTS }, (_, i) => match[`values.${i}`]);
   const bounded = values.flatMap((v, i) => (Object.keys(readRange(v)).length > 0 ? [i] : []));
@@ -112,9 +129,8 @@ function statRows(match: ElemMatch, gaps: Set<MarketFilterGap>): Omit<StatFilter
     const anyOf = prop(v, '$in');
     if (isSlotNumber(v)) return String(v);
     if (Array.isArray(anyOf) && anyOf.length > 0 && anyOf.every(isSlotNumber)) return anyOf.join('|');
-    const { min, max } = readRange(v);
-    const ends = [min, max].filter((end) => end !== undefined);
-    if (ends.length > 0 && ends.every(isSlotNumber)) return min === max ? String(min) : `${min ?? ''}..${max ?? ''}`;
+    const range = rangeSlot(v);
+    if (range !== null) return range;
     gaps.add('slot-value');
     return '*';
   });
@@ -126,6 +142,29 @@ function statRows(match: ElemMatch, gaps: Set<MarketFilterGap>): Omit<StatFilter
   return [{ kind: 'mod', key, ...(rollIndex === null ? {} : readRange(values[rollIndex])), enabled: true }];
 }
 
+/**
+ * The physical damage pair's `$elemMatch`es (min-damage and max-damage lines) → one `damage` row, like an
+ * elemental pair's `firedam|firemindam{4..}`: the min line's bounds pin slot 0, the max line's are the row's.
+ */
+function damageRow(min: ElemMatch, max: ElemMatch, gaps: Set<MarketFilterGap>): Omit<StatFilter, 'id'> {
+  const pinned = Object.keys(readRange(min['values.0'])).length > 0;
+  const slot = rangeSlot(min['values.0']);
+  if (pinned && slot === null) gaps.add('slot-value');
+  const key = slot === null ? DAMAGE_KEY : `${DAMAGE_KEY}{${slot}}`;
+  return { kind: 'mod', key, ...readRange(max['values.0']), enabled: true };
+}
+
+/** The query's `$elemMatch`es → stat rows; a physical min + max damage pair becomes one `damage` row. */
+function modifierRows(matches: ElemMatch[], gaps: Set<MarketFilterGap>): Omit<StatFilter, 'id'>[] {
+  const minAt = matches.findIndex((m) => physicalSide(m) === 'min');
+  const maxAt = matches.findIndex((m) => physicalSide(m) === 'max');
+  const paired = minAt >= 0 && maxAt >= 0;
+  return matches.flatMap((match, i) => {
+    if (!paired || (i !== minAt && i !== maxAt)) return statRows(match, gaps);
+    return i === Math.min(minAt, maxAt) ? [damageRow(matches[minAt], matches[maxAt], gaps)] : [];
+  });
+}
+
 /** Market filters read from a price-check PD2 market query, and the parts of it they can't express. */
 export interface MarketQueryFilters {
   filters: Partial<MarketFilters>;
@@ -135,11 +174,7 @@ export interface MarketQueryFilters {
 /** Reads a price-check PD2 market query back into market filters. */
 export function marketQueryToFilters(query: Record<string, unknown>, archive: boolean): MarketQueryFilters {
   const gaps = new Set<MarketFilterGap>();
-  const out: Partial<MarketFilters> = {
-    source: archive ? 'archive' : 'live',
-    // The price check's windows: 14 days of sales, 3 days of live listings
-    maxAgeDays: archive ? 14 : 3,
-  };
+  const out: Partial<MarketFilters> = { source: archive ? 'archive' : 'live' };
   if (typeof query.is_hardcore === 'boolean') out.hardcore = query.is_hardcore;
   if (typeof query.is_ladder === 'boolean') out.ladder = query.is_ladder;
 
@@ -159,20 +194,22 @@ export function marketQueryToFilters(query: Record<string, unknown>, archive: bo
   const baseCode = query['item.base_code'];
   const baseGroup = prop(baseCode, '$in');
   if (typeof baseCode === 'string' && baseCode) out.baseCode = baseCode;
-  // Grouped bases (`{ $in: ['glw', 'glws'] }`) → their catalog option, else the group the service also accepts
+  // Grouped bases (`{ $in: ['glw', 'glws'] }`) → their catalog option; any other set of bases (a weapon group's, 2H
+  // Melee) → its `$in`, which the service also accepts
   else if (Array.isArray(baseGroup) && baseGroup.length > 0 && baseGroup.every((c) => typeof c === 'string')) {
-    out.baseCode = findBaseOption(baseGroup[0])?.baseCode ?? JSON.stringify({ $in: baseGroup });
+    const option = findBaseOption(baseGroup[0])?.baseCode;
+    const codes = option ? optionCodes(option) : [];
+    const same = codes.length === baseGroup.length && codes.every((c) => baseGroup.includes(c));
+    out.baseCode = option && same ? option : JSON.stringify({ $in: baseGroup });
   }
   const typeCode = query['item.base.type_code'];
   const typeGroup = prop(typeCode, '$in');
   if (typeof typeCode === 'string' && typeCode) out.typeCode = typeCode;
   else if (typeof baseCode === 'string' && CHARM_TYPE_BY_BASE[baseCode]) out.typeCode = CHARM_TYPE_BY_BASE[baseCode];
   // Type groups (`{ $in: ['bow', 'abow'] }`, any order) → their group code ("Bows"); other grouped types
-  // (`{ $in: ['h2h', 'h2h2'] }`) → their catalog option ("Fist Weapon")
-  else if (Array.isArray(typeGroup) && typeGroup.length > 0 && typeGroup.every((c) => typeof c === 'string')) {
-    const option = typeGroupForMembers(typeGroup) ?? findTypeOption(typeGroup[0]);
-    if (option) out.typeCode = option.code;
-  }
+  // (`{ $in: ['h2h', 'h2h2'] }`) → their catalog option ("Fist Weapon"); several types → their selection
+  else if (Array.isArray(typeGroup) && typeGroup.length > 0 && typeGroup.every((c) => typeof c === 'string'))
+    out.typeCode = typeCodeForCodes(typeGroup);
 
   if (query['item.corrupted'] === true) out.corrupted = 'yes';
   else if (query['item.corrupted'] === false) out.corrupted = 'no';
@@ -195,7 +232,7 @@ export function marketQueryToFilters(query: Record<string, unknown>, archive: bo
   const corruptionRows: Omit<StatFilter, 'id'>[] = Array.isArray(corruptions)
     ? corruptions.flatMap((key) => (typeof key === 'string' ? [{ kind: 'corruption', key, enabled: true }] : []))
     : [];
-  out.stats = [...matches.flatMap((match) => statRows(match, gaps)), ...corruptionRows].map((row) => ({
+  out.stats = [...modifierRows(matches, gaps), ...corruptionRows].map((row) => ({
     ...row,
     id: crypto.randomUUID(),
   }));
@@ -203,8 +240,8 @@ export function marketQueryToFilters(query: Record<string, unknown>, archive: bo
 }
 
 /**
- * The price check's current search as market filters (no `status`: Show Expired searches `ARCHIVE_STATUSES` in
- * the price check, the market browser's sold archive when opened there), and the gaps PD2 would fill.
+ * The price check's current search as market filters (Show Expired: the archive, every ended listing like PD2's
+ * listingArchive), and the gaps PD2 would fill.
  */
 export function priceCheckMarketSearch(search: PriceCheckSearch): MarketQueryFilters {
   const query = buildGetMarketListingQuery(
@@ -228,16 +265,24 @@ export function priceCheckMarketSearch(search: PriceCheckSearch): MarketQueryFil
   // Runewords keep their base's quality on PD2; the service selects them by Runeword (`item.is_runeword`), and
   // would leave them out of a Normal/Superior search
   if (search.item.isRuneword) filters.rarity = ['Runeword'];
-  // Pseudo rows (`pseudo:<id>` keys) aren't in the PD2 query: added from the selection
+  // Pseudo rows (`pseudo:<id>` keys) aren't in the PD2 query: added from the selection. A pair total (Total
+  // Elemental Damage) bounds both ends like a damage row: min / max the low end, pinned in the key, maxMin / maxMax
+  // the high end, the row's bounds
+  const bound = (v?: string) => (v?.trim() ? Number(v) : undefined);
   for (const key of search.selected) {
     if (!key.startsWith(PSEUDO_KEY_PREFIX)) continue;
-    const { min, max } = search.filters[key] ?? {};
+    const id = key.slice(PSEUDO_KEY_PREFIX.length);
+    const input = search.filters[key] ?? {};
+    const pair = id in PSEUDO_LOW_ENDS;
+    const pinned = pair ? withLowDamageRange(id, { min: bound(input.min), max: bound(input.max) }) : id;
+    if (pinned === null) gaps.push('slot-value');
+    const [min, max] = pair ? [bound(input.maxMin), bound(input.maxMax)] : [bound(input.min), bound(input.max)];
     filters.stats!.push({
       id: crypto.randomUUID(),
       kind: 'pseudo',
-      key: key.slice(PSEUDO_KEY_PREFIX.length),
-      ...(min?.trim() ? { min: Number(min) } : {}),
-      ...(max?.trim() ? { max: Number(max) } : {}),
+      key: pinned ?? id,
+      ...(min !== undefined && { min }),
+      ...(max !== undefined && { max }),
       enabled: true,
     });
   }
@@ -256,10 +301,7 @@ export function priceCheckServiceSearch(
   const { filters, gaps } = priceCheckMarketSearch(search);
   const realm = { hardcore: search.settings.mode === 'hardcore', ladder: search.settings.ladder === 'ladder' };
   return {
-    filters: mergeFilters(defaultFilters(realm), {
-      ...(search.archive ? { ...filters, status: ARCHIVE_STATUSES } : filters),
-      sort,
-    }),
+    filters: mergeFilters(defaultFilters(realm), { ...filters, sort }),
     gaps,
   };
 }
@@ -267,4 +309,39 @@ export function priceCheckServiceSearch(
 /** The price check's current search as market filters ("Open in market"). */
 export function priceCheckToMarketFilters(search: PriceCheckSearch): Partial<MarketFilters> {
   return priceCheckMarketSearch(search).filters;
+}
+
+/** The price-checked item as buy requests see it (see priceCheckItemProfile). */
+export interface PriceCheckItemProfile {
+  /** Its search without stat rows, in the user's realm: what overlapping requests are asked for. */
+  filters: MarketFilters;
+  /** Every stat row of the item at its own value (min = max = the roll). */
+  rows: StatFilter[];
+}
+
+/**
+ * The item for buy requests: its search scope (type / base / name / quality, no stat rows) and every one of its stat
+ * rows pinned at the item's value, both through the price check's own market mapping.
+ */
+export function priceCheckItemProfile(
+  search: Omit<PriceCheckSearch, 'selected' | 'filters' | 'archive' | 'corruptedState' | 'corruptionNames'>,
+  stats: readonly Stat[],
+): PriceCheckItemProfile {
+  const base = { ...search, archive: false, corruptedState: 0, corruptionNames: [] };
+  const inputs: Record<string, StatFilterInput> = Object.fromEntries(
+    stats.map((s) => [
+      getStatKey(s),
+      {
+        min: String(s.value ?? 0),
+        max: String(s.value ?? 0),
+        ...(s.maxValue !== undefined && { maxMin: String(s.maxValue), maxMax: String(s.maxValue) }),
+      },
+    ]),
+  );
+  const order = { by: 'bumped', dir: 'desc' } as const;
+  return {
+    filters: priceCheckServiceSearch({ ...base, selected: new Set(), filters: {} }, order).filters,
+    rows: priceCheckServiceSearch({ ...base, selected: new Set(Object.keys(inputs)), filters: inputs }, order).filters
+      .stats,
+  };
 }

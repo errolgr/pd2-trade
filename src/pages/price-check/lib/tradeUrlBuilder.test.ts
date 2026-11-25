@@ -186,6 +186,9 @@ describe('buildTradeUrl', () => {
     stats: [
       { name: '+3 to Lower Resist', skill: 'Lower Resist', value: 3 } as Stat,
       { name: '+3 to Fire Golem', skill: 'Fire Golem', value: 3 } as Stat,
+      // S14 game names the site's labels don't use ("Raise Skeleton", "IronGolem")
+      { name: '+3 to Raise Skeleton Warrior', skill: 'Raise Skeleton Warrior', value: 3 } as Stat,
+      { name: '+3 to Iron Golem', skill: 'Iron Golem', value: 3 } as Stat,
     ],
   });
 
@@ -193,6 +196,8 @@ describe('buildTradeUrl', () => {
     [hawkmail, 'Raven', 'item_nonclassskill{221}'],
     [necroHead, 'Lower Resist', 'item_singleskill{91}'],
     [necroHead, 'Fire Golem', 'item_singleskill{94}'],
+    [necroHead, 'Raise Skeleton Warrior', 'item_singleskill{70}'],
+    [necroHead, 'Iron Golem', 'item_singleskill{90}'],
   ])('maps exported skill line %#: %s to %s', (item, skill, prop) => {
     const key = `skill:${skill.toLowerCase()}`;
     expect(urlParams(item, [key], { [key]: { min: '3' } }).p.get(`properties[${prop}][min]`)).toBe('3');
@@ -292,12 +297,18 @@ describe('buildTradeUrl', () => {
       expect(p.has('name')).toBe(false);
     });
 
-    it('searches runewords by runeword name even in typeLabel mode', () => {
-      const item = makeItem({ quality: 'Normal', isRuneword: true, runeword: 'Spirit' });
+    // #297: the header's Base / Type / Group toggle narrows a runeword's name search too
+    it('searches runewords by runeword name within the search mode', () => {
+      const item = makeItem({ quality: 'Superior', isRuneword: true, runeword: 'Epiphany' });
+      const base = urlParams(item).p;
+      expect(base.get('name')).toBe('Epiphany');
+      expect(base.get('base')).toBe('uit');
+      expect(base.get('type')).toBeTruthy();
       const matched = { typeLabel: 'Shield', typeValue: 'shie', bases: [] };
       const { p } = urlParams(item, [], {}, { searchMode: 1, matched });
-      expect(p.get('name')).toBe('Spirit');
-      expect(p.has('type')).toBe(false);
+      expect(p.get('name')).toBe('Epiphany');
+      expect(p.get('type')).toBe('shie');
+      expect(p.has('base')).toBe(false);
     });
 
     it('searches uniques by mapped name, falling back to the parsed name', () => {
@@ -346,6 +357,27 @@ describe('buildTradeUrl', () => {
       const { p } = urlParams(makeItem({ type: 'Ceremonial Bow' }), [], {}, { searchMode: 2, matched });
       expect(p.get('type')).toBe('{"$in": ["bow", "abow"]}');
       expect(p.has('base')).toBe(false);
+    });
+
+    it('searches weapon groups as the $in of their types, and of their bases when they split a type', () => {
+      const swords = { typeLabel: 'Sword', typeValue: 'swor', bases: [] };
+      const blade = makeItem({ type: 'Colossus Blade' });
+      // Mode 3: 2H Melee takes only the two-handed swords, axes and hammers
+      const hands = urlParams(blade, [], {}, { searchMode: 3, matched: swords }).p;
+      expect(JSON.parse(hands.get('type')!).$in).toEqual(
+        expect.arrayContaining(['swor', 'axe', 'hamm', 'pole', 'spea', 'aspe', 'staf', 'sc9', '2hcs']),
+      );
+      const bases: string[] = JSON.parse(hands.get('base')!).$in;
+      expect(bases).toHaveLength(94);
+      expect(bases).toEqual(expect.arrayContaining(['7gd', '7pa', '6ws']));
+      expect(bases).not.toContain('7cr');
+      // Modes 4 and 5: whole types, no base
+      const melee = urlParams(blade, [], {}, { searchMode: 4, matched: swords }).p;
+      expect(JSON.parse(melee.get('type')!).$in).toHaveLength(21);
+      expect(melee.has('base')).toBe(false);
+      const weapons = urlParams(blade, [], {}, { searchMode: 5, matched: swords }).p;
+      expect(JSON.parse(weapons.get('type')!).$in).toHaveLength(24);
+      expect(weapons.has('base')).toBe(false);
     });
 
     it('omits type/base and warns for unknown base types', () => {
@@ -405,31 +437,32 @@ describe('buildGetMarketListingQuery', () => {
     ) as Record<string, any>;
   }
 
-  it('builds an open-listing query over the last 3 days, newest bump first', () => {
+  it('builds an open-listing query over every live listing (no age window), newest bump first', () => {
     const q = query(makeItem());
     expect(q).toMatchObject({
       type: 'item',
       $limit: 10,
       $skip: 0,
       accepted_offer_id: null,
-      updated_at: { $gte: '2026-10-15T12:00:00.000Z' },
       $sort: { bumped_at: -1 },
       is_hardcore: false,
       is_ladder: true,
       'item.quality.name': 'Rare',
     });
+    expect(q).not.toHaveProperty('updated_at');
     expect(q).not.toHaveProperty(['item.modifiers']);
     expect(q).not.toHaveProperty(['item.corrupted']);
   });
 
-  it('looks back 14 days in archive mode and honors paging, realm and quality override', () => {
+  it('searches the whole archive, sold listings included, and honors paging, realm and quality override', () => {
     const q = query(
       makeItem(),
       [],
       {},
       { archive: true, limit: 50, offset: 100, settings: HC_NONLADDER, quality: 'Crafted' },
     );
-    expect(q.updated_at.$gte).toBe('2026-10-04T12:00:00.000Z');
+    expect(q).not.toHaveProperty('updated_at');
+    expect(q).not.toHaveProperty('accepted_offer_id');
     expect(q).toMatchObject({
       $limit: 50,
       $skip: 100,
@@ -638,10 +671,14 @@ describe('buildGetMarketListingQuery', () => {
       });
     });
 
-    it('matches runewords by case-insensitive runeword name', () => {
-      const q = query(makeItem({ quality: 'Normal', isRuneword: true, runeword: 'Enigma' }));
-      expect(q['item.name']).toEqual({ $regex: 'Enigma', $options: 'i' });
-      expect(q).not.toHaveProperty(['item.base.type_code']);
+    it('matches runewords by case-insensitive runeword name, on the searched base for live and expired', () => {
+      const item = makeItem({ quality: 'Superior', isRuneword: true, runeword: 'Epiphany' });
+      for (const archive of [false, true]) {
+        const q = query(item, [], {}, { archive });
+        expect(q['item.name']).toEqual({ $regex: 'Epiphany', $options: 'i' });
+        expect(q['item.base_code']).toBe('uit');
+        expect(q['item.base.type_code']).toBeTruthy();
+      }
     });
 
     it('matches uniques/sets by mapped name, else parsed name', () => {
@@ -694,6 +731,29 @@ describe('buildGetMarketListingQuery', () => {
       const orb = { typeLabel: 'Sorceress Orb', typeValue: 'orb', bases: [] };
       const o = query(makeItem({ type: 'Eagle Orb' }), [], {}, { searchMode: 2, matched: orb });
       expect(o['item.base.type_code']).toBe('orb');
+    });
+
+    it('searches weapon groups as the $in of their types, and of their bases when they split a type', () => {
+      const bows = { typeLabel: 'Amazon Bow', typeValue: 'abow', bases: [] };
+      const bow = makeItem({ type: 'Ceremonial Bow' });
+      expect(query(bow, [], {}, { searchMode: 3, matched: bows })).toMatchObject({
+        'item.base.type_code': { $in: ['abow', 'bow', 'xbow'] },
+      });
+      expect(query(bow, [], {}, { searchMode: 3, matched: bows })).not.toHaveProperty(['item.base_code']);
+      expect(query(bow, [], {}, { searchMode: 4, matched: bows })['item.base.type_code']).toEqual({
+        $in: ['abow', 'ajav', 'bow', 'xbow', 'jave', 'taxe', 'tkni'],
+      });
+      // A one-handed sword's hand group: 1H, base-level (157 bases)
+      const swords = { typeLabel: 'Sword', typeValue: 'swor', bases: [] };
+      const q = query(makeItem({ type: 'Crystal Sword' }), [], {}, { searchMode: 3, matched: swords });
+      expect(q['item.base.type_code'].$in).toHaveLength(15);
+      expect(q['item.base_code'].$in).toHaveLength(157);
+      expect(q['item.base_code'].$in).toEqual(expect.arrayContaining(['crs', '7wb', 'ama', 'obf']));
+      expect(q['item.base_code'].$in).not.toContain('7gd');
+      // Uniques keep their name search
+      expect(
+        query(makeItem({ type: 'Crystal Sword', quality: 'Unique' }), [], {}, { searchMode: 3, matched: swords }),
+      ).not.toHaveProperty(['item.base_code']);
     });
 
     it('omits type and warns for unknown bases', () => {

@@ -10,7 +10,7 @@ import {
   MAX_ALERT_TOASTS,
   watchKey,
 } from './alert-logic';
-import type { MarketAlert } from './saved-search-api';
+import type { MarketAlert } from './market-api';
 
 const alert = (id: string, over: Partial<MarketAlert['listing']> = {}): MarketAlert => ({
   id,
@@ -41,12 +41,13 @@ const base = (): MarketFilters => ({
   ...defaultFilters({ hardcore: false, ladder: true }),
   itemName: 'Harlequin Crest',
 });
-const search = (id: string, filters: MarketFilters, alert: boolean): SavedSearch => ({
+const search = (id: string, filters: MarketFilters, watching: boolean): SavedSearch => ({
   id,
   name: id,
   filters,
-  alert,
+  watching,
   createdAt: '2026-10-21T00:00:00Z',
+  updatedAt: '2026-10-21T00:00:00Z',
 });
 
 describe('alert popups', () => {
@@ -90,7 +91,7 @@ describe('alert popups', () => {
 describe('watchKey / findWatch', () => {
   const stat = { id: 'r1', kind: 'mod' as const, key: 'item_fastercastrate', min: 20, enabled: true };
 
-  it('treats filters the server normalized as the same watch', () => {
+  it('treats filters a search normalized as the same watch', () => {
     const mine: MarketFilters = { ...base(), rarity: ['Unique', 'Set'], stats: [stat], priceText: '' };
     const server: MarketFilters = {
       ...base(),
@@ -111,7 +112,7 @@ describe('watchKey / findWatch', () => {
     expect(watchKey({ ...base(), hrMax: 1 })).not.toBe(watchKey(base()));
   });
 
-  it('finds the alerting search for the filters, else a saved one to turn on', () => {
+  it('finds the watched search for the filters, else a saved one to watch', () => {
     const watched = search('w', base(), true);
     const other = search('o', { ...base(), itemName: 'Spirit' }, true);
     expect(findWatch([other, watched], base())).toEqual({ watching: watched, saved: null });

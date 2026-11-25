@@ -29,6 +29,10 @@
       "type": "类型：{{type}}",
       "group": "类别：{{group}}",
       "toggleSearchMode": "点击切换搜索模式",
+      "scopeMenu": "搜索范围",
+      "scopeThisBase": "此底材",
+      "scopeBases_other": "{{count}} 种底材",
+      "scopeTypes_other": "{{count}} 种类型",
       "cycleQuality": "点击切换品质",
       "anyQuality": "任意",
       "defense": "防御：<value>{{defense}}</value>",
@@ -39,13 +43,14 @@
       "noData": "暂无价格数据",
       "fetchFailed": "获取价格数据失败",
       "median": "中位数",
-      "min": "最低",
-      "max": "最高",
+      "minMax": "最低 – 最高",
       "samples": "样本",
       "change7d": "7 天变化",
       "last30Days": "最近 30 天",
       "openOnPd2Trader": "在 pd2trader.com 打开",
-      "viewOnWeb": "网页查看"
+      "viewOnWeb": "网页查看",
+      "clean": "未腐化 {{price}} HR",
+      "cleanListings_other": "未腐化（{{count}} 个挂单）"
     },
     "corruptions": {
       "thisItem": "此物品的腐化",
@@ -69,7 +74,6 @@
     },
     "actions": {
       "openTrade": "在 projectdiablo2.com 打开搜索",
-      "more": "更多",
       "openInMarket": "在市场中打开",
       "list": "挂单",
       "listDisabled": "物品必须在储物箱（共享或个人）中才能挂单。"
@@ -78,6 +82,17 @@
       "source": { "label": "搜索范围", "live": "在售", "expired": "已过期" },
       "matches": "匹配：<value>{{total}}</value>",
       "showing": "· 显示 {{shown}} 条",
+      "median": "· 中位数",
+      "spread": {
+        "title": "价格分布",
+        "median": "中位数",
+        "middleHalf": "中间一半",
+        "average": "平均",
+        "listings_other": "{{count}} 个挂单",
+        "more": "另有 {{n}} 个，{{price}} HR 起",
+        "basisLive": "在售挂单的当前要价。",
+        "basisExpired": "已结束挂单（过期、下架或售出）的最后要价，并非成交价。"
+      },
       "loading": "正在加载市场挂单…",
       "errorTitle": "无法加载挂单",
       "fetchFailed": "获取市场挂单失败",

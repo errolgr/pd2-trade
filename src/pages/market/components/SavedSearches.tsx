@@ -1,16 +1,34 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import moment from 'moment';
-import { Bell, BellOff, Bookmark, Check, LogIn, Pencil, Play, Plus, RotateCw, Trash2, X } from 'lucide-react';
+import {
+  type Announcements,
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  type UniqueIdentifier,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Bell, BellOff, Bookmark, Check, GripVertical, Pencil, Play, Plus, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tip } from '@/components/ui/tooltip';
 import { showToast, undoToast } from '@/overlay';
-import { useSignIn } from '@/hooks/useSignIn';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
-import { type MarketStore, retrySavedSearchSync } from '@/pages/market/store/useMarketStore';
-import { findTypeOption } from '../lib/catalog';
+import { type MarketStore, MAX_WATCHED_SEARCHES } from '@/pages/market/store/useMarketStore';
+import { typeValueLabel } from '../lib/type-selection';
 import { groupOf, orBlockNumbers } from '../lib/stat-groups';
 import { filterName } from './stat-text';
 import type { MarketFilters, SavedSearch, StatFilter } from '../lib/types';
@@ -23,7 +41,7 @@ const UNDO_MS = 6000;
 export function describeFilters(f: MarketFilters): string {
   const parts: string[] = [];
   if (f.itemName) parts.push(f.itemName);
-  if (f.typeCode) parts.push(findTypeOption(f.typeCode)?.label ?? t('market:filters.type'));
+  if (f.typeCode) parts.push(typeValueLabel(f) ?? t('market:filters.type'));
   if (f.rarity.length) parts.push(f.rarity.join('/'));
   const stats = f.stats.filter((s) => s.enabled);
   const row = (s: StatFilter) =>
@@ -43,7 +61,7 @@ export function describeFilters(f: MarketFilters): string {
   if (required.length) parts.push(required.join(', '));
   if (f.sellerName) parts.push(t('market:describe.seller', { name: f.sellerName }));
   parts.push(
-    `${f.hardcore ? 'HC' : 'SC'} ${f.ladder ? 'L' : 'NL'}${f.source === 'archive' ? t('market:describe.sold') : ''}`,
+    `${f.hardcore ? 'HC' : 'SC'} ${f.ladder ? 'L' : 'NL'}${f.source === 'archive' ? t('market:describe.archive') : f.source === 'wanted' ? t('market:describe.wanted') : ''}`,
   );
   return parts.join(' · ');
 }
@@ -54,17 +72,11 @@ export interface SavedSearchesProps {
   onRun: (search: SavedSearch) => void;
 }
 
-/** Saved tab: run, rename, delete, live-alert toggle and "save current search". */
+/** Saved tab: run, rename, reorder, delete, live-alert toggle and "save current search". */
 export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
   const { t } = useTranslation(['market', 'common']);
   const [name, setName] = useState('');
-  const { openSignIn } = useSignIn();
-  const alerting = store.savedSearches.filter((s) => s.alert).length;
-  const synced = store.syncStatus === 'ready';
-  // Opening the tab retries a failed load right away
-  useEffect(() => {
-    retrySavedSearchSync();
-  }, []);
+  const alerting = store.savedSearches.filter((s) => s.watching).length;
 
   const save = (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,20 +92,52 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
     if (!removed) return;
     undoToast({
       title: t('saved.deletedToast'),
-      description: removed.name,
+      description: removed.search.name,
       duration: UNDO_MS,
       onUndo: () => store.restoreSearch(removed),
     });
   };
 
   const toggleAlert = (search: SavedSearch, on: boolean) => {
-    if (!store.setSearchAlert(search.id, on)) {
+    if (!store.setSearchWatching(search.id, on)) {
       showToast({
         title: t('saved.tooManyTitle'),
-        description: t('saved.tooManyDescription', { count: store.limits.maxAlerting }),
+        description: t('saved.tooManyDescription', { count: MAX_WATCHED_SEARCHES }),
         variant: 'warning',
       });
     }
+  };
+
+  const searches = store.savedSearches;
+  const ids = searches.map((s) => s.id);
+  // The distance keeps a click on the grip a click; the keyboard sensor reorders with Space/Enter + arrow keys.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const nameOf = (id: UniqueIdentifier) => searches.find((s) => s.id === id)?.name ?? '';
+  const announcements: Announcements = {
+    onDragStart: ({ active }) => t('saved.reorderPickedUp', { name: nameOf(active.id) }),
+    onDragOver: ({ active, over }) =>
+      over
+        ? t('saved.reorderMoved', {
+            name: nameOf(active.id),
+            position: ids.indexOf(String(over.id)) + 1,
+            count: ids.length,
+          })
+        : undefined,
+    onDragEnd: ({ active, over }) =>
+      over
+        ? t('saved.reorderDropped', {
+            name: nameOf(active.id),
+            position: ids.indexOf(String(over.id)) + 1,
+            count: ids.length,
+          })
+        : t('saved.reorderCancelled', { name: nameOf(active.id) }),
+    onDragCancel: ({ active }) => t('saved.reorderCancelled', { name: nameOf(active.id) }),
+  };
+  const drop = ({ active, over }: DragEndEvent) => {
+    if (over && active.id !== over.id) store.moveSearch(String(active.id), ids.indexOf(String(over.id)));
   };
 
   return (
@@ -108,19 +152,16 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
           onChange={(e) => setName(e.target.value)}
           className={cn(fieldInputClass, 'flex-1')}
         />
-        <Button
-          type="submit"
+        <Button type="submit"
           size="sm"
           className="h-7 px-2.5 text-xs"
-          disabled={!name.trim() || !synced}
-          title={synced ? undefined : t('saved.needsSync')}
-        >
+          disabled={!name.trim()}>
           <Plus className="size-3.5" />
           {t('common:actions.save')}
         </Button>
       </form>
       <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-1.5 text-[11px] text-muted-foreground">
-        <span>{t('saved.alertingSummary', { alerting, max: store.limits.maxAlerting })}</span>
+        <span>{t('saved.alertingSummary', { alerting, max: MAX_WATCHED_SEARCHES })}</span>
         <label className="flex items-center gap-1.5">
           {t('saved.alerts')}
           <Switch
@@ -131,49 +172,7 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
           />
         </label>
       </div>
-      {store.syncStatus === 'signedOut' ? (
-        <EmptyState
-          className="m-4"
-          icon={<Bookmark />}
-          title={t('saved.signInTitle')}
-          description={t('saved.signInDescription')}
-        />
-      ) : store.syncStatus === 'unauthorized' ? (
-        <EmptyState
-          className="m-4"
-          icon={<Bookmark />}
-          title={t('saved.reauthTitle')}
-          description={t('saved.reauthDescription')}
-          action={
-            <Button size="sm"
-              className="h-7 px-2.5 text-xs"
-              onClick={openSignIn}>
-              <LogIn className="size-3.5" />
-              {t('common:actions.signIn')}
-            </Button>
-          }
-        />
-      ) : store.syncStatus === 'loading' && store.savedSearches.length === 0 ? (
-        <EmptyState className="m-4"
-          icon={<Bookmark />}
-          title={t('saved.loading')} />
-      ) : store.syncStatus === 'error' && store.savedSearches.length === 0 ? (
-        <EmptyState
-          className="m-4"
-          icon={<Bookmark />}
-          title={t('saved.loadFailedTitle')}
-          description={t('saved.loadFailedDescription')}
-          action={
-            <Button size="sm"
-              variant="outline"
-              className="h-7 px-2.5 text-xs"
-              onClick={retrySavedSearchSync}>
-              <RotateCw className="size-3.5" />
-              {t('saved.retryNow')}
-            </Button>
-          }
-        />
-      ) : store.savedSearches.length === 0 ? (
+      {searches.length === 0 ? (
         <EmptyState
           className="m-4"
           icon={<Bookmark />}
@@ -182,19 +181,30 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
         />
       ) : (
         <ScrollArea className="min-h-0 flex-1 [&_[data-radix-scroll-area-viewport]>div]:!block">
-          <ul className="divide-y divide-border/50">
-            {store.savedSearches.map((s) => (
-              <SavedRow
-                key={s.id}
-                search={s}
-                onRun={() => onRun(s)}
-                onRename={(n) => store.renameSearch(s.id, n)}
-                onRemove={() => remove(s)}
-                onAlert={(on) => toggleAlert(s, on)}
-                alertsEnabled={store.alertsEnabled}
-              />
-            ))}
-          </ul>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={drop}
+            accessibility={{ announcements, screenReaderInstructions: { draggable: t('saved.reorderInstructions') } }}
+          >
+            <SortableContext items={ids}
+              strategy={verticalListSortingStrategy}>
+              <ul className="divide-y divide-border/50">
+                {searches.map((s) => (
+                  <SavedRow
+                    key={s.id}
+                    search={s}
+                    reorderable={searches.length > 1}
+                    onRun={() => onRun(s)}
+                    onRename={(n) => store.renameSearch(s.id, n)}
+                    onRemove={() => remove(s)}
+                    onAlert={(on) => toggleAlert(s, on)}
+                    alertsEnabled={store.alertsEnabled}
+                  />
+                ))}
+              </ul>
+            </SortableContext>
+          </DndContext>
         </ScrollArea>
       )}
     </div>
@@ -203,6 +213,7 @@ export function SavedSearches({ store, current, onRun }: SavedSearchesProps) {
 
 function SavedRow({
   search,
+  reorderable,
   onRun,
   onRename,
   onRemove,
@@ -210,6 +221,8 @@ function SavedRow({
   alertsEnabled,
 }: {
   search: SavedSearch;
+  /** Shows the drag grip (more than one saved search). */
+  reorderable: boolean;
   onRun: () => void;
   onRename: (name: string) => void;
   onRemove: () => void;
@@ -219,13 +232,38 @@ function SavedRow({
   const { t } = useTranslation('market');
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(search.name);
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
+    id: search.id,
+    disabled: !reorderable,
+  });
   const commit = () => {
     const trimmed = draft.trim();
     if (trimmed && trimmed !== search.name) onRename(trimmed);
     setEditing(false);
   };
   return (
-    <li className="group flex items-center gap-2 px-3 py-1.5 hover:bg-accent/30">
+    <li
+      ref={setNodeRef}
+      // Rows only slide up and down; the gap the dragged row leaves shows where it will drop
+      style={{ transform: CSS.Translate.toString(transform && { ...transform, x: 0 }), transition }}
+      className={cn(
+        'group flex items-center gap-2 px-3 py-1.5 hover:bg-accent/30',
+        isDragging && 'relative z-10 rounded-md bg-surface-elevated shadow-panel ring-1 ring-primary',
+      )}
+    >
+      {reorderable && (
+        <Button
+          ref={setActivatorNodeRef}
+          variant="ghost"
+          size="sm"
+          className="-ml-1.5 h-7 w-4 shrink-0 cursor-grab touch-none p-0 text-muted-foreground opacity-50 group-hover:opacity-100 focus-visible:opacity-100 active:cursor-grabbing has-[>svg]:px-0"
+          {...attributes}
+          {...listeners}
+          aria-label={t('saved.reorder', { name: search.name })}
+        >
+          <GripVertical className="size-3.5" />
+        </Button>
+      )}
       <Button
         variant="ghost"
         size="sm"
@@ -310,22 +348,21 @@ function SavedRow({
           <Pencil className="size-3.5" />
         </Button>
       )}
-      <label
-        className="flex shrink-0 items-center gap-1"
-        title={alertsEnabled ? t('saved.toastNewMatches') : t('saved.alertsOff')}
-      >
-        {search.alert && alertsEnabled ? (
-          <Bell className="size-3.5 text-primary" />
-        ) : (
-          <BellOff className="size-3.5 text-muted-foreground" />
-        )}
-        <Switch
-          checked={search.alert}
-          onCheckedChange={onAlert}
-          aria-label={t('saved.alertsFor', { name: search.name })}
-          className="scale-75"
-        />
-      </label>
+      <Tip label={alertsEnabled ? t('saved.toastNewMatches') : t('saved.alertsOff')}>
+        <label className="flex shrink-0 items-center gap-1">
+          {search.watching && alertsEnabled ? (
+            <Bell className="size-3.5 text-primary" />
+          ) : (
+            <BellOff className="size-3.5 text-muted-foreground" />
+          )}
+          <Switch
+            checked={search.watching}
+            onCheckedChange={onAlert}
+            aria-label={t('saved.alertsFor', { name: search.name })}
+            className="scale-75"
+          />
+        </label>
+      </Tip>
       <Button
         variant="ghost"
         size="sm"

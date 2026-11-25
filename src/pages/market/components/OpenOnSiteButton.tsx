@@ -1,4 +1,5 @@
 import { ExternalLink } from 'lucide-react';
+import { Tip } from '@/components/ui/tooltip';
 import { openUrl } from '@/lib/browser-opener';
 import { trackEvent } from '@/lib/telemetry';
 import { showToast } from '@/overlay';
@@ -31,15 +32,16 @@ export function OpenOnSiteButton({ filters }: { filters: MarketFilters | null })
   };
 
   return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      disabled={!link}
-      onClick={open}
-      className="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-input bg-background/40 text-muted-foreground outline-none transition-[color,background-color,border-color] duration-(--dur-fast) hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 disabled:cursor-not-allowed disabled:opacity-50"
-    >
-      <ExternalLink className="size-3.5" />
-    </button>
+    <Tip label={label}>
+      <button
+        type="button"
+        aria-label={label}
+        disabled={!link}
+        onClick={open}
+        className="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-input bg-background/40 text-muted-foreground outline-none transition-[color,background-color,border-color] duration-(--dur-fast) hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <ExternalLink className="size-3.5" />
+      </button>
+    </Tip>
   );
 }

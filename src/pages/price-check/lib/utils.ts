@@ -30,6 +30,25 @@ export function parseCodeValue(value: string): string | object {
   }
 }
 
+type ItemTypeEntry = (typeof itemTypes)[number];
+
+/**
+ * The site's Type list entry and base for a base name (`Phase Blade`), case-insensitive. A name can be listed twice:
+ * PD2's variant bases are their base's code plus `2` (the site's `2H Crystal Sword` type holds a `7cr2` Phase Blade
+ * beside the Sword type's one-handed `7cr`), and a price checked item is never the variant, so a code whose
+ * unsuffixed code is listed under the same name loses.
+ */
+export function findItemType(
+  baseName: string,
+): { type: ItemTypeEntry; base: ItemTypeEntry['bases'][number] } | undefined {
+  const name = baseName.toLowerCase();
+  const matches = itemTypes.flatMap((type) =>
+    type.bases.filter((b) => b.label.toLowerCase() === name).map((base) => ({ type, base })),
+  );
+  const codes = new Set(matches.map((m) => m.base.value));
+  return matches.find((m) => !(m.base.value.endsWith('2') && codes.has(m.base.value.slice(0, -1)))) ?? matches[0];
+}
+
 // parseTypeValue: If true, will parse typeValue as JSON if it contains $in. This is needed for query objects (e.g., buildGetMarketListingQuery),
 // but should be left false for URL string building (e.g., buildTradeUrl), which expects a string.
 export function getTypeFromBaseType(
@@ -37,14 +56,9 @@ export function getTypeFromBaseType(
   parseTypeValue: boolean = false,
 ): { type: string | object; base: string | object; label: string } | undefined {
   // Clean the type string to remove color codes and special characters
-  const cleanedType = cleanItemType(baseType);
-  const baseName = cleanedType.toLowerCase();
-
-  const matchedType = itemTypes.find((type) => type.bases.some((b) => b.label.toLowerCase() === baseName));
-
-  if (!matchedType) return;
-
-  const base = matchedType.bases.find((b) => b.label.toLowerCase() === baseName);
+  const match = findItemType(cleanItemType(baseType));
+  if (!match) return;
+  const { type: matchedType, base } = match;
   return {
     type: parseTypeValue ? parseCodeValue(matchedType.typeValue) : matchedType.typeValue,
     base: parseTypeValue ? parseCodeValue(base.value) : base.value,

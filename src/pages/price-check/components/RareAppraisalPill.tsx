@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { HoverPopover } from '@/components/custom/hover-popover';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tip } from '@/components/ui/tooltip';
 import { scaleIn } from '@/lib/motion';
 import type { RareAppraisal, RareHistory } from '@/lib/rare-appraisal-api';
 import { CraftedBadges, VerdictBadge } from '@/components/rares/RareParts';
@@ -84,35 +85,34 @@ export function RareAppraisalPill({
           </div>
         }
       >
-        <div
-          title={hcNote ?? undefined}
-          className="group flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2 transition-[background-color,border-color,box-shadow] duration-(--dur-med) ease-out hover:border-glow/50 hover:bg-accent/60 hover:shadow-glow"
-        >
-          <VerdictBadge rare={appraisal}
-            className="px-2.5 py-1 text-xs" />
-          <CraftedBadges rare={appraisal}
-            className="flex-col items-start" />
-          <div className="flex flex-col leading-tight">
-            <span className="text-sm font-semibold tabular-nums text-foreground">{rankText(appraisal.rank)}</span>
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              {t('rareAppraisal.ofSlots', { slots })}
-            </span>
+        <Tip label={hcNote}>
+          <div className="group flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2 transition-[background-color,border-color,box-shadow] duration-(--dur-med) ease-out hover:border-glow/50 hover:bg-accent/60 hover:shadow-glow">
+            <VerdictBadge rare={appraisal}
+              className="px-2.5 py-1 text-xs" />
+            <CraftedBadges rare={appraisal}
+              className="flex-col items-start" />
+            <div className="flex flex-col leading-tight">
+              <span className="text-sm font-semibold tabular-nums text-foreground">{rankText(appraisal.rank)}</span>
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                {t('rareAppraisal.ofSlots', { slots })}
+              </span>
+            </div>
+            {market && (
+              <>
+                <span aria-hidden
+                  className="h-7 w-px bg-border" />
+                <div className="flex flex-col leading-tight">
+                  <span className="text-sm font-semibold tabular-nums text-foreground">
+                    {bandRange(market.lowHr, market.highHr)} HR
+                  </span>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    {t('rareAppraisal.usuallyListed')}
+                  </span>
+                </div>
+              </>
+            )}
           </div>
-          {market && (
-            <>
-              <span aria-hidden
-                className="h-7 w-px bg-border" />
-              <div className="flex flex-col leading-tight">
-                <span className="text-sm font-semibold tabular-nums text-foreground">
-                  {bandRange(market.lowHr, market.highHr)} HR
-                </span>
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                  {t('rareAppraisal.usuallyListed')}
-                </span>
-              </div>
-            </>
-          )}
-        </div>
+        </Tip>
       </HoverPopover>
     </motion.div>
   );

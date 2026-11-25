@@ -36,7 +36,11 @@
     "offer": "Offer: {{price}}",
     "offerFor": "Offer: {{price}} for {{item}}",
     "yourOffer": "Your offer: {{price}}",
-    "yourOfferFor": "Your offer: {{price}} for {{item}}"
+    "yourOfferFor": "Your offer: {{price}} for {{item}}",
+    "wtbReceivedItem": "Has {{item}} for your {{title}} request",
+    "wtbReceived": "Whispered about your {{title}} request",
+    "wtbMadeItem": "You offered {{item}} for their {{title}} request",
+    "wtbMade": "You whispered about their {{title}} request"
   },
   "links": {
     "marketListing": "Market Listing {{id}}..."
@@ -183,7 +187,21 @@
     "marketPrice": "market {{hr}} HR",
     "showLess": "Show less",
     "more_one": "{{count}} more",
-    "more_other": "{{count}} more"
+    "more_other": "{{count}} more",
+    "buyRequestReceived": "Buy request",
+    "buyRequestMade": "Their buy request",
+    "forRequest": "for {{title}}",
+    "whisperBack": "Message back",
+    "whisperBackTitle": "Message the seller in the website chat",
+    "whisper": "Message",
+    "whisperBuyerTitle": "Message the buyer in the website chat",
+    "viewRequest": "View request",
+    "viewRequestTitle": "Open the buy request in the market",
+    "markFilled": "Mark filled",
+    "markFilledTitle": "Close your request: this seller filled it",
+    "markFilledFailed": "Couldn't close the request",
+    "wtbOfferReceived": "Offer on your buy request",
+    "wtbOfferMade": "Your offer on their request"
   },
   "thread": {
     "muted": "Muted",
@@ -221,9 +239,9 @@
     "empty": {
       "allTitle": "No conversations",
       "sellingTitle": "Nothing you are selling right now",
-      "sellingDescription": "Offers on your listings and trade whispers from buyers show up here.",
+      "sellingDescription": "Offers on your listings, trade whispers from buyers, and buy requests you answered show up here.",
       "buyingTitle": "Nothing you are buying right now",
-      "buyingDescription": "Your offers and the trade whispers you send show up here.",
+      "buyingDescription": "Your offers, the trade whispers you send, and sellers answering your buy requests show up here.",
       "archivedTitle": "No archived chats",
       "archivedDescription": "Archive a chat from its ⋯ menu; a new message brings it back."
     },

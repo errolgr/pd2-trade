@@ -1,10 +1,10 @@
 import type { Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
-import { PSEUDO_STATS } from './pseudo';
+import { MAX_DAMAGE_NAMES, MIN_DAMAGE_NAMES, PSEUDO_LOW_ENDS, PSEUDO_STATS } from './pseudo';
 import { SITE_STAT_OPTIONS } from './stat-options.data';
-import type { CorruptionOption, PseudoDef, StatOption } from './types';
+import type { CorruptionOption, ItemPropertyOption, PseudoDef, StatOption } from './types';
 
-/** A stat picker entry: a property, a pseudo stat or a cube corruption. */
-export type StatChoice = StatOption | PseudoDef | CorruptionOption;
+/** A stat picker entry: a property, a pseudo stat, a cube corruption or an item property. */
+export type StatChoice = StatOption | PseudoDef | CorruptionOption | ItemPropertyOption;
 
 /** A constrained `values[index]` of a stat key: equal to one of `values`, or within `min`..`max`. */
 export interface ParamPin {
@@ -23,6 +23,16 @@ export interface ParsedStatKey {
   /** Index into `values` that min/max (and scoring) read. */
   valueIndex: number;
 }
+
+/**
+ * Virtual key of physical flat damage ("Adds 4-14 Damage"), shared with the market service: PD2 lists it as a
+ * min-damage line and a max-damage line, resolved as one `[min, max]` pair like `firedam`. `damage{4..}` pins the
+ * min line's value (slot 0); the row's min/max and the roll read the max line.
+ */
+export const DAMAGE_KEY = 'damage';
+
+/** Whether a parsed key's names are the physical damage pair (`damage`, `damage{4..}`). */
+export const isDamagePair = (names: readonly string[]) => names.length === 1 && names[0] === DAMAGE_KEY;
 
 const INT = '\\d{1,6}';
 /** `*` (any), `N` or `N|M|…` (any of), `N..M` / `N..` / `..M` (range). */
@@ -43,15 +53,17 @@ function slotPin(slot: string, index: number): ParamPin | null {
  * `*` (unconstrained), then optionally `[i]`, the value min/max and scoring read. Without `[i]` the roll follows
  * the slots (`item_singleskill{54}` → `values.1`); without slots `item_elemskill_*` rolls live in `values.1`,
  * everything else in `values.0`. E.g. `item_skillongethit{*,44}[0]`, `item_aura{98|123}`, `item_splashonhit[2]`,
- * `firedam|firemindam{4..}[1]`. A key outside the grammar reads as unpinned `a|b` names.
+ * `firedam|firemindam{4..}[1]`, `damage{4..}` (the physical pair, see `DAMAGE_KEY`). A key outside the grammar
+ * reads as unpinned `a|b` names.
  */
 export function parseStatKey(key: string): ParsedStatKey {
   const match = KEY.exec(key);
   const names = match ? match[1].split('|') : key.split('|');
   const slots = match?.[2]?.split(',') ?? [];
   const pins = slots.flatMap((slot, i) => slotPin(slot, i) ?? []);
-  const valueIndex =
-    match?.[3] !== undefined ? Number(match[3]) : slots.length || (names[0].includes('item_elemskill_') ? 1 : 0);
+  // Pairs read as `[min, max]` roll their max: `item_elemskill_*` (values.1 as on the site) and `damage`
+  const pairRoll = names[0].includes('item_elemskill_') || isDamagePair(names);
+  const valueIndex = match?.[3] !== undefined ? Number(match[3]) : slots.length || (pairRoll ? 1 : 0);
   return { names, pins, valueIndex };
 }
 
@@ -65,10 +77,17 @@ export function pinsMatch(values: readonly unknown[] | undefined, pins: readonly
   });
 }
 
-/** The stat's roll on these modifiers (largest when several lines match), or null when the item lacks it. */
+/**
+ * The stat's roll on these modifiers (largest when several lines match), or null when the item lacks it. The
+ * physical pair (`damage{…}`) needs a min-damage line within the pins and rolls the largest max-damage line.
+ */
 export function readStatValue(mods: Modifier[] | undefined, key: string): number | null {
   if (!mods?.length) return null;
   const { names, pins, valueIndex } = parseStatKey(key);
+  if (isDamagePair(names)) {
+    if (!mods.some((m) => MIN_DAMAGE_NAMES.includes(m.name) && pinsMatch(m.values, pins))) return null;
+    return readStatValue(mods, MAX_DAMAGE_NAMES.join('|'));
+  }
   let best: number | null = null;
   for (const mod of mods) {
     if (!names.includes(mod.name) || !pinsMatch(mod.values, pins)) continue;
@@ -125,25 +144,134 @@ export function statGroup(key: string): string {
   return 'Charm/Misc';
 }
 
-/** The site's Properties list (labels are `{X}` templates), in site order, with display groups. */
-export const STAT_OPTIONS: StatOption[] = SITE_STAT_OPTIONS.map(([key, label]) => ({
-  key,
-  label,
-  group: statGroup(key),
-}));
-
-const OPTION_BY_KEY = new Map(STAT_OPTIONS.map((o) => [o.key, o]));
-const PSEUDO_BY_ID = new Map(PSEUDO_STATS.map((p) => [p.id, p]));
+/** The physical damage pair's picker entry (not a site property: the market service resolves `DAMAGE_KEY`). */
+const DAMAGE_OPTION: StatOption = { key: DAMAGE_KEY, label: 'Adds {X}-{Y} Damage', group: 'Offense' };
 
 /**
- * Label template for a property key or pseudo id; a key the site list lacks (`a|b` alternatives, extended slots)
- * takes the label of its first known name; the key itself when unknown.
+ * The site's elemental Minimum / Maximum Damage entries (`firemindam`, `firemaxdam`) as one entry per element, the
+ * line PD2 sends: "Adds X-Y" `firedam [min, max]` (cold: `[min, max, chill frames]`), or the same pair named
+ * `firemindam`. Lone min / max lines don't occur on listings, so the site's keys match nothing. Like `damage`, the
+ * entry rolls the max (`values.1`) and its low end is a slot-0 pin (`firedam|firemindam{4..10}`, see
+ * `withLowDamageRange`). Poison reads "+X Poison Damage over N Seconds" (`[min, max, seconds]`, min = max).
+ */
+const ELEMENTAL_DAMAGE: ReadonlyMap<string, StatOption | null> = new Map(
+  (
+    [
+      ['fire', 'Adds {X}-{Y} Fire Damage'],
+      ['light', 'Adds {X}-{Y} Lightning Damage'],
+      ['magic', 'Adds {X}-{Y} Magic Damage'],
+      ['cold', 'Adds {X}-{Y} Cold Damage'],
+      ['poison', '+{X} Poison Damage'],
+    ] as const
+  ).flatMap(([e, label]) => [
+    [`${e}mindam`, { key: `${e}dam|${e}mindam[1]`, label, group: 'Offense' }],
+    [`${e}maxdam`, null],
+  ]),
+);
+
+/** Elemental "Adds X-Y" pair lines with a low end of their own (not poison: min = max). */
+const ELEMENTAL_PAIRS = new Set(['fire', 'light', 'magic', 'cold'].map((e) => `${e}dam|${e}mindam`));
+
+/**
+ * An "Adds X-Y" key with two ends to bound: physical `damage{…}`, an elemental pair line rolling its max, or a pair
+ * pseudo stat (`pseudo_elemental_max_damage{…}`, its low end a pseudo of its own).
+ */
+export function isDamageRangeKey(key: string): boolean {
+  const { names, valueIndex } = parseStatKey(key);
+  if (names.length === 1 && names[0] in PSEUDO_LOW_ENDS) return true;
+  return valueIndex === 1 && (isDamagePair(names) || ELEMENTAL_PAIRS.has(names.join('|')));
+}
+
+/** The pseudo id a pseudo row key reads (`pseudo_elemental_max_damage{4..}` → `pseudo_elemental_max_damage`). */
+export const pseudoIdOf = (key: string): string => parseStatKey(key).names[0];
+
+/** The low end a damage pair key pins (slot 0): `firedam|firemindam{4..10}` → `{ min: 4, max: 10 }`. */
+export function lowDamageRange(key: string): { min?: number; max?: number } {
+  const pin = parseStatKey(key).pins.find((p) => p.index === 0);
+  if (!pin) return {};
+  if (pin.values) return { min: pin.values[0], max: pin.values[0] };
+  return { ...(pin.min !== undefined && { min: pin.min }), ...(pin.max !== undefined && { max: pin.max }) };
+}
+
+/** A value the key grammar can pin: a non-negative integer of at most 6 digits. */
+const isSlotNumber = (v: number) => Number.isInteger(v) && v >= 0 && v < 1e6;
+
+/**
+ * The damage pair key with its low end pinned to `range` (`damage{4..}`, `firedam|firemindam{4..10}`,
+ * `pseudo_elemental_max_damage{4..}`; unpinned when empty: `damage`, `firedam|firemindam[1]`,
+ * `pseudo_elemental_max_damage`); null when the grammar can't hold it (not a non-negative integer, or min above
+ * max: the service rejects such keys).
+ */
+export function withLowDamageRange(key: string, { min, max }: { min?: number; max?: number }): string | null {
+  const { names } = parseStatKey(key);
+  const base = names.join('|');
+  if (min === undefined && max === undefined)
+    return isDamagePair(names) || base in PSEUDO_LOW_ENDS ? base : `${base}[1]`;
+  const ends = [min, max].filter((v) => v !== undefined);
+  if (!ends.every(isSlotNumber) || (min !== undefined && max !== undefined && min > max)) return null;
+  return `${base}{${min === max ? min : `${min ?? ''}..${max ?? ''}`}}`;
+}
+
+/**
+ * The site's Properties list (labels are `{X}` templates), in site order, with display groups; the physical
+ * damage pair ahead of its max/min lines, each element's min / max entries as its one pair entry.
+ */
+export const STAT_OPTIONS: StatOption[] = SITE_STAT_OPTIONS.flatMap(([key, label]) => {
+  const elemental = ELEMENTAL_DAMAGE.get(key);
+  if (elemental !== undefined) return elemental ? [elemental] : [];
+  const option = { key, label, group: statGroup(key) };
+  return key.startsWith(`${MAX_DAMAGE_NAMES[0]}|`) ? [DAMAGE_OPTION, option] : [option];
+});
+
+const OPTION_BY_KEY = new Map(STAT_OPTIONS.map((o) => [o.key, o]));
+
+/** Item properties the picker offers next to the site's properties (`item` rows: the socket count). */
+export const ITEM_PROPERTY_OPTIONS: ItemPropertyOption[] = [
+  { property: 'sockets', label: '{X} Sockets', group: 'Item' },
+];
+
+/** The picker entry of an item property row's key. */
+export function itemPropertyOption(key: string): ItemPropertyOption | undefined {
+  return ITEM_PROPERTY_OPTIONS.find((o) => o.property === key);
+}
+
+const PSEUDO_BY_ID = new Map(PSEUDO_STATS.map((p) => [p.id, p]));
+/** Unpinned options by their names, for keys the list lacks over the same names (`firedam|firemindam{4..}`). */
+const OPTION_BY_NAMES = new Map(
+  STAT_OPTIONS.flatMap((o) => {
+    const { names, pins } = parseStatKey(o.key);
+    return pins.length === 0 ? [[names.join('|'), o] as const] : [];
+  }),
+);
+/**
+ * Unpinned `a|b|…` options by each of their names (the first option listing a name wins), for a key naming one
+ * member alone (`max_damage` of `max_damage|maxdamage|…`), as other clients and older requests may send.
+ */
+const OPTION_BY_MEMBER = new Map<string, StatOption>();
+for (const o of STAT_OPTIONS) {
+  const { names, pins } = parseStatKey(o.key);
+  if (pins.length > 0 || names.length < 2) continue;
+  for (const name of names) if (!OPTION_BY_MEMBER.has(name)) OPTION_BY_MEMBER.set(name, o);
+}
+
+/**
+ * Label template for a property key or pseudo id; a key the site list lacks takes the label of the unpinned
+ * option over the same names (`firedam|firemindam{4..}` → Adds {X}-{Y} Fire Damage), else of its first known name
+ * (`a|b` alternatives, extended slots), else of the `a|b` option listing that name (`max_damage` → +{X} to Maximum
+ * Damage); the key itself when unknown.
  */
 export function statLabel(key: string): string {
-  const known = OPTION_BY_KEY.get(key) ?? PSEUDO_BY_ID.get(key);
+  const known = OPTION_BY_KEY.get(key) ?? PSEUDO_BY_ID.get(key) ?? PSEUDO_BY_ID.get(pseudoIdOf(key));
   if (known) return known.label;
-  for (const name of parseStatKey(key).names) {
+  const { names } = parseStatKey(key);
+  const sameNames = OPTION_BY_NAMES.get(names.join('|'));
+  if (sameNames) return sameNames.label;
+  for (const name of names) {
     const option = OPTION_BY_KEY.get(name);
+    if (option) return option.label;
+  }
+  for (const name of names) {
+    const option = OPTION_BY_MEMBER.get(name);
     if (option) return option.label;
   }
   return key;
@@ -157,6 +285,11 @@ export function isPseudo(option: StatChoice): option is PseudoDef {
 /** True for corruption entries returned by searchStats. */
 export function isCorruption(option: StatChoice): option is CorruptionOption {
   return 'rolled' in option;
+}
+
+/** True for item property entries returned by searchStats. */
+export function isItemProperty(option: StatChoice): option is ItemPropertyOption {
+  return 'property' in option;
 }
 
 /** Shorthands players type, expanded before matching. */
@@ -183,10 +316,17 @@ const ALIASES: Record<string, string> = {
   pdr: 'physical damage taken reduced',
   res: 'resist',
   hp: 'life',
+  // "flat damage" → "Adds {X}-{Y} Damage"
+  flat: 'adds',
 };
 
 function normalize(text: string): string {
-  return text.replace(/\{X\}/g, ' ').replace(/[+%]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+  return text
+    .replace(/\{X\}(?:-\{Y\})?/g, ' ')
+    .replace(/[+%]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
 }
 
 /** A normalized label without filler: leading "to " / "total ", trailing "(…)" notes ("+{X} to Life" → "life"). */
@@ -225,16 +365,18 @@ const CORRUPT_WORD = /^corrupt/;
 
 /**
  * Picker search: every query word (aliases like `fcr`, `res`, `mf` expanded) must appear in the label. Pseudo
- * stats rank ahead of plain properties on equal relevance, corruptions after them unless the query says
- * "corrupt…" (then they lead, and that word needn't appear in their label). Empty query → pseudos then all
- * properties.
+ * stats rank ahead of plain properties and item properties (sockets) on equal relevance, corruptions after them
+ * unless the query says "corrupt…" (then they lead, and that word needn't appear in their label). Empty query →
+ * pseudos then all properties.
  */
 export function searchStats(query: string, limit = 50, corruptions: readonly CorruptionOption[] = []): StatChoice[] {
   const words = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return [...PSEUDO_STATS, ...STAT_OPTIONS].slice(0, limit);
+  // A pair's low-end pseudo is filtered through the pair's row, never picked alone
+  const pseudos = PSEUDO_STATS.filter((p) => !p.lowEndOf);
+  if (words.length === 0) return [...pseudos, ...ITEM_PROPERTY_OPTIONS, ...STAT_OPTIONS].slice(0, limit);
   const tokens = words.flatMap((w) => normalize(ALIASES[w] ?? w).split(' '));
   const hits: { option: StatChoice; score: number }[] = [];
-  for (const pseudo of PSEUDO_STATS) {
+  for (const pseudo of pseudos) {
     // "Total …" frames the pseudo, so rank on the rest; still match when the user typed "total"
     const label = normalize(pseudo.label);
     const score = scoreMatch(label.replace(/^total /, ''), tokens) ?? scoreMatch(label, tokens);
@@ -242,6 +384,10 @@ export function searchStats(query: string, limit = 50, corruptions: readonly Cor
   }
   for (const option of STAT_OPTIONS) {
     const score = scoreMatch(normalize(option.label), tokens) ?? scoreMatch(option.key.toLowerCase(), words);
+    if (score !== null) hits.push({ option, score });
+  }
+  for (const option of ITEM_PROPERTY_OPTIONS) {
+    const score = scoreMatch(normalize(option.label), tokens);
     if (score !== null) hits.push({ option, score });
   }
   const wantsCorruption = words.some((w) => CORRUPT_WORD.test(w));

@@ -2,6 +2,8 @@ export interface Participant {
   _id: string;
   username: string;
   display_name?: string;
+  /** The in-game account the site resolves for the user (when the query asks for it). */
+  in_game_account?: string | null;
   timezone?: number;
   game?: {
     accounts: string[];

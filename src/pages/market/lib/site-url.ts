@@ -79,6 +79,8 @@ export function siteSearchLink(f: MarketFilters): SiteSearchLink {
         ? t('market:siteUrl.corruptionStat')
         : t('market:siteUrl.corruptionStats', { count: corruptions }),
     );
+  // Its socket range has the site's sockets min / max, but those don't combine with any-of blocks
+  if (stats.some((s) => s.kind === 'item' && !s.not)) dropped.push(t('market:siteUrl.socketsStat'));
 
   params.set('is_hardcore', String(f.hardcore));
   params.set('is_ladder', String(f.ladder));
@@ -93,7 +95,10 @@ export function siteSearchLink(f: MarketFilters): SiteSearchLink {
   if (f.sellerUserId || f.sellerName) dropped.push(t('market:siteUrl.seller'));
   if (f.userOnlineSite !== 'all' || f.userOnlineGame !== 'all') dropped.push(t('market:siteUrl.online'));
   if (f.hasBuyout !== 'any') dropped.push(t('market:siteUrl.buyout'));
-  if (f.maxAgeDays !== DEFAULT_MAX_AGE_DAYS[f.source]) dropped.push(t('market:siteUrl.listingAge'));
+  // No window = every listing: nothing to carry (the site applies its own window)
+  if (f.maxAgeDays !== undefined && f.maxAgeDays !== DEFAULT_MAX_AGE_DAYS[f.source === 'archive' ? 'archive' : 'live'])
+    dropped.push(t('market:siteUrl.listingAge'));
+  if (f.source === 'archive' && f.status?.length) dropped.push(t('market:siteUrl.status'));
   if (f.sort.by !== 'bumped' || f.sort.dir !== 'desc') dropped.push(t('market:siteUrl.sort'));
 
   const path = f.source === 'archive' ? 'market/archive' : 'market';

@@ -1881,32 +1881,40 @@ export const itemTypes = [
         value: 'Any',
       },
       {
-        label: 'Arreat Battlefield Map',
-        value: 't23',
+        label: '',
+        value: 't18',
+      },
+      {
+        label: 'Ancestral Trial Map',
+        value: 't34',
       },
       {
         label: 'Fall of Caldeum Map',
         value: 't36',
       },
       {
-        label: 'Halls of Torture Map',
-        value: 't17',
+        label: 'Lost Temple Map',
+        value: 't33',
       },
       {
-        label: "Horazon's Memory Map",
-        value: 't12',
+        label: 'Phlegethon Map',
+        value: 't21',
       },
       {
-        label: 'Royal Crypts Map',
-        value: 't15',
+        label: 'Ruins of Viz-Jun Map',
+        value: 't11',
       },
       {
-        label: 'Sewers of Harrogath Map',
-        value: 't25',
+        label: 'Sanatorium Map',
+        value: 't14',
       },
       {
         label: 'Shadows of Westmarch Map',
         value: 't26',
+      },
+      {
+        label: 'Tomb of Zoltun Kulle Map',
+        value: 't24',
       },
       {
         label: 'Torajan Jungle Map',
@@ -1923,36 +1931,44 @@ export const itemTypes = [
         value: 'Any',
       },
       {
-        label: 'Ancestral Trial Map',
-        value: 't34',
+        label: '',
+        value: 't2a',
       },
       {
-        label: 'Bastion Keep Map',
-        value: 't13',
+        label: '',
+        value: 't29',
       },
       {
-        label: 'Demon Road Map',
-        value: 't27',
+        label: 'Ashen Plains Map',
+        value: 't3a',
       },
       {
-        label: 'Lost Temple Map',
-        value: 't33',
+        label: 'Canyon of Sescheron Map',
+        value: 't38',
       },
       {
-        label: 'River of Blood Map',
-        value: 't31',
+        label: 'Halls of Torture Map',
+        value: 't17',
       },
       {
-        label: 'Ruins of Viz-Jun Map',
-        value: 't11',
+        label: "Horazon's Memory Map",
+        value: 't12',
       },
       {
-        label: 'Skovos Stronghold Map',
-        value: 't28',
+        label: 'Pandemonium Citadel Map',
+        value: 't37',
       },
       {
-        label: 'Tomb of Zoltun Kulle Map',
-        value: 't24',
+        label: 'Ruined Cistern Map',
+        value: 't16',
+      },
+      {
+        label: 'Sewers of Harrogath Map',
+        value: 't25',
+      },
+      {
+        label: 'Throne of Insanity Map',
+        value: 't32',
       },
     ],
   },
@@ -1965,44 +1981,44 @@ export const itemTypes = [
         value: 'Any',
       },
       {
-        label: 'Ashen Plains Map',
-        value: 't3a',
+        label: 'Arreat Battlefield Map',
+        value: 't23',
+      },
+      {
+        label: 'Bastion Keep Map',
+        value: 't13',
       },
       {
         label: 'Blood Moon Map',
         value: 't35',
       },
       {
-        label: 'Canyon of Sescheron Map',
-        value: 't38',
+        label: 'Demon Road Map',
+        value: 't27',
       },
       {
         label: 'Kehjistan Marketplace Map',
         value: 't39',
       },
       {
-        label: 'Pandemonium Citadel Map',
-        value: 't37',
+        label: 'Kyovashad Map',
+        value: 't3b',
       },
       {
-        label: 'Phlegethon Map',
-        value: 't21',
+        label: 'River of Blood Map',
+        value: 't31',
+      },
+      {
+        label: 'Royal Crypts Map',
+        value: 't15',
       },
       {
         label: 'Ruined Cistern Map',
         value: 't69',
       },
       {
-        label: 'Ruined Cistern Map',
-        value: 't16',
-      },
-      {
-        label: 'Sanatorium Map',
-        value: 't14',
-      },
-      {
-        label: 'Throne of Insanity Map',
-        value: 't32',
+        label: 'Skovos Stronghold Map',
+        value: 't28',
       },
     ],
   },
@@ -2041,11 +2057,23 @@ export const itemTypes = [
         value: 'Any',
       },
       {
-        label: '',
+        label: 'Map',
+        value: 't58',
+      },
+      {
+        label: 'Map',
+        value: 't57',
+      },
+      {
+        label: 'Map',
+        value: 't56',
+      },
+      {
+        label: 'Map',
         value: 't55',
       },
       {
-        label: '',
+        label: 'Map',
         value: 't54',
       },
       {
@@ -3187,6 +3215,34 @@ export const itemTypes = [
       {
         label: 'Charged Essence of Hatred',
         value: 'ceh',
+      },
+      {
+        label: "Corrupted Amazon's Ear",
+        value: 'ivez',
+      },
+      {
+        label: "Corrupted Assassin's Ear",
+        value: 'ivea',
+      },
+      {
+        label: "Corrupted Barbarian's Ear",
+        value: 'iveb',
+      },
+      {
+        label: "Corrupted Druid's Ear",
+        value: 'ived',
+      },
+      {
+        label: "Corrupted Necromancer's Ear",
+        value: 'iven',
+      },
+      {
+        label: "Corrupted Paladin's Ear",
+        value: 'ivep',
+      },
+      {
+        label: "Corrupted Sorceress's Ear",
+        value: 'ives',
       },
       {
         label: 'Demonic Insignia',

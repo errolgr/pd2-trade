@@ -105,6 +105,11 @@ export interface PricedEquippedItem extends EquippedItem {
   iconUrl: string | null;
   /** Item + priced sockets; null when nothing in it is priced. */
   priceHr: number | null;
+  /**
+   * What `priceHr` rests on: `corruption`, the listings with the item's exact corruption (a corrupted unique/set);
+   * `item`, its price by name. Null when unpriced; absent from servers before it was added.
+   */
+  priceBasis?: 'corruption' | 'item' | null;
 }
 
 /** A charm in the inventory's charm area (its bottom 4 rows); slot `Inventory`. */
@@ -183,6 +188,27 @@ export interface UsageResponse {
   items: ItemUsage[];
   mercTypes: UsageCount[];
   mercItems: ItemUsage[];
+}
+
+/** The usage lists `/usage/:list` pages through in full (`/usage` holds only the 50 most used of each). */
+export type UsageListName = 'skills' | 'items' | 'mercItems';
+
+interface UsageListRows {
+  skills: UsageCount;
+  items: ItemUsage;
+  mercItems: ItemUsage;
+}
+
+export interface UsageListResponse<L extends UsageListName> {
+  season: string;
+  mode: BuildsMode;
+  total: number;
+  list: L;
+  /** Rows matching `q` in the whole list. */
+  matches: number;
+  page: number;
+  pageSize: number;
+  rows: UsageListRows[L][];
 }
 
 export interface ShoppingListItem extends ItemUsage {
@@ -360,6 +386,16 @@ export function getBuildUsage(filters: BuildsFilters, signal?: AbortSignal): Pro
 
 export function getBuildShoppingList(filters: BuildsFilters, signal?: AbortSignal): Promise<ShoppingListResponse> {
   return getJson(builds('/shopping-list', filterParams(filters)), signal);
+}
+
+/** One page of a full usage list; `q` keeps the names containing it (case-insensitive). pageSize 1–200. */
+export function getBuildUsageList<L extends UsageListName>(
+  list: L,
+  filters: BuildsFilters,
+  opts: { q?: string; page?: number; pageSize?: number; signal?: AbortSignal } = {},
+): Promise<UsageListResponse<L>> {
+  const params = { ...filterParams(filters), q: opts.q, page: opts.page, pageSize: opts.pageSize };
+  return getJson(builds(`/usage/${list}`, params), opts.signal);
 }
 
 /** `mode` omitted: the server looks in softcore first, then hardcore. 404 → BuildsApiError status 404. */

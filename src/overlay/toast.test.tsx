@@ -2,12 +2,14 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { toast } from 'sonner';
+import { invoke, isTauri } from '@tauri-apps/api/core';
+import { getNotificationLog, resetNotificationLog } from '@/lib/notification-log';
 import { openUrl } from '@/lib/browser-opener';
 import { installUpdateAndRelaunch } from '@/lib/updater';
 import { ToastActionType } from '@/common/types/Events';
-import { ToastLayer, confirmToast, setToastBridge, showToast, undoToast } from './toast';
+import { ToastLayer, confirmToast, notify, setToastActionHandler, setToastBridge, showToast, undoToast } from './toast';
 import { intentToast } from '@/hooks/useOverlayIntents';
-import { fetchMarketListing } from '@/pages/market/alerts/saved-search-api';
+import { fetchMarketListing } from '@/pages/market/alerts/market-api';
 import { listing, mod } from '@/pages/market/lib/test-utils';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
@@ -17,7 +19,7 @@ vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(() => false), invoke: vi
 vi.mock('@/lib/browser-opener', () => ({ openUrl: vi.fn() }));
 vi.mock('@/lib/updater', () => ({ installUpdateAndRelaunch: vi.fn() }));
 vi.mock('@/lib/themes', () => ({ useThemeMode: () => 'dark' }));
-vi.mock('@/pages/market/alerts/saved-search-api', () => ({ fetchMarketListing: vi.fn() }));
+vi.mock('@/pages/market/alerts/market-api', () => ({ fetchMarketListing: vi.fn() }));
 vi.mock('@/hooks/pd2website/usePD2Website', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/pd2website/usePD2Website')>()),
   usePd2Website: vi.fn(),
@@ -267,6 +269,43 @@ describe('showToast action toasts', () => {
     expect(openMarket).toHaveBeenCalledWith({ savedSearchId: 's1', focusListingId: 'l1', tab: 'search' });
   });
 
+  describe('a toast with a second action (a buy request response)', () => {
+    const response = {
+      title: 'A seller can fill your buy request',
+      description: 'FrozenOrb whispered you about Rare Circlet',
+      action: { label: 'View request', type: ToastActionType.OPEN_MARKET_PANEL, data: { requestId: 'r1' } },
+      secondaryAction: { label: 'Whisper back', type: ToastActionType.WTB_WHISPER_BACK, data: { id: 'w1' } },
+    };
+    afterEach(() => setToastActionHandler(ToastActionType.WTB_WHISPER_BACK, null));
+
+    it('puts both buttons on a row below the full-width text; a one-action toast keeps them beside it', async () => {
+      await renderLayer();
+      await show(() => showToast(response));
+      expect(toastEl(response.description)?.className).toContain('!flex-wrap');
+      expect(screen.getByText(response.description).closest('[data-content]')?.className).toContain('flex-1');
+      await show(() => showToast({ ...response, description: 'single', secondaryAction: undefined }));
+      expect(toastEl('single')?.className).not.toContain('!flex-wrap');
+    });
+
+    it('Whisper back runs its handler; View request opens the market', async () => {
+      const whisperBack = vi.fn();
+      const openMarket = vi.fn();
+      setToastActionHandler(ToastActionType.WTB_WHISPER_BACK, whisperBack);
+      setToastBridge({ openChat: vi.fn(), openMarket, openListing: vi.fn(), openSim: vi.fn() });
+      await renderLayer();
+      await show(() => showToast(response));
+      await click(screen.getByText('Whisper back'));
+      expect(whisperBack).toHaveBeenCalledWith({ id: 'w1' });
+      expect(openMarket).not.toHaveBeenCalled();
+      await advance(1000);
+      expect(toastEl(response.description)).toBeNull();
+
+      await show(() => showToast(response));
+      await click(screen.getByText('View request'));
+      expect(openMarket).toHaveBeenCalledWith({ requestId: 'r1' });
+    });
+  });
+
   it("a finished sim's Open opens the Sim panel on its report", async () => {
     const openSim = vi.fn();
     setToastBridge({ openChat: vi.fn(), openMarket: vi.fn(), openListing: vi.fn(), openSim });
@@ -473,6 +512,20 @@ describe('confirmToast', () => {
     await click(screen.getByText('Confirm'));
     expect(console.error).toHaveBeenCalledWith('[overlay] confirm action failed:', expect.any(Error));
   });
+
+  it('runs the link choice instead of onConfirm, and dismisses', async () => {
+    const onConfirm = vi.fn();
+    const onLink = vi.fn();
+    const dismissSpy = vi.spyOn(toast, 'dismiss');
+    await renderLayer();
+    await show(() =>
+      confirmToast({ title: 'A', description: 'linked', onConfirm, link: { label: 'Never ask', onClick: onLink } }),
+    );
+    await click(within(toastEl('linked')!).getByText('Never ask'));
+    expect(onLink).toHaveBeenCalledTimes(1);
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(dismissSpy).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('undoToast', () => {
@@ -494,5 +547,63 @@ describe('undoToast', () => {
     expect(dismissSpy).toHaveBeenCalledTimes(1);
     expect(dismissSpy.mock.calls[0][0]).toBeDefined();
     expect(onUndo).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('notify: missed or seen', () => {
+  /** Tauri with Diablo in front (or not) and this much time since the last keyboard/mouse input. */
+  function player({ focused, idleMs }: { focused: boolean; idleMs: number }) {
+    vi.mocked(isTauri).mockReturnValue(true);
+    vi.mocked(invoke).mockImplementation(async (cmd: string) => (cmd === 'is_diablo_focused' ? focused : idleMs));
+  }
+  const missed = () => getNotificationLog().map((e) => e.missed);
+  const offer = { title: 'New Offer', description: 'offer text', duration: 5000 };
+  const whisper = { title: 'Whisper from bob', description: 'hi' };
+
+  beforeEach(() => resetNotificationLog());
+  afterEach(() => vi.mocked(isTauri).mockReturnValue(false));
+
+  it('a toast over the game the player is playing is seen, even unhovered', async () => {
+    player({ focused: true, idleMs: 2_000 });
+    await renderLayer();
+    await show(() => notify('offer', offer, { toast: true }));
+    expect(toastEl('offer text')).not.toBeNull();
+    await advance(10_000);
+    expect(missed()).toEqual([false]);
+  });
+
+  it('AFK in the game or tabbed out, an unhovered toast is missed', async () => {
+    await renderLayer();
+    player({ focused: true, idleMs: 120_000 });
+    await show(() => notify('offer', offer, { toast: true }));
+    await advance(10_000);
+    player({ focused: false, idleMs: 0 });
+    await show(() => notify('offer', { ...offer, description: 'second' }, { toast: true }));
+    await advance(10_000);
+    expect(missed()).toEqual([true, true]);
+  });
+
+  it("a whisper the game's chat showed is seen in the game, missed when AFK or tabbed out", async () => {
+    player({ focused: true, idleMs: 0 });
+    await act(async () => notify('whisper', whisper, { toast: false, inGameChat: true }));
+    player({ focused: true, idleMs: 120_000 });
+    await act(async () => notify('whisper', whisper, { toast: false, inGameChat: true }));
+    player({ focused: false, idleMs: 0 });
+    await act(async () => notify('whisper', whisper, { toast: false, inGameChat: true }));
+    // newest first
+    expect(missed()).toEqual([true, true, false]);
+  });
+
+  it('a suppressed popup nothing else showed stays missed in the game', async () => {
+    player({ focused: true, idleMs: 0 });
+    await act(async () => notify('offer', offer, { toast: false }));
+    expect(missed()).toEqual([true]);
+  });
+
+  it('logs both of the toast actions', async () => {
+    const action = { label: 'View request', type: ToastActionType.OPEN_MARKET_PANEL, data: { requestId: 'r1' } };
+    const secondaryAction = { label: 'Whisper back', type: ToastActionType.WTB_WHISPER_BACK, data: { id: 'w1' } };
+    await act(async () => notify('market', { ...offer, action, secondaryAction }, { toast: false }));
+    expect(getNotificationLog()[0]).toMatchObject({ action, secondaryAction });
   });
 });

@@ -3,7 +3,7 @@
  * hovering shows the item at once and Details opens without a second request.
  */
 import { useEffect, useState } from 'react';
-import { fetchMarketListing, type MarketListingDetail } from './saved-search-api';
+import { fetchMarketListing, type MarketListingDetail } from './market-api';
 
 /** A lookup is reused this long (the drawer's offer and whisper re-check the listing themselves). */
 const TTL_MS = 2 * 60_000;

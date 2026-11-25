@@ -33,14 +33,14 @@ static WATCHER_HANDLE: Mutex<Option<Arc<Mutex<Option<RecommendedWatcher>>>>> = M
 static LAST_POSITION: Mutex<u64> = Mutex::new(0);
 
 /// Find the Diablo II installation directory
-/// If custom_path is provided and exists, use it. Otherwise, try auto-detection.
+/// If custom_path is provided and exists, use it (or, for a Wine prefix, the install inside it). Otherwise, try
+/// auto-detection.
 pub fn find_diablo2_directory(custom_path: Option<&str>) -> Option<PathBuf> {
-    // If custom path is provided and exists, use it
     if let Some(custom) = custom_path {
         if !custom.is_empty() {
             let path = PathBuf::from(custom);
             if path.exists() {
-                return Some(path);
+                return Some(crate::modules::d2_directory::resolve(&path));
             }
         }
     }

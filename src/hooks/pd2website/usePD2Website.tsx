@@ -81,7 +81,7 @@ export function isExpectedApiError(error: unknown): boolean {
   return error instanceof PD2ApiError && error.statusCode >= 400 && error.statusCode < 500;
 }
 
-interface Pd2WebsiteContextType extends SocialActions, OfferNotificationsApi {
+export interface Pd2WebsiteContextType extends SocialActions, OfferNotificationsApi {
   findMatchingItems: (item: PriceCheckItem) => Promise<GameStashItem[]>;
   /** A fresh copy of the selected account's stash (GET /game/stash; refreshes the stash cache). */
   fetchStash: () => Promise<GameData>;

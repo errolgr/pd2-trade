@@ -37,6 +37,11 @@ import ItemOverlayWidget from './ItemOverlayWidget';
 
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/hooks/pd2website/usePD2Website', () => ({ usePd2Website: vi.fn() }));
+// The buy request banner's /match call (pd2trader.com) is not what these tests cover
+vi.mock('@/pages/market/wtb/useWtbData', () => ({
+  useWtbSession: () => ({ realm: null, token: null, userId: null }),
+  useWtbItemMatches: () => [],
+}));
 vi.mock('@/lib/market-search-api', async (importOriginal) => ({
   ...(await importOriginal<typeof MarketSearchApi>()),
   searchMarketListings: vi.fn(),
@@ -249,6 +254,11 @@ function renderWidget(item: Item, onClose = vi.fn()) {
 const statCheckbox = (name: string) =>
   screen.getByText(name).closest('label')!.querySelector('[role="checkbox"]') as HTMLElement;
 const searchButton = () => screen.getByRole('button', { name: /^Search$/ });
+/** The rare header's toggles, by their (changing) visible text: the hint is a tooltip, not a title. */
+const QUALITY_TOGGLE = /^((Any|Normal|Superior|Magic|Crafted|Rare)\s*)+$/;
+const MODE_TOGGLE = /^((Base|Type|Group): .+)+$/;
+const qualityToggle = () => screen.getByRole('button', { name: QUALITY_TOGGLE });
+const modeToggle = () => screen.getByRole('button', { name: MODE_TOGGLE });
 const lastQuery = (fn = getMarketListings) => fn.mock.calls[fn.mock.calls.length - 1][0];
 /** The listed searches on the market service (an empty search's relaxation counts ask for one row, aside). */
 const realSearches = () => searchListings.mock.calls.filter(([, opts]) => opts.limit !== 1);
@@ -278,19 +288,19 @@ describe('ItemOverlayWidget header', () => {
 
   it('lets a rare cycle the searched quality through Any, every other base quality and back', async () => {
     renderWidget(rareRing());
-    const toggle = screen.getByTitle('Click to cycle quality');
+    const toggle = qualityToggle();
     expect(toggle.textContent).toBe('Rare');
     for (const next of ['Any', 'Normal', 'Superior', 'Magic', 'Crafted', 'Rare']) {
       fireEvent.click(toggle);
       // the outgoing label animates out, so wait until only the new one remains
-      await waitFor(() => expect(screen.getByTitle('Click to cycle quality').textContent).toBe(next));
+      await waitFor(() => expect(qualityToggle().textContent).toBe(next));
     }
   });
 
   it('the cycled quality is what the market search asks for', async () => {
     renderWidget(rareRing());
-    fireEvent.click(screen.getByTitle('Click to cycle quality')); // -> Any
-    fireEvent.click(screen.getByTitle('Click to cycle quality')); // -> Normal
+    fireEvent.click(qualityToggle()); // -> Any
+    fireEvent.click(qualityToggle()); // -> Normal
     fireEvent.click(searchButton());
     await waitFor(() => expect(searchListings).toHaveBeenCalled());
     expect(lastFilters().rarity).toEqual(['Normal']);
@@ -298,7 +308,7 @@ describe('ItemOverlayWidget header', () => {
 
   it('"Any" searches every base quality, so rares and crafted come back together', async () => {
     renderWidget(rareRing());
-    fireEvent.click(screen.getByTitle('Click to cycle quality')); // -> Any
+    fireEvent.click(qualityToggle()); // -> Any
     fireEvent.click(searchButton());
     await waitFor(() => expect(searchListings).toHaveBeenCalled());
     expect(lastFilters().rarity).toEqual(['Normal', 'Superior', 'Magic', 'Rare', 'Crafted']);
@@ -306,8 +316,8 @@ describe('ItemOverlayWidget header', () => {
 
   it('uniques have no quality/search-mode toggles', () => {
     renderWidget(shako());
-    expect(screen.queryByTitle('Click to cycle quality')).toBeNull();
-    expect(screen.queryByTitle('Click to toggle search mode')).toBeNull();
+    expect(screen.queryByRole('button', { name: QUALITY_TOGGLE })).toBeNull();
+    expect(screen.queryByRole('button', { name: MODE_TOGGLE })).toBeNull();
   });
 
   it('Close and Settings do what they say', () => {
@@ -381,8 +391,7 @@ describe('ItemOverlayWidget unique price pill', () => {
     fireEvent.mouseEnter(img.parentElement!.parentElement!);
     const popover = await screen.findByRole('dialog');
     expect(within(popover).getByText('Median').parentElement!.textContent).toContain('3.00 HR');
-    expect(within(popover).getByText('Min').parentElement!.textContent).toContain('1.00 HR');
-    expect(within(popover).getByText('Max').parentElement!.textContent).toContain('9.00 HR');
+    expect(within(popover).getByText('Min – Max').parentElement!.textContent).toContain('1.00 – 9.00 HR');
     expect(within(popover).getByText('Samples:').parentElement!.textContent).toContain('42');
     expect(within(popover).getByText('7d Change:').parentElement!.textContent).toContain('+10.0%');
 
@@ -390,6 +399,37 @@ describe('ItemOverlayWidget unique price pill', () => {
     expect(openUrl).toHaveBeenCalledWith(
       'https://pd2trader.com/item/harlequin_crest?isLadder=true&isHardcore=false&hours=168',
     );
+  });
+
+  it('adds the clean (uncorrupted) median under the headline and as a popover tile', async () => {
+    vi.mocked(fetchItemPriceByName).mockResolvedValue(
+      priceData({ clean: { averagePrice: 2.6, medianPrice: 2.5, sampleCount: 30 } }),
+    );
+    renderWidget(shako());
+    const img = await screen.findByAltText('Harlequin Crest');
+    const pill = img.parentElement!;
+    await waitFor(() => expect(pill.textContent).toContain('3.50 HR')); // headline unchanged
+    expect(within(pill).getByText('Clean 2.50 HR')).not.toBeNull();
+
+    fireEvent.mouseEnter(pill.parentElement!);
+    const popover = await screen.findByRole('dialog');
+    expect(within(popover).getByText('Clean (30 listings)').parentElement!.textContent).toContain('2.50 HR');
+    expect(within(popover).getByText('Median').parentElement!.textContent).toContain('3.00 HR');
+  });
+
+  it.each([
+    ['null (fewer than 3 clean listings)', { clean: null }],
+    ['absent (older server)', {}],
+  ])('hides the clean line and tile when clean is %s', async (_, overrides) => {
+    vi.mocked(fetchItemPriceByName).mockResolvedValue(priceData(overrides));
+    renderWidget(shako());
+    const img = await screen.findByAltText('Harlequin Crest');
+    await waitFor(() => expect(img.parentElement!.textContent).toContain('3.50 HR'));
+    expect(img.parentElement!.textContent).not.toContain('Clean');
+
+    fireEvent.mouseEnter(img.parentElement!.parentElement!);
+    const popover = await screen.findByRole('dialog');
+    expect(within(popover).queryByText(/^Clean/)).toBeNull();
   });
 
   it('lists top corruptions and searches expired corrupted listings with the clicked corruption', async () => {
@@ -423,7 +463,7 @@ describe('ItemOverlayWidget unique price pill', () => {
     const f = lastFilters();
     expect(f.stats).toEqual([expect.objectContaining({ kind: 'corruption', key: 'item_corr_2' })]);
     expect(f.corrupted).toBe('yes');
-    expect(f.status).toEqual(['sold', 'removed', 'expired']);
+    expect(f.source).toBe('archive');
     expect(getMarketListingsArchive).not.toHaveBeenCalled();
     expect(getMarketListings).not.toHaveBeenCalled();
   });
@@ -566,8 +606,9 @@ describe('ItemOverlayWidget market search', () => {
     expect(screen.getByText('· showing 2')).not.toBeNull();
     expect(screen.queryByText('Loading market listings...')).toBeNull();
 
-    expect(searchListings.mock.calls[0][1]).toEqual({ page: 0, limit: 20 });
-    expect(lastFilters()).toMatchObject({ source: 'live', maxAgeDays: 3, ladder: true, hardcore: false });
+    expect(searchListings.mock.calls[0][1]).toEqual({ page: 0, limit: 20, priceStats: true });
+    expect(lastFilters()).toMatchObject({ source: 'live', ladder: true, hardcore: false });
+    expect(lastFilters()).not.toHaveProperty('maxAgeDays');
     expect(lastFilters()).not.toHaveProperty('status');
     // Every search goes to the market service; PD2 only stands in for it
     expect(getMarketListings).not.toHaveBeenCalled();
@@ -603,12 +644,12 @@ describe('ItemOverlayWidget market search', () => {
     await screen.findByText('1.5 HR');
     expect(lastFilters().sort).toEqual({ by: 'bumped', dir: 'desc' });
 
-    fireEvent.click(screen.getByTitle('Sort by price'));
+    fireEvent.click(screen.getByRole('button', { name: 'Price' }));
     await waitFor(() => expect(lastFilters().sort).toEqual({ by: 'price', dir: 'desc' }));
     expect(lastPage()).toBe(0);
-    fireEvent.click(screen.getByTitle('Sort by price'));
+    fireEvent.click(screen.getByRole('button', { name: 'Price' }));
     await waitFor(() => expect(lastFilters().sort).toEqual({ by: 'price', dir: 'asc' }));
-    fireEvent.click(screen.getByTitle('Sort by listing date'));
+    fireEvent.click(screen.getByRole('button', { name: 'Age' }));
     await waitFor(() => expect(lastFilters().sort).toEqual({ by: 'bumped', dir: 'desc' }));
   });
 
@@ -617,12 +658,12 @@ describe('ItemOverlayWidget market search', () => {
     renderWidget(rareRing());
     fireEvent.click(searchButton());
     await screen.findByText('1.5 HR');
-    fireEvent.click(screen.getByTitle('Sort by price'));
+    fireEvent.click(screen.getByRole('button', { name: 'Price' }));
     await waitFor(() => expect(lastFilters().sort.by).toBe('price'));
 
     searchListings.mockRejectedValueOnce(new MarketBackendError('down', 'unavailable', 503));
     getMarketListings.mockResolvedValueOnce(page([listing({ hr_price: 2 })]));
-    fireEvent.click(screen.getByTitle('Sort by price'));
+    fireEvent.click(screen.getByRole('button', { name: 'Price' }));
     expect(await screen.findByText('2 HR')).not.toBeNull();
     expect(lastQuery()).toMatchObject({ $sort: { hr_price: 1 }, hr_price: { $gt: 0 } });
   });
@@ -717,7 +758,8 @@ describe('ItemOverlayWidget market search', () => {
     expect(searchListings).not.toHaveBeenCalled();
     fireEvent.click(searchButton());
     await waitFor(() => expect(searchListings).toHaveBeenCalledTimes(1));
-    expect(lastFilters()).toMatchObject({ source: 'archive', maxAgeDays: 14, status: ['sold', 'removed', 'expired'] });
+    expect(lastFilters()).toMatchObject({ source: 'archive' });
+    expect(lastFilters()).not.toHaveProperty('maxAgeDays');
     expect(getMarketListingsArchive).not.toHaveBeenCalled();
   });
 
@@ -750,8 +792,10 @@ describe('ItemOverlayWidget market search', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Expired' }));
     fireEvent.click(searchButton());
     const row = (await screen.findByText('4 HR')).closest('tr')!;
-    const ended = within(row).getByText('sold after 2 days');
-    expect(ended.getAttribute('title')).toBe('Ended 2 days ago');
+    const ended = within(row).getByText('Sold').closest('td')!;
+    expect(ended.textContent).toBe('Sold 2d');
+    fireEvent.focus(ended);
+    expect((await screen.findByRole('tooltip')).textContent).toBe('sold after 2 days · Ended 2 days ago');
   });
 
   it('asks PD2 for the page when the market service fails, and reports the failure', async () => {
@@ -958,43 +1002,177 @@ describe('ItemOverlayWidget market search', () => {
   });
 });
 
-describe('ItemOverlayWidget ⋯ menu', () => {
-  const openMore = async () => {
-    await act(async () => {
-      fireEvent.pointerDown(screen.getByRole('button', { name: 'More' }), {
-        button: 0,
-        ctrlKey: false,
-        pointerType: 'mouse',
-      });
-    });
-    return screen.getByRole('menu');
-  };
+describe('ItemOverlayWidget matches median', () => {
+  const stats = (overrides: Partial<MarketPriceStats> = {}): MarketPriceStats => ({
+    count: 23,
+    avg: 3.1,
+    p25: 1.5,
+    median: 2.5,
+    p75: 4,
+    histogram: [
+      { from: 1.25, to: 1.6, count: 6 },
+      { from: 2.5, to: 3.15, count: 12 },
+      { from: 4, to: 5, count: 5 },
+    ],
+    ...overrides,
+  });
+  /** A first page of listings priced unlike any median below, with the spread of all `total` matches. */
+  const pageWithStats = (priceStats: MarketPriceStats | undefined, total = 23): MarketSearchPage => ({
+    ...servicePage([listing({ hr_price: 9 }), listing({ hr_price: 8 })], total),
+    ...(priceStats && { priceStats }),
+  });
+  /** The "· median …" part of the matches line, or null. */
+  const medianPart = () => screen.queryByText('· median');
+
+  it('appends the median of every match to the matches line, asking for it on the first page only', async () => {
+    // A full first page, so the next one loads
+    const first = Array.from({ length: 20 }, (_, i) => listing({ _id: `m${i}`, hr_price: 9 }));
+    searchListings.mockResolvedValueOnce({ ...servicePage(first, 40), priceStats: stats() });
+    searchListings.mockResolvedValueOnce(servicePage([listing({ hr_price: 7 })], 40));
+    const item = rareRing();
+    const { rerenderItem } = renderWidget(item);
+    fireEvent.click(searchButton());
+    await screen.findAllByText('9 HR');
+    expect(medianPart()!.textContent).toBe('· median 2.5 HR');
+    expect(realSearches()[0][1]).toMatchObject({ page: 0, priceStats: true });
+
+    // The next page is the same search: no stats asked, the median stays
+    inView = true;
+    rerenderItem(item);
+    await screen.findByText('7 HR');
+    expect(realSearches()[1][1]).not.toHaveProperty('priceStats');
+    expect(medianPart()!.textContent).toBe('· median 2.5 HR');
+  });
+
+  it('shows the median from 3 priced matches, hides it below', async () => {
+    searchListings.mockResolvedValueOnce(pageWithStats(stats({ count: 3, median: 1.25 }), 3));
+    renderWidget(rareRing());
+    fireEvent.click(searchButton());
+    await screen.findByText('9 HR');
+    expect(medianPart()!.textContent).toBe('· median 1.25 HR');
+
+    // 5 matches, 2 of them priced
+    searchListings.mockResolvedValueOnce(pageWithStats(stats({ count: 2, median: 1.25 }), 5));
+    fireEvent.click(searchButton());
+    await waitFor(() => expect(realSearches()).toHaveLength(2));
+    await waitFor(() => expect(medianPart()).toBeNull());
+    expect(screen.getByText('5')).not.toBeNull();
+  });
+
+  it('hidden for searches PD2 answers: the service cannot express it, or it failed', async () => {
+    const zorbo = { name: '15% Chance to cast level 20 Zorbo Blast on attack' } as Stat;
+    getMarketListings.mockResolvedValue(page([listing({ hr_price: 6 }), listing({ hr_price: 5 })], 40));
+    renderWidget(rareRing({ stats: [FCR, zorbo] }));
+    fireEvent.click(statCheckbox('15% Chance to cast level 20 Zorbo Blast on attack'));
+    fireEvent.click(searchButton());
+    await screen.findByText('6 HR');
+    expect(searchListings).not.toHaveBeenCalled();
+    expect(medianPart()).toBeNull();
+
+    // A service search shows it; the next one, failing over to PD2, drops it (never a median of one page)
+    fireEvent.click(statCheckbox('15% Chance to cast level 20 Zorbo Blast on attack'));
+    searchListings.mockResolvedValueOnce(pageWithStats(stats()));
+    fireEvent.click(searchButton());
+    await waitFor(() => expect(medianPart()).not.toBeNull());
+    searchListings.mockRejectedValueOnce(new MarketBackendError('down', 'unavailable', 503));
+    fireEvent.click(searchButton());
+    await waitFor(() => expect(getMarketListings).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(medianPart()).toBeNull());
+  });
+
+  it('hover shows the spread: count, ask ladder with the median marked, stat row and the Live basis', async () => {
+    searchListings.mockResolvedValueOnce(pageWithStats(stats()));
+    renderWidget(rareRing());
+    fireEvent.click(searchButton());
+    await screen.findByText('9 HR');
+    fireEvent.mouseEnter(medianPart()!.parentElement!);
+    const popover = await screen.findByRole('dialog');
+    expect(within(popover).getByText('Price spread')).not.toBeNull();
+    expect(within(popover).getByText('23 listings')).not.toBeNull();
+    const ladder = within(within(popover).getByTestId('price-ladder'));
+    const row = (level: string) => {
+      const label = ladder.getByText(level);
+      return [label.previousElementSibling!.textContent, label.nextElementSibling!.nextElementSibling!.textContent];
+    };
+    expect(row('1.25 HR')).toEqual(['', '6']);
+    expect(row('2.5 HR')).toEqual(['▸', '12']);
+    expect(row('4 HR')).toEqual(['', '5']);
+    const stat = (label: string) => within(popover).getByText(label).nextElementSibling!.textContent;
+    expect(stat('Median')).toBe('2.50 HR');
+    expect(stat('Middle half')).toBe('1.50–4.00');
+    expect(stat('Average')).toBe('3.10');
+    expect(within(popover).getByText('Current asking prices of live listings.')).not.toBeNull();
+  });
+
+  it('over Expired, the basis is the last asks of ended listings', async () => {
+    searchListings.mockResolvedValueOnce(pageWithStats(stats()));
+    renderWidget(rareRing());
+    fireEvent.click(screen.getByRole('radio', { name: 'Expired' }));
+    fireEvent.click(searchButton());
+    await screen.findByText('9 HR');
+    fireEvent.mouseEnter(medianPart()!.parentElement!);
+    const popover = await screen.findByRole('dialog');
+    expect(
+      within(popover).getByText('Last asking prices of ended listings (expired, removed or sold), not sale prices.'),
+    ).not.toBeNull();
+  });
+
+  it('follows the search: new filters and switching Live / Expired bring their own median', async () => {
+    searchListings.mockResolvedValueOnce(pageWithStats(stats({ median: 2.5 })));
+    renderWidget(rareRing());
+    fireEvent.click(searchButton());
+    await waitFor(() => expect(medianPart()?.textContent).toBe('· median 2.5 HR'));
+
+    // A stat ticked: the narrower search's median
+    searchListings.mockResolvedValueOnce(pageWithStats(stats({ median: 4.5 }), 12));
+    fireEvent.click(statCheckbox('+20% Faster Cast Rate'));
+    fireEvent.click(searchButton());
+    await waitFor(() => expect(medianPart()?.textContent).toBe('· median 4.5 HR'));
+    expect(lastFilters().stats).toEqual([expect.objectContaining({ key: 'item_fastercastrate' })]);
+
+    // Expired searches again, with the ended listings' median and basis
+    searchListings.mockResolvedValueOnce(pageWithStats(stats({ median: 1.75 }), 30));
+    fireEvent.click(screen.getByRole('radio', { name: 'Expired' }));
+    await waitFor(() => expect(medianPart()?.textContent).toBe('· median 1.75 HR'));
+    expect(lastFilters()).toMatchObject({ source: 'archive' });
+    fireEvent.mouseEnter(medianPart()!.parentElement!);
+    expect(
+      within(await screen.findByRole('dialog')).getByText(
+        'Last asking prices of ended listings (expired, removed or sold), not sale prices.',
+      ),
+    ).not.toBeNull();
+  });
+});
+
+describe('ItemOverlayWidget secondary actions', () => {
+  const LIST_DISABLED = 'Item must be in your stash (shared or personal) to list.';
 
   it('greys out List with the reason for items outside a stash, and lists nothing', async () => {
     renderWidget(rareRing());
-    const menu = await openMore();
-    const list = within(menu).getByRole('menuitem', { name: 'List' });
+    const list = screen.getByRole('button', { name: 'List' });
     expect(list.getAttribute('aria-disabled')).toBe('true');
-    expect(within(menu).getByText('Item must be in your stash (shared or personal) to list.')).not.toBeNull();
+    await act(async () => {
+      fireEvent.focus(list);
+    });
+    expect((await screen.findByRole('tooltip')).textContent).toContain(LIST_DISABLED);
     fireEvent.click(list);
-    expect(overlay.openPanel).not.toHaveBeenCalledWith('quickList', expect.anything(), expect.anything());
+    expect(vi.mocked(overlay.openPanel).mock.calls.some(([id]) => id === 'quickList')).toBe(false);
   });
 
-  it('List opens the quick-list panel at the cursor with the encoded item for stash items', async () => {
+  it('List opens the quick-list panel with the encoded item for stash items', () => {
     const item = rareRing({ location: 'Stash' });
     renderWidget(item);
-    const menu = await openMore();
-    expect(within(menu).queryByText('Item must be in your stash (shared or personal) to list.')).toBeNull();
-    fireEvent.click(within(menu).getByRole('menuitem', { name: 'List' }));
-    expect(overlay.openPanel).toHaveBeenCalledWith('quickList', { item: expect.any(String) }, { placement: 'cursor' });
+    const list = screen.getByRole('button', { name: 'List' });
+    expect(list.getAttribute('aria-disabled')).toBe('false');
+    fireEvent.click(list);
+    expect(overlay.openPanel).toHaveBeenCalledWith('quickList', { item: expect.any(String) });
     const { item: encoded } = vi.mocked(overlay.openPanel).mock.calls[0][1] as { item: string };
     expect(JSON.parse(decodeURIComponent(escape(atob(encoded))))).toEqual(item);
   });
 
-  it('opens the same search on projectdiablo2.com, whether or not the item can be listed', async () => {
+  it('opens the same search on projectdiablo2.com, whether or not the item can be listed', () => {
     renderWidget(rareRing());
-    const menu = await openMore();
-    fireEvent.click(within(menu).getByRole('menuitem', { name: 'Open search on projectdiablo2.com' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open search on projectdiablo2.com' }));
     expect(vi.mocked(openUrl).mock.calls[0][0]).toMatch(/^https:\/\/(www\.)?projectdiablo2\.com\//);
   });
 });
@@ -1079,7 +1257,7 @@ describe('ItemOverlayWidget rare appraisal', () => {
     expect(screen.queryByText('Keep')).toBeNull();
   });
 
-  it('explains a crafted gate-off reason in plain words and keeps the detail on hover', () => {
+  it('explains a crafted gate-off reason in plain words and keeps the detail on hover', async () => {
     const reason = 'crafted slot unreliable: backtest MAE not better than the crafted median';
     rareState = {
       status: 'done',
@@ -1090,52 +1268,143 @@ describe('ItemOverlayWidget rare appraisal', () => {
     expect(note.textContent).toBe(
       "Appraisal note: crafted items in this slot can't be appraised reliably yet (too little crafted data)",
     );
-    expect(note.getAttribute('title')).toBe(reason);
+    fireEvent.focus(note);
+    expect((await screen.findByRole('tooltip')).textContent).toBe(reason);
   });
 });
 
 describe('ItemOverlayWidget extra header behaviour', () => {
-  it('toggles a rare between searching its exact base and its whole item type', async () => {
-    renderWidget(rareRing());
-    const mode = screen.getByTitle('Click to toggle search mode');
-    expect(mode.textContent).toBe('Base: Ring');
-    fireEvent.click(mode);
-    await waitFor(() => expect(screen.getByTitle('Click to toggle search mode').textContent).toBe('Type: Jewelry'));
+  /** The open scope menu's rows as `label · size`, the ticked one prefixed `✓ `. */
+  const scopeRows = () =>
+    screen
+      .queryAllByRole('menuitem')
+      .map(
+        (row) =>
+          `${row.querySelector('svg.invisible') ? '' : '✓ '}${[...row.querySelectorAll('span')].map((s) => s.textContent).join(' · ')}`,
+      );
+  /** Opens the header's scope menu (a click: Radix opens on pointer down) and returns its rows. */
+  const openScopes = () => {
+    fireEvent.pointerDown(modeToggle(), { button: 0, ctrlKey: false });
+    return scopeRows();
+  };
+  const pickScope = (label: string) =>
+    fireEvent.click(screen.getAllByRole('menuitem').find((row) => row.textContent?.startsWith(label))!);
+  const scopeLabels = () => scopeRows().map((row) => row.replace(/^✓ /, '').split(' · ')[0]);
 
-    fireEvent.click(searchButton());
+  it('lets a rare pick between searching its exact base and its whole item type, searching on pick', async () => {
+    renderWidget(rareRing());
+    expect(modeToggle().textContent).toBe('Base: Ring');
+    expect(openScopes()).toEqual(['✓ Base: Ring · this base', expect.stringMatching(/^Type: Jewelry · \d+ bases$/)]);
+    pickScope('Type: Jewelry');
     await waitFor(() => expect(searchListings).toHaveBeenCalled());
+    expect(modeToggle().textContent).toBe('Type: Jewelry');
     expect(JSON.stringify(lastFilters())).toContain('amul');
     expect(lastFilters().baseCode).toBeUndefined();
-
-    fireEvent.click(screen.getByTitle('Click to toggle search mode'));
-    await waitFor(() => expect(screen.getByTitle('Click to toggle search mode').textContent).toBe('Base: Ring'));
+    expect(openScopes()[1]).toMatch(/^✓ Type: Jewelry/);
   });
 
-  it("cycles a rare bow's base → type → type group → base, searching the group's members", async () => {
+  it("lists a rare bow's base, type, type group, 2H Ranged, Ranged and Weapons, and searches the picked one", async () => {
     renderWidget(rareRing({ name: 'Grim Fletch', type: 'Ceremonial Bow' }));
-    const mode = () => screen.getByTitle('Click to toggle search mode');
-    expect(mode().textContent).toBe('Base: Ceremonial Bow');
-    fireEvent.click(mode());
-    await waitFor(() => expect(mode().textContent).toBe('Type: Amazon Bow'));
-    fireEvent.click(mode());
-    await waitFor(() => expect(mode().textContent).toBe('Group: Bows'));
-
-    fireEvent.click(searchButton());
+    expect(modeToggle().textContent).toBe('Base: Ceremonial Bow');
+    expect(openScopes()).toEqual([
+      '✓ Base: Ceremonial Bow · this base',
+      expect.stringMatching(/^Type: Amazon Bow · \d+ bases$/),
+      'Group: Bows · 2 types',
+      'Group: 2H Ranged · 3 types',
+      expect.stringMatching(/^Group: Ranged · \d+ types$/),
+      expect.stringMatching(/^Group: Weapons · \d+ types$/),
+    ]);
+    pickScope('Group: Bows');
     await waitFor(() => expect(searchListings).toHaveBeenCalled());
     expect(lastFilters()).toMatchObject({ typeCode: 'group:bows' });
     expect(lastFilters().baseCode).toBeUndefined();
 
-    fireEvent.click(mode());
-    await waitFor(() => expect(mode().textContent).toBe('Base: Ceremonial Bow'));
+    openScopes();
+    pickScope('Group: Ranged');
+    await waitFor(() => expect(lastFilters().typeCode).toContain('tkni'));
+    expect(lastFilters().baseCode).toBeUndefined();
+    expect(modeToggle().textContent).toBe('Group: Ranged');
   });
 
-  it('toggles a rare without a type group (Sorceress Orb) between base and type only', async () => {
+  it('lists a rare 2H sword through 2H Melee, which searches its two-handed bases only', async () => {
+    renderWidget(rareRing({ name: 'Doom Edge', type: 'Colossus Blade' }));
+    expect(openScopes()).toEqual([
+      '✓ Base: Colossus Blade · this base',
+      expect.stringMatching(/^Type: Sword · \d+ bases$/),
+      expect.stringMatching(/^Group: 2H Melee · \d+ bases$/),
+      expect.stringMatching(/^Group: Melee · \d+ types$/),
+      expect.stringMatching(/^Group: Weapons · \d+ types$/),
+    ]);
+    pickScope('Group: 2H Melee');
+    await waitFor(() => expect(searchListings).toHaveBeenCalled());
+    expect(lastFilters().baseCode).toContain('"7gd"');
+    expect(lastFilters().baseCode).not.toContain('"7cr"');
+  });
+
+  it('treats a Phase Blade as a one-handed Sword: its base is 7cr and its hand step 1H', async () => {
+    renderWidget(rareRing({ name: 'Doom Edge', type: 'Phase Blade' }));
+    openScopes();
+    expect(scopeLabels()).toEqual(['Base: Phase Blade', 'Type: Sword', 'Group: 1H', 'Group: Melee', 'Group: Weapons']);
+    pickScope('Base: Phase Blade');
+    await waitFor(() => expect(searchListings).toHaveBeenCalled());
+    expect(lastFilters().baseCode).toBe('7cr');
+    openScopes();
+    pickScope('Group: 1H');
+    await waitFor(() => expect(lastFilters().baseCode).toContain('"7cr"'));
+    expect(lastFilters().baseCode).not.toContain('"7gd"');
+  });
+
+  it('lists a helm through its type and its family, and a type with no family (Sorceress Orb) to its weapon groups', () => {
+    const { unmount } = renderWidget(rareRing({ name: 'Doom Visage', type: 'Shako' }));
+    openScopes();
+    expect(scopeLabels()).toEqual(['Base: Shako', 'Type: Helm', expect.stringMatching(/^Group: /)]);
+    expect(scopeRows()[2]).toMatch(/ · \d+ types$/);
+    unmount();
     renderWidget(rareRing({ name: 'Doom Eye', type: 'Eagle Orb' }));
-    const mode = () => screen.getByTitle('Click to toggle search mode');
-    fireEvent.click(mode());
-    await waitFor(() => expect(mode().textContent).toBe('Type: Sorceress Orb'));
-    fireEvent.click(mode());
-    await waitFor(() => expect(mode().textContent).toBe('Base: Eagle Orb'));
+    openScopes();
+    expect(scopeLabels()).toEqual([
+      'Base: Eagle Orb',
+      'Type: Sorceress Orb',
+      'Group: 1H',
+      'Group: Melee',
+      'Group: Weapons',
+    ]);
+  });
+
+  it('picks a scope with the arrow keys and Enter, and Escape closes the menu', async () => {
+    renderWidget(rareRing({ name: 'Doom Edge', type: 'Colossus Blade' }));
+    openScopes();
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
+
+    fireEvent.keyDown(modeToggle(), { key: 'ArrowDown' });
+    await waitFor(() => expect(document.activeElement?.getAttribute('role')).toBe('menuitem'));
+    fireEvent.keyDown(document.activeElement!, { key: 'ArrowDown' });
+    await waitFor(() => expect(document.activeElement?.textContent).toMatch(/^Type: Sword/));
+    fireEvent.keyDown(document.activeElement!, { key: 'Enter' });
+    await waitFor(() => expect(searchListings).toHaveBeenCalled());
+    expect(modeToggle().textContent).toBe('Type: Sword');
+  });
+
+  it('the mouse wheel on the scope steps narrower and wider without opening the menu', async () => {
+    renderWidget(rareRing({ name: 'Doom Edge', type: 'Colossus Blade' }));
+    fireEvent.wheel(modeToggle(), { deltaY: -100 });
+    expect(modeToggle().textContent).toBe('Base: Colossus Blade');
+    fireEvent.wheel(modeToggle(), { deltaY: 100 });
+    await waitFor(() => expect(modeToggle().textContent).toBe('Type: Sword'));
+    fireEvent.wheel(modeToggle(), { deltaY: 100 });
+    await waitFor(() => expect(modeToggle().textContent).toBe('Group: 2H Melee'));
+    fireEvent.wheel(modeToggle(), { deltaY: -100 });
+    await waitFor(() => expect(modeToggle().textContent).toBe('Type: Sword'));
+    for (let i = 0; i < 6; i++) fireEvent.wheel(modeToggle(), { deltaY: 100 });
+    await waitFor(() => expect(modeToggle().textContent).toBe('Group: Weapons'));
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it('gives a unique no scope menu: its base is plain text', () => {
+    renderWidget({ name: 'Harlequin Crest', quality: 'Unique', type: 'Shako', iLevel: 80, stats: [] });
+    expect(screen.queryByRole('button', { name: MODE_TOGGLE })).toBeNull();
+    expect(screen.getByText('Base: Shako')).toBeTruthy();
   });
 
   it('Net Worth opens the currency panel', () => {
@@ -1144,7 +1413,7 @@ describe('ItemOverlayWidget extra header behaviour', () => {
     expect(overlay.openPanel).toHaveBeenCalledWith('currency');
   });
 
-  it('titles a Rainbow Facet by element and rolls, and prices that exact facet', async () => {
+  it('titles a Rainbow Facet by element and rolls, prices that exact facet and searches its exact rolls', async () => {
     vi.mocked(fetchItemPrice).mockResolvedValue(null);
     renderWidget({
       name: 'Rainbow Facet',
@@ -1154,13 +1423,20 @@ describe('ItemOverlayWidget extra header behaviour', () => {
       stats: [
         { stat_id: 48, name: 'Fire Damage', value: 50 },
         { stat_id: 329, name: '+5% to Fire Skill Damage', value: 5 },
-        { stat_id: 333, name: '-5% to Enemy Fire Resistance', value: -5 },
+        { stat_id: 333, name: '-3% to Enemy Fire Resistance', value: -3 },
       ],
     });
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Fire Facet 5/5');
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Fire Facet 5/3');
     await waitFor(() => expect(fetchItemPrice).toHaveBeenCalled());
-    expect(vi.mocked(fetchItemPrice).mock.calls[0][0]).toBe('rainbow_facet_fire_5_5');
+    expect(vi.mocked(fetchItemPrice).mock.calls[0][0]).toBe('rainbow_facet_fire_5_3');
     expect(fetchItemPriceByName).not.toHaveBeenCalled();
+
+    // Searched right away for exactly these rolls (the resistance one as stored: positive)
+    await waitFor(() => expect(realSearches()).toHaveLength(1));
+    expect(lastFilters().stats).toEqual([
+      expect.objectContaining({ key: 'passive_fire_mastery', min: 5, max: 5 }),
+      expect.objectContaining({ key: 'passive_fire_pierce', min: 3, max: 3 }),
+    ]);
   });
 
   it("shows the item's own corruption price separately from the top corruptions", async () => {

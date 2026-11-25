@@ -64,4 +64,60 @@ describe('computePseudo', () => {
     expect(p.pseudo_skill_damage).toBe(9);
     expect(p.pseudo_enemy_res).toBe(7);
   });
+
+  it('elemental damage sums the average of each fire, cold and lightning line; poison and magic stay out', () => {
+    const p = pseudo(
+      mod('firedam', 6, 36),
+      mod('colddam', 6, 22, 50),
+      mod('lightdam', 4, 114),
+      mod('poisondam', 100, 100, 6),
+      mod('magicdam', 500, 650),
+    );
+    expect(p.pseudo_elemental_damage).toBe(21 + 14 + 59);
+    // lone min / max lines add to each end of the element's average
+    expect(pseudo(mod('firemindam', 4), mod('firemaxdam', 50)).pseudo_elemental_damage).toBe(27);
+    expect(pseudo(mod('min_damage', 9), mod('max_damage', 15)).pseudo_elemental_damage).toBe(0);
+  });
+
+  it('Adds X-Y Total Elemental Damage sums the max of the fire, cold and lightning lines', () => {
+    const p = pseudo(
+      mod('firedam', 4, 20),
+      mod('colddam', 6, 22, 50),
+      mod('lightdam', 1, 114),
+      mod('poisondam', 100, 100, 6),
+      mod('magicdam', 500, 650),
+      mod('max_damage', 9),
+    );
+    expect(p.pseudo_elemental_max_damage).toBe(20 + 22 + 114);
+    // a `firemindam [min, max]` pair and lone end lines
+    expect(pseudo(mod('firemindam', 3, 7), mod('coldmindam', 2), mod('lightmaxdam', 30))).toMatchObject({
+      pseudo_elemental_max_damage: 37,
+    });
+  });
+
+  it('Adds X-Y Total Flat Damage adds physical and magic to the elemental lines, per end; poison stays out', () => {
+    const p = pseudo(
+      mod('min_damage', 10),
+      mod('max_damage', 30),
+      mod('magicdam', 60, 120),
+      mod('lightdam', 1, 700),
+      mod('poisondam', 100, 100, 6),
+    );
+    expect(p).toMatchObject({ pseudo_flat_min_damage: 71, pseudo_flat_max_damage: 850 });
+    expect(p).toMatchObject({ pseudo_elemental_min_damage: 1, pseudo_elemental_max_damage: 700 });
+  });
+
+  it('Total Damage adds every physical min and max damage line; per-level and elemental stay out', () => {
+    expect(pseudo(mod('min_damage', 9), mod('max_damage', 15)).pseudo_total_damage).toBe(24);
+    expect(pseudo(mod('max_damage', 24)).pseudo_total_damage).toBe(24);
+    // weapon aliases, a corruption's second line, and lines that don't count
+    const p = pseudo(
+      mod('mindamage', 5),
+      mod('secondary_maxdamage', 10),
+      mod('secondary_maxdamage', 4),
+      mod('item_maxdamage_perlevel', 16),
+      mod('firedam', 4, 20),
+    );
+    expect(p.pseudo_total_damage).toBe(19);
+  });
 });

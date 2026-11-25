@@ -9,7 +9,8 @@ import { modifierByName } from '@/assets/modifiers';
 import { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import { ItemType as PD2Item } from '@/assets/itemFuzzySearch';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
-import { typeGroupOf, typeGroupSiteValue } from '@/pages/market/lib/type-groups';
+import { inCodes, typeGroupOf, typeGroupSiteValue } from '@/pages/market/lib/type-groups';
+import { searchModeWeaponGroup } from './search-modes';
 
 /** Qualities whose price check searches a base (not a name) and can be switched in the header. */
 export const BASE_QUALITIES: readonly ItemQuality[] = [
@@ -121,9 +122,11 @@ export function buildTradeUrl(
   // `base`, it doesn't JSON.parse it), so an `$in` here would match nothing.
   if (typeof quality === 'string') searchParams.set('quality', quality);
 
-  // Handle search mode: 0 = category (base), 1 = typeLabel, 2 = the type's group (every member type)
+  // Handle search mode: 0 = category (base), 1 = typeLabel, 2 = the type's group (every member type), 3-5 = the
+  // weapon's hand / class / Weapons group (search-modes.ts)
   // Note: Toggle only applies to base item qualities (Rare, Magic, Crafted, Normal, Superior)
-  // Uniques, Sets, and Runewords always use name search
+  // Uniques and Sets use name search; runewords (which keep their base's quality) their name within the mode's
+  // base / type / group, as the header shows (#297)
   if (item.type === 'Jewel') {
     searchParams.set('type', 'jewl');
     searchParams.set('base', 'jew');
@@ -131,48 +134,44 @@ export function buildTradeUrl(
     searchParams.set('type', `{"$in": ["scha", "mcha", "lcha", "torc"]}`);
     searchParams.set('base', ItemCharmMap[item.type]);
   } else {
-    // Runewords always use name search regardless of base quality
-    if (item.isRuneword) {
-      searchParams.set('name', item.runeword || mappedItem?.name || item.name);
-    } else {
-      // Check if item is a base quality that supports toggle
-      const isBaseQuality =
-        item.quality === ItemQuality.Rare ||
-        item.quality === ItemQuality.Magic ||
-        item.quality === ItemQuality.Crafted ||
-        item.quality === ItemQuality.Normal ||
-        item.quality === ItemQuality.Superior;
+    if (item.isRuneword) searchParams.set('name', item.runeword || mappedItem?.name || item.name);
+    const isBaseQuality = BASE_QUALITIES.includes(item.quality as ItemQuality);
 
-      const typeGroup = searchMode === 2 && matchedItemType ? typeGroupOf(matchedItemType.typeValue) : undefined;
-      if (isBaseQuality && typeGroup) {
-        // Mode 2: every type of the group, as the site's `$in` (the site doesn't know our group codes); no base
-        searchParams.set('type', typeGroupSiteValue(typeGroup));
-      } else if (isBaseQuality && searchMode === 1 && matchedItemType) {
-        // Mode 1: Search by typeLabel (category type) - only for base qualities
-        const typeValue =
-          typeof matchedItemType.typeValue === 'string'
-            ? matchedItemType.typeValue
-            : JSON.stringify(matchedItemType.typeValue);
+    const typeGroup = searchMode === 2 && matchedItemType ? typeGroupOf(matchedItemType.typeValue) : undefined;
+    const weapons = isBaseQuality ? searchModeWeaponGroup(searchMode, item.type, matchedItemType) : undefined;
+    if (weapons) {
+      // Modes 3-5: the weapon group's types, and its bases when it takes only some of a type's (2H Melee), as the
+      // site's `$in` values (the site JSON.parses Type and Base)
+      searchParams.set('type', inCodes(weapons.types));
+      if (weapons.bases) searchParams.set('base', inCodes(weapons.bases));
+    } else if (isBaseQuality && typeGroup) {
+      // Mode 2: every type of the group, as the site's `$in` (the site doesn't know our group codes); no base
+      searchParams.set('type', typeGroupSiteValue(typeGroup));
+    } else if (isBaseQuality && searchMode === 1 && matchedItemType) {
+      // Mode 1: Search by typeLabel (category type) - only for base qualities
+      const typeValue =
+        typeof matchedItemType.typeValue === 'string'
+          ? matchedItemType.typeValue
+          : JSON.stringify(matchedItemType.typeValue);
+      searchParams.set('type', typeValue);
+      // Don't set base parameter when searching by typeLabel
+    } else if (isBaseQuality) {
+      // Mode 0: Default behavior (category/base) - only for base qualities
+      const result = getTypeFromBaseType(item.type, false);
+      if (result && result?.type && result?.type) {
+        const typeValue = typeof result.type === 'string' ? result.type : JSON.stringify(result.type);
+        const baseValue = typeof result.base === 'string' ? result.base : JSON.stringify(result.base);
         searchParams.set('type', typeValue);
-        // Don't set base parameter when searching by typeLabel
-      } else if (isBaseQuality) {
-        // Mode 0: Default behavior (category/base) - only for base qualities
-        const result = getTypeFromBaseType(item.type, false);
-        if (result && result?.type && result?.type) {
-          const typeValue = typeof result.type === 'string' ? result.type : JSON.stringify(result.type);
-          const baseValue = typeof result.base === 'string' ? result.base : JSON.stringify(result.base);
-          searchParams.set('type', typeValue);
-          // Only set base parameter if it's not "Any"
-          if (baseValue !== 'Any') {
-            searchParams.set('base', baseValue);
-          }
-        } else {
-          console.warn('[ItemOverlayWidget] No base type found for rare item:', item.name);
+        // Only set base parameter if it's not "Any"
+        if (baseValue !== 'Any') {
+          searchParams.set('base', baseValue);
         }
       } else {
-        // Uniques, Sets: Always use name search (original functionality)
-        searchParams.set('name', mappedItem?.name || item.name);
+        console.warn('[ItemOverlayWidget] No base type found for rare item:', item.name);
       }
+    } else if (!item.isRuneword) {
+      // Uniques, Sets: Always use name search (original functionality)
+      searchParams.set('name', mappedItem?.name || item.name);
     }
   }
 
@@ -199,17 +198,14 @@ export function buildGetMarketListingQuery(
   corruptionNames?: string[],
   qualityOverride?: QualitySearch,
 ): MarketListingQuery {
-  const now = new Date();
-  const daysAgo = isArchive ? 14 : 3; // 2 weeks for archive, 3 days for regular
-  const dateThreshold = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
   const quality = qualityOverride ?? item.quality;
+  // Every listing, no age window, like the market browser; the archive keeps sold listings (accepted offer) too
   const query: Partial<MarketListingQuery> = {
     $resolve: { user: { in_game_account: true } },
     type: 'item',
     $limit: limit,
     $skip: offset,
-    accepted_offer_id: null,
-    updated_at: { $gte: dateThreshold.toISOString() },
+    ...(!isArchive && { accepted_offer_id: null }),
     $sort: { bumped_at: -1 },
     is_hardcore: settings.mode === 'hardcore',
     is_ladder: settings.ladder === 'ladder',
@@ -335,9 +331,11 @@ export function buildGetMarketListingQuery(
     }
   });
 
-  // Handle search mode: 0 = category (base), 1 = typeLabel, 2 = the type's group (every member type)
+  // Handle search mode: 0 = category (base), 1 = typeLabel, 2 = the type's group (every member type), 3-5 = the
+  // weapon's hand / class / Weapons group (search-modes.ts)
   // Note: Toggle only applies to base item qualities (Rare, Magic, Crafted, Normal, Superior)
-  // Uniques, Sets, and Runewords always use name search
+  // Uniques and Sets use name search; runewords (which keep their base's quality) their name within the mode's
+  // base / type / group, as the header shows (#297)
   if (item.type === 'Jewel') {
     query['item.base.type_code'] = 'jewl';
     query['item.base_code'] = 'jew';
@@ -345,47 +343,44 @@ export function buildGetMarketListingQuery(
     query['item.base.type_code'] = { $in: ['scha', 'mcha', 'lcha', 'torc'] };
     query['item.base_code'] = ItemCharmMap[item.type];
   } else {
-    // Runewords always use name search regardless of base quality
     if (item.isRuneword) {
       const name = item.runeword || mappedItem?.name || item.name;
       if (name) query['item.name'] = { $regex: name, $options: 'i' };
-    } else {
-      // Check if item is a base quality that supports toggle
-      const isBaseQuality =
-        item.quality === ItemQuality.Rare ||
-        item.quality === ItemQuality.Magic ||
-        item.quality === ItemQuality.Crafted ||
-        item.quality === ItemQuality.Normal ||
-        item.quality === ItemQuality.Superior;
+    }
+    const isBaseQuality = BASE_QUALITIES.includes(item.quality as ItemQuality);
 
-      const typeGroup = searchMode === 2 && matchedItemType ? typeGroupOf(matchedItemType.typeValue) : undefined;
-      if (isBaseQuality && typeGroup) {
-        // Mode 2: every type of the group, as an `$in` like grouped types (PD2 doesn't know our group codes)
-        query['item.base.type_code'] = { $in: [...typeGroup.members] };
-      } else if (isBaseQuality && searchMode === 1 && matchedItemType) {
-        // Mode 1: Search by typeLabel (category type) - only for base qualities. Grouped types ("Fist Weapon":
-        // `{"$in": ["h2h", "h2h2"]}`) query as their `$in` object: PD2 matches the JSON string literally.
-        query['item.base.type_code'] = parseCodeValue(matchedItemType.typeValue);
-        // Don't set base_code parameter when searching by typeLabel
-      } else if (isBaseQuality) {
-        // Mode 0: Default behavior (category/base) - only for base qualities
-        const result = getTypeFromBaseType(item.type, true);
-        if (result && result?.type && result?.type) {
-          const typeValue = result.type;
-          query['item.base.type_code'] = typeValue as any;
-          // Only set base_code parameter if it's not "Any"
-          const baseValue = typeof result.base === 'string' ? result.base : JSON.stringify(result.base);
-          if (baseValue !== 'Any') {
-            query['item.base_code'] = result.base;
-          }
-        } else {
-          console.warn('[ItemOverlayWidget] No base type found for rare item:', item.name);
+    const typeGroup = searchMode === 2 && matchedItemType ? typeGroupOf(matchedItemType.typeValue) : undefined;
+    const weapons = isBaseQuality ? searchModeWeaponGroup(searchMode, item.type, matchedItemType) : undefined;
+    if (weapons) {
+      // Modes 3-5: the weapon group's types, and its bases when it takes only some of a type's (2H Melee)
+      query['item.base.type_code'] = { $in: [...weapons.types] };
+      if (weapons.bases) query['item.base_code'] = { $in: [...weapons.bases] };
+    } else if (isBaseQuality && typeGroup) {
+      // Mode 2: every type of the group, as an `$in` like grouped types (PD2 doesn't know our group codes)
+      query['item.base.type_code'] = { $in: [...typeGroup.members] };
+    } else if (isBaseQuality && searchMode === 1 && matchedItemType) {
+      // Mode 1: Search by typeLabel (category type) - only for base qualities. Grouped types ("Fist Weapon":
+      // `{"$in": ["h2h", "h2h2"]}`) query as their `$in` object: PD2 matches the JSON string literally.
+      query['item.base.type_code'] = parseCodeValue(matchedItemType.typeValue);
+      // Don't set base_code parameter when searching by typeLabel
+    } else if (isBaseQuality) {
+      // Mode 0: Default behavior (category/base) - only for base qualities
+      const result = getTypeFromBaseType(item.type, true);
+      if (result && result?.type && result?.type) {
+        const typeValue = result.type;
+        query['item.base.type_code'] = typeValue as any;
+        // Only set base_code parameter if it's not "Any"
+        const baseValue = typeof result.base === 'string' ? result.base : JSON.stringify(result.base);
+        if (baseValue !== 'Any') {
+          query['item.base_code'] = result.base;
         }
       } else {
-        // Uniques, Sets: Always use name search (original functionality). Nameless items (Inferior quality) get no
-        // name filter: PD2 answers an empty $regex with a 500 ("$regex has to be a string").
-        if (item.name) query['item.name'] = { $regex: mappedItem?.name || item.name, $options: 'i' };
+        console.warn('[ItemOverlayWidget] No base type found for rare item:', item.name);
       }
+    } else if (!item.isRuneword) {
+      // Uniques, Sets: Always use name search (original functionality). Nameless items (Inferior quality) get no
+      // name filter: PD2 answers an empty $regex with a 500 ("$regex has to be a string").
+      if (item.name) query['item.name'] = { $regex: mappedItem?.name || item.name, $options: 'i' };
     }
   }
 

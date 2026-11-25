@@ -29,6 +29,12 @@
       "type": "Type: {{type}}",
       "group": "Group: {{group}}",
       "toggleSearchMode": "Click to toggle search mode",
+      "scopeMenu": "Search scope",
+      "scopeThisBase": "this base",
+      "scopeBases_one": "{{count}} base",
+      "scopeBases_other": "{{count}} bases",
+      "scopeTypes_one": "{{count}} type",
+      "scopeTypes_other": "{{count}} types",
       "cycleQuality": "Click to cycle quality",
       "anyQuality": "Any",
       "defense": "Defense: <value>{{defense}}</value>",
@@ -39,13 +45,15 @@
       "noData": "No price data available",
       "fetchFailed": "Failed to fetch price data",
       "median": "Median",
-      "min": "Min",
-      "max": "Max",
+      "minMax": "Min – Max",
       "samples": "Samples",
       "change7d": "7d Change",
       "last30Days": "Last 30 days",
       "openOnPd2Trader": "Open on pd2trader.com",
-      "viewOnWeb": "View on Web"
+      "viewOnWeb": "View on Web",
+      "clean": "Clean {{price}} HR",
+      "cleanListings_one": "Clean ({{count}} listing)",
+      "cleanListings_other": "Clean ({{count}} listings)"
     },
     "corruptions": {
       "thisItem": "This Item's Corruption",
@@ -72,7 +80,6 @@
     },
     "actions": {
       "openTrade": "Open search on projectdiablo2.com",
-      "more": "More",
       "openInMarket": "Open in market",
       "list": "List",
       "listDisabled": "Item must be in your stash (shared or personal) to list."
@@ -81,6 +88,18 @@
       "source": { "label": "Listings to search", "live": "Live", "expired": "Expired" },
       "matches": "Matches: <value>{{total}}</value>",
       "showing": "· showing {{shown}}",
+      "median": "· median",
+      "spread": {
+        "title": "Price spread",
+        "median": "Median",
+        "middleHalf": "Middle half",
+        "average": "Average",
+        "listings_one": "{{count}} listing",
+        "listings_other": "{{count}} listings",
+        "more": "+{{n}} more from {{price}} HR",
+        "basisLive": "Current asking prices of live listings.",
+        "basisExpired": "Last asking prices of ended listings (expired, removed or sold), not sale prices."
+      },
       "loading": "Loading market listings...",
       "errorTitle": "Couldn't load listings",
       "fetchFailed": "Failed to fetch market listings",

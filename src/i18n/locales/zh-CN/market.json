@@ -24,11 +24,12 @@
     "noFavoritesDescription": "点击挂单上的爱心即可保存在此；收藏会与 projectdiablo2.com 同步。",
     "noLiveListingsFor": "{{itemName}} 没有在售挂单",
     "noLiveListings": "没有匹配的在售挂单",
-    "searchArchivePrompt": "搜索已售存档，看看最近的成交价？",
-    "searchArchive": "搜索已售存档",
+    "searchArchivePrompt": "搜索存档（已售、已下架和已过期挂单），看看最近的成交价？",
+    "searchArchive": "搜索存档",
     "noListingsTitle": "没有匹配的挂单",
     "noListingsDescription": "放宽筛选、扩大时间范围或切换模式。",
     "refreshing": "正在刷新结果",
+    "unsearched": "筛选条件已更改 · 当前为上次搜索的结果",
     "loadingMore": "正在加载更多…",
     "loadMoreFailed": "无法加载更多",
     "rateLimitedUntil": "请求受限，直到 {{time}}",
@@ -66,12 +67,16 @@
     "tooManyDescription_other": "最多可同时关注 {{count}} 个搜索。请先停止一个（已保存 标签页）。",
     "startedDescription": "每当有符合此搜索的新挂单时，你都会收到弹窗。",
     "labels": {
-      "signedOut": "登录以关注此搜索",
-      "refused": "你的 PD2 会话已过期：请重新登录以关注此搜索",
-      "unsynced": "无法从 pd2trader.com 加载已保存搜索；正在重试…",
-      "archive": "无法关注已售挂单",
+      "archive": "无法关注存档搜索",
       "watching": "关注中：点击停止此搜索新挂单的弹窗",
       "watch": "关注：每当有符合此搜索的新挂单时弹窗并提示音"
+    },
+    "wtbPrompt": {
+      "title": "同时发布求购？",
+      "description": "有此物品的卖家可以联系你。",
+      "post": "发布求购",
+      "notNow": "暂不",
+      "never": "不再询问"
     }
   },
   "alerts": {
@@ -83,6 +88,8 @@
     "single": "{{search}}：{{listing}}"
   },
   "filters": {
+    "wouldTake": "愿意收这些物品",
+    "wouldTakeTitle": "此搜索的物品可满足的求购，而不仅是要求这些筛选条件的求购",
     "label": "搜索筛选",
     "any": "不限",
     "selected_other": "已选 {{count}} 项",
@@ -94,11 +101,36 @@
     "source": {
       "label": "挂单来源",
       "live": "在售挂单",
-      "archive": "已售存档",
-      "archiveTitle": "已售 / 已下架挂单"
+      "archive": "存档",
+      "archiveTitle": "已结束挂单：已售、已下架和已过期（projectdiablo2.com 存档）",
+      "wanted": "求购",
+      "wantedTitle": "求购此物品的请求",
+      "short": {
+        "live": "在售",
+        "archive": "存档",
+        "wanted": "求购"
+      }
+    },
+    "status": {
+      "label": "状态",
+      "all": "全部",
+      "sold": "已售",
+      "removed": "已下架",
+      "expired": "已过期",
+      "soldTitle": "卖家接受了报价",
+      "removedTitle": "被卖家或管理员删除",
+      "expiredTitle": "6 天内未顶帖或编辑"
     },
     "clearAll": "清除所有筛选",
     "clearStats": "移除所有属性筛选",
+    "autoSearch": {
+      "label": "自动搜索",
+      "on": "自动搜索已开启：更改筛选条件时结果会立即更新。点击后仅在按下“搜索”时才搜索。",
+      "off": "自动搜索已关闭：按“搜索”（Ctrl+Enter）以应用筛选更改。点击后将在输入时即时搜索。"
+    },
+    "searchNow": "搜索",
+    "outOfDate": "结果已过期",
+    "upToDate": "结果与筛选条件一致",
     "sections": {
       "stats": "属性",
       "item": "物品",
@@ -106,11 +138,19 @@
       "listing": "挂单",
       "price": "价格",
       "seller": "卖家",
-      "requirements": "需求"
+      "requirements": "需求",
+      "offer": "出价",
+      "buyer": "买家",
+      "requests": "求购",
+      "realm": "服务器"
     },
     "type": "类型",
     "base": "底材",
     "pickTypeFirst": "请先选择类型",
+    "pickedBases_other": "{{count}} 个底材",
+    "someBases_other": "{{type}}（{{count}} 个底材）",
+    "searchOptions": "搜索…",
+    "noOptions": "没有匹配项",
     "class": "职业",
     "corrupted": "Corrupted",
     "sockets": "孔数",
@@ -157,7 +197,12 @@
     "modeLabel": "Softcore 或 Hardcore",
     "applied": {
       "not": "排除 {{name}}"
-    }
+    },
+    "minOffer": "最低出价",
+    "buyer": "买家",
+    "buyerPlaceholder": "用户名或账号",
+    "fitsStash": "我的储物箱有",
+    "mineOnly": "仅我的"
   },
   "controls": {
     "min": "最小",
@@ -341,6 +386,7 @@
     "pseudoStats_other": "{{count}} 个合计属性",
     "corruptionStat": "腐化属性",
     "corruptionStats_other": "{{count}} 个腐化属性",
+    "socketsStat": "孔数属性行",
     "desecrated": "desecrated",
     "priceNote": "价格备注",
     "hrPrice": "HR 价格",
@@ -351,6 +397,7 @@
     "buyout": "一口价",
     "listingAge": "挂单时间",
     "sort": "排序",
+    "status": "状态（网站存档显示已售、已下架和已过期）",
     "extendedStat": "网站无法表达的属性"
   },
   "nameSearch": {
@@ -365,7 +412,7 @@
   },
   "detail": {
     "label": "挂单详情",
-    "sold": "已售 / 已下架",
+    "ended": "已结束",
     "listed": "挂出时间",
     "favorite": "加入收藏",
     "unfavorite": "取消收藏",
@@ -402,7 +449,8 @@
     "anyOf": "任一（{{rows}}）",
     "noneOf": "排除（{{rows}}）",
     "seller": "卖家 {{name}}",
-    "sold": " · 已售"
+    "archive": " · 存档",
+    "wanted": " · 求购"
   },
   "saved": {
     "savedToast": "搜索已保存",
@@ -411,18 +459,9 @@
     "tooManyDescription_other": "最多可同时为 {{count}} 个已保存搜索开启提醒。请先关闭一个。",
     "nameLabel": "当前搜索的名称",
     "namePlaceholder": "保存当前搜索…（{{description}}）",
-    "needsSync": "保存前需要先从 pd2trader.com 加载你的已保存搜索",
     "alertingSummary": "{{alerting}}/{{max}} 提醒中 · 悬浮窗运行时新匹配会弹窗",
     "alerts": "提醒",
     "enableAlerts": "开启实时提醒",
-    "signInTitle": "登录以保存搜索",
-    "signInDescription": "已保存搜索和关注会随你的 PD2 账号保存在 pd2trader.com。",
-    "reauthTitle": "重新登录以加载已保存搜索",
-    "reauthDescription": "pd2trader.com 不再接受你的 PD2 会话。在重新登录前，保存和关注已暂停。",
-    "loading": "正在加载已保存搜索…",
-    "loadFailedTitle": "无法加载已保存搜索",
-    "loadFailedDescription": "pd2trader.com 无响应。正在自动重试；加载完成前保存和关注已暂停。",
-    "retryNow": "立即重试",
     "emptyTitle": "暂无已保存搜索",
     "emptyDescription": "在搜索标签页设置筛选条件，然后在这里保存（或点击关注），即可一键重新搜索或接收新挂单弹窗。",
     "run": "运行 {{name}}",
@@ -434,28 +473,20 @@
     "toastNewMatches": "新匹配时通知",
     "alertsOff": "提醒已关闭（见上方开关）",
     "alertsFor": "{{name}} 的提醒",
-    "delete": "删除 {{name}}"
+    "delete": "删除 {{name}}",
+    "reorder": "拖动以调整 {{name}} 的顺序",
+    "reorderInstructions": "要拿起一个已保存的搜索，请在其拖动手柄上按空格键或回车键。用上下方向键移动，按空格键或回车键放下，或按 Esc 取消。",
+    "reorderPickedUp": "已拿起 {{name}}。",
+    "reorderMoved": "{{name}} 已移到第 {{position}} 位，共 {{count}} 个。",
+    "reorderDropped": "{{name}} 已放在第 {{position}} 位，共 {{count}} 个。",
+    "reorderCancelled": "已取消移动。{{name}} 回到原位。"
   },
   "store": {
-    "title": "已保存搜索",
-    "refused": "你的 PD2 会话已过期。请重新登录以同步已保存搜索。",
-    "unreachable": "无法连接 pd2trader.com，请稍后重试。",
-    "signIn": "登录以保存搜索并关注市场。",
-    "migratedTitle": "已保存搜索已转移到你的账号",
-    "migratedPartial": "已转移 {{uploaded}} 个；{{dropped}} 个无法转移（无效或超过 {{max}} 个搜索上限）。",
-    "migrated_other": "{{count}} 个已保存搜索现在会在你的所有设备上同步。",
+    "anyItem": "任意物品",
     "capSearches_other": "你最多可保存 {{count}} 个搜索。请先删除一个。",
-    "notLoaded": "暂时无法从 pd2trader.com 加载你的已保存搜索，请稍后重试。",
-    "stillLoading": "你的已保存搜索仍在加载中。",
     "tooManySearches": "已保存搜索过多",
-    "saving": "保存中…",
-    "limitReached": "已达上限",
-    "saveFailed": "无法保存搜索",
-    "updateFailed": "无法更新搜索",
-    "renameFailed": "无法重命名搜索",
-    "alertOnFailed": "无法开启提醒",
-    "alertOffFailed": "无法关闭提醒",
-    "deleteFailed": "无法删除搜索"
+    "capFavorites": "你最多可收藏 {{count}} 个。请先移除一个。",
+    "tooManyFavorites": "收藏过多"
   },
   "deal": {
     "marketAverage": "{{window}} 市场均价",
@@ -489,10 +520,7 @@
     "newSeller": "新卖家"
   },
   "favorites": {
-    "loadFailed": "无法加载收藏",
-    "notRemoved": "收藏未移除",
-    "notSaved": "收藏未保存",
-    "refused": "projectdiablo2.com 拒绝了此更改，请稍后重试。"
+    "loadFailed": "无法加载收藏"
   },
   "palette": {
     "openInMarket": "在市场中搜索",
@@ -502,5 +530,279 @@
     "copyName": "复制名称",
     "nameCopied": "名称已复制",
     "nameNotCopied": "名称未复制"
+  },
+  "weaponGroups": {
+    "weapons": "武器",
+    "1h": "单手",
+    "2h": "双手",
+    "melee": "近战",
+    "2h-melee": "双手近战",
+    "ranged": "远程",
+    "1h-ranged": "单手远程",
+    "2h-ranged": "双手远程"
+  },
+  "wtb": {
+    "callout": {
+      "badge": "新",
+      "title": "求购",
+      "description": "找不到？发布求购并附上你的出价：查价到匹配物品的卖家会看到。所有求购都在「{{wanted}}」中。",
+      "dismiss": "关闭"
+    },
+    "chip": {
+      "label_other": "{{count}} 位买家 · 最高 {{offer}}",
+      "tooltip_other": "{{count}} 位玩家发布了此物品满足的求购。点击查看他们的出价。",
+      "hintNew": "新",
+      "hint": "求购：正在寻找此类物品的玩家。点击查看是谁以及出价多少。",
+      "hintOk": "知道了",
+      "title": "此物品的求购",
+      "subtitle": "发布了需求的玩家。发消息给他们即可出售。",
+      "almost_other": "差一点（{{count}}）— 差 1 条属性的买家",
+      "needs": "需要 {{stat}}（{{value}}）",
+      "needsNone": "需要 {{stat}}（你没有）",
+      "allRequests": "全部求购"
+    },
+    "whisperBuyer": "发消息给 {{name}}",
+    "message": "发消息",
+    "copyWhisper": "复制密语",
+    "listAt": "以 {{offer}} 上架",
+    "listItAt": "以 {{offer}} 上架",
+    "nice": "可选",
+    "must": "必需",
+    "flags": {
+      "corrupted": {
+        "yes": "已腐化",
+        "no": "未腐化"
+      },
+      "ethereal": {
+        "yes": "无形",
+        "no": "非无形"
+      },
+      "desecrated": {
+        "yes": "已亵渎",
+        "no": "未亵渎"
+      },
+      "identified": {
+        "yes": "已鉴定",
+        "no": "未鉴定"
+      }
+    },
+    "sockets": {
+      "exact_other": "{{count}} 孔",
+      "min_other": "{{count}}+ 孔",
+      "max_other": "≤{{count}} 孔",
+      "range_other": "{{min}}–{{count}} 孔"
+    },
+    "youHaveOne": "你有一件",
+    "yours": "你的",
+    "daysLeft_other": "剩余 {{count}} 天",
+    "drawer": {
+      "title": "求购",
+      "buyer": "买家",
+      "personalStash": "个人储物箱 · {{name}}",
+      "sharedStash": "共享储物箱 · 第 {{page}} 页",
+      "openToOffersLeft_other": "接受议价 · 剩余 {{count}} 天",
+      "wantsYourItem": "求购 · 你的物品",
+      "wants": "求购",
+      "met": "已满足",
+      "fromStash": "来自你的储物箱",
+      "own": "这是你的求购。请在“我的”中管理。"
+    },
+    "post": {
+      "title": "发布求购",
+      "editTitle": "编辑求购",
+      "filtersHint": "使用左侧的筛选条件。请在那里修改。",
+      "summary": "你想要的",
+      "toggleNice": "必需或可选：{{stat}}",
+      "excluded": "排除",
+      "anyOf": "任一",
+      "niceHint": "点击 必需 / 可选 可将属性设为可选。",
+      "yourOffer": "你的出价",
+      "soldLately": "近期成交 · {{low}} – {{high}} HR",
+      "amount": "数量",
+      "currency": "货币",
+      "invalidAmount": "出价须大于 0 且不超过 1000，最多 2 位小数。",
+      "openToOffers": "接受还价",
+      "expires": "有效期",
+      "days_other": "{{count}} 天",
+      "alsoWatch": "同时关注：有人上架时提醒我",
+      "alreadyWatching": "已在关注此搜索",
+      "preview": "卖家将看到",
+      "previewLine": "有玩家愿为此支付 {{offer}}",
+      "previewHint": "在其查价中，当物品符合时显示",
+      "submit": "发布求购",
+      "save": "保存修改",
+      "signIn": "登录后发布",
+      "postedToast": "求购已发布",
+      "savedToast": "求购已保存",
+      "signInAgain": "请重新登录后发布",
+      "capTitle": "求购过多",
+      "capDescription_other": "最多可有 {{count}} 条进行中或已暂停的求购。请先关闭一条（求购 → 我的）。",
+      "postFailed": "无法发布求购",
+      "saveFailed": "无法保存求购",
+      "blocked": {
+        "item": "请在筛选中选择物品名称、底材或类型。",
+        "detail": "请至少添加一条必需属性、孔数或无形。"
+      },
+      "previewLineNoOffer": "有玩家想买这个",
+      "expiryNext": "时长 · 用于下次顶帖"
+    },
+    "button": {
+      "text": "求购",
+      "label": "求购：为此搜索发布求购",
+      "archive": "无法求购已售挂单"
+    },
+    "status": {
+      "live_other": "进行中 · 剩 {{count}} 天",
+      "paused": "已暂停",
+      "expired": "已过期",
+      "closed": "已关闭"
+    },
+    "mine": {
+      "noMatches": "暂无匹配",
+      "views_other": "在 {{count}} 次查价中显示",
+      "contacts_other": "{{count}} 名卖家联系了你",
+      "edit": "编辑",
+      "pause": "暂停",
+      "resume": "恢复",
+      "close": "关闭",
+      "updateFailed": "无法更新求购"
+    },
+    "sort": {
+      "label": "求购排序",
+      "newest": "最新",
+      "offer": "出价最高"
+    },
+    "signInStash": "“我的储物箱有”会读取你在 projectdiablo2.com 上的储物箱。",
+    "signInMine": "你的求购使用你的 projectdiablo2.com 账号。",
+    "loadFailed": "无法加载求购",
+    "stashFailed": "无法读取你的储物箱",
+    "listLabel": "求购",
+    "empty": {
+      "allTitle": "暂无求购",
+      "allDescription": "还没有人求购。在搜索中点击“求购”发布一条。",
+      "stashTitle": "储物箱中没有符合的物品",
+      "stashDescription": "目前没有进行中的求购符合你储物箱中的物品。",
+      "mineTitle": "你还没有求购",
+      "mineDescription": "搜索你想要的物品，然后点击“求购”发布。"
+    },
+    "cta": {
+      "title": "没有这样的 {{item}} 在售",
+      "titleAny": "没有这样的物品在售",
+      "live": "在售挂单",
+      "stats_other": "{{count}} 条属性",
+      "corrupted": "已腐化",
+      "post": "发布求购",
+      "helper": "查价时物品符合的卖家会看到你的出价。",
+      "orLoosen": "或放宽"
+    },
+    "badge": {
+      "buyers_other": "{{count}} 位买家",
+      "tooltip": "求购：{{name}} 愿付 {{offer}}"
+    },
+    "card": {
+      "subtitle": "求购 · {{kind}}",
+      "subtitleAny": "求购",
+      "pays": "出价",
+      "openToOffers": "接受议价",
+      "approxHr": "≈ {{hr}} HR",
+      "postedAge": "发布于 {{age}}",
+      "bumpedAge": "顶帖于 {{age}}",
+      "expiredAgo": "已过期 {{age}}"
+    },
+    "others": {
+      "title": "其他人也想要",
+      "sameStats": "属性相同",
+      "titleCount": "其他人也想要 · {{count}}",
+      "seeAll": "查看全部 {{count}} 条",
+      "open": "打开 {{name}} 的求购（{{offer}}）",
+      "more_other": "另有 {{count}} 条"
+    },
+    "demand": {
+      "offersUpTo": "出价最高 {{offers}}",
+      "openOffers": "进行中的求购 {{low}}–{{high}} HR（{{count}}）",
+      "openOffersNoHr": "进行中的求购（{{count}}）",
+      "viewRequests": "查看求购",
+      "buying_other": "{{count}} 名玩家在求购",
+      "buyingIncludingYours_other": "{{count}} 名玩家在求购（包括你）",
+      "soldLately_other": "近期成交 {{low}}–{{high}} HR（{{count}} 笔）"
+    },
+    "results": {
+      "count_other": "{{count}} 条求购",
+      "fitting_other": "{{count}} 条符合你的储物箱"
+    },
+    "bump": {
+      "label": "顶帖",
+      "in": "{{h}} 小时 {{m}} 分钟后可顶",
+      "revive": "顶帖以恢复",
+      "done_other": "已顶到最前 · {{count}} 天后到期",
+      "tooSoon": "暂时不能顶帖",
+      "tooSoonDescription": "{{h}} 小时 {{m}} 分钟后可再次顶帖。"
+    },
+    "mineSections": {
+      "active": "进行中（{{count}}）",
+      "expired": "已过期（{{count}}）"
+    },
+    "response": {
+      "title": "🛒 有卖家能满足你的求购",
+      "body": "{{seller}} 有符合 {{title}} 的物品 · 你的出价 {{offer}}",
+      "bodyNoItem": "{{seller}} 就 {{title}} 私聊了你",
+      "viewRequest": "查看求购",
+      "whisperBack": "回复",
+      "requestGone": "该求购已不再开放"
+    },
+    "responses": {
+      "title_other": "回复 · {{count}}",
+      "dismiss": "忽略",
+      "markFilled": "标记为已完成",
+      "confirmClose": "关闭此求购？",
+      "confirmCloseDescription": "{{title}} · 由 {{seller}} 完成",
+      "close": "关闭求购",
+      "summary": {
+        "atYourPrice": "按你的出价出售",
+        "asks": "要价 {{price}}",
+        "messaged": "给你发了消息",
+        "whispered": "私聊了你"
+      }
+    },
+    "offers": {
+      "sell": "以 {{offer}} 出售",
+      "pending": "已发送报价 · 等待中",
+      "withdraw": "撤回",
+      "accepted": "已接受 · 联系 {{buyer}}",
+      "declined": "已拒绝",
+      "askDifferent": "提出其他价格",
+      "askTitle": "你的价格（对方出价 {{offer}}）",
+      "note": "备注",
+      "notePlaceholder": "给买家的备注（可选）",
+      "send": "发送报价",
+      "sentToast": "已向 {{buyer}} 发送报价",
+      "sentToastDescription": "{{item}} 售价 {{price}}",
+      "fixedPrice": "该买家只接受自己的出价",
+      "notOpen": "该求购已不再开放",
+      "throttled": "报价过于频繁，请稍后再试",
+      "failed": "无法发送报价",
+      "signIn": "登录后才能向买家出售",
+      "withdrawnToast": "报价已撤回",
+      "decideFailed": "无法更新报价",
+      "willSell": "{{seller}} 将以 {{price}} 出售 {{item}}（你的出价）",
+      "asks": "{{seller}} 要价 {{price}} 出售 {{item}}（你出价 {{offer}}）",
+      "accept": "接受",
+      "acceptPrice": "接受 {{price}}",
+      "decline": "拒绝",
+      "dealDraft": "成交 — {{item}} 售价 {{price}}。什么时候可以交易？",
+      "noticeWillSell": "🏷 {{seller}} 将以 {{price}} 卖给你 {{item}}",
+      "noticeAsks": "🏷 {{seller}} 要价 {{price}} 出售 {{item}}",
+      "forRequest": "针对你的求购 {{title}}（你出价 {{offer}}）",
+      "acceptedBy": "{{buyer}} 接受了你对 {{title}} 的报价",
+      "declinedBy": "{{buyer}} 拒绝了你对 {{title}} 的报价",
+      "withdrawnBy": "{{seller}} 撤回了对 {{title}} 的报价",
+      "messageBuyer": "联系 {{buyer}}",
+      "status": {
+        "pending": "等待中",
+        "accepted": "已接受",
+        "declined": "已拒绝",
+        "withdrawn": "已撤回"
+      }
+    }
   }
 }

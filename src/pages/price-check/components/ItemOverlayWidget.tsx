@@ -4,7 +4,7 @@ import { useInView } from 'react-intersection-observer';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, MotionConfig, animate, motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tip, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { useAvailableUpdate } from '@/hooks/useAvailableUpdate';
 import { installUpdateAndRelaunch } from '@/lib/updater';
@@ -24,7 +24,6 @@ import {
   ListPlus,
   Loader2,
   LuggageIcon,
-  MoreHorizontal,
   Repeat2,
   RotateCw,
   SearchIcon,
@@ -35,10 +34,11 @@ import {
   Store,
   TrendingDown,
   TrendingUp,
-  UserIcon,
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { WindowChrome, WindowPanel } from '@/components/custom/window-chrome';
+import { TombGlyph } from '@/components/glyph/TombGlyph';
+import { glyphCodeForName } from '@/lib/glyph-code';
 import { cn } from '@/lib/utils';
 import { DUR, EASE_OUT, fadeInUp, scaleIn, useReducedMotionSafe } from '@/lib/motion';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
@@ -64,14 +64,22 @@ import { statText } from '../lib/tooltip-lines';
 import type { MarketFilters, ScoredListing } from '@/pages/market/lib/types';
 import { withRowPresence } from '@/pages/market/lib/presence';
 import { typeGroupOf } from '@/pages/market/lib/type-groups';
+import { weaponGroupLabel } from '@/pages/market/lib/weapon-groups';
+import { searchModeWeaponGroup, searchScopes } from '@/pages/price-check/lib/search-modes';
 import { MarketBackendError, searchMarketListings } from '@/lib/market-search-api';
 import { reportApiError } from '@/lib/error-reporting';
 import { rememberListingPresence, useListingPresence } from '@/hooks/useListingPresence';
 import { RunePricePopover } from './RunePricePopover';
-import { getStatKey, PSEUDO_KEY_PREFIX, RANGE_FIELDS } from '../lib/utils';
+import { findItemType, getStatKey, PSEUDO_KEY_PREFIX, RANGE_FIELDS } from '../lib/utils';
 import moment from 'moment';
 import { HoverPopover } from '@/components/custom/hover-popover';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useItems } from '@/hooks/useItems';
 import type { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
@@ -79,14 +87,6 @@ import { imageToast, showToast, useOverlay } from '@/overlay';
 import { getSeasonById, getSeasonDateConfig } from '@/lib/seasons';
 import { basisLabel, DEFAULT_PRICE_WINDOW_HOURS, priceWindowNote, windowLabel } from '@/lib/price-window';
 import { ButtonGroup } from '@/components/ui/button-group';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { itemTypes } from '@/common/item-types';
 import { ItemQuality } from '@/common/types/Item';
 import { trackEvent, trackMeasurement } from '@/lib/telemetry';
 import {
@@ -101,7 +101,7 @@ import { StatId } from '../lib/stat-mappings';
 import { corruptionNamesForRoll, sameCorruptionNames } from '../lib/corruptions';
 import { corruptionOption } from '@/pages/market/lib/catalog';
 import { isUserOnlineIngame } from '@/lib/user-online-status';
-import { listingAge } from '@/pages/market/lib/listing';
+import { compactDuration, listingAge, sellerGlyphName } from '@/pages/market/lib/listing';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { writePng, writeText } from '@/lib/browser-clipboard';
 import { whisperCommand } from '@/lib/whisper-history';
@@ -114,10 +114,23 @@ import { PriceSparkline } from './PriceSparkline';
 import { keyStatMin, matchRareStats } from '../lib/rare-stat-match';
 import type { AppraisedStat } from '@/lib/rare-appraisal-api';
 import { SimulatorButton } from './SimulatorButton';
+import { MatchesMedian } from './MatchesMedian';
+import type { MarketPriceStats } from '@/pages/market/lib/price-stats';
+import { useWtbItemMatches, useWtbSession } from '@/pages/market/wtb/useWtbData';
+import { WtbBuyersChip } from '@/pages/market/wtb/WtbBuyersChip';
+import { itemStatValues, statValueOf } from '@/pages/market/wtb/wtb-chip';
+import { wtbOverlapBody } from '@/pages/market/lib/wtb';
+import { priceCheckItemProfile } from '@/pages/market/store/priceCheckFilters';
 import { currentLocale, Trans, useTranslation } from '@/i18n';
+
+/** Overlapping requests read for the buyers chip's "Almost" (requests one stat away). */
+const WTB_NEAR_LOOKUP = 50;
 
 /** The header's "Any" quality: searches every base quality (e.g. Rare and Crafted together). */
 const ANY_QUALITY = 'any' as const;
+
+/** Rainbow Facet rolls: elemental skill damage (329-332) and enemy resistance (333-336). */
+const FACET_ROLL_STAT_IDS = new Set([329, 330, 331, 332, 333, 334, 335, 336]);
 
 /** The search whose results are listed. */
 interface ActiveSearch {
@@ -190,6 +203,9 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   // Market listings state: the rows as fetched; `marketRows` below merges PD2's current seller presence in
   const [fetchedRows, setFetchedRows] = useState<ScoredListing[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
+  // The price spread of every match of the shown search (market service only: PD2 pages can't tell it), and whether
+  // that search ran over ended listings
+  const [priceStats, setPriceStats] = useState<{ stats: MarketPriceStats; archived: boolean } | null>(null);
   const [marketLoading, setMarketLoading] = useState(false);
   // `message` is the service's error text, when it sent one
   const [marketError, setMarketError] = useState<{ message?: string } | null>(null);
@@ -264,6 +280,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   const rareResponse = rareAppraisal.status === 'done' ? rareAppraisal.response : null;
   const appraisal = rareResponse?.appraisal ?? null;
   const appraisalNoteText = rareResponse?.reason ? appraisalNote(rareResponse.reason) : null;
+
+  // Open buy requests this item fills (pd2trader.com): the buyers chip beside the name
+  const wtb = useWtbSession();
+  const itemText = useMemo(() => JSON.stringify(item), [item]);
+  const wtbMatches = useWtbItemMatches(itemText, wtb.realm, wtb.token);
 
   /**
    * Extract Rainbow Facet data from item stats
@@ -474,10 +495,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
   ]);
 
   // Find the matched item type entry
-  const matchedItemType = useMemo(() => {
-    if (!item.type) return null;
-    return itemTypes.find((type) => type.bases.some((b) => b.label.toLowerCase() === item.type.toLowerCase()));
-  }, [item.type]);
+  const matchedItemType = useMemo(() => (item.type ? (findItemType(item.type)?.type ?? null) : null), [item.type]);
   // The matched type's group ("Bows" for Amazon Bow): search mode 2
   const typeGroup = useMemo(
     () => (matchedItemType ? typeGroupOf(matchedItemType.typeValue) : undefined),
@@ -550,6 +568,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       activeSearch.current = null;
       setFetchedRows([]);
       setTotalCount(0);
+      setPriceStats(null);
       setHasMore(false);
       setMarketLoading(false);
       setMarketError(null);
@@ -598,6 +617,27 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     // Once per appraisal: later stat/setting changes must not re-apply the selection.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appraisal]);
+
+  // A Rainbow Facet searches its exact rolls (5/5 finds 5/5 only): its skill damage and enemy resistance rows are
+  // selected at their own value as min and max, and the search runs right away. Rolls are stored positive (the game
+  // shows the resistance one negated).
+  useEffect(() => {
+    if (!extractRainbowFacetData()) return;
+    const rollRows = sortedStats.filter((s) => s.stat_id !== undefined && FACET_ROLL_STAT_IDS.has(s.stat_id));
+    if (rollRows.length === 0) return;
+    setSelected(new Set(rollRows.map(getStatKey)));
+    setFilters(
+      Object.fromEntries(
+        rollRows.map((s) => {
+          const roll = String(Math.abs(s.value ?? 0));
+          return [getStatKey(s), { min: roll, max: roll }];
+        }),
+      ),
+    );
+    setSearchPending(true);
+    // Once per item: later edits to the selection are the user's.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item?.name, item?.quality, item?.stats, extractRainbowFacetData]);
 
   // Fetch average price for unique items
   useEffect(() => {
@@ -744,41 +784,43 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     return { corruptionKey, corruptionName, priceData };
   }, [item.stats, item.quality, corruptionPrices, pd2Item]);
 
-  // Toggle search mode (only for items that support toggle)
-  const toggleSearchMode = useCallback(() => {
-    if (!shouldUseToggle) return; // Don't toggle for uniques/sets/runewords
-    setSearchMode((prev) => {
-      // Cycle through: 0 -> 1 -> 2 -> 0, skipping type without a matched item type and group without a type group
-      const available = [true, !!matchedItemType, !!matchedItemType && !!typeGroup];
-      let next = (prev + 1) % available.length;
-      while (!available[next]) next = (next + 1) % available.length;
-      return next;
-    });
-  }, [matchedItemType, typeGroup, shouldUseToggle]);
+  // The header's scopes for this item (base → type → group → the weapon groups), equal ones skipped; uniques, sets
+  // and runewords search their own name only
+  const searchScopeList = useMemo(
+    () => (shouldUseToggle ? searchScopes(item.type, matchedItemType) : []),
+    [item.type, matchedItemType, shouldUseToggle],
+  );
 
-  // Get display text for current search mode
-  const getSearchModeDisplay = useCallback(() => {
-    switch (searchMode) {
-      case 0:
-        return t('overlay.header.base', { type: item.type });
-      case 1:
-        return matchedItemType
-          ? t('overlay.header.type', { type: matchedItemType.typeLabel })
-          : t('overlay.header.base', { type: item.type });
-      case 2:
-        return typeGroup
-          ? t('overlay.header.group', { group: typeGroup.label })
-          : t('overlay.header.base', { type: item.type });
-      default:
-        return t('overlay.header.base', { type: item.type });
-    }
-  }, [searchMode, item.type, matchedItemType, typeGroup, t]);
+  // The scope menu was last used with the mouse: on close, focus stays off its trigger
+  const scopeMenuPointer = useRef(false);
+
+  // The mouse wheel on the header's scope steps narrower (up) or wider (down), stopping at the ends
+  const stepSearchMode = useCallback(
+    (step: 1 | -1) =>
+      setSearchMode((prev) => {
+        const at = searchScopeList.findIndex((s) => s.mode === prev);
+        return searchScopeList[Math.min(Math.max(at + step, 0), searchScopeList.length - 1)]?.mode ?? prev;
+      }),
+    [searchScopeList],
+  );
+
+  // A search mode's header text
+  const searchModeLabel = useCallback(
+    (mode: number) => {
+      const weapons = searchModeWeaponGroup(mode, item.type, matchedItemType);
+      if (weapons) return t('overlay.header.group', { group: weaponGroupLabel(weapons) });
+      if (mode === 1 && matchedItemType) return t('overlay.header.type', { type: matchedItemType.typeLabel });
+      if (mode === 2 && typeGroup) return t('overlay.header.group', { group: typeGroup.label });
+      return t('overlay.header.base', { type: item.type });
+    },
+    [item.type, matchedItemType, typeGroup, t],
+  );
 
   const openCurrencyValuation = useCallback(() => openPanel('currency'), [openPanel]);
 
   const openListWindow = useCallback(() => {
     trackEvent('item_overlay_list_opened');
-    openPanel('quickList', { item: encodeItemForQuickList(JSON.stringify(item)) }, { placement: 'cursor' });
+    openPanel('quickList', { item: encodeItemForQuickList(JSON.stringify(item)) });
   }, [item, openPanel]);
 
   /**
@@ -810,15 +852,17 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
       };
 
       try {
-        let result: { rows: ScoredListing[]; total: number; fetched: number };
+        let result: { rows: ScoredListing[]; total: number; fetched: number; priceStats?: MarketPriceStats };
         if (search.pd2Only) result = await pd2Page();
         else {
           try {
             const page = await searchMarketListings(search.marketFilters, {
               page: search.skip / ITEMS_PER_PAGE,
               limit: ITEMS_PER_PAGE,
+              // The first page carries the spread of every match; later pages are the same search
+              ...(isNewSearch && { priceStats: true }),
             });
-            result = { rows: page.items, total: page.total, fetched: page.fetched };
+            result = { rows: page.items, total: page.total, fetched: page.fetched, priceStats: page.priceStats };
           } catch (e) {
             if (!(e instanceof MarketBackendError) || search.hasPseudo) throw e;
             reportApiError(e, 'market-service', '/api/market/search', e.status, {
@@ -837,6 +881,7 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
         if (isNewSearch) {
           setFetchedRows(result.rows);
           setTotalCount(result.total);
+          setPriceStats(result.priceStats ? { stats: result.priceStats, archived: search.archived } : null);
           setSearched(true);
         } else {
           setFetchedRows((prev) => {
@@ -1030,10 +1075,10 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
 
   // Corruption/socket price clicks and a Keep rare search once their filter changes have applied
   useEffect(() => {
-    if (!searchPending) return;
+    if (!searchPending || settingsLoading) return;
     setSearchPending(false);
     runSearch(selectedCorruptionNames);
-  }, [searchPending, runSearch, selectedCorruptionNames]);
+  }, [searchPending, settingsLoading, runSearch, selectedCorruptionNames]);
 
   // Infinite scroll: the next page of the listed search
   useEffect(() => {
@@ -1072,6 +1117,37 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     }
   };
 
+  // Buy requests: the item's search scope (overlapping requests, "Almost") and its stat values (what it meets)
+  const wtbProfile = useMemo(() => {
+    const profile = priceCheckItemProfile(
+      {
+        item,
+        pd2Item,
+        settings,
+        statMapper,
+        searchMode: shouldUseToggle ? searchMode : 0,
+        matchedItemType,
+        qualityOverride: searchedQuality,
+      },
+      sortedStats,
+    );
+    return {
+      valueOf: statValueOf(itemStatValues(profile.rows)),
+      nearBody: wtb.realm ? wtbOverlapBody({ ...profile.filters, ...wtb.realm }, { limit: WTB_NEAR_LOOKUP }) : null,
+    };
+  }, [
+    item,
+    pd2Item,
+    settings,
+    statMapper,
+    shouldUseToggle,
+    searchMode,
+    matchedItemType,
+    searchedQuality,
+    sortedStats,
+    wtb.realm,
+  ]);
+
   // Same search in the in-game market browser (pool search, pseudo stats, alerts)
   const openInMarket = () => {
     trackEvent('item_overlay_open_in_market', { archived: searchArchived });
@@ -1109,13 +1185,14 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
     <span className="inline-flex items-center gap-1">
       {basisLabel(requestedWindow)}
       {windowNote && (
-        <span
-          title={windowNote.title}
-          aria-label={windowNote.title}
-          className="cursor-help rounded-sm border border-border px-1 text-[9px] font-medium leading-[13px] tracking-wider text-muted-foreground"
-        >
-          {windowNote.label}
-        </span>
+        <Tip label={windowNote.title}>
+          <span
+            aria-label={windowNote.title}
+            className="cursor-help rounded-sm border border-border px-1 text-[9px] font-medium leading-[13px] tracking-wider text-muted-foreground"
+          >
+            {windowNote.label}
+          </span>
+        </Tip>
       )}
     </span>
   );
@@ -1350,17 +1427,70 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               >
                 <span className="min-w-0 truncate">{displayTitle}</span>
                 {item.isRuneword && <Badge className="font-sans text-[10px] uppercase tracking-wider">Runeword</Badge>}
+                <span className="ml-auto" />
+                <WtbBuyersChip
+                  matches={wtbMatches}
+                  itemText={itemText}
+                  contactItem={{ text: itemText }}
+                  valueOf={wtbProfile.valueOf}
+                  nearBody={wtbProfile.nearBody}
+                  realm={wtb.realm}
+                  token={wtb.token}
+                  source="priceCheck"
+                />
               </h1>
               {item.type && (
                 <div className="-ml-1.5 flex flex-wrap items-center gap-0.5 text-lg leading-tight">
                   {shouldUseToggle ? (
                     <HeaderToggle
-                      onClick={toggleSearchMode}
                       title={t('overlay.header.toggleSearchMode')}
                       className="text-muted-foreground"
                       marked={hoveredRelaxation?.kind === 'type' || hoveredRelaxation?.kind === 'typeGroup'}
+                      onWheel={(e) => e.deltaY !== 0 && stepSearchMode(e.deltaY > 0 ? 1 : -1)}
+                      menu={
+                        searchScopeList.length > 1 && (
+                          <DropdownMenuContent
+                            align="start"
+                            aria-label={t('overlay.header.scopeMenu')}
+                            className="min-w-56"
+                            onPointerDown={() => (scopeMenuPointer.current = true)}
+                            onPointerDownOutside={() => (scopeMenuPointer.current = true)}
+                            onCloseAutoFocus={(e) => {
+                              // Closed by the mouse: the scope keeps today's look (no focus ring or tooltip)
+                              if (scopeMenuPointer.current) e.preventDefault();
+                              scopeMenuPointer.current = false;
+                            }}
+                          >
+                            {searchScopeList.map(({ mode, size }) => (
+                              <DropdownMenuItem
+                                key={mode}
+                                onSelect={() => {
+                                  setSearchMode(mode);
+                                  setSearchPending(true);
+                                }}
+                              >
+                                <Check aria-hidden
+                                  className={cn('size-3.5', mode !== searchMode && 'invisible')} />
+                                <span className="min-w-0 flex-1 truncate">{searchModeLabel(mode)}</span>
+                                <span className="ml-3 text-xs tabular-nums text-muted-foreground">
+                                  {size.unit === 'base'
+                                    ? t('overlay.header.scopeThisBase')
+                                    : t(
+                                        size.unit === 'bases'
+                                          ? 'overlay.header.scopeBases'
+                                          : 'overlay.header.scopeTypes',
+                                        {
+                                          count: size.count,
+                                        },
+                                      )}
+                                </span>
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        )
+                      }
                     >
-                      {getSearchModeDisplay()}
+                      {searchModeLabel(searchMode)}
                     </HeaderToggle>
                   ) : (
                     <div className="px-1.5 text-muted-foreground"
@@ -1420,10 +1550,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
               </div>
             )}
             {appraisalNoteText && (
-              <span className="text-[11px] text-muted-foreground/70"
-                title={appraisalNoteText.title}>
-                {t('overlay.header.appraisalNote', { note: appraisalNoteText.text })}
-              </span>
+              <Tip label={appraisalNoteText.title}>
+                <span className="text-[11px] text-muted-foreground/70">
+                  {t('overlay.header.appraisalNote', { note: appraisalNoteText.text })}
+                </span>
+              </Tip>
             )}
 
             {/* Average Price Information for Unique Items - Compact */}
@@ -1469,12 +1600,19 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                             <PopoverTile label={t('overlay.price.median')}>
                               {averagePriceData.medianPrice.toFixed(2)} HR
                             </PopoverTile>
-                            <PopoverTile label={t('overlay.price.min')}>
-                              {averagePriceData.minPrice.toFixed(2)} HR
+                            <PopoverTile
+                              label={t('overlay.price.minMax')}
+                              className={averagePriceData.clean ? undefined : 'col-span-2'}
+                            >
+                              {averagePriceData.minPrice.toFixed(2)} – {averagePriceData.maxPrice.toFixed(2)} HR
                             </PopoverTile>
-                            <PopoverTile label={t('overlay.price.max')}>
-                              {averagePriceData.maxPrice.toFixed(2)} HR
-                            </PopoverTile>
+                            {averagePriceData.clean && (
+                              <PopoverTile
+                                label={t('overlay.price.cleanListings', { count: averagePriceData.clean.sampleCount })}
+                              >
+                                {averagePriceData.clean.medianPrice.toFixed(2)} HR
+                              </PopoverTile>
+                            )}
                           </div>
                           <div className="space-y-1 border-t border-border pt-2 text-xs">
                             <PopoverKeyValue label={t('overlay.price.samples')}>
@@ -1587,6 +1725,11 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                           <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                             {priceBasis}
                           </span>
+                          {averagePriceData.clean && (
+                            <span className="text-[10px] tabular-nums text-muted-foreground/80">
+                              {t('overlay.price.clean', { price: averagePriceData.clean.medianPrice.toFixed(2) })}
+                            </span>
+                          )}
                         </div>
                         {averagePriceData.priceChange7Days && (
                           <ChangeLabel
@@ -1631,25 +1774,27 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                         {hasAnyRange && (
                           <>
                             <span aria-hidden>·</span>
-                            <button
-                              type="button"
-                              onClick={clearAllRanges}
-                              title={t('overlay.stats.clearRangesTitle')}
-                              className="rounded-sm underline-offset-2 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
-                            >
-                              {t('overlay.stats.clearRanges')}
-                            </button>
+                            <Tip label={t('overlay.stats.clearRangesTitle')}>
+                              <button
+                                type="button"
+                                onClick={clearAllRanges}
+                                className="rounded-sm underline-offset-2 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
+                              >
+                                {t('overlay.stats.clearRanges')}
+                              </button>
+                            </Tip>
                           </>
                         )}
                         <span aria-hidden>·</span>
-                        <button
-                          type="button"
-                          onClick={clearSelectedStats}
-                          title={t('overlay.stats.clearTitle')}
-                          className="rounded-sm underline-offset-2 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
-                        >
-                          {t('common:actions.clear')}
-                        </button>
+                        <Tip label={t('overlay.stats.clearTitle')}>
+                          <button
+                            type="button"
+                            onClick={clearSelectedStats}
+                            className="rounded-sm underline-offset-2 outline-none transition-colors hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring/60"
+                          >
+                            {t('common:actions.clear')}
+                          </button>
+                        </Tip>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -1707,46 +1852,45 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                   </TooltipTrigger>
                   <TooltipContent side="top">{t('overlay.actions.openInMarket')}</TooltipContent>
                 </Tooltip>
-                {/* Less used actions: listing the item, the same search on projectdiablo2.com */}
-                <DropdownMenu>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          aria-label={t('overlay.actions.more')}
-                          className="cursor-pointer border-l border-primary-foreground/15 px-3 data-[state=open]:bg-primary/80"
-                        >
-                          <MoreHorizontal />
-                        </Button>
-                      </DropdownMenuTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent side="top">{t('overlay.actions.more')}</TooltipContent>
-                  </Tooltip>
-                  <DropdownMenuContent align="start"
-                    side="bottom"
-                    className="min-w-60">
-                    <DropdownMenuItem className="cursor-pointer"
-                      disabled={!canList}
-                      onSelect={openListWindow}>
-                      <ListPlus />
-                      {t('overlay.actions.list')}
-                    </DropdownMenuItem>
-                    {!canList && (
-                      <p className="max-w-60 px-2 pb-1.5 pl-8 text-xs text-muted-foreground">
-                        {t('overlay.actions.listDisabled')}
-                      </p>
-                    )}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="cursor-pointer"
-                      onSelect={openTradeUrl}>
-                      <SquareArrowOutUpRight />
-                      {t('overlay.actions.openTrade')}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </ButtonGroup>
 
-              <SimulatorButton item={item} />
+              {/* Secondary actions: the same search on projectdiablo2.com, listing the item */}
+              <ButtonGroup>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      aria-label={t('overlay.actions.openTrade')}
+                      className="cursor-pointer px-3 text-muted-foreground hover:text-foreground"
+                      onClick={openTradeUrl}
+                    >
+                      <SquareArrowOutUpRight />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">{t('overlay.actions.openTrade')}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    {/* aria-disabled, not disabled: the tooltip still explains why listing is off */}
+                    <Button
+                      variant="outline"
+                      aria-label={t('overlay.actions.list')}
+                      aria-disabled={!canList}
+                      className="cursor-pointer px-3 text-muted-foreground hover:text-foreground aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:bg-background/60 aria-disabled:hover:text-muted-foreground"
+                      onClick={canList ? openListWindow : undefined}
+                    >
+                      <ListPlus />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top"
+                    className={canList ? undefined : 'max-w-60'}>
+                    {canList ? t('overlay.actions.list') : t('overlay.actions.listDisabled')}
+                  </TooltipContent>
+                </Tooltip>
+              </ButtonGroup>
+
+              <SimulatorButton item={item}
+                className="ml-auto" />
             </div>
 
             {/* Results bar: which listings the search covers (picking one searches again), then what it found */}
@@ -1775,6 +1919,8 @@ export default function ItemOverlayWidget({ item, statMapper, onClose }: Props) 
                       components={{ value: <span className="font-semibold tabular-nums text-foreground" /> }}
                     />
                   </span>
+                  {priceStats && <MatchesMedian stats={priceStats.stats}
+                    archived={priceStats.archived} />}
                   {marketListings.length < totalCount && (
                     <span className="tabular-nums">
                       {t('overlay.results.showing', { shown: marketListings.length })}
@@ -2051,26 +2197,33 @@ function ToolbarButton({
   );
 }
 
-/** Clickable header text (search mode / quality cycling) with a swap animation. */
+/**
+ * Clickable header text (search scope / quality cycling) with a swap animation. With a `menu` (a
+ * `DropdownMenuContent`) a click opens it under the text instead of calling `onClick`; the text looks the same.
+ */
 function HeaderToggle({
   onClick,
+  onWheel,
+  menu,
   title,
   className,
   marked,
   children,
 }: {
-  onClick: () => void;
+  onClick?: () => void;
+  onWheel?: React.WheelEventHandler<HTMLButtonElement>;
+  menu?: React.ReactNode;
   title: string;
   className?: string;
   /** An empty search's hovered suggestion would change this: ringed. */
   marked?: boolean;
   children: React.ReactNode;
 }) {
-  return (
+  const button = (
     <button
       type="button"
       onClick={onClick}
-      title={title}
+      onWheel={onWheel}
       className={cn(
         'group/toggle inline-flex cursor-pointer items-center gap-1 overflow-hidden rounded-md px-1.5 py-0.5 outline-none transition-[background-color,color,filter] duration-(--dur-fast) hover:bg-accent/60 hover:brightness-125 focus-visible:ring-2 focus-visible:ring-ring/60 active:scale-[0.98]',
         className,
@@ -2093,6 +2246,15 @@ function HeaderToggle({
       <Repeat2 aria-hidden
         className="size-3.5 opacity-40 transition-opacity group-hover/toggle:opacity-90" />
     </button>
+  );
+  if (!menu) return <Tip label={title}>{button}</Tip>;
+  return (
+    <DropdownMenu>
+      <Tip label={title}>
+        <DropdownMenuTrigger asChild>{button}</DropdownMenuTrigger>
+      </Tip>
+      {menu}
+    </DropdownMenu>
   );
 }
 
@@ -2233,43 +2395,35 @@ function CorruptionRow({
     </span>
   );
 
+  // One hint for the whole row: a truncated name leads it in full.
+  const searchTitle = t('overlay.corruptions.searchTitle');
   const row = (
-    <div
-      role="button"
-      tabIndex={-1}
-      className={cn(
-        'group/corr -mx-1.5 flex w-[calc(100%+0.75rem)] min-w-0 cursor-pointer items-center justify-between gap-2 rounded-md px-1.5 py-1 text-xs outline-none transition-colors duration-(--dur-fast) focus-visible:ring-2 focus-visible:ring-ring/60',
-        selected ? 'bg-glow/12 ring-1 ring-inset ring-glow/50' : 'hover:bg-accent/60',
-      )}
-      onClick={(e) => {
-        e.stopPropagation();
-        onSelect();
-      }}
-      title={t('overlay.corruptions.searchTitle')}
-    >
-      <div className="min-w-0 flex-1 overflow-hidden">
-        {isTruncated ? (
-          <Tooltip>
-            <TooltipTrigger asChild>{nameElement}</TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">{name}</p>
-            </TooltipContent>
-          </Tooltip>
+    <Tip label={isTruncated ? `${name}\n${searchTitle}` : searchTitle}>
+      <div
+        role="button"
+        tabIndex={-1}
+        className={cn(
+          'group/corr -mx-1.5 flex w-[calc(100%+0.75rem)] min-w-0 cursor-pointer items-center justify-between gap-2 rounded-md px-1.5 py-1 text-xs outline-none transition-colors duration-(--dur-fast) focus-visible:ring-2 focus-visible:ring-ring/60',
+          selected ? 'bg-glow/12 ring-1 ring-inset ring-glow/50' : 'hover:bg-accent/60',
+        )}
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelect();
+        }}
+      >
+        <div className="min-w-0 flex-1 overflow-hidden">{nameElement}</div>
+        {price ? (
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="text-[10px] tabular-nums text-muted-foreground">({price.sampleCount})</span>
+            <span className="font-semibold tabular-nums text-foreground">{price.medianPrice.toFixed(2)} HR</span>
+            {hasSocketPrices && <ChevronRight aria-hidden
+              className="-mr-0.5 size-3 text-muted-foreground" />}
+          </div>
         ) : (
-          nameElement
+          <span className="shrink-0 text-[10px] text-muted-foreground">{t('overlay.corruptions.noPriceData')}</span>
         )}
       </div>
-      {price ? (
-        <div className="flex shrink-0 items-center gap-2">
-          <span className="text-[10px] tabular-nums text-muted-foreground">({price.sampleCount})</span>
-          <span className="font-semibold tabular-nums text-foreground">{price.medianPrice.toFixed(2)} HR</span>
-          {hasSocketPrices && <ChevronRight aria-hidden
-            className="-mr-0.5 size-3 text-muted-foreground" />}
-        </div>
-      ) : (
-        <span className="shrink-0 text-[10px] text-muted-foreground">{t('overlay.corruptions.noPriceData')}</span>
-      )}
-    </div>
+    </Tip>
   );
 
   if (!price || !hasSocketPrices) return row;
@@ -2289,25 +2443,26 @@ function CorruptionRow({
           <div className="mb-2 text-xs font-semibold">{t('overlay.corruptions.socketPrices', { name })}</div>
           <div className="space-y-0.5">
             {socketPrices.map((socketPrice, socketIdx) => (
-              <div
-                key={socketIdx}
-                role="button"
-                tabIndex={-1}
-                className="-mx-2 flex cursor-pointer items-center justify-between rounded-md px-2 py-1 text-xs outline-none transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring/60"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSocketSelect(socketPrice.socketCount);
-                }}
-                title={t('overlay.corruptions.filterBySocket')}
-              >
-                <span className="text-muted-foreground">
-                  {t('overlay.sockets', { count: socketPrice.socketCount })}
-                </span>
-                <div className="flex shrink-0 items-center gap-2">
-                  <span className="text-[10px] tabular-nums text-muted-foreground">({socketPrice.sampleCount})</span>
-                  <span className="font-semibold tabular-nums">{socketPrice.medianPrice.toFixed(2)} HR</span>
+              <Tip key={socketIdx}
+                label={t('overlay.corruptions.filterBySocket')}>
+                <div
+                  role="button"
+                  tabIndex={-1}
+                  className="-mx-2 flex cursor-pointer items-center justify-between rounded-md px-2 py-1 text-xs outline-none transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring/60"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSocketSelect(socketPrice.socketCount);
+                  }}
+                >
+                  <span className="text-muted-foreground">
+                    {t('overlay.sockets', { count: socketPrice.socketCount })}
+                  </span>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="text-[10px] tabular-nums text-muted-foreground">({socketPrice.sampleCount})</span>
+                    <span className="font-semibold tabular-nums">{socketPrice.medianPrice.toFixed(2)} HR</span>
+                  </div>
                 </div>
-              </div>
+              </Tip>
             ))}
           </div>
         </div>
@@ -2362,19 +2517,20 @@ function SortHeader({
 }) {
   const Arrow = dir === 'desc' ? ChevronDown : ChevronUp;
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      className={cn(
-        'cursor-pointer inline-flex items-center gap-0.5 rounded-sm py-0.5 uppercase tracking-[0.12em] outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
-        active && 'font-semibold text-foreground',
-      )}
-    >
-      {label}
-      {active && <Arrow aria-hidden
-        className="size-3" />}
-    </button>
+    <Tip label={title}>
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          'cursor-pointer inline-flex items-center gap-0.5 rounded-sm py-0.5 uppercase tracking-[0.12em] outline-none transition-colors duration-(--dur-fast) hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60',
+          active && 'font-semibold text-foreground',
+        )}
+      >
+        {label}
+        {active && <Arrow aria-hidden
+          className="size-3" />}
+      </button>
+    </Tip>
   );
 }
 
@@ -2415,20 +2571,21 @@ function SellerFilterMenu({ filter, onChange }: { filter: SellerFilter; onChange
   return (
     <Popover open={open}
       onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          aria-label={t('overlay.results.sellerFilter')}
-          title={t('overlay.results.sellerFilter')}
-          className={cn(
-            'cursor-pointer flex h-4 w-5 flex-none items-center justify-center rounded-full outline-none transition-shadow duration-(--dur-fast) hover:ring-1 hover:ring-border focus-visible:ring-2 focus-visible:ring-ring/60',
-            filtered && 'ring-1 ring-foreground/30',
-          )}
-        >
-          <PresenceMark inGame={filter.inGame}
-            onSite={filter.onSite} />
-        </button>
-      </PopoverTrigger>
+      <Tip label={t('overlay.results.sellerFilter')}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            aria-label={t('overlay.results.sellerFilter')}
+            className={cn(
+              'cursor-pointer flex h-4 w-5 flex-none items-center justify-center rounded-full outline-none transition-shadow duration-(--dur-fast) hover:ring-1 hover:ring-border focus-visible:ring-2 focus-visible:ring-ring/60',
+              filtered && 'ring-1 ring-foreground/30',
+            )}
+          >
+            <PresenceMark inGame={filter.inGame}
+              onSite={filter.onSite} />
+          </button>
+        </PopoverTrigger>
+      </Tip>
       <PopoverContent align="end"
         className="w-52 p-1">
         <div role="menu"
@@ -2488,14 +2645,16 @@ const ListingRow = ({ row, idx }: { row: ScoredListing; idx: number }) => {
   const presenceText = `${online ? t('overlay.listing.inGame') : t('overlay.listing.notInGame')} · ${
     onSite ? t('overlay.listing.onSite') : t('overlay.listing.notOnSite')
   }`;
-  // Market service rows: how long the listing was up and, once it ended, how
+  // Market service rows: how long the listing was up and, once it ended, how (the cell is short, the tooltip says it)
   const ended = row.status && row.status !== 'active' ? row.status : null;
   const upFor =
     typeof row.durationSeconds === 'number' ? moment.duration(row.durationSeconds, 'seconds').humanize() : null;
+  const endedTitle = [
+    ended && upFor ? t(ENDED_KEYS[ended], { duration: upFor }) : null,
+    ended && row.endedAt ? t('overlay.listing.endedAt', { when: moment(row.endedAt).fromNow() }) : null,
+  ].filter(Boolean);
   const listedTitle = ended
-    ? row.endedAt
-      ? t('overlay.listing.endedAt', { when: moment(row.endedAt).fromNow() })
-      : undefined
+    ? endedTitle.join(' · ') || undefined
     : upFor
       ? t('overlay.listing.listedFor', { duration: upFor })
       : undefined;
@@ -2538,7 +2697,8 @@ const ListingRow = ({ row, idx }: { row: ScoredListing; idx: number }) => {
         >
           {/* Price Column */}
           <td className="flex flex-row items-center gap-2 whitespace-nowrap rounded-l-md px-2 py-1">
-            <div className="flex-1 truncate">
+            {/* w-0: truncating text adds nothing to the row's min-content, so a long price note can't widen the table */}
+            <div className="w-0 min-w-0 flex-1 truncate">
               {listing.hr_price ? (
                 <span className="font-semibold tabular-nums text-foreground">{`${listing.hr_price} HR`}</span>
               ) : listing.price && listing.price.length > 40 ? (
@@ -2628,13 +2788,21 @@ const ListingRow = ({ row, idx }: { row: ScoredListing; idx: number }) => {
             </Tooltip>
           </td>
 
-          {/* Listed Column: bump age; for ended listings how long they were up ("sold after 2 days") */}
-          <td
-            className="whitespace-nowrap rounded-r-md px-2 py-1 text-right text-xs tabular-nums text-muted-foreground"
-            title={listedTitle}
-          >
-            {ended && upFor ? t(ENDED_KEYS[ended], { duration: upFor }) : listingAge(listing) || '-'}
-          </td>
+          {/* Listed Column: bump age; for ended listings how it ended and how long it was up ("Sold 2d") */}
+          <Tip label={listedTitle}>
+            <td className="whitespace-nowrap rounded-r-md px-2 py-1 text-right text-xs tabular-nums text-muted-foreground">
+              {ended && typeof row.durationSeconds === 'number' ? (
+                <>
+                  <span className={cn('lowercase', ended === 'sold' && 'text-success')}>
+                    {t(`market:filters.status.${ended}`)}
+                  </span>{' '}
+                  {compactDuration(row.durationSeconds * 1000)}
+                </>
+              ) : (
+                listingAge(listing) || '-'
+              )}
+            </td>
+          </Tip>
         </tr>
       </PopoverTrigger>
 
@@ -2654,7 +2822,8 @@ const ListingRow = ({ row, idx }: { row: ScoredListing; idx: number }) => {
             hideToggle={true} />
           {listing.user?.username && (
             <div className="mt-2 flex items-center gap-1.5 border-t border-border pt-2 text-xs text-muted-foreground">
-              <UserIcon className="size-3" />
+              <TombGlyph code={glyphCodeForName(sellerGlyphName(listing) ?? listing.user.username)}
+                size={16} />
               <span>
                 <Trans
                   t={t}
@@ -2663,10 +2832,12 @@ const ListingRow = ({ row, idx }: { row: ScoredListing; idx: number }) => {
                   components={{ name: <span className="text-foreground" /> }}
                 />
               </span>
+              {/* The popover is pointer-events-none (no hover hint possible): the dot is labelled instead. */}
               {online && (
                 <div
+                  role="img"
+                  aria-label={t('overlay.listing.online')}
                   className="size-2 rounded-full bg-success ring-2 ring-success/25"
-                  title={t('overlay.listing.online')}
                 />
               )}
             </div>

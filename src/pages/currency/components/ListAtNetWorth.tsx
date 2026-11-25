@@ -105,7 +105,7 @@ function ManageListingsItem() {
   const { t } = useTranslation('currency');
   const { openPanel } = useOverlay();
   return (
-    <ContextMenuItem onSelect={() => openPanel('quickList', undefined, { placement: 'gameCenter' })}>
+    <ContextMenuItem onSelect={() => openPanel('quickList')}>
       <ListChecks />
       {t('listAtNetWorth.manageListings')}
     </ContextMenuItem>
@@ -365,7 +365,7 @@ function ListAtNetWorthForm({
             size="sm"
             variant="outline"
             className="w-full"
-            onClick={() => openPanel('quickList', undefined, { placement: 'gameCenter' })}
+            onClick={() => openPanel('quickList')}
           >
             {t('listAtNetWorth.manageListings')}
           </Button>

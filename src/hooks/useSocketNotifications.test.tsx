@@ -66,13 +66,6 @@ vi.mock('@/overlay', () => {
   };
 });
 vi.mock('@/assets/poe_whisper.mp3', () => ({ default: 'whisper.mp3' }));
-// The module fetches the sound at import to make its blob: URL; keep that off the network
-vi.hoisted(() =>
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async () => Promise.reject(new Error('offline'))),
-  ),
-);
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: vi.fn(() => true), invoke: vi.fn() }));
 vi.mock('@/lib/browser-events', () => ({ listen: bus.listen }));
 vi.mock('@/lib/browser-fs', () => ({
@@ -143,8 +136,14 @@ async function renderNotifications(props: {
   return hook;
 }
 
+/** Fires `event` and lets the sound play (it waits for the blob: URL, made on the first play). */
 async function fire(event: string, payload: unknown) {
-  await act(() => bus.fire(event, payload));
+  await act(async () => {
+    await bus.fire(event, payload);
+    const tick = Promise.withResolvers<void>();
+    setTimeout(tick.resolve, 0);
+    await tick.promise;
+  });
 }
 
 beforeEach(() => {
@@ -157,6 +156,11 @@ beforeEach(() => {
   bus.state.hold = false;
   resetChatPrefs();
   vi.stubGlobal('Audio', FakeAudio);
+  // The first play fetches the sound to make its blob: URL; keep that off the network
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => Promise.reject(new Error('offline'))),
+  );
   vi.mocked(isTauri).mockReturnValue(true);
   vi.mocked(invoke).mockImplementation(async (cmd) => (cmd === 'is_diablo_focused' ? diabloFocused : undefined));
 });
@@ -206,11 +210,11 @@ describe('playNotificationSound', () => {
         }
       },
     );
-    // Fresh module load: the blob: URL is made when the module is evaluated
+    // Fresh module load: the blob: URL is made on the first play
     const { playNotificationSound } = await import('./useSocketNotifications');
-    await vi.waitFor(() => expect(fetch).toHaveBeenCalled());
-    await act(async () => {});
+    expect(fetch).not.toHaveBeenCalled();
     playNotificationSound();
+    await vi.waitFor(() => expect(played).toHaveLength(1));
     return played[0];
   }
 

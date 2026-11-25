@@ -10,6 +10,7 @@ import {
   BUYOUT_OPTIONS,
   CHAT_TIMING_OPTIONS,
   CORRUPTED_FILTER_OPTIONS,
+  DELIST_EXCEPTION_OPTIONS,
   LADDER_OPTIONS,
   LANGUAGE_OPTIONS,
   LISTINGS_VIEW_OPTIONS,
@@ -25,6 +26,7 @@ import {
   TIMER_LAYOUT_OPTIONS,
   TIMER_ZONES_OPTIONS,
   uiScaleOptions,
+  WINDOW_KEYBOARD_FOCUS_OPTIONS,
   ZONE_ALERT_OPTIONS,
 } from '@/components/dialogs/optionsv2/setting-options';
 import { HOTKEY_ROWS } from '@/components/dialogs/optionsv2/hotkeys/hotkey-form';
@@ -40,8 +42,11 @@ import { clampUiScale } from '@/lib/ui-scale';
  * Values fall back to the same defaults the forms show.
  */
 
-/** An ISettings key, or a row whose state lives elsewhere (the leaderboard profile is stored server-side). */
-export type SettingsFieldKey = keyof ISettings | 'publicProfile';
+/**
+ * An ISettings key, or a row whose state lives elsewhere (the leaderboard profile is stored server-side, Auto search
+ * in the market's market-prefs.json).
+ */
+export type SettingsFieldKey = keyof ISettings | 'publicProfile' | 'marketAutoSearch';
 
 type Text = (t: TFunction, settings: ISettings) => string;
 
@@ -320,6 +325,44 @@ export const SETTINGS_REGISTRY: readonly SettingEntry[] = [
   },
   {
     kind: 'select',
+    key: 'windowKeyboardFocus',
+    section: 'Interface',
+    labelKey: 'settings:interface.windows.keyboardFocus.label',
+    groupKeys: ['settings:interface.windows.group'],
+    keywords: ['focus', 'keyboard', 'typing', 'window', 'mute', 'sound'],
+    value: (s) => s.windowKeyboardFocus ?? 'typing',
+    options: () => WINDOW_KEYBOARD_FOCUS_OPTIONS,
+  },
+  {
+    kind: 'boolean',
+    key: 'windowsCloseOnClickAway',
+    section: 'Interface',
+    labelKey: 'settings:interface.windows.closeOnClickAway.label',
+    groupKeys: ['settings:interface.windows.group'],
+    keywords: ['close', 'auto close', 'click outside', 'blur', 'focus', 'window'],
+    value: (s) => s.windowsCloseOnClickAway ?? true,
+  },
+  {
+    kind: 'boolean',
+    key: 'windowsOutsideGame',
+    section: 'Interface',
+    labelKey: 'settings:interface.windows.outsideGame.label',
+    groupKeys: ['settings:interface.windows.group'],
+    keywords: ['diablo', 'game', 'desktop', 'outside', 'hide', 'window', 'focus'],
+    value: (s) => s.windowsOutsideGame ?? false,
+  },
+  {
+    kind: 'boolean',
+    key: 'hotkeysOutsideGame',
+    section: 'Interface',
+    labelKey: 'settings:interface.windows.hotkeysOutsideGame.label',
+    groupKeys: ['settings:interface.windows.group'],
+    keywords: [...HOTKEY_KEYWORDS, 'diablo', 'game', 'desktop', 'outside', 'global'],
+    value: (s) => s.hotkeysOutsideGame ?? false,
+    disabled: (s) => !s.windowsOutsideGame,
+  },
+  {
+    kind: 'select',
     key: 'themeId',
     section: 'Interface',
     labelKey: 'settings:sections.theme.title',
@@ -511,6 +554,27 @@ export const SETTINGS_REGISTRY: readonly SettingEntry[] = [
   },
   {
     kind: 'select',
+    key: 'delistExceptionMode',
+    section: 'Market',
+    labelKey: 'settings:market.listings.autoDelist.exceptionMode.label',
+    groupKeys: ['settings:market.listings.group', 'settings:market.listings.autoDelist.label'],
+    keywords: ['delist', 'auto delist', 'exception', 'stackable', 'currency', 'token', 'puzzlebox', 'key', 'essence'],
+    value: (s) => s.delistExceptionMode ?? 'none',
+    options: () => DELIST_EXCEPTION_OPTIONS,
+    shown: (s) => (s.stashAutoDelist ?? 'ask') !== 'off',
+  },
+  {
+    kind: 'open',
+    key: 'delistExceptions',
+    section: 'Market',
+    labelKey: 'settings:market.listings.autoDelist.exceptions.label',
+    groupKeys: ['settings:market.listings.group', 'settings:market.listings.autoDelist.label'],
+    keywords: ['delist', 'auto delist', 'exception', 'never', 'token', 'puzzlebox'],
+    trailing: (_t, s) => String(s.delistExceptions?.length ?? 0),
+    shown: (s) => (s.stashAutoDelist ?? 'ask') !== 'off' && (s.delistExceptionMode ?? 'none') !== 'none',
+  },
+  {
+    kind: 'select',
     key: 'myListingsView',
     section: 'Market',
     labelKey: 'settings:market.listings.view.label',
@@ -551,13 +615,13 @@ export const SETTINGS_REGISTRY: readonly SettingEntry[] = [
   },
   {
     kind: 'select',
-    key: 'marketDefaultMaxAgeDays',
+    key: 'marketDefaultListedWithinDays',
     section: 'Market',
     labelKey: 'settings:market.browser.age.label',
     groupKeys: ['settings:market.browser.group'],
     keywords: ['age', 'days', 'old', 'filter'],
-    value: (s) => String(s.marketDefaultMaxAgeDays ?? 3),
-    options: (s) => ageDayOptions(s.marketDefaultMaxAgeDays ?? 3),
+    value: (s) => String(s.marketDefaultListedWithinDays ?? 0),
+    options: (s) => ageDayOptions(s.marketDefaultListedWithinDays ?? 0),
     numeric: true,
   },
   {
@@ -607,6 +671,14 @@ export const SETTINGS_REGISTRY: readonly SettingEntry[] = [
     value: (s) => s.marketShowSellerCard ?? true,
   },
   {
+    kind: 'open',
+    key: 'marketAutoSearch',
+    section: 'Market',
+    labelKey: 'settings:market.browser.autoSearch.label',
+    groupKeys: ['settings:market.browser.group'],
+    keywords: ['auto', 'search', 'live', 'instant', 'filter', 'ctrl+enter'],
+  },
+  {
     kind: 'select',
     key: 'marketAlertToastSeconds',
     section: 'Market',
@@ -633,6 +705,15 @@ export const SETTINGS_REGISTRY: readonly SettingEntry[] = [
     label: (t, s) => t('settings:market.alerts.volume.label', { value: s.marketAlertVolume ?? 70 }),
     groupKeys: ['settings:market.alerts.group'],
     keywords: [...SOUND_KEYWORDS, 'alert'],
+  },
+  {
+    kind: 'boolean',
+    key: 'marketWtbPromptEnabled',
+    section: 'Market',
+    labelKey: 'settings:market.alerts.wtbPrompt.label',
+    groupKeys: ['settings:market.alerts.group'],
+    keywords: ['buy request', 'wtb', 'want to buy', 'watch', 'prompt'],
+    value: (s) => s.marketWtbPromptEnabled ?? true,
   },
 
   // Net worth

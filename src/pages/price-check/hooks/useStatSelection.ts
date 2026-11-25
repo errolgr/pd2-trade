@@ -119,7 +119,12 @@ export function useStatSelection(item: any) {
     setSelected((prev) => new Set([...prev, key]));
     setFilters((f) => ({
       ...f,
-      [key]: initialInput({ stat_id: StatId.Pseudo, name: option.name, value: option.value }),
+      [key]: initialInput({
+        stat_id: StatId.Pseudo,
+        name: option.name,
+        value: option.value,
+        maxValue: option.maxValue,
+      }),
     }));
   };
 

@@ -6,6 +6,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
 import { SETTING_HIGHLIGHT } from '../settings-ui';
 import { Trans, useTranslation } from '@/i18n';
+import { Tip } from '@/components/ui/tooltip';
 
 type ModeFilter = 'all' | 'dark' | 'light';
 
@@ -129,51 +130,52 @@ export function ThemePicker() {
         {visible.map((theme, index) => {
           const checked = theme.id === current.id;
           return (
-            <button
-              key={theme.id}
-              ref={(el) => {
-                optionRefs.current[index] = el;
-              }}
-              type="button"
-              role="radio"
-              aria-checked={checked}
-              aria-label={t('theme.optionLabel', {
-                name: theme.name,
-                mode: theme.mode === 'dark' ? t('theme.mode.dark') : t('theme.mode.light'),
-              })}
-              title={theme.description}
-              tabIndex={theme.id === tabStopId ? 0 : -1}
-              onClick={() => select(theme.id)}
-              onKeyDown={(e) => onOptionKeyDown(e, index)}
-              className={cn(
-                'group relative flex flex-col gap-2 rounded-lg border border-border bg-card p-2 text-left outline-none',
-                'transition-[transform,box-shadow,border-color] duration-(--dur-fast) ease-out',
-                'hover:border-ring/50 hover:shadow-panel motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0',
-                'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                checked && 'border-primary/70 shadow-glow ring-2 ring-primary/70',
-              )}
-            >
-              <ThemePreview theme={theme} />
-              <div className="flex items-center justify-between gap-2 px-0.5">
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-medium text-card-foreground">{theme.name}</div>
-                  <div className="text-xs capitalize text-muted-foreground">
-                    {theme.mode === 'dark' ? t('theme.mode.dark') : t('theme.mode.light')}
+            <Tip key={theme.id}
+              label={theme.description}>
+              <button
+                ref={(el) => {
+                  optionRefs.current[index] = el;
+                }}
+                type="button"
+                role="radio"
+                aria-checked={checked}
+                aria-label={t('theme.optionLabel', {
+                  name: theme.name,
+                  mode: theme.mode === 'dark' ? t('theme.mode.dark') : t('theme.mode.light'),
+                })}
+                tabIndex={theme.id === tabStopId ? 0 : -1}
+                onClick={() => select(theme.id)}
+                onKeyDown={(e) => onOptionKeyDown(e, index)}
+                className={cn(
+                  'group relative flex flex-col gap-2 rounded-lg border border-border bg-card p-2 text-left outline-none',
+                  'transition-[transform,box-shadow,border-color] duration-(--dur-fast) ease-out',
+                  'hover:border-ring/50 hover:shadow-panel motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0',
+                  'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                  checked && 'border-primary/70 shadow-glow ring-2 ring-primary/70',
+                )}
+              >
+                <ThemePreview theme={theme} />
+                <div className="flex items-center justify-between gap-2 px-0.5">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium text-card-foreground">{theme.name}</div>
+                    <div className="text-xs capitalize text-muted-foreground">
+                      {theme.mode === 'dark' ? t('theme.mode.dark') : t('theme.mode.light')}
+                    </div>
                   </div>
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'grid size-5 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground',
+                      'transition-[opacity,transform] duration-(--dur-med) ease-spring',
+                      checked ? 'scale-100 opacity-100' : 'scale-50 opacity-0',
+                    )}
+                  >
+                    <Check className="size-3"
+                      strokeWidth={3} />
+                  </span>
                 </div>
-                <span
-                  aria-hidden
-                  className={cn(
-                    'grid size-5 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground',
-                    'transition-[opacity,transform] duration-(--dur-med) ease-spring',
-                    checked ? 'scale-100 opacity-100' : 'scale-50 opacity-0',
-                  )}
-                >
-                  <Check className="size-3"
-                    strokeWidth={3} />
-                </span>
-              </div>
-            </button>
+              </button>
+            </Tip>
           );
         })}
       </div>

@@ -1,6 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { modToStatKey } from './mod-keys';
-import { searchStats, STAT_OPTIONS, statLabel } from './stats';
+import type { Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import { mergeDamageLines } from './card-model';
+import { modStatValue, modToStatKey } from './mod-keys';
+import { CORRUPTION_OPTIONS } from './catalog';
+import {
+  ITEM_PROPERTY_OPTIONS,
+  isDamageRangeKey,
+  lowDamageRange,
+  parseStatKey,
+  readStatValue,
+  searchStats,
+  STAT_OPTIONS,
+  statLabel,
+  withLowDamageRange,
+} from './stats';
 
 const top = (query: string, n = 2) =>
   searchStats(query, n).map((o) => ('label' in o ? o.label : '').replace(/\{X\}/g, 'X'));
@@ -16,6 +29,13 @@ describe('searchStats ranking', () => {
   it('prefers shorter names among partial matches, and short words must match whole words', () => {
     expect(top('def')).toEqual(['+X Defense', '+X Defense (Based on Character Level)']);
     expect(top('life', 5).indexOf('+X% Total Life Stolen per Hit')).toBeGreaterThan(1);
+  });
+
+  it('offers the Sockets item property ahead of the sockets corruption', () => {
+    const [first, second] = searchStats('sockets', 5, CORRUPTION_OPTIONS);
+    expect(first).toEqual(ITEM_PROPERTY_OPTIONS[0]);
+    expect(second).toMatchObject({ value: 'item_numsockets' });
+    expect(searchStats('socket', 5)).toContainEqual(ITEM_PROPERTY_OPTIONS[0]);
   });
 });
 
@@ -37,5 +57,117 @@ describe('skill tab options', () => {
     const key = modToStatKey({ name: 'item_addskill_tab', values: [24, 4] });
     expect(key).toBe('item_addskill_tab{24}');
     expect(statLabel(key!)).toBe('+{X} to Paladin Combat Skills');
+  });
+});
+
+describe('physical damage pair (damage)', () => {
+  const line = (name: string, value: number): Modifier => ({ name, values: [value], label: '', priority: 0 });
+  const mods = [line('min_damage', 4), line('strength', 20), line('maxdamage', 14), line('secondary_maxdamage', 12)];
+
+  it('parses like an elemental pair: slot 0 pins the min, the roll is the max', () => {
+    expect(parseStatKey('damage{4..}')).toEqual({ names: ['damage'], pins: [{ index: 0, min: 4 }], valueIndex: 1 });
+    expect(parseStatKey('damage')).toEqual({ names: ['damage'], pins: [], valueIndex: 1 });
+    expect(parseStatKey('damage{4..9}').pins).toEqual([{ index: 0, min: 4, max: 9 }]);
+    expect(parseStatKey('damage{4}').pins).toEqual([{ index: 0, values: [4] }]);
+  });
+
+  it('reads the largest max-damage line when a min-damage line meets the pin', () => {
+    expect(readStatValue(mods, 'damage')).toBe(14);
+    expect(readStatValue(mods, 'damage{4..}')).toBe(14);
+    expect(readStatValue(mods, 'damage{3..4}')).toBe(14);
+    expect(readStatValue(mods, 'damage{5..}')).toBeNull();
+    expect(readStatValue(mods, 'damage{4}')).toBe(14);
+    expect(readStatValue([line('maxdamage', 14)], 'damage')).toBeNull();
+    expect(readStatValue([line('min_damage', 4)], 'damage')).toBeNull();
+  });
+
+  it('is a picker option labelled "Adds {X}-{Y} Damage", found as flat / adds damage', () => {
+    expect(statLabel('damage{4..}')).toBe('Adds {X}-{Y} Damage');
+    expect(STAT_OPTIONS.find((o) => o.key === 'damage')).toMatchObject({ group: 'Offense' });
+    expect(top('flat damage', 1)).toEqual(['Adds X-{Y} Damage']);
+    expect(top('adds damage', 1)).toEqual(['Adds X-{Y} Damage']);
+  });
+
+  it('a merged card line filters and sorts on the damage key, valued by its max', () => {
+    const [merged] = mergeDamageLines([line('min_damage', 4), line('max_damage', 14)]);
+    expect(modToStatKey(merged)).toBe('damage');
+    expect(modStatValue(merged, 'damage')).toBe(14);
+  });
+});
+
+describe('elemental damage (Adds X-Y)', () => {
+  // Live listings: one "Adds X-Y" line per element (no lone firemindam / firemaxdam lines)
+  const jewel: Modifier[] = [
+    { name: 'firedam', values: [4, 20], label: 'Adds 4-20 Fire Damage', priority: 101 },
+    { name: 'colddam', values: [1, 3, 50], label: 'Adds 1-3 Cold Damage', priority: 99 },
+  ];
+
+  it.each([
+    ['fire', 'Adds {X}-{Y} Fire Damage'],
+    ['light', 'Adds {X}-{Y} Lightning Damage'],
+    ['magic', 'Adds {X}-{Y} Magic Damage'],
+    ['cold', 'Adds {X}-{Y} Cold Damage'],
+    ['poison', '+{X} Poison Damage'],
+  ])('%s: one entry on the pair line, rolling its max', (e, label) => {
+    const entries = STAT_OPTIONS.filter((o) =>
+      parseStatKey(o.key).names.some((n) => [`${e}dam`, `${e}mindam`, `${e}maxdam`].includes(n)),
+    );
+    expect(entries).toEqual([{ key: `${e}dam|${e}mindam[1]`, label, group: 'Offense' }]);
+  });
+
+  it('filters a jewel on the max, a price-check row on its pinned or bounded end', () => {
+    expect(readStatValue(jewel, 'firedam|firemindam[1]')).toBe(20);
+    expect(readStatValue(jewel, 'firedam|firemindam{4..}')).toBe(20);
+    expect(readStatValue(jewel, 'firedam|firemindam{5..}')).toBeNull();
+    expect(readStatValue(jewel, 'firedam|firemindam')).toBe(4);
+    expect(readStatValue(jewel, 'colddam|coldmindam[1]')).toBe(3);
+    expect(readStatValue(jewel, 'lightdam|lightmindam[1]')).toBeNull();
+  });
+
+  it('a card line filters on its max; price-check keys take the entry label', () => {
+    expect(modToStatKey(jewel[0])).toBe('firedam|firemindam[1]');
+    expect(modStatValue(jewel[0], 'firedam|firemindam[1]')).toBe(20);
+    expect(statLabel('firedam|firemindam{4..}')).toBe('Adds {X}-{Y} Fire Damage');
+    expect(statLabel('firedam|firemindam')).toBe('Adds {X}-{Y} Fire Damage');
+    expect(top('fire damage', 5)).toContain('Adds X-{Y} Fire Damage');
+  });
+
+  it('a damage row keeps its low end as a key pin the service accepts', () => {
+    expect(['damage', 'damage{4..}', 'firedam|firemindam[1]', 'colddam|coldmindam{2..5}'].every(isDamageRangeKey)).toBe(
+      true,
+    );
+    expect(['poisondam|poisonmindam[1]', 'firedam|firemindam', 'item_fastercastrate'].some(isDamageRangeKey)).toBe(
+      false,
+    );
+    expect(lowDamageRange('firedam|firemindam{4..10}')).toEqual({ min: 4, max: 10 });
+    expect(lowDamageRange('damage{7}')).toEqual({ min: 7, max: 7 });
+    expect(lowDamageRange('damage')).toEqual({});
+    expect(withLowDamageRange('firedam|firemindam[1]', { min: 4 })).toBe('firedam|firemindam{4..}');
+    expect(withLowDamageRange('firedam|firemindam{4..}', { max: 9 })).toBe('firedam|firemindam{..9}');
+    expect(withLowDamageRange('damage', { min: 5, max: 5 })).toBe('damage{5}');
+    expect(withLowDamageRange('firedam|firemindam{4..}', {})).toBe('firedam|firemindam[1]');
+    expect(withLowDamageRange('damage{4..}', {})).toBe('damage');
+    // The service rejects inverted, negative and decimal pins
+    expect(withLowDamageRange('damage', { min: 9, max: 4 })).toBeNull();
+    expect(withLowDamageRange('damage', { min: -1 })).toBeNull();
+    expect(withLowDamageRange('damage', { min: 1.5 })).toBeNull();
+    // Every key written reads back the same range and rolls the max
+    const key = withLowDamageRange('colddam|coldmindam[1]', { min: 2, max: 6 })!;
+    expect(parseStatKey(key).valueIndex).toBe(1);
+    expect(lowDamageRange(key)).toEqual({ min: 2, max: 6 });
+  });
+});
+
+describe('statLabel of an alias group member', () => {
+  it('takes the label of the a|b option listing that name', () => {
+    expect(statLabel('max_damage')).toBe('+{X} to Maximum Damage');
+    expect(statLabel('item_throw_maxdamage')).toBe('+{X} to Maximum Damage');
+  });
+
+  it('leaves exact matches as they were', () => {
+    expect(statLabel('max_damage|maxdamage|secondary_maxdamage|item_throw_maxdamage')).toBe('+{X} to Maximum Damage');
+    expect(statLabel('item_fastercastrate')).toBe('+{X} Faster Cast Rate');
+    expect(statLabel('damage')).toBe('Adds {X}-{Y} Damage');
+    expect(statLabel('not_a_stat')).toBe('not_a_stat');
   });
 });

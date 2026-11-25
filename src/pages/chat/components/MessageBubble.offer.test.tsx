@@ -59,6 +59,7 @@ function renderPill(listings: [string, ChatListingState][]) {
       <MessageBubble
         row={buildRows([entry])[0]}
         otherName="seller"
+        otherGlyphName="seller"
         onOpenTrader={() => {}}
         listings={new Map()}
         onRetry={() => {}}
@@ -84,9 +85,8 @@ afterEach(() => {
 });
 
 describe('MessageBubble offer pill hover card', () => {
-  it('shows the listed item and the accepted offer, and drops the native title', async () => {
+  it('shows the listed item and the accepted offer', async () => {
     const pill = renderPill([['l1', { status: 'listed', listing: gravepalm }]]);
-    expect(pill.getAttribute('title')).toBeNull();
 
     fireEvent.mouseEnter(pill);
     const section = await screen.findByRole('region', { name: 'Offer' });

@@ -127,10 +127,15 @@ describe('useMarketSearch', () => {
     expect(vi.mocked(runSearch).mock.calls[2][1].sort).toEqual({ by: 'stat', key: 'pseudo_life', dir: 'desc' });
   });
 
-  it('appends pages on loadMore; only the first page asks for facets, which stay for the next pages', async () => {
+  it('appends pages on loadMore; only the first page asks for facets and the price spread, which stay', async () => {
     const facets = { sockets: [{ value: 0, count: 2 }] };
+    const priceStats = { count: 2, avg: 1, p25: 1, median: 1, p75: 1, histogram: [{ from: 1, to: 1.25, count: 2 }] };
     vi.mocked(runSearch).mockImplementation(async (_api, _f, opts) =>
-      result([row(`p${opts!.page}`)], { total: 2, ...(opts!.facets ? { facets } : {}) }),
+      result([row(`p${opts!.page}`)], {
+        total: 2,
+        ...(opts!.facets ? { facets } : {}),
+        ...(opts!.priceStats ? { priceStats } : {}),
+      }),
     );
     const f = filters({ itemName: 'Harlequin Crest' });
     const { result: hook } = renderHook(() => useMarketSearch(api, f, { signedIn: true, debounceMs: 0 }));
@@ -139,23 +144,29 @@ describe('useMarketSearch', () => {
       page: 0,
       pageSize: MARKET_PAGE_SIZE,
       facets: BROWSER_FACETS,
+      priceStats: true,
     });
     expect(hook.current.facets).toEqual(facets);
+    expect(hook.current.priceStats).toEqual(priceStats);
     await act(() => hook.current.loadMore());
     expect(hook.current.items.map((r) => r.listing._id)).toEqual(['p0', 'p1']);
     expect(hook.current.hasMore).toBe(false);
     expect(vi.mocked(runSearch).mock.calls[1][2]).toMatchObject({ page: 1, pageSize: MARKET_PAGE_SIZE });
     expect(vi.mocked(runSearch).mock.calls[1][2]).not.toHaveProperty('facets');
+    expect(vi.mocked(runSearch).mock.calls[1][2]).not.toHaveProperty('priceStats');
     expect(hook.current.facets).toEqual(facets);
+    expect(hook.current.priceStats).toEqual(priceStats);
   });
 
-  it('does not ask for facets on the default search (every live listing)', async () => {
+  it('does not ask for facets or the price spread on the default search (every live listing)', async () => {
     vi.mocked(runSearch).mockImplementation(async () => result([row('a')], { total: 1 }));
     const f = filters();
     const { result: hook } = renderHook(() => useMarketSearch(api, f, { signedIn: true, debounceMs: 0 }));
     await waitFor(() => expect(hook.current.status).toBe('ready'));
     expect(vi.mocked(runSearch).mock.calls[0][2]?.facets).toBeUndefined();
+    expect(vi.mocked(runSearch).mock.calls[0][2]?.priceStats).toBe(false);
     expect(hook.current.facets).toBeNull();
+    expect(hook.current.priceStats).toBeNull();
   });
 
   it('keeps paging past a page whose rows were all item-less: rows, not shown items, decide', async () => {

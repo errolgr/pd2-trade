@@ -35,7 +35,11 @@
     "offer": "报价：{{price}}",
     "offerFor": "报价：{{price}}，求购 {{item}}",
     "yourOffer": "你的报价：{{price}}",
-    "yourOfferFor": "你的报价：{{price}}，求购 {{item}}"
+    "yourOfferFor": "你的报价：{{price}}，求购 {{item}}",
+    "wtbReceivedItem": "有 {{item}} 可满足你的求购 {{title}}",
+    "wtbReceived": "就你的求购 {{title}} 私聊了你",
+    "wtbMadeItem": "你为对方的求购 {{title}} 提供了 {{item}}",
+    "wtbMade": "你就对方的求购 {{title}} 私聊了"
   },
   "links": {
     "marketListing": "市场挂单 {{id}}…"
@@ -180,7 +184,21 @@
     "asking": "要价 {{price}}",
     "marketPrice": "市场 {{hr}} HR",
     "showLess": "收起",
-    "more_other": "还有 {{count}} 个"
+    "more_other": "还有 {{count}} 个",
+    "buyRequestReceived": "求购",
+    "buyRequestMade": "对方的求购",
+    "forRequest": "用于 {{title}}",
+    "whisperBack": "回复",
+    "whisperBackTitle": "在网站聊天中回复卖家",
+    "whisper": "发消息",
+    "whisperBuyerTitle": "在网站聊天中联系买家",
+    "viewRequest": "查看求购",
+    "viewRequestTitle": "在市场中打开该求购",
+    "markFilled": "标记为已完成",
+    "markFilledTitle": "关闭你的求购：这位卖家已满足",
+    "markFilledFailed": "无法关闭求购",
+    "wtbOfferReceived": "对你求购的报价",
+    "wtbOfferMade": "你对其求购的报价"
   },
   "thread": {
     "muted": "已静音",
@@ -218,9 +236,9 @@
     "empty": {
       "allTitle": "暂无会话",
       "sellingTitle": "你当前没有出售中的交易",
-      "sellingDescription": "你挂单收到的报价和买家的交易私聊会显示在这里。",
+      "sellingDescription": "你挂单收到的出价、买家的交易私聊以及你回复过的求购会显示在这里。",
       "buyingTitle": "你当前没有求购中的交易",
-      "buyingDescription": "你的报价和你发送的交易私聊会显示在这里。",
+      "buyingDescription": "你的出价、你发出的交易私聊以及回复你求购的卖家会显示在这里。",
       "archivedTitle": "没有已归档的聊天",
       "archivedDescription": "通过聊天的 ⋯ 菜单归档；收到新消息后会恢复。"
     },

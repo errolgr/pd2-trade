@@ -6,6 +6,8 @@
     "lookupLabel": "Wyszukaj postać",
     "mode": "Tryb",
     "followingShortcut": "Obserwowane ({{n}})",
+    "myCharacter": "Moja postać: {{name}}",
+    "myCharacterUnavailable": "Zaloguj się i wybierz postać w Ustawienia › Konto, aby od razu do niej przejść",
     "tabs": {
       "meta": "Meta",
       "characters": "Postacie"
@@ -15,7 +17,8 @@
     "na": "b.d.",
     "noReliablePrice": "Brak wiarygodnej ceny rynkowej",
     "hrTitle": "{{hr}} HR według obecnych cen rynkowych",
-    "marketValue": "Wartość rynkowa <num>{{value}} HR</num>"
+    "marketValue": "Wartość rynkowa <num>{{value}} HR</num>",
+    "corruptionBasis": "Wyceniony według korupcji"
   },
   "itemActions": {
     "searchMarket": "Szukaj na rynku",

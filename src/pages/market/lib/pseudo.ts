@@ -42,6 +42,59 @@ const MANA_PER_ENERGY = 2;
 
 const ELEMENTS = ['fire', 'cold', 'ltng', 'pois', 'mag'] as const;
 
+/** Fire, cold and lightning "Adds X-Y" lines (`firedam`) and their lone-end forms (`firemindam`, `firemaxdam`). */
+const ELEMENTAL_DAMAGE_LINE = /^(fire|cold|light)(min|max)?dam$/;
+/** The flat damage total's elemental lines: fire, cold, lightning and magic (poison is damage over time). */
+const FLAT_ELEMENT_LINE = /^(fire|cold|light|magic)(min|max)?dam$/;
+
+/** Modifier names of the physical min / max damage lines (the site's `a|b` alternatives; one per line on a listing). */
+export const MIN_DAMAGE_NAMES: readonly string[] = [
+  'min_damage',
+  'mindamage',
+  'secondary_mindamage',
+  'item_throw_mindamage',
+];
+export const MAX_DAMAGE_NAMES: readonly string[] = [
+  'max_damage',
+  'maxdamage',
+  'secondary_maxdamage',
+  'item_throw_maxdamage',
+];
+
+/**
+ * Added damage of the "Adds X-Y" lines `lines` matches, summed per end: Σ min and Σ max. PD2 sends the line as
+ * `firedam [min, max]` (cold: `[min, max, chill frames]`); `firemindam [min, max]` is the same pair under another
+ * name, and lone `firemindam [min]` / `firemaxdam [max]` lines add to their end.
+ */
+function addedDamage(mods: Modifier[], lines: RegExp): { min: number; max: number } {
+  let min = 0;
+  let max = 0;
+  for (const mod of mods) {
+    const line = lines.exec(mod.name);
+    const first = mod.values?.[0];
+    if (!line || typeof first !== 'number') continue;
+    if (line[2] === 'max') {
+      max += first;
+      continue;
+    }
+    min += first;
+    const second = mod.values?.[1];
+    if (typeof second === 'number') max += second;
+  }
+  return { min, max };
+}
+
+const addedElementalDamage = (mods: Modifier[]) => addedDamage(mods, ELEMENTAL_DAMAGE_LINE);
+
+/**
+ * All flat damage summed per end: physical ("Adds X-Y Damage", the `min_damage` / `max_damage` lines listings carry)
+ * plus fire, cold, lightning and magic.
+ */
+function addedFlatDamage(mods: Modifier[]): { min: number; max: number } {
+  const elemental = addedDamage(mods, FLAT_ELEMENT_LINE);
+  return { min: elemental.min + sum(mods, 'min_damage'), max: elemental.max + sum(mods, 'max_damage') };
+}
+
 /**
  * Computed stats over a listing's modifiers, the same definitions the market service filters and sorts on
  * (computed here for favorites and deep links). Every compute returns 0 when the item has none of the inputs.
@@ -150,6 +203,54 @@ export const PSEUDO_STATS: PseudoDef[] = [
     compute: (m) => sum(m, 'maxdamage_percent'),
   },
   {
+    id: 'pseudo_elemental_damage',
+    // Σ (min + max) / 2 over fire, cold and lightning "Adds X-Y" lines
+    label: '+{X} Average Elemental Damage',
+    group: 'Pseudo',
+    compute: (m) => {
+      const { min, max } = addedElementalDamage(m);
+      return (min + max) / 2;
+    },
+  },
+  {
+    // Fire, cold and lightning "Adds X-Y" lines summed; rolls the max, like the `damage` stat. Its low end is
+    // `pseudo_elemental_min_damage`, bounded through the key's pin (`pseudo_elemental_max_damage{4..10}`)
+    id: 'pseudo_elemental_max_damage',
+    label: 'Adds {X}-{Y} Total Elemental Damage',
+    group: 'Pseudo',
+    compute: (m) => addedElementalDamage(m).max,
+  },
+  {
+    id: 'pseudo_elemental_min_damage',
+    label: 'Adds {X}-{Y} Total Elemental Damage (low end)',
+    group: 'Pseudo',
+    compute: (m) => addedElementalDamage(m).min,
+    lowEndOf: 'pseudo_elemental_max_damage',
+  },
+  {
+    // Physical, fire, cold, lightning and magic "Adds X-Y" summed; rolls the max, its low end pinned like the
+    // elemental total's (`pseudo_flat_max_damage{4..10}`)
+    id: 'pseudo_flat_max_damage',
+    label: 'Adds {X}-{Y} Total Flat Damage',
+    group: 'Pseudo',
+    compute: (m) => addedFlatDamage(m).max,
+  },
+  {
+    id: 'pseudo_flat_min_damage',
+    label: 'Adds {X}-{Y} Total Flat Damage (low end)',
+    group: 'Pseudo',
+    compute: (m) => addedFlatDamage(m).min,
+    lowEndOf: 'pseudo_flat_max_damage',
+  },
+  {
+    // Every physical min- and max-damage line added up: "+9 to Minimum Damage" + "+15 to Maximum Damage" = 24,
+    // "Adds 4-14 Damage" = 18. Not the per-level max damage (an eighth per level) or elemental damage.
+    id: 'pseudo_total_damage',
+    label: '+{X} Total Damage',
+    group: 'Pseudo',
+    compute: (m) => [...MIN_DAMAGE_NAMES, ...MAX_DAMAGE_NAMES].reduce((n, name) => n + sum(m, name), 0),
+  },
+  {
     id: 'pseudo_life_leech',
     label: '+{X}% Total Life Stolen per Hit',
     group: 'Pseudo',
@@ -170,3 +271,8 @@ export function computePseudo(item: Pick<ItemDetail, 'modifiers'> | undefined | 
   for (const def of PSEUDO_STATS) out[def.id] = def.compute(mods);
   return out;
 }
+
+/** Pair pseudo stats whose row bounds the low end too: the rolled (high end) id → the low end's id. */
+export const PSEUDO_LOW_ENDS: Readonly<Record<string, string>> = Object.fromEntries(
+  PSEUDO_STATS.flatMap((p) => (p.lowEndOf ? [[p.lowEndOf, p.id]] : [])),
+);

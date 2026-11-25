@@ -178,7 +178,8 @@
     "pick": "Gegenstände wie {{name}} haben deine Truhe verlassen. Wähle, welche Inserate entfernt werden.",
     "delist": "Entfernen",
     "keep": "Behalten",
-    "choose": "Auswählen"
+    "choose": "Auswählen",
+    "neverAsk": "Nie wieder fragen bei {{name}}"
   },
   "myListings": {
     "searchPlaceholder": "{{count}} Inserate durchsuchen…",

@@ -6,6 +6,8 @@
     "lookupLabel": "查找角色",
     "mode": "模式",
     "followingShortcut": "关注 ({{n}})",
+    "myCharacter": "我的角色：{{name}}",
+    "myCharacterUnavailable": "登录并在 设置 › 账户 中选择你的角色即可直接跳转",
     "tabs": {
       "meta": "主流",
       "characters": "角色"
@@ -15,7 +17,8 @@
     "na": "无",
     "noReliablePrice": "无可靠市场价",
     "hrTitle": "按当前市场价 {{hr}} HR",
-    "marketValue": "市场价值 <num>{{value}} HR</num>"
+    "marketValue": "市场价值 <num>{{value}} HR</num>",
+    "corruptionBasis": "按其腐化定价"
   },
   "itemActions": {
     "searchMarket": "搜索市场",

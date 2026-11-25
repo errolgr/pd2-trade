@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { SETTING_HIGHLIGHT } from '../settings-ui';
 import { MacroTemplate } from '@/pages/quick-list/components/MacroManagerSheet';
 import { Trans, useTranslation } from '@/i18n';
+import { Tip } from '@/components/ui/tooltip';
 
 const rowAction =
   'inline-flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none transition-[color,background-color,transform] duration-(--dur-fast) hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 motion-safe:active:scale-90 disabled:pointer-events-none disabled:opacity-30 [&_svg]:size-3.5';
@@ -78,61 +79,66 @@ export function ChatTemplatesEditor() {
                       />
                     </div>
                     <div className="flex shrink-0 items-center gap-0.5 opacity-70 transition-opacity duration-(--dur-fast) group-hover/template:opacity-100 group-focus-within/template:opacity-100">
-                      <button
-                        type="button"
-                        onClick={() => update(template.id, { favorite: !template.favorite })}
-                        aria-label={
-                          template.favorite
-                            ? t('chatTemplates.unstarNamed', { name: template.name })
-                            : t('chatTemplates.starNamed', { name: template.name })
-                        }
-                        aria-pressed={!!template.favorite}
-                        title={template.favorite ? t('chatTemplates.starredTitle') : t('chatTemplates.starTitle')}
-                        className={cn(rowAction, template.favorite && 'text-warning hover:text-warning')}
-                      >
-                        <Star className={cn(template.favorite && 'fill-current')} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => move(index, -1)}
-                        disabled={index === 0}
-                        aria-label={t('chatTemplates.moveUpNamed', { name: template.name })}
-                        title={t('chatTemplates.moveUp')}
-                        className={rowAction}
-                      >
-                        <ChevronUp />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => move(index, 1)}
-                        disabled={index === templates.length - 1}
-                        aria-label={t('chatTemplates.moveDownNamed', { name: template.name })}
-                        title={t('chatTemplates.moveDown')}
-                        className={rowAction}
-                      >
-                        <ChevronDown />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditing(template.id)}
-                        aria-label={t('chatTemplates.editNamed', { name: template.name })}
-                        title={t('common:actions.edit')}
-                        className={rowAction}
-                      >
-                        <Pencil />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          remove(template.id);
-                          if (editing === template.id) setEditing(null);
-                        }}
-                        aria-label={t('chatTemplates.deleteNamed', { name: template.name })}
-                        title={t('common:actions.delete')}
-                        className={cn(rowAction, 'hover:bg-destructive/15 hover:text-destructive')}
-                      >
-                        <X />
-                      </button>
+                      <Tip label={template.favorite ? t('chatTemplates.starredTitle') : t('chatTemplates.starTitle')}>
+                        <button
+                          type="button"
+                          onClick={() => update(template.id, { favorite: !template.favorite })}
+                          aria-label={
+                            template.favorite
+                              ? t('chatTemplates.unstarNamed', { name: template.name })
+                              : t('chatTemplates.starNamed', { name: template.name })
+                          }
+                          aria-pressed={!!template.favorite}
+                          className={cn(rowAction, template.favorite && 'text-warning hover:text-warning')}
+                        >
+                          <Star className={cn(template.favorite && 'fill-current')} />
+                        </button>
+                      </Tip>
+                      <Tip label={t('chatTemplates.moveUp')}>
+                        <button
+                          type="button"
+                          onClick={() => move(index, -1)}
+                          disabled={index === 0}
+                          aria-label={t('chatTemplates.moveUpNamed', { name: template.name })}
+                          className={rowAction}
+                        >
+                          <ChevronUp />
+                        </button>
+                      </Tip>
+                      <Tip label={t('chatTemplates.moveDown')}>
+                        <button
+                          type="button"
+                          onClick={() => move(index, 1)}
+                          disabled={index === templates.length - 1}
+                          aria-label={t('chatTemplates.moveDownNamed', { name: template.name })}
+                          className={rowAction}
+                        >
+                          <ChevronDown />
+                        </button>
+                      </Tip>
+                      <Tip label={t('common:actions.edit')}>
+                        <button
+                          type="button"
+                          onClick={() => setEditing(template.id)}
+                          aria-label={t('chatTemplates.editNamed', { name: template.name })}
+                          className={rowAction}
+                        >
+                          <Pencil />
+                        </button>
+                      </Tip>
+                      <Tip label={t('common:actions.delete')}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            remove(template.id);
+                            if (editing === template.id) setEditing(null);
+                          }}
+                          aria-label={t('chatTemplates.deleteNamed', { name: template.name })}
+                          className={cn(rowAction, 'hover:bg-destructive/15 hover:text-destructive')}
+                        >
+                          <X />
+                        </button>
+                      </Tip>
                     </div>
                   </div>
                 )}

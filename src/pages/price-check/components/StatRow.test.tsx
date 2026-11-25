@@ -73,7 +73,7 @@ describe('StatRow', () => {
     expect(container.textContent).not.toContain('% Faster Cast Rate: 20');
   });
 
-  it('clears min and max with one click and focuses min for the new value', () => {
+  it('clears min and max with one click and focuses min for the new value', async () => {
     render(<Harness stat={FCR} />);
     fireEvent.click(screen.getByRole('checkbox'));
     fireEvent.change(screen.getByLabelText('% Faster Cast Rate minimum'), { target: { value: '15' } });
@@ -82,6 +82,9 @@ describe('StatRow', () => {
     fireEvent.click(clear);
     expect(JSON.parse(screen.getByTestId('filters').textContent ?? '{}')['id:105']).toEqual({ min: '', max: '' });
     expect(document.activeElement).toBe(screen.getByLabelText('% Faster Cast Rate minimum'));
+    // happy-dom runs the row label's activation while the click is still bubbling, before React's preventDefault,
+    // so here (unlike a browser) the clear also unticks the stat: let its range finish animating out
+    await waitFor(() => expect(screen.queryByLabelText('% Faster Cast Rate minimum')).toBeNull());
   });
 
   it('draws damage pairs as the one line the game shows', () => {
@@ -146,6 +149,7 @@ describe('StatRow', () => {
     fireEvent.mouseDown(rowText);
     fireEvent.click(rowText);
     expect(screen.getByRole('checkbox').getAttribute('aria-checked')).toBe('false');
+    await waitFor(() => expect(screen.queryByLabelText('% Faster Cast Rate minimum')).toBeNull());
   });
 
   it('pre-fills the inputs from existing filters', () => {
@@ -196,9 +200,10 @@ describe('StatRow', () => {
     expect(screen.queryByLabelText('Ethereal minimum')).toBeNull();
   });
 
-  it('flags corrupted stats with an asterisk', () => {
+  it('flags corrupted stats with an asterisk', async () => {
     renderRow({ stat: { ...FCR, corrupted: true } });
-    expect(screen.getByTitle('Corrupted stat').textContent).toBe('*');
+    fireEvent.focus(screen.getByText('*'));
+    expect((await screen.findByRole('tooltip')).textContent).toBe('Corrupted stat');
   });
 
   describe('corrupted tri-state filter', () => {
@@ -254,10 +259,11 @@ describe('StatRow', () => {
       corrupted: false,
     };
 
-    it('shows stars for a key stat with the multiplier in the tooltip', () => {
+    it('shows stars for a key stat with the multiplier in the tooltip', async () => {
       renderRow({ stat: FCR, rare: { ...base, stars: 2, multiplier: 2.5 } });
       const stars = screen.getByText('★★');
-      expect(stars.getAttribute('title')).toContain('×2.5');
+      fireEvent.focus(stars);
+      expect((await screen.findByRole('tooltip')).textContent).toContain('×2.5');
     });
 
     it('shows "valuable from N" when the stat is below its key threshold', () => {

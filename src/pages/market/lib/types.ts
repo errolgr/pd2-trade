@@ -5,6 +5,8 @@
 import type { MarketListingEntry, Modifier } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { MarketListingResult } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { MarketFacetName, MarketFacets } from './facets';
+import type { MarketPriceStats } from './price-stats';
+import type { WtbCurrency, WtbItemMatch } from './wtb';
 
 export type Tri = 'any' | 'yes' | 'no';
 export type OnlineFilter = 'all' | 'online' | 'offline';
@@ -17,7 +19,10 @@ export type CharClass = 'amazon' | 'assassin' | 'barbarian' | 'druid' | 'necroma
  */
 export type SortBy = 'bumped' | 'price' | 'score' | 'value' | 'stat';
 
-export type StatKind = 'mod' | 'pseudo' | 'corruption';
+export type StatKind = 'mod' | 'pseudo' | 'corruption' | 'item';
+
+/** Item properties an `item` stat row bounds (`sockets`: the socket count, items without one count as 0). */
+export type ItemProperty = 'sockets';
 
 /** A listing's state on the market service: still up, or how it ended. */
 export type MarketListingStatus = 'active' | 'sold' | 'removed' | 'expired';
@@ -27,10 +32,11 @@ export interface StatFilter {
   id: string;
   /**
    * `mod` = PD2 property key; `pseudo` = a computed pseudo stat; `corruption` = a cube corruption name
-   * (`item.corruptions`; min/max bound its corrupted line). All filtered by the market service.
+   * (`item.corruptions`; min/max bound its corrupted line); `item` = an item property (`sockets`: min/max bound the
+   * socket count, no bounds = at least one). All filtered by the market service.
    */
   kind: StatKind;
-  /** PD2 modifier name (e.g. `item_fastercastrate`), pseudo id (e.g. `pseudo_total_res`) or corruption name. */
+  /** PD2 modifier name (e.g. `item_fastercastrate`), pseudo id (e.g. `pseudo_total_res`), corruption name or item property. */
   key: string;
   min?: number;
   max?: number;
@@ -57,8 +63,11 @@ export interface Requirements {
 }
 
 export interface MarketFilters {
-  /** `live` = active listings, `archive` = sold listings (see `status` for removed/expired). */
-  source: 'live' | 'archive';
+  /**
+   * `live` = active listings, `archive` = ended ones (sold, removed, expired), like the site's Archive, `wanted` =
+   * buy requests asking for what the filters describe (see `wanted`).
+   */
+  source: 'live' | 'archive' | 'wanted';
   hardcore: boolean;
   ladder: boolean;
   /** Exact item.name (unique/set/runeword/base name), site parity. */
@@ -70,7 +79,10 @@ export interface MarketFilters {
   hrMax?: number;
   /** `hrMax` is exclusive (`< hrMax`, a price chart bucket's upper edge) instead of `<=` (a typed max). */
   hrMaxExclusive?: boolean;
-  /** item.base.type_code: a type, a site `{"$in": [...]}` entry, or a type group code (`group:bows`, type-groups.ts) */
+  /**
+   * item.base.type_code: a type, a site `{"$in": [...]}` entry, a type group code (`group:bows`, type-groups.ts),
+   * or several of them as the `{"$in": [...]}` of their type codes (type-selection.ts)
+   */
   typeCode?: string;
   /** item.base_code */
   baseCode?: string;
@@ -90,15 +102,28 @@ export interface MarketFilters {
   sellerName?: string;
   requirements: Requirements;
   stats: StatFilter[];
-  /**
-   * History: the statuses to search instead of the one `source` selects (`live` = active, `archive` = sold), each
-   * aged by its own time within `maxAgeDays`. Absent = `source`.
-   */
+  /** Archive only: the statuses to show (a subset of ARCHIVE_STATUSES). Absent = every one, like the site. */
   status?: MarketListingStatus[];
-  /** updated_at window; site default 3. */
-  maxAgeDays: number;
+  /** Listing age window in days (`updated_at`); absent = every listing (the default). */
+  maxAgeDays?: number;
   /** `key` (a property key or pseudo id) is required for `by: 'stat'` and ignored otherwise. */
   sort: { by: SortBy; dir: 'asc' | 'desc'; key?: string };
+  /** The Wanted source's own filters (offer, requests, order); the market search never reads them. */
+  wanted?: WantedFilters;
+}
+
+/** Wanted source filters beyond the shared ones (`sellerName` is the buyer there). */
+export interface WantedFilters {
+  /** Lowest offer, in `offerCurrency` (HR when unset). */
+  minOffer?: number;
+  offerCurrency?: WtbCurrency;
+  /** Requests an item of this search could fill (overlap), not only those asking for these filters. */
+  overlap?: boolean;
+  /** Only requests the user's stash fits. */
+  fitsStash?: boolean;
+  /** Only the user's own requests (every status). */
+  mine?: boolean;
+  sort?: 'newest' | 'offer';
 }
 
 export interface StatOption {
@@ -118,12 +143,25 @@ export interface CorruptionOption {
   rolled: boolean;
 }
 
+/** An item property the stat picker offers (`item` rows). */
+export interface ItemPropertyOption {
+  property: ItemProperty;
+  /** Template like the stat labels: `{X} Sockets`. */
+  label: string;
+  group: string;
+}
+
 export interface PseudoDef {
   id: string;
   label: string;
   group: string;
   /** Sum/derive from the listing's item modifiers. Return 0 when absent. */
   compute: (mods: Modifier[]) => number;
+  /**
+   * The pair pseudo whose low end this is (`pseudo_elemental_min_damage`): filtered through that row's pinned key
+   * (`pseudo_elemental_max_damage{4..10}`), never picked or offered on its own.
+   */
+  lowEndOf?: string;
 }
 
 export interface StatPreset {
@@ -170,6 +208,8 @@ export interface SearchOptions {
   signal?: AbortSignal;
   /** Facet counts to ask for with this page (the market browser's first page). */
   facets?: readonly MarketFacetName[];
+  /** Ask for the price spread of every match with this page (the market browser's first page). */
+  priceStats?: boolean;
 }
 
 export interface SearchResult {
@@ -184,6 +224,8 @@ export interface SearchResult {
   mode: 'server';
   /** Facet counts, when `facets` were asked for. */
   facets?: MarketFacets;
+  /** The price spread of every match, when `priceStats` was asked for. */
+  priceStats?: MarketPriceStats;
 }
 
 /** Whether a listing is still on PD2, checked before acting on it; `listing` is PD2's current copy. */
@@ -193,13 +235,17 @@ export type ListingFreshness =
   /** The check itself failed (network, PD2 down, signed out); callers proceed as before. */
   | { status: 'unknown' };
 
-export interface MarketFavorite {
-  _id: string;
-  listing_id: string;
-  seller_id: string;
-  user_id: string;
-  created_at: string;
-  listing?: MarketListingEntry;
+/**
+ * A favorited listing, kept locally (market-prefs.json): PD2's favorites API refuses PD2 Trader's sign-in token.
+ * Newest first.
+ */
+export interface SavedFavorite {
+  listingId: string;
+  addedAt: string;
+  /** The listing as last seen: when it was favorited, then PD2's copy on each refresh while it is live. */
+  listing: MarketListingEntry;
+  /** How it left the live market (pd2trader.com's archive); final once set. */
+  ended?: Exclude<MarketListingStatus, 'active'>;
 }
 
 /**
@@ -215,13 +261,20 @@ export interface MarketApi {
    */
   searchListings: (
     filters: MarketFilters,
-    opts: { page: number; limit: number; signal?: AbortSignal; facets?: readonly MarketFacetName[] },
+    opts: {
+      page: number;
+      limit: number;
+      signal?: AbortSignal;
+      facets?: readonly MarketFacetName[];
+      priceStats?: boolean;
+    },
   ) => Promise<{
     items: ScoredListing[];
     total: number;
     totalExact: boolean;
     fetched: number;
     facets?: MarketFacets;
+    priceStats?: MarketPriceStats;
   }>;
   /** One live listing from PD2 (`GET market/listing/:id`); null when PD2 no longer has it. */
   getListing: (listingId: string) => Promise<MarketListingEntry | null>;
@@ -230,11 +283,9 @@ export interface MarketApi {
    * listing id; ids PD2 no longer lists are absent. Throws on any failure (401 included: it never starts a sign-in).
    */
   getListingPresence: (listingIds: string[]) => Promise<Map<string, ListingPresence>>;
-  getMarketListings: (query: Record<string, unknown>) => Promise<MarketListingResult>;
-  getMarketListingsArchive: (query: Record<string, unknown>) => Promise<MarketListingResult>;
-  getFavorites: (opts?: { limit?: number; skip?: number }) => Promise<{ total: number; data: MarketFavorite[] }>;
-  addFavorite: (listingId: string, sellerId: string) => Promise<MarketFavorite>;
-  removeFavorite: (favoriteId: string) => Promise<void>;
+  /** null on a 401 (handleApiResponse hands it to the auth flow): not an empty result. */
+  getMarketListings: (query: Record<string, unknown>) => Promise<MarketListingResult | null>;
+  getMarketListingsArchive: (query: Record<string, unknown>) => Promise<MarketListingResult | null>;
   /**
    * Make an offer on a listing (site parity: POST market/offer `{listing_id, offer, hr_offer}`).
    * `price` is the offer text shown to the seller, `hrPrice` its optional HR value.
@@ -242,13 +293,17 @@ export interface MarketApi {
   createOffer?: (listingId: string, offer: { price: string; hrPrice?: number }) => Promise<unknown>;
 }
 
+/** A saved search, kept locally (market-prefs.json). */
 export interface SavedSearch {
   id: string;
   name: string;
   filters: MarketFilters;
-  /** Live alert enabled (15s poll). */
-  alert: boolean;
+  /** Watched: a popup for every new listing matching it (live search stream). */
+  watching: boolean;
   createdAt: string;
+  updatedAt: string;
+  /** bumpedAt of the newest listing the watch has seen: a reconnect alerts only what was bumped after it. */
+  lastSeenBumpedAt?: string;
 }
 
 export type MarketTab = 'search' | 'favorites' | 'saved';
@@ -260,6 +315,17 @@ export interface MarketPanelPayload {
   savedSearchId?: string;
   focusListingId?: string;
   tab?: MarketTab;
+  /**
+   * Opens Search on the Wanted source: the item a buy request asks for (it and its kind), the request in the
+   * drawer; `itemText` (the price-checked item's clipboard JSON) offers "List it at {offer}"; `item` (the user's
+   * listing it came from) is sent with a contact.
+   */
+  wanted?: { match: WtbItemMatch; itemText?: string; item?: object };
+  /**
+   * Opens a buy request by id (a response's View request): the user's own on Mine only, else as it stands on the
+   * board in the user's realm; its drawer open.
+   */
+  requestId?: string;
 }
 
 /** Payload for `openPanel('listingDetail', payload)`: the listing drawer. */

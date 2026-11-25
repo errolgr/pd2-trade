@@ -34,6 +34,13 @@ describe('scoreListing', () => {
     ).toBe(20 + 20);
   });
 
+  it('scores a sockets row by the socket count (0 without one)', () => {
+    const sockets = row('sockets', 2, { kind: 'item' });
+    const l = listing({ mods: [] });
+    expect(score({ ...l, item: { ...l.item, socket_count: 3 } }, [sockets]).score).toBe(6);
+    expect(score(l, [sockets]).score).toBe(0);
+  });
+
   it('null score without weighted rows; null value without an HR price', () => {
     const l = listing({ mods: [mod('maxhp', 30)] });
     expect(score(l, [row('maxhp', undefined), row('maxhp', 0), row('maxhp', 3, { enabled: false })])).toEqual({

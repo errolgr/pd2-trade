@@ -18,6 +18,30 @@
       "label": "Przezroczystość okien: <num>{{value}}%</num>",
       "description": "Widok gry przez tła okien. 0% to pełne krycie."
     },
+    "windows": {
+      "group": "Okna i fokus",
+      "keyboardFocus": {
+        "label": "Fokus klawiatury",
+        "description": "Kiedy okno przejmuje klawiaturę od gry. Dopóki okno ją ma, klawisze nie trafiają do gry, a gra może ucichnąć.",
+        "options": {
+          "typing": "Przy pisaniu w polu",
+          "click": "Po kliknięciu",
+          "open": "Po otwarciu"
+        }
+      },
+      "closeOnClickAway": {
+        "label": "Zamykaj okna po kliknięciu obok",
+        "description": "Sprawdzanie ceny, czat, rynek, buildy i podobne okna zamykają się po kliknięciu poza nimi lub przełączeniu na inną aplikację. Wyłączone: zostają otwarte, dopóki ich nie zamkniesz."
+      },
+      "outsideGame": {
+        "label": "Pokazuj okna poza grą",
+        "description": "Okna zostają na ekranie, gdy Diablo II nie jest na pierwszym planie lub nie działa. Przycisk czatu, ticker majątku i licznik stref nadal pokazują się tylko w grze."
+      },
+      "hotkeysOutsideGame": {
+        "label": "Skróty poza grą",
+        "description": "Otwieraj okna skrótami z dowolnej aplikacji; te kombinacje klawiszy przestają wtedy docierać do innych aplikacji. Skróty kopiujące przedmiot pod kursorem (sprawdzanie ceny, wystawianie, zdejmowanie, przymierzanie) nadal działają tylko w grze. Wymaga „Pokazuj okna poza grą”."
+      }
+    },
     "zoneTimer": {
       "enabled": {
         "label": "Licznik skażonych stref",
@@ -151,7 +175,7 @@
   "nav": {
     "general": "Ogólne",
     "account": "Konto",
-    "chat": "Czat",
+    "chat": "Czat i powiadomienia",
     "interface": "Interfejs",
     "priceCheck": "Wycena",
     "netWorth": "Majątek",
@@ -284,6 +308,15 @@
         "description": "Nie udało się automatycznie wykryć folderu Diablo II. Wpisz go ręcznie."
       },
       "autoDetect": "Wykryj automatycznie",
+      "browse": "Przeglądaj…",
+      "clear": "Wyczyść (wykryj automatycznie)",
+      "check": {
+        "valid": "Znaleziono instalację Diablo II.",
+        "missing": "Ten folder nie istnieje.",
+        "notInstall": "Tu nie ma instalacji Diablo II: wybierz folder zawierający folder ProjectD2.",
+        "winePrefix": "To jest prefiks Wine. Diablo II jest zainstalowane w {{path}}",
+        "useInstall": "Użyj tego folderu"
+      },
       "label": "Folder Diablo II"
     },
     "game": {
@@ -527,8 +560,8 @@
       "description": "Motyw kolorów każdego okna nakładki. Działa natychmiast."
     },
     "chat": {
-      "title": "Czat",
-      "description": "Konfiguruj powiadomienia czatu i szeptów oraz szablony wiadomości."
+      "title": "Czat i powiadomienia",
+      "description": "Konfiguruj powiadomienia czatu i szeptów oraz szablony wiadomości. Wiadomości prywatne na Discordzie od bota PD2 Trader."
     },
     "general": {
       "title": "Ogólne",
@@ -573,6 +606,24 @@
           "off": "Nic nie rób",
           "ask": "Zapytaj mnie",
           "auto": "Usuń ogłoszenie"
+        },
+        "exceptions": {
+          "label": "Nigdy nie usuwaj tych",
+          "description": "Ogłoszenia tych przedmiotów nigdy nie są usuwane ani nie wywołują pytania. „Nigdy nie pytaj o…” w powiadomieniu dodaje przedmiot.",
+          "add": "Dodaj",
+          "search": "Szukaj baz przedmiotów…",
+          "empty": "Brak przedmiotów.",
+          "noMatch": "Brak pasujących baz przedmiotów",
+          "remove": "Usuń {{name}}",
+          "stackableNote": "Waluta w stosach: tokeny, pboxy, klucze, esencje."
+        },
+        "exceptionMode": {
+          "label": "Nigdy nie usuwaj",
+          "options": {
+            "none": "Nic (domyślnie)",
+            "stackable": "Walutę w stosach i wybrane przedmioty",
+            "selected": "Tylko wybrane przedmioty"
+          }
         }
       },
       "view": {
@@ -632,6 +683,10 @@
       "sellerCard": {
         "label": "Karta sprzedawcy",
         "description": "Pokazuje status sprzedawcy i jego inne ogłoszenia w szczegółach ogłoszenia."
+      },
+      "autoSearch": {
+        "label": "Automatyczne wyszukiwanie",
+        "description": "Szuka przy każdej zmianie filtrów rynku. Wyłączone: zmiany czekają, aż naciśniesz Szukaj (Ctrl+Enter). Również błyskawica obok Wyczyść w filtrach."
       }
     },
     "alerts": {
@@ -652,6 +707,10 @@
         "label": "Głośność alertów rynku: <num>{{value}}%</num>",
         "description": "Głośność dźwięku alertu rynku (0-100%).",
         "ariaLabel": "Głośność alertów rynku"
+      },
+      "wtbPrompt": {
+        "label": "Proponuj zlecenie kupna po Obserwuj",
+        "description": "Gdy zaczynasz obserwować wyszukiwanie, zaproponuj dodanie też zlecenia kupna dla niego."
       }
     }
   },

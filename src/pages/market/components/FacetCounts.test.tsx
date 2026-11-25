@@ -4,6 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { TriField } from './controls';
+import { FacetCount } from './FacetCounts';
 
 afterEach(() => {
   cleanup();
@@ -36,5 +37,19 @@ describe('TriField facets', () => {
     tri({ yes: undefined, no: undefined });
     expect(document.querySelector('[data-facet-hairline]')).toBeNull();
     expect(option(/^Yes/).className).not.toMatch(/opacity-30/);
+  });
+});
+
+describe('FacetCount', () => {
+  it('shows the count as text, 0 too, compact once it gets long', () => {
+    const { container, rerender } = render(<FacetCount count={0} />);
+    expect(container.textContent).toBe('0');
+    rerender(<FacetCount count={12345} />);
+    expect(container.textContent).toBe('12.3K');
+  });
+
+  it('shows nothing without facets', () => {
+    const { container } = render(<FacetCount count={undefined} />);
+    expect(container.textContent).toBe('');
   });
 });

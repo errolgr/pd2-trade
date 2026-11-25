@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fetch } from '@/lib/browser-http';
 import { BACKEND_URL } from '@/lib/pkce';
 import { defaultFilters, mergeFilters } from '@/pages/market/lib/defaults';
+import { toggleTypeOption } from '@/pages/market/lib/type-selection';
 import type { MarketFilters } from '@/pages/market/lib/types';
 import {
   MARKET_SEARCH_TIMEOUT_MS,
@@ -83,15 +84,16 @@ describe('searchMarketListings', () => {
       ],
       total: 1,
     });
-    const f = mergeFilters(base, { source: 'archive', status: ['sold', 'removed', 'expired'] });
+    const f = mergeFilters(base, { source: 'archive', status: ['sold', 'removed'] });
 
     const result = await search(f);
 
-    expect(JSON.parse(vi.mocked(fetch).mock.calls[0][1]?.body as string).filters.status).toEqual([
-      'sold',
-      'removed',
-      'expired',
-    ]);
+    const sent = (call: number) => JSON.parse(vi.mocked(fetch).mock.calls[call][1]?.body as string).filters;
+    expect(sent(0).status).toEqual(['sold', 'removed']);
+    // A status pick left on a live search never narrows it
+    respond(200, { items: [], total: 0 });
+    await search({ ...f, source: 'live' });
+    expect(sent(1).status).toBeUndefined();
     expect(result.items[0]).toMatchObject({
       status: 'removed',
       listedAt: '2026-10-20T09:00:00.000Z',
@@ -199,7 +201,7 @@ describe('marketSearchBody', () => {
     expect(body({ hrMax: 1 }).hrMaxExclusive).toBeUndefined();
   });
 
-  it('sends OR blocks, NOT and corruption rows, and never text over the service limits', () => {
+  it('sends OR blocks, NOT, corruption and sockets rows, and never text over the service limits', () => {
     const f = mergeFilters(base, {
       priceText: 'x'.repeat(150),
       sellerName: 'CIutch',
@@ -207,6 +209,8 @@ describe('marketSearchBody', () => {
         { id: 'a', kind: 'corruption', key: 'item_fastercastrate', min: 10, enabled: true, or: 2 },
         { id: 'b', kind: 'mod', key: 'maxhp', enabled: true, or: undefined },
         { id: 'c', kind: 'mod', key: 'strength', enabled: true, not: true },
+        // NOT sockets = 1: 0-socket and 2+ socket items
+        { id: 'd', kind: 'item', key: 'sockets', min: 1, max: 1, enabled: true, not: true },
       ],
     });
     const body = JSON.parse(JSON.stringify(marketSearchBody(f, 0, 25)));
@@ -214,12 +218,29 @@ describe('marketSearchBody', () => {
       { id: 'a', kind: 'corruption', key: 'item_fastercastrate', min: 10, enabled: true, or: 2 },
       { id: 'b', kind: 'mod', key: 'maxhp', enabled: true },
       { id: 'c', kind: 'mod', key: 'strength', enabled: true, not: true },
+      { id: 'd', kind: 'item', key: 'sockets', min: 1, max: 1, enabled: true, not: true },
     ]);
     expect(body.filters.priceText).toHaveLength(100);
     expect(body.filters.sellerName).toBe('CIutch');
     // A seller picked from a listing is queried by id
     const byId = marketSearchBody({ ...f, sellerUserId: 'u1' }, 0, 25).filters;
     expect(byId).toMatchObject({ sellerUserId: 'u1', sellerName: undefined });
+  });
+
+  it('sends several picked types as one `$in` of their type codes, which the service validates as a Type value', () => {
+    const polearmsAndSpears = toggleTypeOption({ typeCode: 'pole' }, 'group:spears').typeCode;
+    expect(marketSearchBody(mergeFilters(base, { typeCode: polearmsAndSpears }), 0, 25).filters.typeCode).toBe(
+      '{"$in": ["pole", "spea", "aspe"]}',
+    );
+    const claws = toggleTypeOption({ typeCode: '{"$in": ["h2h", "h2h2"]}' }, 'knif').typeCode;
+    expect(marketSearchBody(mergeFilters(base, { typeCode: claws }), 0, 25).filters.typeCode).toBe(
+      '{"$in": ["knif", "h2h", "h2h2"]}',
+    );
+    // A hand group: its types, and its bases as one `$in` the service also takes (up to 200 codes)
+    const twoHanded = toggleTypeOption({}, 'weapons:2h');
+    const body = marketSearchBody(mergeFilters(base, twoHanded), 0, 25).filters;
+    expect(body.typeCode).toBe(twoHanded.typeCode);
+    expect(JSON.parse(body.baseCode!).$in).toHaveLength(136);
   });
 });
 

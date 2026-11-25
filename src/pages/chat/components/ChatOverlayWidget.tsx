@@ -21,7 +21,16 @@ import {
   type ThreadPrefs,
 } from '@/lib/chat-prefs';
 import { isOpenTrade, unreadWhispers, whisperCommand, whisperTarget } from '@/lib/whisper-history';
-import { setBadgeCount, showToast, undoToast, usePanel } from '@/overlay';
+import { setBadgeCount, showToast, undoToast, useOverlay, usePanel } from '@/overlay';
+import {
+  contactWtbRequest,
+  updateWtbRequest,
+  wtbContactBody,
+  type WtbContactItem,
+} from '@/pages/market/alerts/wtb-api';
+import { useWtbWhisper } from '@/pages/market/wtb/useWtbWhisper';
+import { useWtbOffers } from '@/pages/market/wtb/useWtbOffers';
+import { markFilledPatch } from '@/pages/market/wtb/wtb-responses';
 import { DUR, EASE_OUT, fadeIn, slideInRight } from '@/lib/motion';
 import { EmptyState } from '@/pages/currency/components/StatePanel';
 import { playNotificationSound } from '@/hooks/useSocketNotifications';
@@ -43,10 +52,13 @@ import { useTradeListings } from '../hooks/useTradeListings';
 import { EMPTY_THREAD, useChatStore } from '../hooks/useChatStore';
 import { useResolvedSellers } from '../hooks/useResolvedSellers';
 import { presenceLabel, useTraderProfile } from '../hooks/useTraderProfile';
+import { traderGlyphName } from './chat-parts';
 import { Composer, type ComposerHandle, type ReplyChannel, type TemplateVars } from './Composer';
 import { ConversationList } from './ConversationList';
 import { MessageList } from './MessageList';
 import { offerStatus, ThreadDeals } from './ThreadDeals';
+import type { WtbResponse } from '@/pages/market/lib/wtb';
+import { useWtbResponses } from '@/pages/market/wtb/useWtbData';
 import { ThreadHeader } from './ThreadHeader';
 import { TraderSidebar } from './TraderSidebar';
 
@@ -75,7 +87,12 @@ interface OffersSeen {
   notifications: readonly OfferNotification[];
   accepted: readonly TradeOffer[];
   trades: readonly NewTrade[];
+  /** Unread responses to the user's buy requests (inbox: received, newer than the thread's offers seen mark). */
+  responses: readonly WtbResponse[];
 }
+
+const unreadResponses = (thread: InboxThread): WtbResponse[] =>
+  thread.wtb.filter((entry) => entry.unread).map((entry) => entry.response);
 
 /** Open trade whispers are re-evaluated (they stop being pinned after a day) this often. */
 const CLOCK_TICK_MS = 60_000;
@@ -180,6 +197,35 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   });
   const { conversations, loadingConversations, conversationsLoaded, loadConversations, loadMessages, loadOlder } = chat;
   const signedIn = !!authData?.accessToken;
+  // Buy request responses: theirs to your requests (you're buying) and yours to theirs (selling); new ones come in
+  // on the market alerts stream, the lists again each time the panel opens
+  const wtbToken = settings?.pd2Token || null;
+  const wtbResponses = useWtbResponses(signedIn, wtbToken);
+  const { reload: reloadWtbResponses, setRequestStatus: setWtbRequestStatus } = wtbResponses;
+  useEffect(() => {
+    if (visible) reloadWtbResponses();
+  }, [visible, reloadWtbResponses]);
+  const wtbWhisper = useWtbWhisper('chat');
+  const wtbOffers = useWtbOffers('chat');
+  const { openPanel } = useOverlay();
+  /** A thread's Mark filled: closes the user's request with that response (failures toasted, then rethrown). */
+  const markWtbFilled = useCallback(
+    async (response: WtbResponse) => {
+      if (!wtbToken) return;
+      try {
+        await updateWtbRequest(wtbToken, response.requestId, markFilledPatch(response));
+        setWtbRequestStatus(response.requestId, 'closed');
+      } catch (error) {
+        showToast({
+          title: t('deals.markFilledFailed'),
+          description: error instanceof Error ? error.message : String(error),
+          variant: 'error',
+        });
+        throw error;
+      }
+    },
+    [wtbToken, setWtbRequestStatus, t],
+  );
 
   // Each whisper sender's account is looked up in the market service: a hit becomes a contact so the thread
   // links to that website user (useTraderProfile, trader sidebar) instead of standing as in-game-only.
@@ -223,8 +269,21 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
         now,
         prefs,
         contacts: allContacts,
+        wtb: { received: wtbResponses.received, made: wtbResponses.made },
       }),
-    [conversations, deleting, currentUserId, whispers.people, incomingOffers, outgoingOffers, now, prefs, allContacts],
+    [
+      conversations,
+      deleting,
+      currentUserId,
+      whispers.people,
+      incomingOffers,
+      outgoingOffers,
+      now,
+      prefs,
+      allContacts,
+      wtbResponses.received,
+      wtbResponses.made,
+    ],
   );
   // Pin/mute/archive follow a thread onto ids it gained since they were set (a conversation started later), so
   // notifications that only know a conversation id or a whisper sender find them
@@ -349,8 +408,13 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   const peopleList = useMemo(() => Object.values(whispers.people), [whispers.people]);
   const unseenTrades = useMemo(() => newTrades(prefs, peopleList, now), [prefs, peopleList, now]);
   const allOffers = useMemo<OffersSeen>(
-    () => ({ notifications: offerNotifications, accepted: newAcceptedOffers, trades: unseenTrades }),
-    [offerNotifications, newAcceptedOffers, unseenTrades],
+    () => ({
+      notifications: offerNotifications,
+      accepted: newAcceptedOffers,
+      trades: unseenTrades,
+      responses: threads.flatMap(unreadResponses),
+    }),
+    [offerNotifications, newAcceptedOffers, unseenTrades, threads],
   );
   /**
    * Acknowledges the notifications on PD2 (the website's bell clears too) and marks everything up to now (or the
@@ -361,14 +425,15 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
    * (Maximum update depth exceeded).
    */
   const seeOffers = useCallback(
-    ({ notifications, accepted, trades }: OffersSeen, threadIds?: readonly string[]) => {
-      if (notifications.length === 0 && accepted.length === 0 && trades.length === 0) return;
+    ({ notifications, accepted, trades, responses }: OffersSeen, threadIds?: readonly string[]) => {
+      if (notifications.length === 0 && accepted.length === 0 && trades.length === 0 && responses.length === 0) return;
       if (notifications.length > 0) acknowledgeOfferNotifications(notifications.map((n) => n.id));
       changeChatPrefs((current) => {
         const newest = Math.max(
           ...notifications.map((n) => n.at),
           ...accepted.map((offer) => current.acceptedOffers?.[offer.id] ?? 0),
           ...trades.map(({ trade }) => trade.timestamp),
+          ...responses.map((response) => Date.parse(response.createdAt) || 0),
         );
         if (newest <= offersSeenUpTo(current, threadIds)) return current;
         return markOffersSeen(current, Math.max(Date.now(), newest), threadIds);
@@ -388,6 +453,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
       notifications: offerNotifications.filter((n) => !!n.listingId && listingIds.has(n.listingId)),
       accepted: newAcceptedOffers.filter((offer) => aliases.includes(offerThreadId(offer))),
       trades: unseenTrades.filter(({ person }) => selectedThread.people.some((p) => p.key === person.key)),
+      responses: unreadResponses(selectedThread),
     };
     return { seen, aliases };
   }, [visible, selectedThread, offerNotifications, newAcceptedOffers, unseenTrades]);
@@ -458,6 +524,27 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
   // The open that asked to show the Trader sidebar (a market seller's name); applied in an effect below since the
   // wide column's state lives in the saved chat prefs
   const [traderVersion, setTraderVersion] = useState(0);
+  /**
+   * A buy request's Message (chat payload `wtbContact`): the contact `/contact` records once the user actually sends
+   * that buyer a message from the opened thread (`message`, or `copy` as an in-game whisper); another thread opened
+   * or the panel closed first drops it.
+   */
+  const pendingWtbContact = useRef<{ userId: string; requestId: string; item?: WtbContactItem } | null>(null);
+  useEffect(() => {
+    const pending = pendingWtbContact.current;
+    if (pending && selectedThread && selectedThread.userId !== pending.userId) pendingWtbContact.current = null;
+  }, [selectedThread]);
+  useEffect(() => {
+    if (!visible) pendingWtbContact.current = null;
+  }, [visible]);
+  const recordWtbContact = (thread: InboxThread, channel: 'message' | 'copy') => {
+    const pending = pendingWtbContact.current;
+    if (!pending || thread.userId !== pending.userId) return;
+    pendingWtbContact.current = null;
+    contactWtbRequest(pending.requestId, wtbContactBody(channel, pending.item, settings?.account), wtbToken).catch(
+      (error) => console.warn('[wtb] contact not counted:', error),
+    );
+  };
   if (payloadVersion !== handledPayloadVersion) {
     setHandledPayloadVersion(payloadVersion);
     const conversationId = payload?.conversationId;
@@ -485,6 +572,9 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
         return { ...current, [contactThreadId]: unsent ? `${unsent}\n${draft}` : draft };
       });
     }
+    // A buy request's Message: its contact waits for the first message sent to that buyer (replaces any earlier one)
+    pendingWtbContact.current =
+      payload?.wtbContact && payload.userId ? { userId: payload.userId, ...payload.wtbContact } : null;
     const threadId = payload?.threadId ?? contactThreadId ?? newestUnread?.id;
     // A requested conversation shows in the full list; a filter (offers hotkey) applies as asked
     if (payload?.filter) setFilter(payload.filter);
@@ -784,6 +874,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                 <>
                   <ThreadHeader
                     name={selectedThread.name}
+                    glyphName={traderGlyphName(selectedThread)}
                     participant={participant}
                     account={whisperAccount}
                     inGameOnly={!selectedThread.userId}
@@ -832,6 +923,20 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                         (offer) => !!offer.userId && offer.userId === selectedThread.userId,
                       )}
                       whisperTrades={openTrades}
+                      wtbResponses={selectedThread.wtb}
+                      onWtbWhisper={(response, received) =>
+                        void (received ? wtbWhisper.whisperBack(response) : wtbWhisper.whisperBuyer(response))
+                      }
+                      onWtbViewRequest={(requestId) => openPanel('market', { requestId }, { focus: true })}
+                      onWtbMarkFilled={markWtbFilled}
+                      onWtbAccept={async (response) => {
+                        const decided = await wtbOffers.accept(response);
+                        if (decided) wtbResponses.upsert(decided);
+                      }}
+                      onWtbDecline={async (response) => {
+                        const decided = await wtbOffers.decline(response);
+                        if (decided) wtbResponses.upsert(decided);
+                      }}
                       listingIds={linkedListingIds}
                       now={now}
                       onCounter={(text) => {
@@ -854,6 +959,7 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                     thread={websiteThread}
                     readerId={participant?._id}
                     otherName={selectedThread.name}
+                    otherGlyphName={traderGlyphName(selectedThread)}
                     onOpenTrader={() => setTraderShown(true)}
                     listings={listings}
                     unreadKey={unreadKey}
@@ -869,9 +975,14 @@ export default function ChatOverlayWidget({ onClose }: ChatOverlayWidgetProps) {
                     onSend={(text) => {
                       if (channel === 'website') {
                         // Shows right away as a pending bubble; a failure stays on it with a retry
-                        void sendWebsite(selectedThread, text);
+                        void sendWebsite(selectedThread, text).then(
+                          (sent) => sent && recordWtbContact(selectedThread, 'message'),
+                        );
                       } else if (whisperAccount) {
-                        void sendWhisper(person ?? { accountName: whisperAccount, playerName: whisperAccount }, text);
+                        void sendWhisper(
+                          person ?? { accountName: whisperAccount, playerName: whisperAccount },
+                          text,
+                        ).then((copied) => copied && recordWtbContact(selectedThread, 'copy'));
                       }
                     }}
                     placeholder={

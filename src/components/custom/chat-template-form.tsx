@@ -12,6 +12,7 @@ import {
 } from '@/lib/message-templates';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/i18n';
+import { Tip } from '@/components/ui/tooltip';
 
 type FieldErrors = Partial<Record<'name' | 'text', string>>;
 
@@ -181,17 +182,18 @@ export function ChatTemplateForm({
           className="flex flex-wrap items-center gap-1.5 pt-0.5">
           <span className="text-[11px] text-muted-foreground">Insert:</span>
           {tokens.map(({ token, description }) => (
-            <button
-              key={token}
-              type="button"
-              title={description}
-              // Keep the text's caret: the token goes where the user was typing
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => insertToken(token)}
-              className="rounded-sm border border-border/70 bg-muted/60 px-1.5 py-0.5 font-mono text-[11px] text-foreground/80 outline-none transition-[color,background-color,border-color] duration-(--dur-fast) hover:border-ring/50 hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
-            >
-              {token}
-            </button>
+            <Tip key={token}
+              label={description}>
+              <button
+                type="button"
+                // Keep the text's caret: the token goes where the user was typing
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => insertToken(token)}
+                className="rounded-sm border border-border/70 bg-muted/60 px-1.5 py-0.5 font-mono text-[11px] text-foreground/80 outline-none transition-[color,background-color,border-color] duration-(--dur-fast) hover:border-ring/50 hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60"
+              >
+                {token}
+              </button>
+            </Tip>
           ))}
         </div>
         <p id={`${id}-asks`}

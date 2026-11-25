@@ -48,8 +48,9 @@ export const PANEL_DEFS: PanelDefs = {
     size: { width: 720, height: 680 },
     minSize: { width: 520, height: 420 },
     resizable: true,
-    placement: 'cursor', // manage mode opens with { placement: 'gameCenter' }
-    persist: false,
+    // Centered on the screen; once the user moves or resizes it, every open restores that rect instead
+    placement: 'screenCenter',
+    persist: true,
     keyboard: 'onPointerDown',
     keepMounted: true, // queued listings keep polling while closed (the old window was hidden, not destroyed)
     hideOnGameBlur: true,
@@ -97,6 +98,7 @@ export const PANEL_DEFS: PanelDefs = {
     keyboard: 'never',
     keepMounted: true,
     hideOnGameBlur: true,
+    gameHud: true,
     // click-through frame: only the tab (and its open menu) take clicks
     interactive: 'children',
   },
@@ -171,6 +173,7 @@ export const PANEL_DEFS: PanelDefs = {
     keyboard: 'never',
     keepMounted: true,
     hideOnGameBlur: true,
+    gameHud: true,
   },
 
   // ---- netWorthPanel (Group ChatButton/NetWorth) ----
@@ -227,6 +230,7 @@ export const PANEL_DEFS: PanelDefs = {
     keyboard: 'never',
     keepMounted: false,
     hideOnGameBlur: true,
+    gameHud: true,
     // click-through frame: only the pill and the open schedule take clicks (not the corner beside a narrow pill)
     interactive: 'children',
   },

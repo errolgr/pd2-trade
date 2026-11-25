@@ -18,6 +18,8 @@ const BASE: Partial<ISettings> = { mode: 'softcore', ladder: 'ladder', diablo2Di
 
 let store: OptionsStore;
 let detected: string | null;
+let picked: string | null;
+let checks: Record<string, { status: string; resolved: string | null }>;
 
 async function renderForm(settings: Partial<ISettings> = BASE, isLoading = false) {
   store = createOptionsStore(settings, isLoading);
@@ -34,9 +36,16 @@ const dirInput = () => screen.getByPlaceholderText('C:\\Diablo II') as HTMLInput
 beforeEach(() => {
   vi.useFakeTimers({ now: new Date('2026-05-01T12:00:00Z') });
   detected = null;
+  picked = null;
+  checks = {};
   vi.mocked(isTauri).mockReturnValue(true);
-  vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+  vi.mocked(invoke).mockImplementation(async (cmd: string, args?: unknown) => {
     if (cmd === 'auto_detect_diablo2_directory') return detected;
+    if (cmd === 'pick_diablo2_directory') return picked;
+    if (cmd === 'check_diablo2_directory') {
+      const { path } = args as { path: string };
+      return checks[path] ?? { status: 'valid', resolved: null };
+    }
     throw new Error(`unexpected ${cmd}`);
   });
 });
@@ -114,6 +123,62 @@ describe('GeneralForm', () => {
     await act(async () => fireEvent.click(screen.getByRole('button', { name: /Auto-Detect/ })));
     expect(showToast).toHaveBeenCalledWith(expect.objectContaining({ variant: 'warning' }));
     expect(dirInput().value).toBe('C:\\Old');
+  });
+
+  it('Browse fills the field with the picked folder, starting from the current one', async () => {
+    await renderForm({ ...BASE, diablo2Directory: 'C:\\Old' });
+    picked = 'D:\\Picked';
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: /Browse/ })));
+    expect(invoke).toHaveBeenCalledWith('pick_diablo2_directory', { current: 'C:\\Old' });
+    expect(dirInput().value).toBe('D:\\Picked');
+    await advance(500);
+    expect(store.updateSettings.mock.calls[0][0].diablo2Directory).toBe('D:\\Picked');
+  });
+
+  it('a cancelled Browse leaves the field alone', async () => {
+    await renderForm({ ...BASE, diablo2Directory: 'C:\\Old' });
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: /Browse/ })));
+    expect(dirInput().value).toBe('C:\\Old');
+  });
+
+  it('Clear empties the field so the directory is auto-detected again', async () => {
+    await renderForm({ ...BASE, diablo2Directory: '/home/u/Games/project-diablo-2' });
+    fireEvent.click(screen.getByRole('button', { name: /Clear/ }));
+    expect(dirInput().value).toBe('');
+    expect(screen.queryByRole('button', { name: /Clear/ })).toBeNull();
+    await advance(500);
+    expect(store.updateSettings.mock.calls[0][0].diablo2Directory).toBe('');
+  });
+
+  it('offers the install inside a Wine prefix and applies it', async () => {
+    const prefix = '/home/u/Games/project-diablo-2';
+    const install = `${prefix}/drive_c/Program Files (x86)/Diablo II`;
+    checks[prefix] = { status: 'winePrefix', resolved: install };
+    await renderForm({ ...BASE, diablo2Directory: prefix });
+    await advance(300);
+    expect(screen.getByRole('alert').textContent).toContain(`Wine prefix. Diablo II is installed in ${install}`);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Use this folder' }));
+    expect(dirInput().value).toBe(install);
+    expect(screen.queryByRole('alert')).toBeNull();
+    await advance(300);
+    expect(screen.queryByText('Diablo II installation found.')).not.toBeNull();
+  });
+
+  it('checks typed paths once typing pauses and flags folders without Diablo II', async () => {
+    checks['C:\\Nope'] = { status: 'missing', resolved: null };
+    checks['C:\\Games'] = { status: 'notInstall', resolved: null };
+    await renderForm();
+    fireEvent.change(dirInput(), { target: { value: 'C:\\Nope' } });
+    await advance(299);
+    expect(invoke).not.toHaveBeenCalledWith('check_diablo2_directory', expect.anything());
+    await advance(1);
+    expect(screen.getByRole('alert').textContent).toContain('This folder does not exist.');
+
+    fireEvent.change(dirInput(), { target: { value: 'C:\\Games' } });
+    expect(screen.queryByRole('alert')).toBeNull();
+    await advance(300);
+    expect(screen.getByRole('alert').textContent).toContain('No Diablo II installation here');
   });
 
   it('does not attempt detection outside Tauri', async () => {

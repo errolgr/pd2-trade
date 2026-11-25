@@ -26,7 +26,9 @@
     "apply": "Appliquer",
     "signIn": "Se connecter",
     "signOut": "Se déconnecter",
-    "tryAgain": "Réessayer"
+    "tryAgain": "Réessayer",
+    "test": "Tester",
+    "testSoundTitle": "Jouer le son de notification à ce volume"
   },
   "status": {
     "loading": "Chargement…",

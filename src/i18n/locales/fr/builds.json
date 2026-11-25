@@ -6,6 +6,8 @@
     "lookupLabel": "Rechercher un personnage",
     "mode": "Mode",
     "followingShortcut": "Suivis ({{n}})",
+    "myCharacter": "Mon personnage : {{name}}",
+    "myCharacterUnavailable": "Connecte-toi et choisis ton personnage dans Paramètres › Compte pour y accéder directement",
     "tabs": {
       "meta": "Méta",
       "characters": "Personnages"
@@ -15,7 +17,8 @@
     "na": "n/d",
     "noReliablePrice": "Aucun prix de marché fiable",
     "hrTitle": "{{hr}} HR aux prix actuels du marché",
-    "marketValue": "Valeur marché <num>{{value}} HR</num>"
+    "marketValue": "Valeur marché <num>{{value}} HR</num>",
+    "corruptionBasis": "Estimé selon sa corruption"
   },
   "itemActions": {
     "searchMarket": "Chercher sur le marché",
