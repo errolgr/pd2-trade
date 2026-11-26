@@ -26,12 +26,14 @@
     "listUpdateFailed": "Nie udało się wystawić/zaktualizować przedmiotu",
     "noItemTitle": "Nie wybrano przedmiotu",
     "noItemDescription": "Skopiuj przedmiot w grze (Ctrl+C) i otwórz ponownie to okno, aby go wystawić, albo wybierz „Zarządzaj ogłoszeniami”, aby zobaczyć aktywne oferty handlu.",
-    "noItemsFound": "Nie znaleziono przedmiotów pasujących do „{{name}}”",
+    "pendingLabel": "Jeszcze nie ma go w skrzyni",
+    "pendingBadge": "Trafi do kolejki po wystawieniu",
+    "pendingDescription": "Żaden przedmiot w skrzyni nie pasuje dokładnie do tego, więc nie został jeszcze zsynchronizowany. Wystaw go, a zostanie wystawiony automatycznie, gdy tylko się pojawi (zwykle kilka minut).",
     "whyNotFound": "Dlaczego nie znaleziono mojego przedmiotu?",
     "notFoundTooltip": "Przedmiot zostanie znaleziony, gdy leży we wspólnej skrzyni lub w osobistej skrzyni postaci w trybie wybranym w Ustawieniach i utworzysz nową grę.",
-    "queueHint": "Możesz dodać ten przedmiot do kolejki, aby wystawić go automatycznie. Poczekamy, aż serwer zsynchronizuje go z twojej skrzyni (zwykle kilka minut).",
-    "noneMatch": "Żaden nie pasuje?",
-    "queueModeHint": "Dodaj ten przedmiot do kolejki, aby poczekać, aż nowy pojawi się w skrzyni (zwykle kilka minut).",
+    "alreadyInStash": "Jest już w skrzyni?",
+    "pickFromStash": "Wybierz ze skrzyni",
+    "notInList": "Nie ma go na liście?",
     "fallback": "Nie wybrano przedmiotu. Użyj skrótu lub przejdź z parametrem przedmiotu, aby wystawiać przedmioty."
   },
   "queued": {

@@ -4,17 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
-import {
-  X,
-  GripVertical,
-  Loader2,
-  AlertCircle,
-  Clock,
-  Hourglass,
-  ListChecks,
-  PackageSearch,
-  SearchX,
-} from 'lucide-react';
+import { X, GripVertical, Loader2, AlertCircle, Clock, Hourglass, ListChecks, PackageSearch } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
@@ -32,6 +22,7 @@ import { useOptions } from '@/hooks/useOptions';
 import { CustomToastPayload, ToastActionType, GenericToastPayload } from '@/common/types/Events';
 import { shortcutFormSchema, ShortcutFormData } from './types';
 import ItemSelectionList from './ItemSelectionList';
+import { ClipboardStatsDisplay } from './ItemStatsDisplay';
 import ListingFormFields from './ListingFormFields';
 import LoadingAndErrorStates from './LoadingAndErrorStates';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -42,13 +33,14 @@ import { trackEvent, trackMeasurement } from '@/lib/telemetry';
 import { usePendingListingsQueue, PendingListing } from '@/hooks/usePendingListingsQueue';
 import MultipleMatchSelector from './MultipleMatchSelector';
 import EmptyState from './EmptyState';
-import { countChip, itemCard } from './styles';
+import { countChip, itemCard, sectionLabel } from './styles';
 import { WindowPanel } from '@/components/custom/window-chrome';
 import { cn } from '@/lib/utils';
-import { DUR, EASE_OUT, fadeInUp, listItem, listStagger, popIn } from '@/lib/motion';
+import { DUR, fadeInUp, listItem, listStagger, popIn } from '@/lib/motion';
 import { showToast, usePanel } from '@/overlay';
 import { subscribeListingDeleted } from '@/hooks/pd2website/listing-events';
-import { exactStashMatches } from '../lib/exact-stash-match';
+import { diffStashItem, matchStashItem, type StashMatchTier } from '../lib/exact-stash-match';
+import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import { useTranslation } from '@/i18n';
 import { wtbOverlapBody, type WtbListPrice } from '@/pages/market/lib/wtb';
 import { useWtbItemMatches, useWtbSession } from '@/pages/market/wtb/useWtbData';
@@ -58,6 +50,9 @@ import { itemRowValue } from '@/pages/market/wtb/wtb-text';
 
 /** Overlapping requests read for the buyers chip's "Almost" (requests one stat away). */
 const WTB_NEAR_LOOKUP = 50;
+
+/** The pending card's key in `expandedItems` (stash items are keyed by hash). */
+const CLIPBOARD_STATS_ID = 'clipboard';
 
 interface ListItemShortcutFormProps {
   item: PriceCheckItem | null;
@@ -99,12 +94,13 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   const [showMultipleMatchSelector, setShowMultipleMatchSelector] = useState(false);
   const [pendingMatches, setPendingMatches] = useState<GameStashItem[]>([]);
   const [pendingMatchListingId, setPendingMatchListingId] = useState<string | null>(null);
-  const [showQueueOption, setShowQueueOption] = useState(false); // Track if user explicitly revealed queue option
+  // How the copied item was found among the stash candidates; `none` lists them only when the user asks to pick by hand
+  const [matchTier, setMatchTier] = useState<StashMatchTier | null>(null);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isPollRunningRef = useRef(false); // Prevent overlapping poll cycles
   const isProcessingRef = useRef<Set<string>>(new Set()); // Track which items are being processed
   const pendingListingDataRef = useRef<PendingListing | null>(null);
-  // Every stash item findMatchingItems returned, even when the list shows only the exact match: queueing
+  // Every stash item findMatchingItems returned, even when the list shows only the matched ones: queueing
   // must wait for an item that is new to all of them.
   const stashCandidatesRef = useRef<GameStashItem[]>([]);
 
@@ -157,7 +153,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     setShowMultipleMatchSelector(false);
     setPendingMatches([]);
     setPendingMatchListingId(null);
-    setShowQueueOption(false);
+    setMatchTier(null);
     isProcessingRef.current = new Set();
     pendingListingDataRef.current = null;
     form.reset({ type: 'exact', note: '', price: '', currency: 'HR' });
@@ -173,25 +169,23 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     try {
       const candidates = await findMatchingItems(item);
       const duration = performance.now() - startTime;
-      // Narrow to the very item that was copied/inspected when it is identifiable among the candidates.
-      const exact = exactStashMatches(item, candidates);
-      const items = exact.length > 0 ? exact : candidates;
+      // Only the very item that was copied/inspected is offered; with none, it hasn't synced yet and posting queues it
+      const match = matchStashItem(item, candidates);
 
       trackMeasurement(
         'list_item_matching_search',
-        { duration_ms: duration, matched_items: candidates.length, exact_matches: exact.length },
-        { outcome: 'success' },
+        { duration_ms: duration, matched_items: candidates.length, exact_matches: match.items.length },
+        { outcome: 'success', match_tier: match.tier },
       );
 
       stashCandidatesRef.current = candidates;
-      setMatchingItems(items);
-      if (items.length === 1) {
-        setSelectedItem(items[0]);
-        setShowQueueOption(false); // Reset queue option visibility
-        trackEvent('list_item_auto_selected');
+      setMatchTier(match.tier);
+      setMatchingItems(match.items);
+      if (match.items.length === 1) {
+        setSelectedItem(match.items[0]);
+        trackEvent('list_item_auto_selected', { match_tier: match.tier });
       } else {
         setSelectedItem(null);
-        setShowQueueOption(false); // Reset queue option visibility when new search
       }
     } catch (err) {
       const duration = performance.now() - startTime;
@@ -245,6 +239,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     if (directItem) {
       resetAllState();
       stashCandidatesRef.current = [directItem];
+      setMatchTier('exact');
       setMatchingItems([directItem]);
       setSelectedItem(directItem);
     } else if (item && authData) {
@@ -487,24 +482,12 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
 
       try {
         const items = await findMatchingItems(pendingListing.item);
-
-        // Determine which item to use based on whether we have initial matching hashes
-        let itemToUse: GameStashItem | null = null;
-
-        if (pendingListing.initialMatchingHashes && pendingListing.initialMatchingHashes.size > 0) {
-          // We queued with multiple matches - look for a NEW item (not in initial set)
-          const newItems = items.filter((item) => !pendingListing.initialMatchingHashes!.has(item.hash));
-
-          if (newItems.length > 0) {
-            // Found a new item! Use the first one (or could use the most recent if we had timestamps)
-            itemToUse = newItems[0];
-          }
-        } else {
-          // No initial matching hashes - this was queued with 0 matches, use first item found
-          if (items.length > 0) {
-            itemToUse = items[0];
-          }
-        }
+        // Queued beside stash candidates: only an item new to all of them can be the one waited for
+        const known = pendingListing.initialMatchingHashes;
+        const fresh = known && known.size > 0 ? items.filter((i) => !known.has(i.hash)) : items;
+        // The copied item among them when it is identifiable, else the only one
+        const itemToUse: GameStashItem | null =
+          matchStashItem(pendingListing.item, fresh).items[0] ?? (fresh.length === 1 ? fresh[0] : null);
 
         if (itemToUse) {
           // Mark as processing immediately to prevent duplicates
@@ -521,9 +504,8 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           // Process the found item
           await processQueuedListing(pendingListing, itemToUse);
           isProcessingRef.current.delete(pendingId);
-        } else if (items.length > 1 && !pendingListing.initialMatchingHashes) {
-          // Multiple matches but no initial hashes (shouldn't happen, but handle gracefully)
-          // This means we queued with 0 matches but now have multiple - show selector
+        } else if (fresh.length > 1) {
+          // Several new items, none provably the copied one: the user picks
           isProcessingRef.current.add(pendingId);
           setQueuedListingIds((prev) => {
             const next = new Set(prev);
@@ -533,9 +515,9 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           removePendingListing(pendingId);
           pendingListingDataRef.current = pendingListing;
           setPendingMatchListingId(pendingId);
-          setPendingMatches(items);
+          setPendingMatches(fresh);
           setShowMultipleMatchSelector(true);
-          setMatchingItems(items);
+          setMatchingItems(fresh);
         }
       } catch (err) {
         console.error('[Queue] Error polling for queued item:', pendingId, err);
@@ -612,9 +594,24 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queuedListingIds.size]);
 
+  // A hand-picked or loosely matched item once listed: what its stash copy shows that the clipboard doesn't (and the
+  // other way round), so the exact check can learn what the clipboard copy drops
+  const trackMatchDrift = (stashItem: GameStashItem) => {
+    if (!item || (matchTier !== 'loose' && matchTier !== 'none')) return;
+    const diff = diffStashItem(item, stashItem);
+    trackEvent('list_item_match_drift', {
+      match_tier: matchTier === 'none' ? 'hand_picked' : 'loose',
+      quality: item.quality,
+      item_level_differs: diff.itemLevel,
+      ethereal_differs: diff.ethereal,
+      sockets_differs: diff.sockets,
+      clipboard_only_stats: diff.clipboardOnlyStats.join(',') || undefined,
+      stash_only_modifiers: diff.stashOnlyModifiers.join(',') || undefined,
+    });
+  };
+
   const handleSubmit = async (values: ShortcutFormData) => {
-    // If no item selected and we have an item, allow queuing
-    // This includes both: no items found (length === 0) and multiple items found but none selected
+    // No stash item is the copied one (it hasn't synced yet): queue it
     if (!selectedItem && item) {
       setSubmitLoading(true);
       // Check listing count before queuing
@@ -640,11 +637,11 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       setIsQueued(true);
       setSubmitLoading(false);
 
-      trackEvent('list_item_queued', { has_multiple_matches: matchingItems.length > 0 });
+      trackEvent('list_item_queued', { has_multiple_matches: candidates.length > 0 });
       const queuedToast: GenericToastPayload = {
         title: t('shortcut.queuedTitle'),
         description:
-          matchingItems.length > 0 ? t('shortcut.queuedNewItemDescription') : t('shortcut.queuedSyncDescription'),
+          candidates.length > 0 ? t('shortcut.queuedNewItemDescription') : t('shortcut.queuedSyncDescription'),
         variant: 'default',
       };
       showToast(queuedToast);
@@ -652,7 +649,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       // Switch to queued tab to show the queued item
       setActiveTab('queued');
 
-      // Reset form to allow queuing another item, but keep showQueueOption true
+      // Reset form to allow queuing another item
       form.reset({ type: 'exact', note: '', price: '', currency: 'HR' });
       // Don't hide window - allow user to queue multiple items
       return;
@@ -691,6 +688,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
         }
         await updateMarketListing(currentListingForSelected._id, updateFields);
         await updateItemByHash(selectedItem.hash, updateFields);
+        trackMatchDrift(selectedItem);
         await fetchAllListings(); // Refresh all listings
         showToast({ title: 'PD2 Trader', description: t('toasts.listingUpdated') });
 
@@ -719,6 +717,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
           values.note || '',
           listingType,
         );
+        trackMatchDrift(selectedItem);
         form.reset({ type: 'exact', note: '', price: '', currency: 'HR' });
 
         trackMeasurement(
@@ -1068,42 +1067,79 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
       );
     }
 
-    // 4. No Items Found (with Queue option)
-    if (matchingItems.length === 0 && !isLoading && !error && item) {
+    // 4. The copied item is in no stash item (it hasn't synced yet): posting queues it until it shows up
+    if (matchingItems.length === 0 && item) {
+      const name = (item.isRuneword ? item.runeword : item.name) || item.type;
       return (
-        <motion.div
-          variants={fadeInUp}
-          initial="hidden"
-          animate="visible"
-          className="flex flex-col items-center justify-center py-6 gap-4"
-        >
-          <span className="flex size-12 items-center justify-center rounded-full bg-warning/12 text-warning ring-1 ring-warning/25">
-            <SearchX className="size-6" />
-          </span>
-          <div className="flex flex-col items-center gap-2 text-center">
-            <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-              {wtbChip(null)}
-              <span>{t('shortcut.noItemsFound', { name: item.name || item.type })}</span>
-              <Tooltip delayDuration={0}>
-                <TooltipTrigger asChild>
-                  <button
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)}
+            className="h-full flex flex-col gap-3 overflow-hidden">
+            <ScrollArea className="min-h-0 flex-1 pr-2 [&_[data-radix-scroll-area-viewport]>div]:!block">
+              <motion.div variants={fadeInUp}
+                initial="hidden"
+                animate="visible"
+                className="flex flex-col gap-2 p-px">
+                <span className={sectionLabel}>{t('shortcut.pendingLabel')}</span>
+                <div className={itemCard({ tone: 'pending' })}>
+                  <div className="flex min-h-7 items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <div className={cn('truncate', qualityColor(item.quality))}
+                        style={{ fontFamily: 'DiabloFont' }}>
+                        {name}
+                      </div>
+                      {wtbChip(null)}
+                    </div>
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/12 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                      <Hourglass className="size-3" />
+                      {t('shortcut.pendingBadge')}
+                    </span>
+                  </div>
+                  {name !== item.type && <div className="text-xs text-muted-foreground">{item.type}</div>}
+                  <ClipboardStatsDisplay
+                    id={CLIPBOARD_STATS_ID}
+                    item={item}
+                    isExpanded={expandedItems.has(CLIPBOARD_STATS_ID)}
+                    onToggleExpanded={toggleExpandedStats}
+                  />
+                  <div className="mt-2 flex items-start gap-1.5 border-t border-border/60 pt-2 text-xs leading-relaxed text-muted-foreground">
+                    <span>{t('shortcut.pendingDescription')}</span>
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label={t('shortcut.whyNotFound')}
+                          className="mt-0.5 inline-flex shrink-0 rounded-full text-primary outline-none transition-transform duration-(--dur-fast) hover:scale-110 focus-visible:ring-2 focus-visible:ring-ring/60"
+                        >
+                          <AlertCircle className="size-3.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs text-xs text-center">
+                        {t('shortcut.notFoundTooltip')}
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </div>
+              </motion.div>
+            </ScrollArea>
+            <div className="flex-shrink-0 space-y-2">
+              {stashCandidatesRef.current.length > 0 && (
+                // The way to a similar stash item when the copied one did sync but matched none
+                <div className="flex items-center justify-between gap-2 rounded-lg border border-dashed border-border bg-muted/30 py-1.5 pl-3 pr-1.5">
+                  <div className="flex items-center gap-2">
+                    <PackageSearch className="size-3.5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">{t('shortcut.alreadyInStash')}</span>
+                  </div>
+                  <Button
                     type="button"
-                    aria-label={t('shortcut.whyNotFound')}
-                    className="inline-flex rounded-full text-warning outline-none transition-transform duration-(--dur-fast) hover:scale-110 focus-visible:ring-2 focus-visible:ring-ring/60"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setMatchingItems(stashCandidatesRef.current)}
+                    className="text-xs h-7 px-3"
                   >
-                    <AlertCircle className="w-4 h-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs text-xs text-center">
-                  {t('shortcut.notFoundTooltip')}
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <div className="text-sm text-muted-foreground max-w-md leading-relaxed">{t('shortcut.queueHint')}</div>
-          </div>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)}
-              className="w-full max-w-lg">
+                    {t('shortcut.pickFromStash')}
+                  </Button>
+                </div>
+              )}
               <ListingFormFields
                 form={form}
                 selectedItem={null}
@@ -1112,15 +1148,14 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
                 onSubmit={handleSubmit}
                 allowQueue={true}
               />
-            </form>
-          </Form>
-        </motion.div>
+            </div>
+          </form>
+        </Form>
       );
     }
 
     // 5. Default: Item Selection Form
     if (item || directItem) {
-      const queueMode = matchingItems.length > 0 && !selectedItem && showQueueOption;
       return (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)}
@@ -1132,10 +1167,7 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
               currentListings={currentListings}
               expandedItems={expandedItems}
               isMarketListingsLoading={isMarketListingsLoading}
-              onItemSelect={(item) => {
-                setSelectedItem(item);
-                setShowQueueOption(false);
-              }}
+              onItemSelect={setSelectedItem}
               onToggleExpanded={toggleExpandedStats}
               onExpandAll={expandAllStats}
               onCollapseAll={collapseAllStats}
@@ -1145,58 +1177,35 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
             />
 
             <div className="flex-shrink-0 space-y-2">
-              <AnimatePresence initial={false}
-                mode="popLayout">
-                {!showQueueOption && (
-                  <motion.div
-                    key="queue-cta"
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 4 }}
-                    transition={{ duration: DUR.fast, ease: EASE_OUT }}
-                    className="flex items-center justify-between gap-2 rounded-lg border border-dashed border-border bg-muted/30 py-1.5 pl-3 pr-1.5"
+              {matchTier === 'none' && (
+                // Picking by hand among the similar items: the way back to queueing the copied one
+                <div className="flex items-center justify-between gap-2 rounded-lg border border-dashed border-border bg-muted/30 py-1.5 pl-3 pr-1.5">
+                  <div className="flex items-center gap-2">
+                    <Hourglass className="size-3.5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">{t('shortcut.notInList')}</span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedItem(null);
+                      setMatchingItems([]);
+                    }}
+                    className="text-xs h-7 px-3"
                   >
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">{t('shortcut.noneMatch')}</span>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedItem(null);
-                        setShowQueueOption(true);
-                      }}
-                      className="text-xs h-7 px-3"
-                    >
-                      {t('form.queueItem')}
-                    </Button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              {(selectedItem || queueMode) && (
-                <motion.div layout="position"
-                  className="space-y-2">
-                  {queueMode && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="flex items-center justify-center gap-1.5 rounded-md bg-primary/8 px-2 py-1.5 text-xs text-muted-foreground"
-                    >
-                      <Hourglass className="size-3.5 shrink-0 text-primary" />
-                      {t('shortcut.queueModeHint')}
-                    </motion.div>
-                  )}
-                  <ListingFormFields
-                    form={form}
-                    selectedItem={selectedItem}
-                    currentListings={currentListings}
-                    submitLoading={submitLoading}
-                    onSubmit={handleSubmit}
-                    allowQueue={queueMode}
-                  />
-                </motion.div>
+                    {t('form.queueItem')}
+                  </Button>
+                </div>
+              )}
+              {selectedItem && (
+                <ListingFormFields
+                  form={form}
+                  selectedItem={selectedItem}
+                  currentListings={currentListings}
+                  submitLoading={submitLoading}
+                  onSubmit={handleSubmit}
+                />
               )}
             </div>
           </form>

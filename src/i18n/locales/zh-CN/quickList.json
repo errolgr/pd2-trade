@@ -26,12 +26,14 @@
     "listUpdateFailed": "挂单/更新物品失败",
     "noItemTitle": "未选择物品",
     "noItemDescription": "在游戏中复制物品（Ctrl+C）后重新打开此窗口即可挂单，或选择“管理挂单”查看你的有效交易。",
-    "noItemsFound": "未找到与“{{name}}”匹配的物品",
+    "pendingLabel": "尚未进入你的储物箱",
+    "pendingBadge": "发布时排队",
+    "pendingDescription": "储物箱中没有物品与此物品完全匹配，说明它尚未同步。发布后，它一出现就会自动挂单（通常需要几分钟）。",
     "whyNotFound": "为什么找不到我的物品？",
     "notFoundTooltip": "物品放入共享储物箱，或放入设置中所选模式下某个角色的个人储物箱，并且你已创建新游戏后，即可被找到。",
-    "queueHint": "你可以将此物品排队以自动挂单。我们会等待服务器从你的储物箱同步它（通常需要几分钟）。",
-    "noneMatch": "都不匹配？",
-    "queueModeHint": "将此物品排队，等待新物品出现在你的储物箱中（通常需要几分钟）。",
+    "alreadyInStash": "已经在储物箱里了？",
+    "pickFromStash": "从储物箱中选择",
+    "notInList": "不在列表中？",
     "fallback": "未选择物品。请使用快捷键或通过物品参数导航来挂单。"
   },
   "queued": {

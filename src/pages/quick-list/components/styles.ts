@@ -13,6 +13,8 @@ export const itemCard = cva(
           'cursor-pointer border-primary/70 bg-primary/8 shadow-glow outline-none ring-1 ring-primary/40 focus-visible:ring-2 focus-visible:ring-ring/60',
         danger:
           'cursor-pointer border-border outline-none hover:border-destructive/60 hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-destructive/50',
+        // An item not in the stash yet: listing it queues it until it syncs
+        pending: 'border-dashed border-primary/60 bg-primary/5',
       },
     },
     defaultVariants: { tone: 'static' },
