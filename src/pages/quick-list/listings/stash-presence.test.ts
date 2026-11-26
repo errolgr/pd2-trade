@@ -21,18 +21,18 @@ const states = (presence: Map<string, { state: string }>) =>
   Object.fromEntries([...presence].map(([id, p]) => [id, p.state]));
 
 describe('stashPresence', () => {
-  it('tells an item in place from one moved (a new hash) and one gone', () => {
+  it('shows where an item is now, whether or not it moved since it was listed, and tells one gone', () => {
     const presence = stashPresence(
       [listing('here', 'h1'), listing('moved', 'h2', 3), listing('gone', 'h3', 4)],
       [item('h1'), item('h9', 'Stash', 3), item('h3', 'Inventory', 4)],
     );
-    expect(states(presence)).toEqual({ here: 'here', moved: 'moved', gone: 'missing' });
+    expect(states(presence)).toEqual({ here: 'found', moved: 'found', gone: 'missing' });
     expect(presence.get('moved')).toMatchObject({ places: [{ hash: 'h9' }] });
   });
 
   it('does not let a moved listing claim the stash item an unmoved look-alike is', () => {
     const presence = stashPresence([listing('a', 'h1'), listing('b', 'h2')], [item('h1')]);
-    expect(states(presence)).toEqual({ a: 'here', b: 'missing' });
+    expect(states(presence)).toEqual({ a: 'found', b: 'missing' });
   });
 
   it('is unsure when identical listings outnumber identical stash items', () => {

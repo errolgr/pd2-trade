@@ -214,7 +214,6 @@
     },
     "stash": {
       "or": " oder ",
-      "moved": "Verschoben: {{place}}",
       "unsure": "Nur {{found}} von {{listed}} solchen in deiner Truhe",
       "missing": "Nicht in deiner Truhe",
       "at": "In deiner Truhe: {{places}}",

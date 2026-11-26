@@ -214,7 +214,6 @@
     },
     "stash": {
       "or": " or ",
-      "moved": "Moved: {{place}}",
       "unsure": "Only {{found}} of {{listed}} like this in your stash",
       "missing": "Not in your stash",
       "at": "In your stash: {{places}}",

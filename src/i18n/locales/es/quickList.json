@@ -218,7 +218,6 @@
     },
     "stash": {
       "or": " o ",
-      "moved": "Movido: {{place}}",
       "unsure": "Solo {{found}} de {{listed}} así en tu alijo",
       "missing": "No está en tu alijo",
       "at": "En tu alijo: {{places}}",

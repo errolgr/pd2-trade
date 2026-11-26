@@ -222,7 +222,6 @@
     },
     "stash": {
       "or": " lub ",
-      "moved": "Przeniesiono: {{place}}",
       "unsure": "Tylko {{found}} z {{listed}} takich w skrzyni",
       "missing": "Brak w skrzyni",
       "at": "W skrzyni: {{places}}",

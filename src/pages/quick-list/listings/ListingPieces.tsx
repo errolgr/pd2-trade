@@ -4,7 +4,6 @@ import {
   ArrowUp,
   Check,
   Clock,
-  CornerDownRight,
   Loader2,
   MapPin,
   Pencil,
@@ -123,16 +122,16 @@ export function PriceText({ listing, className }: { listing: MarketListingEntry;
 export const sideNote = (listing: MarketListingEntry) => (listing.hr_price > 0 && listing.price ? listing.price : null);
 
 const STASH_TONE: Record<StashPresence['state'], string> = {
-  here: 'border-success/40 text-success',
-  moved: 'border-primary/40 text-primary',
+  found: 'border-success/40 text-success',
   unsure: 'border-warning/50 bg-warning/10 text-warning',
   missing: 'border-warning/50 bg-warning/10 text-warning',
 };
-const STASH_ICON = { here: MapPin, moved: CornerDownRight, unsure: TriangleAlert, missing: TriangleAlert };
+const STASH_ICON = { found: MapPin, unsure: TriangleAlert, missing: TriangleAlert };
 
 /**
- * Where the listed item is in the stash now: in place ("Shared 3 · column 5, row 2"), moved (its new place), or not
- * found. Hover: where it was listed from and when the stash was read (PD2 syncs a stash only on a new game).
+ * Where the listed item is in the stash now ("Shared 3 · column 5, row 2"; items get shuffled around, so only where
+ * it is counts), or that it is not found. Hover: where it was listed from and when the stash was read (PD2 syncs a
+ * stash only on a new game).
  */
 export function StashChip({
   listing,
@@ -153,13 +152,11 @@ export function StashChip({
           .join(t('myListings.stash.or'));
   const ago = moment(checkedAt).fromNow();
   const label =
-    presence.state === 'here'
+    presence.state === 'found'
       ? places
-      : presence.state === 'moved'
-        ? t('myListings.stash.moved', { place: places })
-        : presence.state === 'unsure'
-          ? t('myListings.stash.unsure', { found: presence.places.length, listed: presence.listed })
-          : t('myListings.stash.missing');
+      : presence.state === 'unsure'
+        ? t('myListings.stash.unsure', { found: presence.places.length, listed: presence.listed })
+        : t('myListings.stash.missing');
   const listedFrom = stashPlace(listing.item);
   const Icon = STASH_ICON[presence.state];
   return (
@@ -179,7 +176,7 @@ export function StashChip({
       </TooltipTrigger>
       <TooltipContent className="max-w-72 space-y-0.5 text-xs">
         {presence.state === 'unsure' && <p>{t('myListings.stash.at', { places })}</p>}
-        {presence.state !== 'here' && listedFrom && <p>{t('myListings.stash.listedFrom', { place: listedFrom })}</p>}
+        {presence.state !== 'found' && listedFrom && <p>{t('myListings.stash.listedFrom', { place: listedFrom })}</p>}
         <p className="text-muted-foreground">{t('myListings.stash.readAgo', { ago })}</p>
       </TooltipContent>
     </Tooltip>

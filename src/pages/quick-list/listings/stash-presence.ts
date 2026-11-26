@@ -7,10 +7,8 @@ import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketLis
 import { inStash, itemFingerprint } from '@/pages/delist/stash-removal';
 
 export type StashPresence =
-  /** Where it was listed from (same hash: it hasn't moved). */
-  | { state: 'here'; places: GameStashItem[] }
-  /** Moved since it was listed (a new hash): an identical item's place, or the places of several. */
-  | { state: 'moved'; places: GameStashItem[] }
+  /** In the stash: where it lies now (the place of each identical item when it moved and several fit). */
+  | { state: 'found'; places: GameStashItem[] }
   /** Identical listings outnumber identical stash items: some of them left, nobody can tell which. */
   | { state: 'unsure'; places: GameStashItem[]; listed: number }
   /** Nothing like it in the stash. */
@@ -38,7 +36,7 @@ export function stashPresence(
     const same = byHash.get(listing.item?.hash);
     if (same) {
       claimed.add(same);
-      presence.set(listing._id, { state: 'here', places: [same] });
+      presence.set(listing._id, { state: 'found', places: [same] });
       continue;
     }
     const fingerprint = itemFingerprint(listing.item);
@@ -58,7 +56,7 @@ export function stashPresence(
       places.length === 0
         ? { state: 'missing' }
         : places.length >= group.length
-          ? { state: 'moved', places }
+          ? { state: 'found', places }
           : { state: 'unsure', places, listed: group.length };
     for (const listing of group) presence.set(listing._id, found);
   }

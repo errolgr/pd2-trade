@@ -210,7 +210,6 @@
     },
     "stash": {
       "or": " 或 ",
-      "moved": "已移动：{{place}}",
       "unsure": "储物箱中只有 {{found}}/{{listed}} 件同样的物品",
       "missing": "不在你的储物箱中",
       "at": "在储物箱中：{{places}}",

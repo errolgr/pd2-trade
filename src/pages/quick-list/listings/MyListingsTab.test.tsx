@@ -254,7 +254,7 @@ describe('MyListingsTab', () => {
   it('shows where each listed item is in the stash, and filters the ones not there', async () => {
     await renderTab();
     expect(within(card('Shako')).queryByText('Shared 3 · column 5, row 2')).not.toBeNull();
-    expect(within(card('Arachnid Mesh')).queryByText('Moved: Personal · hammerdin · column 2, row 7')).not.toBeNull();
+    expect(within(card('Arachnid Mesh')).queryByText('Personal · hammerdin · column 2, row 7')).not.toBeNull();
     expect(within(card('Stone of Jordan')).queryByText('Not in your stash')).not.toBeNull();
 
     await click(screen.getByRole('button', { name: 'Not in stash 1' }));

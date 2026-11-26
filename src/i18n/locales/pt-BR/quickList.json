@@ -218,7 +218,6 @@
     },
     "stash": {
       "or": " ou ",
-      "moved": "Movido: {{place}}",
       "unsure": "Só {{found}} de {{listed}} assim no seu baú",
       "missing": "Não está no seu baú",
       "at": "No seu baú: {{places}}",

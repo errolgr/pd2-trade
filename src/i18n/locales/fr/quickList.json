@@ -218,7 +218,6 @@
     },
     "stash": {
       "or": " ou ",
-      "moved": "Déplacé : {{place}}",
       "unsure": "Seulement {{found}} sur {{listed}} de ce type dans votre coffre",
       "missing": "Absent de votre coffre",
       "at": "Dans votre coffre : {{places}}",
