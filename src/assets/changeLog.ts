@@ -2,6 +2,7 @@ export const changeLog = {
   '0.12.5': [
     '✨ Quick List: lists the exact item you copied instead of the closest similar one. When your item isn\'t in the stash yet, it shows as "Not in your stash yet" with its stats, and posting queues it until it syncs. "Pick from stash" lists the similar items when yours did sync',
     '🔧 Quick List: when several new items reach the stash while one is queued, the one you copied is listed, or you pick, instead of whichever came first',
+    '🆕 Market: filter "Chance to cast" mods by skill. Search a skill and its trigger in Stats ("ctc static field casting") to find, say, Static Field on casting; Min / Max bound the skill level',
   ],
   '0.12.4': [
     '🆕 Settings › Interface › Windows & focus: choose when a window takes the keyboard (typing, any click, or on open), turn off closing windows when you click away, and show windows (and their hotkeys) outside the game. The defaults keep the current behavior',
