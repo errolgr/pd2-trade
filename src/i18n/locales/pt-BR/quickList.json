@@ -185,7 +185,11 @@
     "delist": "Remover",
     "keep": "Manter",
     "choose": "Escolher",
-    "neverAsk": "Nunca perguntar sobre {{name}}"
+    "neverAsk": "Nunca perguntar sobre {{name}}",
+    "relist": "Anunciar de novo",
+    "viewListing": "Ver anúncio",
+    "relistNotInStash": "{{name}} não está no seu baú (compartilhado ou pessoal) agora. Coloque-o de volta e use Anunciar de novo outra vez.",
+    "relistFailed": "Não foi possível procurar {{name}} no seu baú."
   },
   "myListings": {
     "searchPlaceholder": "Buscar entre {{count}} anúncios…",

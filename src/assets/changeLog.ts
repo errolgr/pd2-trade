@@ -4,6 +4,7 @@ export const changeLog = {
     '🔧 Quick List: when several new items reach the stash while one is queued, the one you copied is listed, or you pick, instead of whichever came first',
     '🆕 Market: filter "Chance to cast" mods by skill. Search a skill and its trigger in Stats ("ctc static field casting") to find, say, Static Field on casting; Min / Max bound the skill level',
     '🔧 Market: the Stats picker widens to show whole mod names instead of cutting them off',
+    '🆕 Notifications: auto-delisted listings are logged under Trade. Hover one for the item, the price and note it was listed at, and the stash tab it was listed from; click it (or Relist on the toast) to open Quick List on the item at that price',
   ],
   '0.12.4': [
     '🆕 Settings › Interface › Windows & focus: choose when a window takes the keyboard (typing, any click, or on open), turn off closing windows when you click away, and show windows (and their hotkeys) outside the game. The defaults keep the current behavior',

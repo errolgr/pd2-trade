@@ -177,7 +177,11 @@
     "delist": "下架",
     "keep": "保留",
     "choose": "选择",
-    "neverAsk": "不再询问 {{name}}"
+    "neverAsk": "不再询问 {{name}}",
+    "relist": "重新上架",
+    "viewListing": "查看挂单",
+    "relistNotInStash": "{{name}} 目前不在你的储物箱（共享或个人）中。放回后再点“重新上架”。",
+    "relistFailed": "无法在你的储物箱中查找 {{name}}。"
   },
   "myListings": {
     "searchPlaceholder": "在 {{count}} 个挂单中搜索…",

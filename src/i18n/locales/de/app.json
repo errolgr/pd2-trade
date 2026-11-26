@@ -135,6 +135,7 @@
     "missed_other": "Verpasst · {{count}}",
     "earlier": "Früher",
     "rowHint": "Klicken zum Öffnen · nach links oder rechts schieben zum Entfernen",
-    "rowHintRemoveOnly": "Nach links oder rechts schieben zum Entfernen"
+    "rowHintRemoveOnly": "Nach links oder rechts schieben zum Entfernen",
+    "listedFrom": "Inseriert aus"
   }
 }

@@ -145,6 +145,7 @@
     "missed_other": "Pominięte · {{count}}",
     "earlier": "Wcześniejsze",
     "rowHint": "Kliknij, aby otworzyć · przesuń w lewo lub prawo, aby usunąć",
-    "rowHintRemoveOnly": "Przesuń w lewo lub prawo, aby usunąć"
+    "rowHintRemoveOnly": "Przesuń w lewo lub prawo, aby usunąć",
+    "listedFrom": "Wystawiono z"
   }
 }

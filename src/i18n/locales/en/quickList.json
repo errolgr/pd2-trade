@@ -181,7 +181,11 @@
     "delist": "Delist",
     "keep": "Keep",
     "choose": "Choose",
-    "neverAsk": "Never ask for {{name}}"
+    "neverAsk": "Never ask for {{name}}",
+    "relist": "Relist",
+    "viewListing": "View listing",
+    "relistNotInStash": "{{name}} isn't in your stash (shared or personal) now. Put it back, then use Relist again.",
+    "relistFailed": "Couldn't look for {{name}} in your stash."
   },
   "myListings": {
     "searchPlaceholder": "Search {{count}} listings…",

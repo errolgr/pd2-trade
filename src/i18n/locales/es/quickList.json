@@ -185,7 +185,11 @@
     "delist": "Retirar",
     "keep": "Mantener",
     "choose": "Elegir",
-    "neverAsk": "No volver a preguntar por {{name}}"
+    "neverAsk": "No volver a preguntar por {{name}}",
+    "relist": "Volver a anunciar",
+    "viewListing": "Ver anuncio",
+    "relistNotInStash": "{{name}} no está ahora en tu alijo (compartido o personal). Devuélvelo y usa Volver a anunciar otra vez.",
+    "relistFailed": "No se pudo buscar {{name}} en tu alijo."
   },
   "myListings": {
     "searchPlaceholder": "Buscar entre {{count}} anuncios…",

@@ -126,6 +126,16 @@ describe('parseLog', () => {
     expect(parseLog(JSON.stringify({ entries: [bad] }))).toEqual([]);
   });
 
+  it("keeps a delist entry's item and price, and drops a malformed item but not its entry", () => {
+    const item = { item: { name: 'Harlequin Crest', modifiers: [], hash: 'h1' }, hrPrice: 2.5, note: 'or offer' };
+    const delist = { id: 'a', kind: 'delist', title: 'Item left your stash', at: T0, item, count: 1, missed: true };
+    const broken = { ...delist, id: 'b', at: T0 - 1, item: { item: { name: 'x' } } };
+    const [kept, bare] = parseLog(JSON.stringify({ entries: [delist, broken] }));
+    expect(kept).toEqual(delist);
+    expect(bare.id).toBe('b');
+    expect(bare.item).toBeUndefined();
+  });
+
   it('reads a broken or foreign file as empty', () => {
     expect(parseLog('{')).toEqual([]);
     expect(parseLog('[]')).toEqual([]);

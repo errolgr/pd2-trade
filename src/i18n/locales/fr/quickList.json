@@ -185,7 +185,11 @@
     "delist": "Retirer",
     "keep": "Garder",
     "choose": "Choisir",
-    "neverAsk": "Ne plus demander pour {{name}}"
+    "neverAsk": "Ne plus demander pour {{name}}",
+    "relist": "Remettre en vente",
+    "viewListing": "Voir l'annonce",
+    "relistNotInStash": "{{name}} n'est pas dans votre coffre (partagé ou personnel) pour l'instant. Remettez-le, puis utilisez de nouveau Remettre en vente.",
+    "relistFailed": "Impossible de chercher {{name}} dans votre coffre."
   },
   "myListings": {
     "searchPlaceholder": "Rechercher parmi {{count}} annonces…",

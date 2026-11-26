@@ -140,6 +140,7 @@
     "missed_other": "Perdidas · {{count}}",
     "earlier": "Anteriores",
     "rowHint": "Clique para abrir · deslize para a esquerda ou direita para remover",
-    "rowHintRemoveOnly": "Deslize para a esquerda ou direita para remover"
+    "rowHintRemoveOnly": "Deslize para a esquerda ou direita para remover",
+    "listedFrom": "Anunciado de"
   }
 }

@@ -51,6 +51,17 @@ export function stashSize(snapshot: StashSnapshot): number {
   return size;
 }
 
+/**
+ * The stash item (personal and shared tabs) that is `fingerprint`'s item: the one with `hash` when it hasn't moved,
+ * else the first look-alike (an item gets a new hash when it moves; look-alikes are interchangeable for a listing).
+ */
+export function findInStash(items: GameStashItem[], hash: string, fingerprint: string): GameStashItem | null {
+  const stashed = items.filter((item) => STASH_STORAGE.test(item.location?.storage ?? ''));
+  return (
+    stashed.find((item) => item.hash === hash) ?? stashed.find((item) => itemFingerprint(item) === fingerprint) ?? null
+  );
+}
+
 /** Fingerprints with fewer items now than before: something that looks like them left the stash. */
 export function droppedFingerprints(prev: StashSnapshot, cur: StashSnapshot): string[] {
   const dropped: string[] = [];

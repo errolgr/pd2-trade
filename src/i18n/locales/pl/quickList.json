@@ -189,7 +189,11 @@
     "delist": "Usuń",
     "keep": "Zostaw",
     "choose": "Wybierz",
-    "neverAsk": "Nigdy nie pytaj o {{name}}"
+    "neverAsk": "Nigdy nie pytaj o {{name}}",
+    "relist": "Wystaw ponownie",
+    "viewListing": "Zobacz ogłoszenie",
+    "relistNotInStash": "{{name}} nie ma teraz w skrzyni (wspólnej ani osobistej). Odłóż go i ponownie użyj Wystaw ponownie.",
+    "relistFailed": "Nie udało się wyszukać {{name}} w skrzyni."
   },
   "myListings": {
     "searchPlaceholder": "Szukaj wśród {{count}} ogłoszeń…",

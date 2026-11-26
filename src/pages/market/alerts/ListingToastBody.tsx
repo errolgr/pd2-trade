@@ -5,15 +5,13 @@ import { useListingLookup } from './listing-lookup';
 import { useTranslation } from '@/i18n';
 
 /**
- * A watch toast's text. Looks the listing up as the toast appears, so pointing at the toast shows the item's
- * in-game tooltip beside it at once (none while the lookup runs or when it failed). The tooltip ignores the
- * pointer: it closes as soon as the pointer leaves the toast.
+ * A toast's text with a card shown beside the toast while the pointer is on it (none while `card` is null). The card
+ * ignores the pointer: it closes as soon as the pointer leaves the toast.
  */
-export function ListingToastBody({ listingId, children }: { listingId: string; children: React.ReactNode }) {
+export function ToastHoverCard({ card, children }: { card: React.ReactNode | null; children: React.ReactNode }) {
   const { t } = useTranslation('market');
-  const lookup = useListingLookup(listingId);
   const ref = useRef<HTMLSpanElement>(null);
-  /** The sonner toast around the text: hover target and tooltip anchor. */
+  /** The sonner toast around the text: hover target and card anchor. */
   const toastRef = useRef<HTMLElement | null>(null);
   const [hovered, setHovered] = useState(false);
 
@@ -31,12 +29,11 @@ export function ListingToastBody({ listingId, children }: { listingId: string; c
     };
   }, []);
 
-  const listing = lookup.state === 'ready' ? lookup.detail.listing : null;
   return (
-    <Popover open={hovered && !!listing}>
+    <Popover open={hovered && card != null}>
       <PopoverAnchor virtualRef={toastRef as React.RefObject<HTMLElement>} />
       <span ref={ref}>{children}</span>
-      {listing && (
+      {card != null && (
         <PopoverContent
           side="left"
           align="end"
@@ -44,12 +41,26 @@ export function ListingToastBody({ listingId, children }: { listingId: string; c
           collisionPadding={8}
           onOpenAutoFocus={(e) => e.preventDefault()}
           aria-label={t('toast.itemTooltip')}
-          className="pointer-events-none w-72 border-0 bg-transparent p-0 shadow-none"
+          className="pointer-events-none w-auto border-0 bg-transparent p-0 shadow-none"
         >
-          <ItemTooltip item={listing.item}
-            className="bg-popover shadow-panel" />
+          {card}
         </PopoverContent>
       )}
     </Popover>
+  );
+}
+
+/**
+ * A watch toast's text. Looks the listing up as the toast appears, so pointing at the toast shows the item's
+ * in-game tooltip beside it at once (none while the lookup runs or when it failed).
+ */
+export function ListingToastBody({ listingId, children }: { listingId: string; children: React.ReactNode }) {
+  const lookup = useListingLookup(listingId);
+  const listing = lookup.state === 'ready' ? lookup.detail.listing : null;
+  return (
+    <ToastHoverCard card={listing && <ItemTooltip item={listing.item}
+      className="w-72 bg-popover shadow-panel" />}>
+      {children}
+    </ToastHoverCard>
   );
 }
