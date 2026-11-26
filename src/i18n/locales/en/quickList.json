@@ -26,12 +26,14 @@
     "listUpdateFailed": "Failed to list/update item",
     "noItemTitle": "No Item Selected",
     "noItemDescription": "Copy an item in-game (Ctrl+C) and reopen this window to list it, or select \"Manage Listings\" to view your active trades.",
-    "noItemsFound": "No items found matching \"{{name}}\"",
+    "pendingLabel": "Not in your stash yet",
+    "pendingBadge": "Queues on post",
+    "pendingDescription": "No stash item matches this one exactly, so it hasn't synced yet. Post it and it's listed automatically once it shows up (usually a few minutes).",
     "whyNotFound": "Why wasn't my item found?",
     "notFoundTooltip": "An item is found once it is in your shared stash or in the personal stash of a character in the mode picked in Settings, and you have made a new game.",
-    "queueHint": "You can queue this item to be listed automatically. We'll wait for the server to sync it from your stash (usually takes a few minutes).",
-    "noneMatch": "None of these match?",
-    "queueModeHint": "Queue this item to wait for the new one to appear in your stash (usually takes a few minutes).",
+    "alreadyInStash": "Already in your stash?",
+    "pickFromStash": "Pick from stash",
+    "notInList": "Not in the list?",
     "fallback": "No item selected. Use the shortcut or navigate with an item parameter to list items."
   },
   "queued": {

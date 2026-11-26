@@ -26,12 +26,14 @@
     "listUpdateFailed": "No se pudo anunciar/actualizar el objeto",
     "noItemTitle": "Ningún objeto seleccionado",
     "noItemDescription": "Copia un objeto en el juego (Ctrl+C) y vuelve a abrir esta ventana para anunciarlo, o selecciona \"Gestionar anuncios\" para ver tus intercambios activos.",
-    "noItemsFound": "No se encontraron objetos que coincidan con \"{{name}}\"",
+    "pendingLabel": "Aún no está en tu alijo",
+    "pendingBadge": "Se pone en cola al publicar",
+    "pendingDescription": "Ningún objeto de tu alijo coincide exactamente con este, así que aún no se ha sincronizado. Publícalo y se anunciará automáticamente en cuanto aparezca (suele tardar unos minutos).",
     "whyNotFound": "¿Por qué no se encontró mi objeto?",
     "notFoundTooltip": "Un objeto se encuentra cuando está en tu alijo compartido o en el alijo personal de un personaje del modo elegido en Ajustes, y has creado una partida nueva.",
-    "queueHint": "Puedes poner este objeto en cola para anunciarlo automáticamente. Esperaremos a que el servidor lo sincronice desde tu alijo (suele tardar unos minutos).",
-    "noneMatch": "¿Ninguno coincide?",
-    "queueModeHint": "Pon este objeto en cola para esperar a que el nuevo aparezca en tu alijo (suele tardar unos minutos).",
+    "alreadyInStash": "¿Ya está en tu alijo?",
+    "pickFromStash": "Elegir del alijo",
+    "notInList": "¿No está en la lista?",
     "fallback": "Ningún objeto seleccionado. Usa el atajo o navega con un parámetro de objeto para anunciar objetos."
   },
   "queued": {

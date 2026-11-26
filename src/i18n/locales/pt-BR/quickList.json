@@ -26,12 +26,14 @@
     "listUpdateFailed": "Falha ao anunciar/atualizar item",
     "noItemTitle": "Nenhum item selecionado",
     "noItemDescription": "Copie um item no jogo (Ctrl+C) e reabra esta janela para anunciá-lo, ou selecione \"Gerenciar anúncios\" para ver suas trocas ativas.",
-    "noItemsFound": "Nenhum item encontrado para \"{{name}}\"",
+    "pendingLabel": "Ainda não está no seu baú",
+    "pendingBadge": "Entra na fila ao publicar",
+    "pendingDescription": "Nenhum item do seu baú corresponde exatamente a este, então ele ainda não foi sincronizado. Publique e ele será anunciado automaticamente assim que aparecer (geralmente leva alguns minutos).",
     "whyNotFound": "Por que meu item não foi encontrado?",
     "notFoundTooltip": "Um item é encontrado quando está no seu baú compartilhado ou no baú pessoal de um personagem do modo escolhido nas Configurações, e você criou um novo jogo.",
-    "queueHint": "Você pode colocar este item na fila para ser anunciado automaticamente. Aguardaremos o servidor sincronizá-lo do seu baú (geralmente leva alguns minutos).",
-    "noneMatch": "Nenhum corresponde?",
-    "queueModeHint": "Coloque este item na fila para aguardar o novo aparecer no seu baú (geralmente leva alguns minutos).",
+    "alreadyInStash": "Já está no seu baú?",
+    "pickFromStash": "Escolher do baú",
+    "notInList": "Não está na lista?",
     "fallback": "Nenhum item selecionado. Use o atalho ou navegue com um parâmetro de item para anunciar itens."
   },
   "queued": {

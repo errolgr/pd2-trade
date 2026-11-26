@@ -26,12 +26,14 @@
     "listUpdateFailed": "Échec de la mise en vente/mise à jour de l'objet",
     "noItemTitle": "Aucun objet sélectionné",
     "noItemDescription": "Copiez un objet en jeu (Ctrl+C) et rouvrez cette fenêtre pour le mettre en vente, ou sélectionnez « Gérer les annonces » pour voir vos échanges actifs.",
-    "noItemsFound": "Aucun objet ne correspond à « {{name}} »",
+    "pendingLabel": "Pas encore dans votre coffre",
+    "pendingBadge": "Mis en attente à la publication",
+    "pendingDescription": "Aucun objet de votre coffre ne correspond exactement à celui-ci : il n'est donc pas encore synchronisé. Publiez-le et il sera mis en vente automatiquement dès qu'il apparaîtra (quelques minutes en général).",
     "whyNotFound": "Pourquoi mon objet est-il introuvable ?",
     "notFoundTooltip": "Un objet est trouvé dès qu'il se trouve dans votre coffre partagé ou dans le coffre personnel d'un personnage du mode choisi dans les Paramètres, et que vous avez créé une nouvelle partie.",
-    "queueHint": "Vous pouvez mettre cet objet en attente pour qu'il soit mis en vente automatiquement. Nous attendrons que le serveur le synchronise depuis votre coffre (quelques minutes en général).",
-    "noneMatch": "Aucun ne correspond ?",
-    "queueModeHint": "Mettez cet objet en attente jusqu'à ce que le nouveau apparaisse dans votre coffre (quelques minutes en général).",
+    "alreadyInStash": "Déjà dans votre coffre ?",
+    "pickFromStash": "Choisir dans le coffre",
+    "notInList": "Pas dans la liste ?",
     "fallback": "Aucun objet sélectionné. Utilisez le raccourci ou naviguez avec un paramètre d'objet pour mettre en vente."
   },
   "queued": {

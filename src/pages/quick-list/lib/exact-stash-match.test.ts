@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Item as GameStashItem, Modifier } from '@/common/types/pd2-website/GameStashResponse';
 import type { Item as PriceCheckItem, Stat } from '@/pages/price-check/lib/interfaces';
-import { exactStashMatches } from './exact-stash-match';
+import { diffStashItem, matchStashItem } from './exact-stash-match';
 
 const mod = (name: string, label: string, values: number[]): Modifier => ({ name, label, values, priority: 0 });
 
@@ -28,6 +28,10 @@ const clip = (stats: Stat[], over: Partial<PriceCheckItem> = {}): PriceCheckItem
 });
 
 const hashes = (items: GameStashItem[]) => items.map((i) => i.hash);
+const matched = (item: PriceCheckItem, candidates: GameStashItem[]) => {
+  const { tier, items } = matchStashItem(item, candidates);
+  return { tier, hashes: hashes(items) };
+};
 
 // Rare jewel as the game copies it: ED arrives as both min and max % rows, all res as four rows.
 const inspected = clip([
@@ -44,8 +48,9 @@ const itself = stash('self', [
   mod('maxdamage_percent', '+25% Enhanced Damage', [25, 25]),
   mod('all_resist', 'All Resistances +10%', [10]),
 ]);
+const withEnergy = (hash: string) => stash(hash, [...itself.modifiers, mod('energy', '+5 to Energy', [5])]);
 
-describe('exactStashMatches', () => {
+describe('matchStashItem', () => {
   it('picks the inspected jewel out of many of the same base and quality', () => {
     const others = [
       stash('ed', [
@@ -57,13 +62,23 @@ describe('exactStashMatches', () => {
       stash('eth', itself.modifiers, { is_ethereal: true }),
       stash('sockets', itself.modifiers, { socket_count: 1 }),
     ];
-    expect(hashes(exactStashMatches(inspected, [...others, itself]))).toEqual(['self']);
+    expect(matched(inspected, [...others, itself])).toEqual({ tier: 'exact', hashes: ['self'] });
   });
 
-  it('rejects stash items with an extra or a missing stat line', () => {
-    const extra = stash('extra', [...itself.modifiers, mod('energy', '+5 to Energy', [5])]);
-    const missing = stash('missing', itself.modifiers.slice(1));
-    expect(exactStashMatches(inspected, [extra, missing])).toEqual([]);
+  it('rejects a stash item missing one of the clipboard lines', () => {
+    expect(matched(inspected, [stash('missing', itself.modifiers.slice(1))])).toEqual({ tier: 'none', hashes: [] });
+  });
+
+  it('loosely matches a stash item showing a line the clipboard dropped', () => {
+    expect(matched(inspected, [withEnergy('extra')])).toEqual({ tier: 'loose', hashes: ['extra'] });
+  });
+
+  it('prefers an exact match over a loose one', () => {
+    expect(matched(inspected, [withEnergy('extra'), itself])).toEqual({ tier: 'exact', hashes: ['self'] });
+  });
+
+  it('never loosely matches a clipboard item without numbers', () => {
+    expect(matched(clip([]), [itself])).toEqual({ tier: 'none', hashes: [] });
   });
 
   it('matches skill, chance-to-cast and charge lines by their numbers', () => {
@@ -79,7 +94,7 @@ describe('exactStashMatches', () => {
       mod('item_charged_skill', 'Level 5 Teleport (25/31 Charges)', [5, 54, 25, 31]),
       mod('passive_fire_pierce', '-5% to Enemy Fire Resistance', [5]),
     ]);
-    expect(hashes(exactStashMatches(item, [facet]))).toEqual(['facet']);
+    expect(matched(item, [facet])).toEqual({ tier: 'exact', hashes: ['facet'] });
   });
 
   it('ignores corruption and socket rows, comparing sockets through the item field', () => {
@@ -101,7 +116,7 @@ describe('exactStashMatches', () => {
       ],
       { socket_count: 3, corrupted: true },
     );
-    expect(hashes(exactStashMatches(item, [armor]))).toEqual(['armor']);
+    expect(matched(item, [armor])).toEqual({ tier: 'exact', hashes: ['armor'] });
   });
 
   it('accepts a clipboard value only the modifier values carry (label-less flags)', () => {
@@ -113,7 +128,7 @@ describe('exactStashMatches', () => {
       mod('item_knockback', 'Knockback', [1]),
       mod('min_damage', '+8 to Minimum Damage', [8]),
     ]);
-    expect(hashes(exactStashMatches(item, [knock]))).toEqual(['knock']);
+    expect(matched(item, [knock])).toEqual({ tier: 'exact', hashes: ['knock'] });
   });
 
   it('breaks a tie between identical-looking copies by the stash name when it can', () => {
@@ -124,16 +139,35 @@ describe('exactStashMatches', () => {
     const ias = mod('item_fasterattackrate', '+15% Increased Attack Speed', [15]);
     const fervor = stash('fervor', [ias], { name: 'Jewel of Fervor' });
     const ruby = stash('ruby', [mod('item_maxdamage_percent', '+15% Enhanced Damage', [15])], { name: 'Ruby Jewel' });
-    expect(hashes(exactStashMatches(item, [ruby, fervor]))).toEqual(['fervor']);
+    expect(matched(item, [ruby, fervor])).toEqual({ tier: 'exact', hashes: ['fervor'] });
   });
 
   it('keeps every identical copy when names cannot tell them apart', () => {
     const copies = [stash('a', itself.modifiers), stash('b', itself.modifiers)];
-    expect(hashes(exactStashMatches(inspected, copies))).toEqual(['a', 'b']);
+    expect(matched(inspected, copies)).toEqual({ tier: 'exact', hashes: ['a', 'b'] });
   });
 
   it('finds nothing when the inspected item is not among the candidates', () => {
-    expect(exactStashMatches(inspected, [])).toEqual([]);
-    expect(exactStashMatches(inspected, [stash('other', [mod('energy', '+5 to Energy', [5])])])).toEqual([]);
+    expect(matched(inspected, [])).toEqual({ tier: 'none', hashes: [] });
+    expect(matched(inspected, [stash('other', [mod('energy', '+5 to Energy', [5])])])).toEqual({
+      tier: 'none',
+      hashes: [],
+    });
+  });
+});
+
+describe('diffStashItem', () => {
+  it('names the stat lines and frame fields that differ', () => {
+    const other = stash('other', [mod('min_damage', '+8 to Minimum Damage', [8]), mod('energy', '+5 to Energy', [5])], {
+      item_level: 55,
+      socket_count: 1,
+    });
+    expect(diffStashItem(inspected, other)).toEqual({
+      itemLevel: true,
+      ethereal: false,
+      sockets: true,
+      clipboardOnlyStats: [17, 18, 39, 41, 43, 45],
+      stashOnlyModifiers: ['energy'],
+    });
   });
 });

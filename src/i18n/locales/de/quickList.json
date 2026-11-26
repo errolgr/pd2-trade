@@ -26,12 +26,14 @@
     "listUpdateFailed": "Item konnte nicht inseriert/aktualisiert werden",
     "noItemTitle": "Kein Item ausgewählt",
     "noItemDescription": "Kopiere ein Item im Spiel (Ctrl+C) und öffne dieses Fenster erneut, um es zu inserieren, oder wähle „Inserate verwalten“, um deine aktiven Handel zu sehen.",
-    "noItemsFound": "Keine Items gefunden, die „{{name}}“ entsprechen",
+    "pendingLabel": "Noch nicht in deiner Truhe",
+    "pendingBadge": "Wird beim Posten eingereiht",
+    "pendingDescription": "Kein Item in deiner Truhe passt genau zu diesem, es ist also noch nicht synchronisiert. Poste es und es wird automatisch inseriert, sobald es auftaucht (dauert meist ein paar Minuten).",
     "whyNotFound": "Warum wurde mein Item nicht gefunden?",
     "notFoundTooltip": "Ein Item wird gefunden, sobald es in deiner geteilten Truhe oder in der persönlichen Truhe eines Charakters im in den Einstellungen gewählten Modus liegt und du ein neues Spiel erstellt hast.",
-    "queueHint": "Du kannst dieses Item in die Warteschlange stellen, damit es automatisch inseriert wird. Wir warten, bis der Server es aus deiner Truhe synchronisiert (dauert meist ein paar Minuten).",
-    "noneMatch": "Nichts davon passt?",
-    "queueModeHint": "Stelle dieses Item in die Warteschlange, um zu warten, bis das neue in deiner Truhe erscheint (dauert meist ein paar Minuten).",
+    "alreadyInStash": "Schon in deiner Truhe?",
+    "pickFromStash": "Aus der Truhe wählen",
+    "notInList": "Nicht in der Liste?",
     "fallback": "Kein Item ausgewählt. Nutze das Tastenkürzel oder öffne die Seite mit einem Item-Parameter, um Items zu inserieren."
   },
   "queued": {

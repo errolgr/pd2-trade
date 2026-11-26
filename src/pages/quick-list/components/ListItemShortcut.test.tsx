@@ -18,6 +18,7 @@ import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketLis
 import type { MarketListingQuery } from '@/common/types/pd2-website/GetMarketListingsCommand';
 import type { Item as PriceCheckItem } from '@/pages/price-check/lib/interfaces';
 import { publishListingDeleted } from '@/hooks/pd2website/listing-events';
+import { trackEvent } from '@/lib/telemetry';
 import ListItemShortcutForm from './ListItemShortcut';
 
 const panel = vi.hoisted(() => ({ close: (() => {}) as () => void }));
@@ -215,6 +216,7 @@ describe('finding the item', () => {
     const card = screen.getByRole('button', { name: /Shako #1/ });
     expect(card.getAttribute('aria-pressed')).toBe('true');
     expect(submitButton().textContent).toBe('Post');
+    expect(screen.queryByText('Not in the list?')).toBeNull();
   });
 
   it('requires picking one of multiple matches before the form appears', async () => {
@@ -270,24 +272,65 @@ describe('finding the item', () => {
       expect(api.listSpecificItem.mock.calls).toEqual([[jewels[1], 3, '', 'exact']]);
     });
 
-    it('falls back to every similar item when none is provably the inspected one', async () => {
+    it('shows the copied item as pending when none is provably the inspected one', async () => {
       api.findMatchingItems.mockResolvedValue([jewel(1, 30), jewel(3, 20)]);
       renderForm(inspected);
       await flush();
-      expect(cards()).toHaveLength(2);
-      expect(screen.queryByPlaceholderText('HR')).toBeNull();
+      expect(screen.queryAllByRole('button', { name: /^Jewel/ })).toHaveLength(0);
+      expect(screen.queryByText('Not in your stash yet')).not.toBeNull();
+      expect(screen.queryByText('Storm Eye')).not.toBeNull();
+      // The copied item's own stats, as on a stash item card
+      expect(screen.queryByText(/Enhanced Damage/)).not.toBeNull();
+      expect(screen.queryByText(/to Energy/)).not.toBeNull();
+      expect(submitButton().textContent).toBe('Queue Item');
     });
 
-    it('queues against every similar item, not just the exact match', async () => {
-      api.findMatchingItems.mockResolvedValue(jewels);
+    it('queues against every similar item', async () => {
+      api.findMatchingItems.mockResolvedValue([jewel(1, 30), jewel(3, 20)]);
+      renderForm(inspected);
+      await flush();
+      fireEvent.change(noteInput(), { target: { value: 'wts' } });
+      await submit();
+      expect(storedQueue()[0].initialMatchingHashes).toEqual(['j1', 'j3']);
+    });
+
+    it('lets the user pick a similar item by hand and reports how it differs', async () => {
+      api.findMatchingItems.mockResolvedValue([jewel(1, 30), jewel(3, 20)]);
       renderForm(inspected);
       await flush();
       await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Pick from stash' }));
+      });
+      expect(cards()).toHaveLength(2);
+      expect(screen.queryByPlaceholderText('HR')).toBeNull();
+      await act(async () => {
+        fireEvent.click(cards()[1]);
+      });
+      fireEvent.change(priceInput(), { target: { value: '3' } });
+      await submit();
+      expect(api.listSpecificItem.mock.calls).toEqual([[jewel(3, 20), 3, '', 'exact']]);
+      expect(trackEvent).toHaveBeenCalledWith(
+        'list_item_match_drift',
+        expect.objectContaining({
+          match_tier: 'hand_picked',
+          clipboard_only_stats: '17,18',
+          stash_only_modifiers: 'maxdamage_percent',
+        }),
+      );
+    });
+
+    it('goes back to queueing from the hand-picked list', async () => {
+      api.findMatchingItems.mockResolvedValue([jewel(1, 30), jewel(3, 20)]);
+      renderForm(inspected);
+      await flush();
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Pick from stash' }));
+      });
+      await act(async () => {
         fireEvent.click(screen.getByRole('button', { name: 'Queue Item' }));
       });
-      fireEvent.change(noteInput(), { target: { value: 'wts' } });
-      await submit();
-      expect(storedQueue()[0].initialMatchingHashes).toEqual(['j1', 'j2', 'j3']);
+      expect(screen.queryByText('Not in your stash yet')).not.toBeNull();
+      expect(submitButton().textContent).toBe('Queue Item');
     });
   });
 
@@ -479,7 +522,8 @@ describe('queueing', () => {
     api.findMatchingItems.mockResolvedValue([]);
     renderForm();
     await flush();
-    expect(screen.queryByText('No items found matching "Harlequin Crest"')).not.toBeNull();
+    expect(screen.queryByText('Not in your stash yet')).not.toBeNull();
+    expect(screen.queryByRole('button', { name: 'Pick from stash' })).toBeNull();
     expect(submitButton().textContent).toBe('Queue Item');
     await queueWithNote('wts');
 
@@ -512,14 +556,12 @@ describe('queueing', () => {
     expect(tab(/Queued/).textContent).toBe('Queued');
   });
 
-  it('"None of these match?" queues against only new stash items', async () => {
+  const socketed = { ...copied, sockets: 1 } as PriceCheckItem;
+
+  it('queues an item no stash item matches and waits for one new to all of them', async () => {
     api.findMatchingItems.mockResolvedValue([stash(1), stash(2)]);
-    renderForm();
+    renderForm(socketed);
     await flush();
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Queue Item' }));
-    });
-    expect(screen.queryByText(/Queue this item to wait for the new one/)).not.toBeNull();
     await queueWithNote('new one');
     expect(storedQueue()[0].initialMatchingHashes).toEqual(['h1', 'h2']);
 
@@ -530,6 +572,29 @@ describe('queueing', () => {
     api.findMatchingItems.mockResolvedValue([stash(1), stash(3), stash(2)]);
     await tick(POLL_INTERVAL);
     expect(api.listSpecificItem.mock.calls).toEqual([[stash(3), 0, 'new one', 'note']]);
+  });
+
+  it('lists the copied item when several new items sync at once', async () => {
+    const itself = { ...stash(3), socket_count: 1 } as GameStashItem;
+    api.findMatchingItems.mockResolvedValue([stash(1)]);
+    renderForm(socketed);
+    await flush();
+    await queueWithNote('x');
+    api.findMatchingItems.mockResolvedValue([stash(1), stash(2), itself]);
+    await tick(POLL_INTERVAL);
+    expect(api.listSpecificItem.mock.calls).toEqual([[itself, 0, 'x', 'note']]);
+  });
+
+  it('asks which one when several new items sync and none is the copied one', async () => {
+    api.findMatchingItems.mockResolvedValue([stash(1)]);
+    renderForm(socketed);
+    await flush();
+    await queueWithNote('x');
+    api.findMatchingItems.mockResolvedValue([stash(1), stash(2), stash(3)]);
+    await tick(POLL_INTERVAL);
+    expect(api.listSpecificItem).not.toHaveBeenCalled();
+    await selectTab(/List Item/);
+    expect(screen.queryByText('Multiple items found')).not.toBeNull();
   });
 
   it('gives up after the timeout window with an error toast', async () => {
