@@ -15,7 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { qualityColor } from '@/pages/price-check/lib/qualityColor';
 import ItemStatsDisplay from '@/pages/quick-list/components/ItemStatsDisplay';
 import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
-import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
+import type { ItemDetail, MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { listingArtCandidates } from '../lib/listing-art';
 import { type ListingMarketPrice, useListingMarketPrices } from '../hooks/useListingMarketPrices';
 import { isPersonalStashLocation } from '@/hooks/pd2website/personal-stash';
@@ -91,17 +91,30 @@ export const nameColor = (listing: MarketListingEntry) =>
     ? 'text-q-rune'
     : qualityColor(listing.item.quality?.name ?? '');
 
-/** Compact stash tab, as the net worth tabs label it: "Shared 3", "Personal", else the storage name. */
-function stashLabel(listing: MarketListingEntry): string | null {
-  const location = listing.item.location;
+/**
+ * Compact stash tab, as the net worth tabs label it: "Shared 3", "Personal" (with its character when known:
+ * "Personal · hammerdin"), else the storage name.
+ */
+function stashLabel(item: Pick<ItemDetail, 'location' | 'character_id'>): string | null {
+  const location = item.location;
   if (!location?.storage) return null;
-  if (isPersonalStashLocation(location)) return t('chat:listing.stashPersonal');
+  if (isPersonalStashLocation(location)) {
+    const personal = t('chat:listing.stashPersonal');
+    return item.character_id ? `${personal} · ${item.character_id}` : personal;
+  }
   if (/shared/i.test(location.storage)) {
     return typeof location.stash_page === 'number'
       ? t('chat:listing.stashShared', { page: location.stash_page })
       : t('chat:listing.stashSharedOnly');
   }
   return location.storage;
+}
+
+/** Where the item lies: its stash tab and, when known, its column and row there ("Shared 3 · column 2, row 5"). */
+export function stashPlace(item: Pick<ItemDetail, 'location' | 'position' | 'character_id'>): string | null {
+  const stash = stashLabel(item);
+  if (!stash || !item.position) return stash;
+  return t('chat:listing.stashPosition', { stash, column: item.position.column + 1, row: item.position.row + 1 });
 }
 
 /** "12% under market" / "5% over market" / "at market" for an asking price against the market price. */
@@ -173,17 +186,7 @@ export function ListingDetails({
         <PopoverKeyValue label={t('listing.mode')}>
           {`${listing.is_ladder ? 'Ladder' : 'Non-ladder'} · ${listing.is_hardcore ? 'Hardcore' : 'Softcore'}`}
         </PopoverKeyValue>
-        {stashLabel(listing) && (
-          <PopoverKeyValue label={t('listing.stash')}>
-            {item.position
-              ? t('listing.stashPosition', {
-                  stash: stashLabel(listing),
-                  column: item.position.column + 1,
-                  row: item.position.row + 1,
-                })
-              : stashLabel(listing)}
-          </PopoverKeyValue>
-        )}
+        {stashPlace(item) && <PopoverKeyValue label={t('listing.stash')}>{stashPlace(item)}</PopoverKeyValue>}
         {item.item_level > 0 && <PopoverKeyValue label={t('listing.itemLevel')}>{item.item_level}</PopoverKeyValue>}
         {item.requirements?.level > 0 && (
           <PopoverKeyValue label={t('listing.requiredLevel')}>{item.requirements.level}</PopoverKeyValue>

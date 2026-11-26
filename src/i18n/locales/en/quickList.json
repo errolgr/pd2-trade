@@ -181,7 +181,11 @@
     "delist": "Delist",
     "keep": "Keep",
     "choose": "Choose",
-    "neverAsk": "Never ask for {{name}}"
+    "neverAsk": "Never ask for {{name}}",
+    "relist": "Relist",
+    "viewListing": "View listing",
+    "relistNotInStash": "{{name}} isn't in your stash (shared or personal) now. Put it back, then use Relist again.",
+    "relistFailed": "Couldn't look for {{name}} in your stash."
   },
   "myListings": {
     "searchPlaceholder": "Search {{count}} listings…",
@@ -205,7 +209,19 @@
     },
     "filter": {
       "ready": "Bump ready {{count}}",
-      "offers": "Offers {{count}}"
+      "offers": "Offers {{count}}",
+      "missing": "Not in stash {{count}}"
+    },
+    "stash": {
+      "or": " or ",
+      "unsure": "Only {{found}} of {{listed}} like this in your stash",
+      "missing": "Not in your stash",
+      "at": "In your stash: {{places}}",
+      "listedFrom": "Listed from {{place}}",
+      "readAgo": "Stash read {{ago}}. PD2 updates it when you make a new game.",
+      "reading": "Reading your stash…",
+      "readFailed": "Couldn't read your stash: {{error}}",
+      "refresh": "Read the stash again"
     },
     "slots": "{{count}} / {{max}} slots",
     "bumpReady_one": "Bump {{count}} ready",

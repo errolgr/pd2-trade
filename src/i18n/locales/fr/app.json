@@ -140,6 +140,7 @@
     "missed_other": "Manquées · {{count}}",
     "earlier": "Plus tôt",
     "rowHint": "Cliquez pour ouvrir · glissez à gauche ou à droite pour retirer",
-    "rowHintRemoveOnly": "Glissez à gauche ou à droite pour retirer"
+    "rowHintRemoveOnly": "Glissez à gauche ou à droite pour retirer",
+    "listedFrom": "Mis en vente depuis"
   }
 }

@@ -135,6 +135,7 @@
     "missed_other": "Missed · {{count}}",
     "earlier": "Earlier",
     "rowHint": "Click to open · slide left or right to remove",
-    "rowHintRemoveOnly": "Slide left or right to remove"
+    "rowHintRemoveOnly": "Slide left or right to remove",
+    "listedFrom": "Listed from"
   }
 }

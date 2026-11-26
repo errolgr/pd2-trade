@@ -403,6 +403,42 @@ describe('showToast action toasts', () => {
     });
   });
 
+  describe('an auto-delist toast', () => {
+    const hover = (el: HTMLElement) =>
+      act(() => {
+        fireEvent.pointerEnter(el);
+      });
+
+    beforeEach(() => resetNotificationLog());
+
+    it('shows the delisted item and its price on hover, logs them, and Relist runs its handler', async () => {
+      const item = {
+        item: listing({ id: 'd1', name: 'Harlequin Crest', mods: [mod('+2 to All Skills')] }).item,
+        hrPrice: 2.5,
+        note: 'or offer',
+      };
+      const action = { label: 'Relist', type: ToastActionType.RELIST_ITEM, data: { hash: 'h1' } };
+      const relist = vi.fn();
+      setToastActionHandler(ToastActionType.RELIST_ITEM, relist);
+      await renderLayer();
+      await show(() =>
+        notify('delist', { title: 'Item left your stash', description: 'Removed', item, action }, { toast: true }),
+      );
+      expect(getNotificationLog()[0]).toMatchObject({ kind: 'delist', item, action });
+
+      hover(toastEl('Removed')!);
+      await advance(0);
+      const tooltip = screen.getByLabelText('Item tooltip');
+      expect(within(tooltip).getByText('+2 to All Skills')).toBeTruthy();
+      expect(within(tooltip).getByText('2.5 HR')).toBeTruthy();
+      expect(within(tooltip).getByText('or offer')).toBeTruthy();
+
+      await click(screen.getByText('Relist'));
+      expect(relist).toHaveBeenCalledWith({ hash: 'h1' });
+      setToastActionHandler(ToastActionType.RELIST_ITEM, null);
+    });
+  });
+
   describe('a toast whose text links a listing (a PD2 offer notification)', () => {
     const ID = '6a0bf54e6c42aba37528ae01';
     const URL = `https://www.projectdiablo2.com/market/listing/${ID}?display="Silkweave"`;

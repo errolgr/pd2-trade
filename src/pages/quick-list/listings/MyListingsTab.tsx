@@ -12,8 +12,10 @@ import {
   Search,
   SearchX,
   Store,
+  TriangleAlert,
   X as XIcon,
 } from 'lucide-react';
+import moment from 'moment';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
 import { useOptions } from '@/hooks/useOptions';
@@ -57,6 +59,8 @@ import {
 } from './my-listings-store';
 import { ListingCard, ListingRow, ListingRowsHeader, type ListingViewProps } from './ListingViews';
 import type { ListingActionHandlers } from './ListingPieces';
+import { isMissing } from './stash-presence';
+import { useStashPresence } from './useStashPresence';
 
 // "Bump All" success flash (mirrors the pd2trader.com/overlay demo): keep in sync with --animate-bump-flash.
 const BUMP_FLASH_STAGGER_MS = 210;
@@ -152,7 +156,12 @@ const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange, focus
   const deals = useDealIndicators(listings ?? []);
   // Open buy requests matching the user's listings ("{n} buyers"), one cached `/match` call for all of them
   const buyers = useListingWtbMatches(listings, listings ? { ladder, hardcore } : null, settings?.pd2Token || null);
-  const ctx: ListingContext = useMemo(() => ({ now, offers, deals }), [now, offers, deals]);
+  // Where each listed item is in the stash now (shared and personal tabs)
+  const stash = useStashPresence(listings);
+  const ctx: ListingContext = useMemo(
+    () => ({ now, offers, deals, stash: stash.presence }),
+    [now, offers, deals, stash.presence],
+  );
 
   const searched = useMemo(() => {
     if (!listings) return [];
@@ -175,6 +184,10 @@ const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange, focus
   );
   const readyIds = useMemo(() => (listings ?? []).filter((l) => canBump(l, now)).map((l) => l._id), [listings, now]);
   const offerCount = useMemo(() => (listings ?? []).filter((l) => receivedOffers(l, ctx) > 0).length, [listings, ctx]);
+  const missingCount = useMemo(
+    () => (listings ?? []).filter((l) => isMissing(stash.presence?.get(l._id))).length,
+    [listings, stash.presence],
+  );
 
   // A listing the palette asked for: applied once the list holds it (dropped when the loaded list lacks it), after
   // clearing a search or filter hiding it. Adjusted during render; the scroll waits for the commit.
@@ -313,6 +326,8 @@ const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange, focus
     deal: deals.get(listing._id),
     offers: offers.get(listing._id),
     buyers: buyers.get(listing._id),
+    stash: stash.presence?.get(listing._id),
+    stashCheckedAt: stash.checkedAt,
     editing: editingId === listing._id,
     bumping: bumpingId === listing._id,
     deleting: deletingId === listing._id,
@@ -446,9 +461,48 @@ const MyListingsTab: React.FC<MyListingsTabProps> = ({ onTotalCountChange, focus
         >
           {t('myListings.filter.offers', { count: offerCount })}
         </button>
+        {(missingCount > 0 || filter === 'missing') && (
+          <button
+            type="button"
+            aria-pressed={filter === 'missing'}
+            onClick={() => setFilter((f) => (f === 'missing' ? null : 'missing'))}
+            className={cn(
+              chip,
+              filter === 'missing'
+                ? 'border-warning/60 bg-warning/15 text-warning'
+                : 'border-warning/40 text-warning hover:bg-warning/10',
+            )}
+          >
+            <TriangleAlert className="size-3" />
+            {t('myListings.filter.missing', { count: missingCount })}
+          </button>
+        )}
         <span className="ml-auto text-xs text-muted-foreground tabular-nums">
           {t('myListings.slots', { count: listings?.length ?? 0, max: 50 })}
         </span>
+        {(listings?.length ?? 0) > 0 && (
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn('size-7 p-0', stash.error && 'border-warning/50 text-warning')}
+                onClick={() => void stash.refresh()}
+                disabled={stash.reading}
+                aria-label={t('myListings.stash.refresh')}
+              >
+                <RotateCw className={cn('size-3.5', stash.reading && 'animate-spin')} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-64 text-xs">
+              {stash.error
+                ? t('myListings.stash.readFailed', { error: stash.error })
+                : stash.checkedAt
+                  ? t('myListings.stash.readAgo', { ago: moment(stash.checkedAt).fromNow() })
+                  : t('myListings.stash.reading')}
+            </TooltipContent>
+          </Tooltip>
+        )}
         <Button
           size="sm"
           className="h-7 gap-1 text-xs"

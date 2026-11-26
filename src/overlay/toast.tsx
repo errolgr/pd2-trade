@@ -11,7 +11,8 @@ import { chatDockWidth } from '@/pages/chat/chat-dock';
 import { offerNotificationLanding } from '@/pages/chat/chat-feed';
 import { LinkedMessageContent } from '@/pages/chat/components/MessageContent';
 import { findMarketLinks } from '@/pages/chat/lib/market-links';
-import { ListingToastBody } from '@/pages/market/alerts/ListingToastBody';
+import { ListingToastBody, ToastHoverCard } from '@/pages/market/alerts/ListingToastBody';
+import { LoggedItemTooltip } from '@/pages/notifications/LoggedItemTooltip';
 import { WtbItemArt } from '@/pages/market/wtb/WtbItemArt';
 import { useOverlay, usePanelOpen } from './OverlayProvider';
 import type { PanelPayloads } from './types';
@@ -43,8 +44,8 @@ export function setToastBridge(next: ToastBridge | null): void {
 }
 
 /**
- * Toast actions that need app state below the overlay (the whisper history): their handler is set by whoever owns
- * that state (WTB_WHISPER_BACK: useMarketAlerts).
+ * Toast actions that need app state below the overlay (the whisper history, the stash): their handler is set by
+ * whoever owns that state (WTB_WHISPER_BACK: useMarketAlerts; RELIST_ITEM: StashAutoDelistController).
  */
 const actionHandlers = new Map<ToastActionType, (data: unknown) => void | Promise<void>>();
 
@@ -98,6 +99,7 @@ async function runToastAction(action: NonNullable<CustomToastPayload['action']>)
         );
         break;
       case ToastActionType.WTB_WHISPER_BACK:
+      case ToastActionType.RELIST_ITEM:
         await actionHandlers.get(action.type)?.(action.data);
         break;
       default:
@@ -181,7 +183,7 @@ export function showToast(payload: ToastPayload, watch?: ToastWatch): void {
     toast(wrap(DEFAULT_TITLE), { description: wrap(custom.description), closeButton: true, ...watchOptions });
     return;
   }
-  const { listing, description, tone } = custom;
+  const { listing, item, description, tone } = custom;
   // Listing links (an offer's or a message's text) read as the chat's item pills, hover for the item
   const text =
     description && findMarketLinks(description).length > 0 ? (
@@ -192,7 +194,16 @@ export function showToast(payload: ToastPayload, watch?: ToastWatch): void {
       description
     );
   const show = tone === 'error' ? toast.error : toast;
-  const body = listing ? <ListingToastBody listingId={listing.listingId}>{text}</ListingToastBody> : text;
+  const body = listing ? (
+    <ListingToastBody listingId={listing.listingId}>{text}</ListingToastBody>
+  ) : item ? (
+    <ToastHoverCard card={<LoggedItemTooltip item={item}
+      className="rounded-md bg-popover p-1.5 shadow-panel" />}>
+      {text}
+    </ToastHoverCard>
+  ) : (
+    text
+  );
   const { secondaryAction, art } = custom;
   show(wrap(custom.title || DEFAULT_TITLE), {
     ...(tone === 'muted' && { className: '[--toast-accent:var(--muted-foreground)] opacity-80' }),
@@ -244,6 +255,7 @@ function entryOf(
     action: custom.action ?? undefined,
     secondaryAction: custom.secondaryAction,
     listing: custom.listing,
+    item: custom.item,
     tone,
     groupKey,
   };

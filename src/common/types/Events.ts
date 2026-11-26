@@ -1,4 +1,5 @@
 import type { ListingPanelPayload } from '@/pages/market/lib/types';
+import type { LoggedItem } from '@/lib/notification-log';
 
 export enum ToastActionType {
   OPEN_MARKET_LISTING = 'OPEN_MARKET_LISTING',
@@ -17,6 +18,8 @@ export enum ToastActionType {
   OPEN_SIM_PANEL = 'OPEN_SIM_PANEL',
   /** data: WtbResponse: copies the buyer's whisper back to the seller (handled by useMarketAlerts). */
   WTB_WHISPER_BACK = 'WTB_WHISPER_BACK',
+  /** data: RelistData: finds the item in the stash and opens Quick List on it (handled by StashAutoDelistController). */
+  RELIST_ITEM = 'RELIST_ITEM',
 }
 
 export interface CustomToastPayload {
@@ -37,6 +40,8 @@ export interface CustomToastPayload {
   secondaryAction?: CustomToastPayload['action'];
   /** An item picture beside the text (a buy request response's item: its name and base). */
   art?: { itemName?: string; baseCode?: string };
+  /** A listing's item and price at the time: hovering the toast (and its log entry) shows them. Not with `listing`. */
+  item?: LoggedItem;
 }
 
 export interface GenericToastPayload {

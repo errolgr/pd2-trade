@@ -9,6 +9,7 @@ import {
   History,
   type LucideIcon,
   MessageSquare,
+  PackageMinus,
   MessagesSquare,
   Store,
   Trash2,
@@ -33,6 +34,7 @@ import { cn } from '@/lib/utils';
 import { Tip } from '@/components/ui/tooltip';
 import { openLoggedListing, runLoggedAction, usePanel } from '@/overlay';
 import { timeAgo } from '@/pages/chat/components/ChatPeek';
+import { LoggedItemTooltip } from './LoggedItemTooltip';
 
 const KIND_ICONS: Record<NotificationKind, { icon: LucideIcon; className: string }> = {
   whisper: { icon: MessageSquare, className: 'text-primary' },
@@ -43,6 +45,7 @@ const KIND_ICONS: Record<NotificationKind, { icon: LucideIcon; className: string
   market: { icon: Store, className: 'text-info' },
   sim: { icon: FlaskConical, className: 'text-info' },
   networth: { icon: TrendingUp, className: 'text-success' },
+  delist: { icon: PackageMinus, className: 'text-warning' },
   update: { icon: Download, className: 'text-info' },
   error: { icon: AlertTriangle, className: 'text-destructive' },
 };
@@ -236,8 +239,20 @@ function Row({
 
   // Removed right away: the row is already slid out and faded, the exit collapses it
   const remove = () => removeNotification(entry.id);
-  // One tooltip per row: the full description (truncated in the row) above the gesture hint
+  // One tooltip per row: the full description (truncated in the row) above the gesture hint; a logged item (an
+  // auto-delisted listing) shows as its in-game tooltip with the price it was listed at
   const hint = openable ? t('notificationLog.rowHint') : t('notificationLog.rowHintRemoveOnly');
+  const tip = entry.item ? (
+    <div className="space-y-1.5">
+      {entry.description && <p className="max-w-72">{entry.description}</p>}
+      <LoggedItemTooltip item={entry.item} />
+      <p className="text-muted-foreground">{hint}</p>
+    </div>
+  ) : entry.description ? (
+    `${entry.description}\n${hint}`
+  ) : (
+    hint
+  );
 
   return (
     <motion.li
@@ -245,7 +260,11 @@ function Row({
       exit={{ height: 0, opacity: 0, transition: { duration: 0.16 } }}
       className="relative overflow-hidden rounded-md"
     >
-      <Tip label={entry.description ? `${entry.description}\n${hint}` : hint}>
+      <Tip
+        label={tip}
+        side={entry.item ? 'left' : 'top'}
+        className={entry.item ? 'max-w-none whitespace-normal' : undefined}
+      >
         <motion.div
           drag="x"
           dragDirectionLock

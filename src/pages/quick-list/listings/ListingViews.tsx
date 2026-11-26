@@ -16,6 +16,7 @@ import { DUR, EASE_OUT } from '@/lib/motion';
 import { useTranslation } from '@/i18n';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { bumpReadyAt, type ListingsSort, type ListingsSortKey } from './my-listings';
+import { isMissing, type StashPresence } from './stash-presence';
 import {
   baseName,
   ListingActions,
@@ -26,6 +27,7 @@ import {
   ItemFlags,
   PriceText,
   sideNote,
+  StashChip,
 } from './ListingPieces';
 
 /** Mod lines a card shows before the tooltip takes over. */
@@ -38,6 +40,10 @@ export interface ListingViewProps {
   offers: ListingOffers | undefined;
   /** Open buy requests this listing's item matches ("{n} buyers"). */
   buyers: WtbItemMatch[] | undefined;
+  /** Where the item is in the stash now (cards); undefined until the stash was read. */
+  stash: StashPresence | undefined;
+  /** When that stash read happened (ms epoch). */
+  stashCheckedAt: number | null;
   editing: boolean;
   bumping: boolean;
   deleting: boolean;
@@ -51,9 +57,15 @@ export interface ListingViewProps {
   onCancelEdit: () => void;
 }
 
-/** Status edge: offers waiting, then bump ready. */
-function statusEdge(listing: MarketListingEntry, now: number, offers: ListingOffers | undefined): string | null {
+/** Status edge: offers waiting, then not in the stash, then bump ready. */
+function statusEdge(
+  listing: MarketListingEntry,
+  now: number,
+  offers: ListingOffers | undefined,
+  stash?: StashPresence,
+): string | null {
   if ((offers?.received.length ?? 0) > 0) return 'bg-primary';
+  if (isMissing(stash)) return 'bg-warning';
   if (bumpReadyAt(listing) <= now) return 'bg-success';
   return null;
 }
@@ -147,9 +159,9 @@ function CardStats({ listing }: { listing: MarketListingEntry }) {
 }
 
 export const ListingCard = React.memo(function ListingCard(props: ListingViewProps) {
-  const { listing, now, deal, offers, buyers, editing, bumping, deleting, handlers } = props;
+  const { listing, now, deal, offers, buyers, stash, stashCheckedAt, editing, bumping, deleting, handlers } = props;
   const { t } = useTranslation('quickList');
-  const edge = statusEdge(listing, now, offers);
+  const edge = statusEdge(listing, now, offers, stash);
   const base = baseName(listing);
   const ready = bumpReadyAt(listing) <= now;
   return (
@@ -198,7 +210,12 @@ export const ListingCard = React.memo(function ListingCard(props: ListingViewPro
                 <WtbBuyersBadge matches={buyers}
                   item={listing.item} />
               </span>
-              <span className="min-w-0 truncate text-[11px] text-muted-foreground">
+              {stash && stashCheckedAt !== null && (
+                <StashChip listing={listing}
+                  presence={stash}
+                  checkedAt={stashCheckedAt} />
+              )}
+              <span className="min-w-0 shrink-[2] truncate text-[11px] text-muted-foreground">
                 {ready
                   ? t('myListings.readyListed', { listed: moment(listing.created_at).fromNow() })
                   : t('myListings.bumpedListed', {

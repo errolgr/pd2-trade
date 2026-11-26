@@ -124,12 +124,13 @@ const ListItemShortcutForm: React.FC<ListItemShortcutFormProps> = ({ item }) => 
   const wtb = useWtbSession();
   const itemText = useMemo(() => (item && isStashItem(item) ? JSON.stringify(item) : null), [item]);
   const wtbMatches = useWtbItemMatches(itemText, wtb.realm, wtb.token);
-  /** "List at {offer}": the offer as the HR price, or as the note when it has no HR value. */
+  /** "List at {offer}" / Relist: the HR price (and its note), or the note alone when there is no HR value. */
   const applyListPrice = useCallback(
     (price: WtbListPrice) => {
       if ('price' in price) {
         form.setValue('type', 'exact');
         form.setValue('price', price.price, { shouldValidate: true });
+        if (price.note) form.setValue('note', price.note);
       } else {
         form.setValue('type', 'note');
         form.setValue('note', price.note, { shouldValidate: true });

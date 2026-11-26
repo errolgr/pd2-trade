@@ -185,7 +185,11 @@
     "delist": "Remover",
     "keep": "Manter",
     "choose": "Escolher",
-    "neverAsk": "Nunca perguntar sobre {{name}}"
+    "neverAsk": "Nunca perguntar sobre {{name}}",
+    "relist": "Anunciar de novo",
+    "viewListing": "Ver anúncio",
+    "relistNotInStash": "{{name}} não está no seu baú (compartilhado ou pessoal) agora. Coloque-o de volta e use Anunciar de novo outra vez.",
+    "relistFailed": "Não foi possível procurar {{name}} no seu baú."
   },
   "myListings": {
     "searchPlaceholder": "Buscar entre {{count}} anúncios…",
@@ -209,7 +213,19 @@
     },
     "filter": {
       "ready": "Subida pronta {{count}}",
-      "offers": "Ofertas {{count}}"
+      "offers": "Ofertas {{count}}",
+      "missing": "Fora do baú {{count}}"
+    },
+    "stash": {
+      "or": " ou ",
+      "unsure": "Só {{found}} de {{listed}} assim no seu baú",
+      "missing": "Não está no seu baú",
+      "at": "No seu baú: {{places}}",
+      "listedFrom": "Anunciado de {{place}}",
+      "readAgo": "Baú lido {{ago}}. O PD2 o atualiza quando você cria um novo jogo.",
+      "reading": "Lendo seu baú…",
+      "readFailed": "Não foi possível ler seu baú: {{error}}",
+      "refresh": "Ler o baú de novo"
     },
     "slots": "{{count}} / {{max}} espaços",
     "bumpReady_one": "Subir {{count}} pronto",

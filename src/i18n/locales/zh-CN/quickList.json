@@ -177,7 +177,11 @@
     "delist": "下架",
     "keep": "保留",
     "choose": "选择",
-    "neverAsk": "不再询问 {{name}}"
+    "neverAsk": "不再询问 {{name}}",
+    "relist": "重新上架",
+    "viewListing": "查看挂单",
+    "relistNotInStash": "{{name}} 目前不在你的储物箱（共享或个人）中。放回后再点“重新上架”。",
+    "relistFailed": "无法在你的储物箱中查找 {{name}}。"
   },
   "myListings": {
     "searchPlaceholder": "在 {{count}} 个挂单中搜索…",
@@ -201,7 +205,19 @@
     },
     "filter": {
       "ready": "可顶帖 {{count}}",
-      "offers": "报价 {{count}}"
+      "offers": "报价 {{count}}",
+      "missing": "不在储物箱 {{count}}"
+    },
+    "stash": {
+      "or": " 或 ",
+      "unsure": "储物箱中只有 {{found}}/{{listed}} 件同样的物品",
+      "missing": "不在你的储物箱中",
+      "at": "在储物箱中：{{places}}",
+      "listedFrom": "挂单位置：{{place}}",
+      "readAgo": "储物箱读取于{{ago}}。PD2 会在你创建新游戏时更新它。",
+      "reading": "正在读取储物箱…",
+      "readFailed": "无法读取储物箱：{{error}}",
+      "refresh": "重新读取储物箱"
     },
     "slots": "{{count}} / {{max}} 个栏位",
     "bumpReady_other": "{{count}} 个可顶帖",

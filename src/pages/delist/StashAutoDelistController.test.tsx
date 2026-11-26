@@ -3,19 +3,27 @@ import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useOptions, type ISettings } from '@/hooks/useOptions';
 import { usePd2Website } from '@/hooks/pd2website/usePD2Website';
-import { confirmToast, showToast, useOverlay, type OverlayApi } from '@/overlay';
+import { confirmToast, notify, setToastActionHandler, showToast, useOverlay, type OverlayApi } from '@/overlay';
+import { ToastActionType } from '@/common/types/Events';
 import { isDiabloFocused } from '@/lib/diablo-focus';
 import type { Item as GameStashItem } from '@/common/types/pd2-website/GameStashResponse';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { publishListingDeleted } from '@/hooks/pd2website/listing-events';
-import StashAutoDelistController, { STASH_POLL_MS } from './StashAutoDelistController';
+import StashAutoDelistController, { STASH_POLL_MS, type RelistData } from './StashAutoDelistController';
+import { itemFingerprint } from './stash-removal';
 
 vi.mock('@/hooks/useOptions', () => ({ useOptions: vi.fn() }));
 vi.mock('@/hooks/pd2website/usePD2Website', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/pd2website/usePD2Website')>()),
   usePd2Website: vi.fn(),
 }));
-vi.mock('@/overlay', () => ({ confirmToast: vi.fn(), showToast: vi.fn(), useOverlay: vi.fn() }));
+vi.mock('@/overlay', () => ({
+  confirmToast: vi.fn(),
+  notify: vi.fn(),
+  setToastActionHandler: vi.fn(),
+  showToast: vi.fn(),
+  useOverlay: vi.fn(),
+}));
 vi.mock('@/lib/diablo-focus', () => ({ isDiabloFocused: vi.fn() }));
 
 const shako = (hash: string, storage = 'Shared Stash') =>
@@ -55,7 +63,14 @@ beforeEach(() => {
   vi.clearAllMocks();
   settings = { account: 'MyAcc', mode: 'softcore', ladder: 'ladder', stashAutoDelist: 'auto' };
   stash = [shako('h1'), ring];
-  listings = [{ _id: 'L1', item: { ...shako('h1'), account_id: 'myacc' } } as unknown as MarketListingEntry];
+  listings = [
+    {
+      _id: 'L1',
+      hr_price: 2.5,
+      price: 'or offer',
+      item: { ...shako('h1'), account_id: 'myacc' },
+    } as unknown as MarketListingEntry,
+  ];
   vi.mocked(useOptions).mockImplementation(() => ({ settings }) as never);
   vi.mocked(usePd2Website).mockImplementation(
     () => ({ authData: { user: { _id: 'u1' } }, fetchStash, getMarketListings, deleteMarketListing }) as never,
@@ -78,7 +93,7 @@ describe('StashAutoDelistController', () => {
     stash = [ring];
     await nextPoll();
     expect(deleteMarketListing).toHaveBeenCalledWith('L1');
-    expect(showToast).toHaveBeenCalledTimes(1);
+    expect(notify).toHaveBeenCalledTimes(1);
   });
 
   it('delists once when a stale stash read brings the item back while PD2 still lists it', async () => {
@@ -92,7 +107,7 @@ describe('StashAutoDelistController', () => {
     stash = [ring];
     await nextPoll();
     expect(deleteMarketListing).toHaveBeenCalledTimes(1);
-    expect(showToast).toHaveBeenCalledTimes(1);
+    expect(notify).toHaveBeenCalledTimes(1);
   });
 
   it('asks first, and delists only on confirm', async () => {
@@ -152,6 +167,66 @@ describe('StashAutoDelistController', () => {
     await mount();
     await nextPoll();
     expect(fetchStash).not.toHaveBeenCalled();
+  });
+
+  describe('the notification log', () => {
+    const relistHandler = () =>
+      vi.mocked(setToastActionHandler).mock.calls.find(([type]) => type === ToastActionType.RELIST_ITEM)![1]!;
+
+    it('logs a delist with the item, its price and a Relist that finds the item again', async () => {
+      await mount();
+      stash = [ring];
+      await nextPoll();
+      const [kind, payload, options] = vi.mocked(notify).mock.calls[0];
+      expect(kind).toBe('delist');
+      expect(options).toEqual({ toast: true });
+      expect(payload).toMatchObject({
+        item: { item: listings[0].item, hrPrice: 2.5, note: 'or offer' },
+        action: {
+          label: 'Relist',
+          type: ToastActionType.RELIST_ITEM,
+          data: { hash: 'h1', fingerprint: itemFingerprint(listings[0].item), hrPrice: 2.5, note: 'or offer' },
+        },
+      });
+
+      // The delist was a mistake: the item is back, moved to another tab (a new hash)
+      const moved = shako('h5', 'Stash');
+      stash = [moved, ring];
+      await act(async () => void (await relistHandler()(('action' in payload ? payload.action : null)!.data)));
+      expect(openPanel).toHaveBeenCalledWith(
+        'quickList',
+        { stashItem: moved, prefill: { price: 2.5, note: 'or offer' } },
+        { focus: true },
+      );
+    });
+
+    it('Relist says so when the item is not in the stash', async () => {
+      await mount();
+      const data: RelistData = {
+        name: 'Shako',
+        hash: 'h1',
+        fingerprint: itemFingerprint(shako('h1')),
+        hrPrice: 0,
+        note: 'x',
+      };
+      stash = [ring];
+      await act(async () => void (await relistHandler()(data)));
+      expect(openPanel).not.toHaveBeenCalled();
+      expect(vi.mocked(showToast).mock.calls[0][0]).toMatchObject({ variant: 'warning' });
+    });
+
+    it('logs a failed delist as an error with the listing to open', async () => {
+      deleteMarketListing.mockRejectedValueOnce(new Error('503'));
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      await mount();
+      stash = [ring];
+      await nextPoll();
+      expect(vi.mocked(notify).mock.calls[0][1]).toMatchObject({
+        tone: 'error',
+        item: { hrPrice: 2.5 },
+        action: { type: ToastActionType.OPEN_MARKET_LISTING, data: { listingId: 'L1' } },
+      });
+    });
   });
 
   describe('exemptions', () => {

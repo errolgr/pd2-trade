@@ -261,8 +261,11 @@ export const wtbExpiringSoon = (request: Pick<WtbRequest, 'status' | 'expiresAt'
 export const countsTowardCap = (request: Pick<WtbRequest, 'status' | 'expiresAt'>, now: number): boolean =>
   (request.status === 'open' || request.status === 'paused') && !wtbExpired(request, now);
 
-/** What "List at {offer}" puts in the list-item form: an HR price, or a note when the offer has none. */
-export type WtbListPrice = { price: number } | { note: string };
+/**
+ * What "List at {offer}" (or a delisted listing's Relist) puts in the list-item form: an HR price with an optional
+ * note, or a note when there is no HR value.
+ */
+export type WtbListPrice = { price: number; note?: string } | { note: string };
 
 export function listPriceFor(offer: WtbOffer): WtbListPrice {
   if (offer.currency === 'HR') return { price: Math.round(offer.amount * 100) / 100 };

@@ -1,7 +1,7 @@
 /**
  * The notification log: what happened to the user (whispers, trade whispers, chat messages, offers, joins, market
- * watch alerts, Horadric Sim results, net worth moves, updates, errors), whether or not a toast showed it. Feedback
- * on the user's own actions ("Whisper copied") is never logged.
+ * watch alerts, Horadric Sim results, net worth moves, auto-delisted listings, updates, errors), whether or not a toast
+ * showed it. Feedback on the user's own actions ("Whisper copied") is never logged.
  *
  * An entry is *missed* when nobody saw it. Seen: it reached the player in the game (Diablo in front, keyboard or
  * mouse used within the last minute) by a toast or the game's own chat (whispers), or its toast had the pointer on
@@ -15,6 +15,7 @@ import { useSyncExternalStore } from 'react';
 import { z } from 'zod';
 import { ToastActionType } from '@/common/types/Events';
 import type { ListingPanelPayload } from '@/pages/market/lib/types';
+import type { ItemDetail } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { BaseDirectory, exists, mkdir, readTextFile, writeTextFile } from '@/lib/browser-fs';
 
 export const NOTIFICATION_KINDS = [
@@ -26,6 +27,7 @@ export const NOTIFICATION_KINDS = [
   'market',
   'sim',
   'networth',
+  'delist',
   'update',
   'error',
 ] as const;
@@ -33,7 +35,7 @@ export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 
 /** The log's filter tabs and the kinds each holds. */
 export const NOTIFICATION_GROUPS = {
-  trade: ['offer', 'trade'],
+  trade: ['offer', 'trade', 'delist'],
   chat: ['whisper', 'chat', 'join'],
   alerts: ['market', 'sim', 'networth'],
   system: ['update', 'error'],
@@ -56,6 +58,14 @@ export interface LoggedAction {
   data?: unknown;
 }
 
+/** A listing's item as it was when the entry was logged (an auto-delisted listing): hover shows it in the log. */
+export interface LoggedItem {
+  item: ItemDetail;
+  /** The listing's HR price (0: none) and note. */
+  hrPrice: number;
+  note: string;
+}
+
 export interface NotificationEntry {
   id: string;
   kind: NotificationKind;
@@ -69,6 +79,8 @@ export interface NotificationEntry {
   secondaryAction?: LoggedAction;
   /** A market listing: Details opens it in the listing drawer. */
   listing?: ListingPanelPayload;
+  /** The listing's item and price at the time (it may be gone since): the row's hover shows them. */
+  item?: LoggedItem;
   tone?: 'success' | 'warning' | 'error' | 'muted';
   /** Occurrences folded into this entry. */
   count: number;
@@ -138,6 +150,15 @@ const savedEntrySchema = z.object({
   action: loggedActionSchema.optional(),
   secondaryAction: loggedActionSchema.optional(),
   listing: z.object({ listingId: z.string(), savedSearchId: z.string().optional() }).passthrough().optional(),
+  // The item is PD2's own listing item, shown as is: only what the tooltip needs to render is checked
+  item: z
+    .object({
+      item: z.object({ name: z.string(), modifiers: z.array(z.unknown()) }).passthrough(),
+      hrPrice: z.number().catch(0),
+      note: z.string().catch(''),
+    })
+    .optional()
+    .catch(undefined),
   tone: z.enum(['success', 'warning', 'error', 'muted']).optional(),
   count: z.number().int().positive().catch(1),
   groupKey: z.string().optional(),
