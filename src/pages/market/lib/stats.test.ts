@@ -171,3 +171,32 @@ describe('statLabel of an alias group member', () => {
     expect(statLabel('not_a_stat')).toBe('not_a_stat');
   });
 });
+
+describe('chance-to-cast options per skill', () => {
+  const ormus: Modifier[] = [
+    {
+      name: 'item_skilloncast',
+      values: [18, 42, 10],
+      label: '10% Chance to cast level 18 Static Field on casting',
+      priority: 100,
+    },
+  ];
+
+  it('finds a skill proc by skill and trigger, filtering the level on that skill', () => {
+    const [hit] = searchStats('ctc static field casting', 1);
+    expect(hit).toMatchObject({
+      key: 'item_skilloncast{*,42}[0]',
+      label: 'Chance to cast level {X} Static Field on casting',
+      group: 'Skills',
+    });
+    expect(readStatValue(ormus, 'item_skilloncast{*,42}[0]')).toBe(18);
+    expect(readStatValue(ormus, 'item_skilloncast{*,44}[0]')).toBeNull();
+    expect(modToStatKey(ormus[0])).toBe('item_skilloncast{*,42}[0]');
+  });
+
+  it("a curse's proc id joins its class skill, as price-check keys carry them", () => {
+    expect(statLabel('item_skillonhit{*,66|442}[0]')).toBe('Chance to cast level {X} Amplify Damage on striking');
+    const procs = STAT_OPTIONS.filter((o) => o.key.startsWith('item_skillon'));
+    expect(procs.some((o) => /RoguePierce|SelfAura/.test(o.label))).toBe(false);
+  });
+});

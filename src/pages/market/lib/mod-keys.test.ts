@@ -32,7 +32,8 @@ describe('modToStatKey', () => {
     [mod('item_nonclassskill', [235, 3]), 'item_nonclassskill{235}', 3],
     [mod('item_aura', [123, 12]), 'item_aura{123}', 12],
     [mod('max_damage', [14]), 'max_damage|maxdamage|secondary_maxdamage|item_throw_maxdamage', 14],
-    [mod('item_skillonlevelup', [41, 48, 100]), 'item_skillonlevelup', 41],
+    [mod('item_skillonlevelup', [41, 48, 100]), 'item_skillonlevelup{*,48}[0]', 41],
+    [mod('item_skillonlevelup', [41, 99999, 100]), 'item_skillonlevelup', 41],
     [mod('item_req_percent', [-15]), 'item_req_percent', -15],
   ])('%o → %s', (m, key, value) => {
     expect(modToStatKey(m)).toBe(key);

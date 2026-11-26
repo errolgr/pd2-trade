@@ -213,15 +213,46 @@ export function withLowDamageRange(key: string, { min, max }: { min?: number; ma
 }
 
 /**
- * The site's Properties list (labels are `{X}` templates), in site order, with display groups; the physical
- * damage pair ahead of its max/min lines, each element's min / max entries as its one pair entry.
+ * Chance-to-cast entries per skill ("Chance to cast level {X} Static Field on casting" =
+ * `item_skilloncast{*,42}[0]`): the site lists each trigger only for any skill, while the service filters on the
+ * skill pinned in `values.1` and rolls the level in `values.0`. Skills are the site's +skill entries by name, a
+ * curse's proc id joining its class skill (`{*,66|442}` Amplify Damage, as the price check sends); entries with no
+ * class and no class skill to join (RoguePierce, SelfAuras) are left out.
  */
-export const STAT_OPTIONS: StatOption[] = SITE_STAT_OPTIONS.flatMap(([key, label]) => {
-  const elemental = ELEMENTAL_DAMAGE.get(key);
-  if (elemental !== undefined) return elemental ? [elemental] : [];
-  const option = { key, label, group: statGroup(key) };
-  return key.startsWith(`${MAX_DAMAGE_NAMES[0]}|`) ? [DAMAGE_OPTION, option] : [option];
-});
+function skillProcOptions(): StatOption[] {
+  const idsByName = new Map<string, number[]>();
+  for (const [key, label] of SITE_STAT_OPTIONS) {
+    const id = /^item_singleskill\{(\d+)\}$/.exec(key)?.[1];
+    const skill = id === undefined ? null : /^\+\{X\} to (.+?)(?: \((\w+)\))?$/.exec(label);
+    if (!skill) continue;
+    const ids = idsByName.get(skill[1]);
+    if (ids) ids.push(Number(id));
+    else if (skill[2]) idsByName.set(skill[1], [Number(id)]);
+  }
+  return SITE_STAT_OPTIONS.flatMap(([trigger, label]) =>
+    /^item_skillon\w+$/.test(trigger) && label.includes(' skill ')
+      ? [...idsByName].map(([name, ids]) => {
+          const key = `${trigger}{*,${ids.join('|')}}[0]`;
+          return { key, label: label.replace(' skill ', ` ${name} `), group: statGroup(key) };
+        })
+      : [],
+  );
+}
+
+/**
+ * The site's Properties list (labels are `{X}` templates), in site order, with display groups; the physical
+ * damage pair ahead of its max/min lines, each element's min / max entries as its one pair entry; then the
+ * per-skill chance-to-cast entries.
+ */
+export const STAT_OPTIONS: StatOption[] = [
+  ...SITE_STAT_OPTIONS.flatMap(([key, label]) => {
+    const elemental = ELEMENTAL_DAMAGE.get(key);
+    if (elemental !== undefined) return elemental ? [elemental] : [];
+    const option = { key, label, group: statGroup(key) };
+    return key.startsWith(`${MAX_DAMAGE_NAMES[0]}|`) ? [DAMAGE_OPTION, option] : [option];
+  }),
+  ...skillProcOptions(),
+];
 
 const OPTION_BY_KEY = new Map(STAT_OPTIONS.map((o) => [o.key, o]));
 
@@ -316,6 +347,7 @@ const ALIASES: Record<string, string> = {
   pdr: 'physical damage taken reduced',
   res: 'resist',
   hp: 'life',
+  ctc: 'chance to cast',
   // "flat damage" → "Adds {X}-{Y} Damage"
   flat: 'adds',
 };
