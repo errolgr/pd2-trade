@@ -483,7 +483,9 @@ export function StatFilters({
           optionKey={choiceKey}
           onPick={add}
           className="flex-1"
-          contentClassName="min-w-80"
+          // As wide as the longest label ("Chance to cast level # Chain Lightning Sentry when you Kill an Enemy"),
+          // within the room beside the input
+          contentClassName="w-max min-w-80 max-w-(--radix-popover-content-available-width)"
           onKeyDown={(e) => {
             if (e.key === 'Tab' && matches.length > 0) {
               e.preventDefault();
