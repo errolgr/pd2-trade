@@ -1,16 +1,29 @@
 import React, { useState } from 'react';
 import moment from 'moment';
-import { ArrowUp, Check, Clock, Loader2, Pencil, SquareArrowOutUpRight, Trash2, X as XIcon } from 'lucide-react';
+import {
+  ArrowUp,
+  Check,
+  Clock,
+  CornerDownRight,
+  Loader2,
+  MapPin,
+  Pencil,
+  SquareArrowOutUpRight,
+  Trash2,
+  TriangleAlert,
+  X as XIcon,
+} from 'lucide-react';
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ListingThumb, nameColor } from '@/pages/chat/components/ListingCard';
+import { ListingThumb, nameColor, stashPlace } from '@/pages/chat/components/ListingCard';
 import { ItemTooltip } from '@/pages/market/components/ItemTooltip';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/i18n';
 import { itemDisplayName } from '@/pages/market/lib/listing';
 import { bumpReadyAt } from './my-listings';
+import type { StashPresence } from './stash-presence';
 
 /** The listing's item art; hovering it (or anything wrapped in ItemHover) shows the in-game tooltip. */
 export function ItemHover({ listing, children }: { listing: MarketListingEntry; children: React.ReactNode }) {
@@ -108,6 +121,70 @@ export function PriceText({ listing, className }: { listing: MarketListingEntry;
 
 /** The note beside an HR price ("or best offer"); a note-only listing's note is its price. */
 export const sideNote = (listing: MarketListingEntry) => (listing.hr_price > 0 && listing.price ? listing.price : null);
+
+const STASH_TONE: Record<StashPresence['state'], string> = {
+  here: 'border-success/40 text-success',
+  moved: 'border-primary/40 text-primary',
+  unsure: 'border-warning/50 bg-warning/10 text-warning',
+  missing: 'border-warning/50 bg-warning/10 text-warning',
+};
+const STASH_ICON = { here: MapPin, moved: CornerDownRight, unsure: TriangleAlert, missing: TriangleAlert };
+
+/**
+ * Where the listed item is in the stash now: in place ("Shared 3 · column 5, row 2"), moved (its new place), or not
+ * found. Hover: where it was listed from and when the stash was read (PD2 syncs a stash only on a new game).
+ */
+export function StashChip({
+  listing,
+  presence,
+  checkedAt,
+}: {
+  listing: MarketListingEntry;
+  presence: StashPresence;
+  checkedAt: number;
+}) {
+  const { t } = useTranslation('quickList');
+  const places =
+    presence.state === 'missing'
+      ? ''
+      : presence.places
+          .map((item) => stashPlace(item))
+          .filter(Boolean)
+          .join(t('myListings.stash.or'));
+  const ago = moment(checkedAt).fromNow();
+  const label =
+    presence.state === 'here'
+      ? places
+      : presence.state === 'moved'
+        ? t('myListings.stash.moved', { place: places })
+        : presence.state === 'unsure'
+          ? t('myListings.stash.unsure', { found: presence.places.length, listed: presence.listed })
+          : t('myListings.stash.missing');
+  const listedFrom = stashPlace(listing.item);
+  const Icon = STASH_ICON[presence.state];
+  return (
+    <Tooltip delayDuration={150}>
+      <TooltipTrigger asChild>
+        <span
+          tabIndex={0}
+          data-stash={presence.state}
+          className={cn(
+            'inline-flex h-5 max-w-[65%] shrink-0 items-center gap-1 rounded-full border px-2 text-[11px] leading-none outline-none focus-visible:ring-2 focus-visible:ring-ring/60',
+            STASH_TONE[presence.state],
+          )}
+        >
+          <Icon className="size-3 shrink-0" />
+          <span className="truncate">{label}</span>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-72 space-y-0.5 text-xs">
+        {presence.state === 'unsure' && <p>{t('myListings.stash.at', { places })}</p>}
+        {presence.state !== 'here' && listedFrom && <p>{t('myListings.stash.listedFrom', { place: listedFrom })}</p>}
+        <p className="text-muted-foreground">{t('myListings.stash.readAgo', { ago })}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 const iconButton =
   'inline-flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none transition-[color,background-color] duration-(--dur-fast) hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring/60 disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-3.5';

@@ -217,7 +217,20 @@
     },
     "filter": {
       "ready": "Gotowe do podbicia {{count}}",
-      "offers": "Oferty {{count}}"
+      "offers": "Oferty {{count}}",
+      "missing": "Brak w skrzyni {{count}}"
+    },
+    "stash": {
+      "or": " lub ",
+      "moved": "Przeniesiono: {{place}}",
+      "unsure": "Tylko {{found}} z {{listed}} takich w skrzyni",
+      "missing": "Brak w skrzyni",
+      "at": "W skrzyni: {{places}}",
+      "listedFrom": "Wystawiono z {{place}}",
+      "readAgo": "Skrzynię odczytano {{ago}}. PD2 aktualizuje ją po utworzeniu nowej gry.",
+      "reading": "Odczytywanie skrzyni…",
+      "readFailed": "Nie udało się odczytać skrzyni: {{error}}",
+      "refresh": "Odczytaj skrzynię ponownie"
     },
     "slots": "{{count}} / {{max}} slotów",
     "bumpReady_one": "Podbij {{count}} gotowe",

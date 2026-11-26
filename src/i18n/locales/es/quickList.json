@@ -213,7 +213,20 @@
     },
     "filter": {
       "ready": "Subida lista {{count}}",
-      "offers": "Ofertas {{count}}"
+      "offers": "Ofertas {{count}}",
+      "missing": "No en el alijo {{count}}"
+    },
+    "stash": {
+      "or": " o ",
+      "moved": "Movido: {{place}}",
+      "unsure": "Solo {{found}} de {{listed}} así en tu alijo",
+      "missing": "No está en tu alijo",
+      "at": "En tu alijo: {{places}}",
+      "listedFrom": "Anunciado desde {{place}}",
+      "readAgo": "Alijo leído {{ago}}. PD2 lo actualiza al crear una partida nueva.",
+      "reading": "Leyendo tu alijo…",
+      "readFailed": "No se pudo leer tu alijo: {{error}}",
+      "refresh": "Volver a leer el alijo"
     },
     "slots": "{{count}} / {{max}} espacios",
     "bumpReady_one": "Subir {{count}} listo",

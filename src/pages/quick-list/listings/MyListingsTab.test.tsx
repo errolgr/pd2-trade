@@ -38,7 +38,14 @@ function makeListing(id: string, name: string, bumpedHoursAgo: number, over: Par
     hr_price: 1,
     bumped_at: hoursAgo(bumpedHoursAgo),
     created_at: hoursAgo(48),
-    item: { hash: `h${id}`, name, base: { name: `${name} base` }, quality: { name: 'Unique' }, modifiers: [] },
+    item: {
+      hash: `h${id}`,
+      name,
+      base_code: `b${id}`,
+      base: { name: `${name} base` },
+      quality: { name: 'Unique' },
+      modifiers: [],
+    },
     ...over,
   } as unknown as MarketListingEntry;
 }
@@ -51,6 +58,7 @@ interface Api {
   bumpAllMarketListings: Mock<(userId: string) => Promise<void>>;
   authData: { user: { _id: string } } | null;
   incomingOffers: never[];
+  fetchStash: Mock<() => Promise<{ items: unknown[] }>>;
 }
 
 let api: Api;
@@ -95,6 +103,19 @@ beforeEach(() => {
     bumpAllMarketListings: vi.fn(async () => {}),
     authData: { user: { _id: 'u1' } },
     incomingOffers: [],
+    // Shako where it was listed from, the Mesh moved to a character's personal stash, the SoJ gone
+    fetchStash: vi.fn(async () => ({
+      items: [
+        { ...server[0].item, location: { storage: 'Shared Stash', stash_page: 3 }, position: { column: 4, row: 1 } },
+        {
+          ...server[1].item,
+          hash: 'moved',
+          character_id: 'hammerdin',
+          location: { storage: 'Shared Stash', stash_page: 0 },
+          position: { column: 1, row: 6 },
+        },
+      ],
+    })),
   };
   vi.mocked(usePd2Website).mockImplementation(() => api as never);
   updateSettings = vi.fn();
@@ -228,5 +249,19 @@ describe('MyListingsTab', () => {
     await renderTab({ listingId: 'gone', version: 1 });
     expect(document.querySelector('[data-highlighted]')).toBeNull();
     expect(scroll).not.toHaveBeenCalled();
+  });
+
+  it('shows where each listed item is in the stash, and filters the ones not there', async () => {
+    await renderTab();
+    expect(within(card('Shako')).queryByText('Shared 3 · column 5, row 2')).not.toBeNull();
+    expect(within(card('Arachnid Mesh')).queryByText('Moved: Personal · hammerdin · column 2, row 7')).not.toBeNull();
+    expect(within(card('Stone of Jordan')).queryByText('Not in your stash')).not.toBeNull();
+
+    await click(screen.getByRole('button', { name: 'Not in stash 1' }));
+    expect(screen.queryByText('Shako')).toBeNull();
+    expect(screen.queryByText('Stone of Jordan')).not.toBeNull();
+
+    await click(screen.getByRole('button', { name: 'Read the stash again' }));
+    expect(api.fetchStash).toHaveBeenCalledTimes(2);
   });
 });

@@ -91,11 +91,17 @@ export const nameColor = (listing: MarketListingEntry) =>
     ? 'text-q-rune'
     : qualityColor(listing.item.quality?.name ?? '');
 
-/** Compact stash tab, as the net worth tabs label it: "Shared 3", "Personal", else the storage name. */
-function stashLabel(item: Pick<ItemDetail, 'location'>): string | null {
+/**
+ * Compact stash tab, as the net worth tabs label it: "Shared 3", "Personal" (with its character when known:
+ * "Personal · hammerdin"), else the storage name.
+ */
+function stashLabel(item: Pick<ItemDetail, 'location' | 'character_id'>): string | null {
   const location = item.location;
   if (!location?.storage) return null;
-  if (isPersonalStashLocation(location)) return t('chat:listing.stashPersonal');
+  if (isPersonalStashLocation(location)) {
+    const personal = t('chat:listing.stashPersonal');
+    return item.character_id ? `${personal} · ${item.character_id}` : personal;
+  }
   if (/shared/i.test(location.storage)) {
     return typeof location.stash_page === 'number'
       ? t('chat:listing.stashShared', { page: location.stash_page })
@@ -105,7 +111,7 @@ function stashLabel(item: Pick<ItemDetail, 'location'>): string | null {
 }
 
 /** Where the item lies: its stash tab and, when known, its column and row there ("Shared 3 · column 2, row 5"). */
-export function stashPlace(item: Pick<ItemDetail, 'location' | 'position'>): string | null {
+export function stashPlace(item: Pick<ItemDetail, 'location' | 'position' | 'character_id'>): string | null {
   const stash = stashLabel(item);
   if (!stash || !item.position) return stash;
   return t('chat:listing.stashPosition', { stash, column: item.position.column + 1, row: item.position.row + 1 });

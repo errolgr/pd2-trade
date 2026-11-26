@@ -205,7 +205,20 @@
     },
     "filter": {
       "ready": "可顶帖 {{count}}",
-      "offers": "报价 {{count}}"
+      "offers": "报价 {{count}}",
+      "missing": "不在储物箱 {{count}}"
+    },
+    "stash": {
+      "or": " 或 ",
+      "moved": "已移动：{{place}}",
+      "unsure": "储物箱中只有 {{found}}/{{listed}} 件同样的物品",
+      "missing": "不在你的储物箱中",
+      "at": "在储物箱中：{{places}}",
+      "listedFrom": "挂单位置：{{place}}",
+      "readAgo": "储物箱读取于{{ago}}。PD2 会在你创建新游戏时更新它。",
+      "reading": "正在读取储物箱…",
+      "readFailed": "无法读取储物箱：{{error}}",
+      "refresh": "重新读取储物箱"
     },
     "slots": "{{count}} / {{max}} 个栏位",
     "bumpReady_other": "{{count}} 个可顶帖",

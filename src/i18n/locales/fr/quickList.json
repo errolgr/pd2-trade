@@ -213,7 +213,20 @@
     },
     "filter": {
       "ready": "Remontée prête {{count}}",
-      "offers": "Offres {{count}}"
+      "offers": "Offres {{count}}",
+      "missing": "Absent du coffre {{count}}"
+    },
+    "stash": {
+      "or": " ou ",
+      "moved": "Déplacé : {{place}}",
+      "unsure": "Seulement {{found}} sur {{listed}} de ce type dans votre coffre",
+      "missing": "Absent de votre coffre",
+      "at": "Dans votre coffre : {{places}}",
+      "listedFrom": "Mis en vente depuis {{place}}",
+      "readAgo": "Coffre lu {{ago}}. PD2 le met à jour quand vous créez une nouvelle partie.",
+      "reading": "Lecture de votre coffre…",
+      "readFailed": "Impossible de lire votre coffre : {{error}}",
+      "refresh": "Relire le coffre"
     },
     "slots": "{{count}} / {{max}} emplacements",
     "bumpReady_one": "Remonter {{count}} annonce prête",

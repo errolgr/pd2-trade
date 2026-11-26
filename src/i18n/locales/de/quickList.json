@@ -209,7 +209,20 @@
     },
     "filter": {
       "ready": "Bump bereit {{count}}",
-      "offers": "Angebote {{count}}"
+      "offers": "Angebote {{count}}",
+      "missing": "Nicht in der Truhe {{count}}"
+    },
+    "stash": {
+      "or": " oder ",
+      "moved": "Verschoben: {{place}}",
+      "unsure": "Nur {{found}} von {{listed}} solchen in deiner Truhe",
+      "missing": "Nicht in deiner Truhe",
+      "at": "In deiner Truhe: {{places}}",
+      "listedFrom": "Inseriert aus {{place}}",
+      "readAgo": "Truhe gelesen {{ago}}. PD2 aktualisiert sie, wenn du ein neues Spiel erstellst.",
+      "reading": "Truhe wird gelesen…",
+      "readFailed": "Truhe konnte nicht gelesen werden: {{error}}",
+      "refresh": "Truhe erneut lesen"
     },
     "slots": "{{count}} / {{max}} Slots",
     "bumpReady_one": "{{count}} Bump bereit",

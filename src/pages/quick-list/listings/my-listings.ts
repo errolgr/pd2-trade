@@ -1,6 +1,7 @@
 import type { MarketListingEntry } from '@/common/types/pd2-website/GetMarketListingsResponse';
 import type { Deal } from '@/pages/market/enrich/useDealIndicators';
 import type { ListingOffers } from '@/pages/market/lib/listing-offers';
+import { isMissing, type StashPresence } from './stash-presence';
 
 /** PD2 lets a listing be bumped once every 12 hours. */
 export const BUMP_COOLDOWN_MS = 12 * 60 * 60 * 1000;
@@ -52,12 +53,14 @@ export const DEFAULT_SORT_DIR: Record<ListingsSortKey, SortDir> = {
 
 export const DEFAULT_LISTINGS_SORT: ListingsSort = { key: 'attention', dir: 'asc' };
 
-export type ListingsFilter = 'ready' | 'offers';
+export type ListingsFilter = 'ready' | 'offers' | 'missing';
 
 export interface ListingContext {
   now: number;
   offers: ReadonlyMap<string, ListingOffers>;
   deals: ReadonlyMap<string, Deal>;
+  /** Where each listing's item is in the stash; null until the stash was read. */
+  stash?: ReadonlyMap<string, StashPresence> | null;
 }
 
 export const receivedOffers = (listing: MarketListingEntry, ctx: ListingContext) =>
@@ -121,5 +124,6 @@ export function matchesFilter(
 ): boolean {
   if (filter === 'ready') return canBump(listing, ctx.now);
   if (filter === 'offers') return receivedOffers(listing, ctx) > 0;
+  if (filter === 'missing') return isMissing(ctx.stash?.get(listing._id));
   return true;
 }

@@ -213,7 +213,20 @@
     },
     "filter": {
       "ready": "Subida pronta {{count}}",
-      "offers": "Ofertas {{count}}"
+      "offers": "Ofertas {{count}}",
+      "missing": "Fora do baú {{count}}"
+    },
+    "stash": {
+      "or": " ou ",
+      "moved": "Movido: {{place}}",
+      "unsure": "Só {{found}} de {{listed}} assim no seu baú",
+      "missing": "Não está no seu baú",
+      "at": "No seu baú: {{places}}",
+      "listedFrom": "Anunciado de {{place}}",
+      "readAgo": "Baú lido {{ago}}. O PD2 o atualiza quando você cria um novo jogo.",
+      "reading": "Lendo seu baú…",
+      "readFailed": "Não foi possível ler seu baú: {{error}}",
+      "refresh": "Ler o baú de novo"
     },
     "slots": "{{count}} / {{max}} espaços",
     "bumpReady_one": "Subir {{count}} pronto",

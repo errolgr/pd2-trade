@@ -33,10 +33,14 @@ export type StashSnapshot = Map<string, Set<string>>;
 
 const STASH_STORAGE = /stash/i;
 
+/** In a stash tab (personal or shared), not the inventory, cube or equipped. */
+export const inStash = (item: Pick<GameStashItem, 'location'>): boolean =>
+  STASH_STORAGE.test(item.location?.storage ?? '');
+
 export function snapshotStash(items: GameStashItem[]): StashSnapshot {
   const snapshot: StashSnapshot = new Map();
   for (const item of items) {
-    if (!STASH_STORAGE.test(item.location?.storage ?? '')) continue;
+    if (!inStash(item)) continue;
     const fingerprint = itemFingerprint(item);
     let hashes = snapshot.get(fingerprint);
     if (!hashes) snapshot.set(fingerprint, (hashes = new Set()));
@@ -56,7 +60,7 @@ export function stashSize(snapshot: StashSnapshot): number {
  * else the first look-alike (an item gets a new hash when it moves; look-alikes are interchangeable for a listing).
  */
 export function findInStash(items: GameStashItem[], hash: string, fingerprint: string): GameStashItem | null {
-  const stashed = items.filter((item) => STASH_STORAGE.test(item.location?.storage ?? ''));
+  const stashed = items.filter(inStash);
   return (
     stashed.find((item) => item.hash === hash) ?? stashed.find((item) => itemFingerprint(item) === fingerprint) ?? null
   );
